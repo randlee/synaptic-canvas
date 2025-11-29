@@ -1,4 +1,4 @@
-"""Synaptic Canvas Python utilities for CLI tools.
+"""Synaptic Canvas CLI utilities (Python).
 
 Modules:
 - sc_install: Python rewrite of tools/sc-install.sh

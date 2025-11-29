@@ -60,7 +60,7 @@ Installer usage (from repo root):
   - `python3 tools/sc-install.py uninstall git-worktree --dest /path/to/your-repo/.claude`
 
 Delay helper (local runs without installing):
-- Python module: `python3 -m scpy.delay_run --minutes 2 --action "go"`
+- Python module: `python3 -m sc_cli.delay_run --minutes 2 --action "go"`
 - Script (as installed by `delay-tasks`): `.claude/scripts/delay-run.py --every 60 --for 5m --action "done"`
 
 Lint/build:
