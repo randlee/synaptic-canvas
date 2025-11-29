@@ -4,8 +4,7 @@ import os
 import subprocess
 from pathlib import Path
 
-from scpy import sc_install
-
+from sc_cli import sc_install
 
 def _init_git_repo(path: Path) -> None:
     subprocess.run(["git", "init", "-q", str(path)], check=True)

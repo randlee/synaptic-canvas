@@ -3,7 +3,7 @@ from __future__ import annotations
 import builtins
 from typing import List
 
-from scpy import delay_run
+from sc_cli import delay_run
 
 
 def test_one_shot_minutes_heartbeats_and_action():

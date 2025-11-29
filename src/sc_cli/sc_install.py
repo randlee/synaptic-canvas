@@ -50,7 +50,12 @@ def error(msg: str) -> None:
     print(f"{RED}✗{NC} {msg}", file=sys.stderr)
 
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+# Determine repository root robustly (supports src/ layout)
+_THIS_FILE = Path(__file__).resolve()
+REPO_ROOT = next(
+    (p for p in [_THIS_FILE.parent] + list(_THIS_FILE.parents) if (p / "packages").exists()),
+    _THIS_FILE.parents[2] if len(_THIS_FILE.parents) >= 3 else _THIS_FILE.parents[1],
+)
 PACKAGES_DIR = REPO_ROOT / "packages"
 
 

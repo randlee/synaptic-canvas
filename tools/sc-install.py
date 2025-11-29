@@ -2,10 +2,12 @@
 import sys
 from pathlib import Path
 
-# Add repo root to sys.path so 'scpy' can be imported without installation
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+# Add repo src to sys.path so 'sc_cli' can be imported without installation
+ROOT = Path(__file__).resolve().parents[1]
+SRC = ROOT / "src"
+sys.path.insert(0, str(SRC))
 
-from scpy.sc_install import main
+from sc_cli.sc_install import main
 
 if __name__ == "__main__":
     raise SystemExit(main())
