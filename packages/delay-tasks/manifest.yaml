@@ -23,7 +23,7 @@ artifacts:
     - agents/delay-once.md
     - agents/delay-poll.md
   scripts:
-    - scripts/delay-run.sh
+    - scripts/delay-run.py
 
 # No variables — Tier 0 package (direct copy)
 

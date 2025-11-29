@@ -36,10 +36,10 @@ def test_install_and_uninstall_delay_tasks(tmp_path: Path):
     assert rc == 0
     # Files exist
     assert (dest / "agents/delay-once.md").exists()
-    sh = dest / "scripts/delay-run.sh"
-    assert sh.exists()
+    py = dest / "scripts/delay-run.py"
+    assert py.exists()
     # Executable bit set (at least for user)
-    assert os.access(sh, os.X_OK)
+    assert os.access(py, os.X_OK)
 
     # Uninstall
     rc = sc_install.main(["uninstall", "delay-tasks", "--dest", str(dest)])

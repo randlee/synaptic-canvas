@@ -1,16 +1,25 @@
 # Synaptic Canvas
 
+[![tests](https://github.com/randlee/synaptic-canvas/actions/workflows/tests.yml/badge.svg)](https://github.com/randlee/synaptic-canvas/actions/workflows/tests.yml)
+
 A marketplace for Claude Code skills, commands, and agents.
 
 ## Installation
 
 ### Quick Install (single package)
 
+Python CLI (recommended):
 ```bash
-# From this repo
-./tools/sc-install.sh install git-worktree --dest /path/to/your-repo/.claude
+python3 tools/sc-install.py install git-worktree --dest /path/to/your-repo/.claude
+```
 
-# From GitHub (once published)
+Bash wrapper (also available):
+```bash
+./tools/sc-install.sh install git-worktree --dest /path/to/your-repo/.claude
+```
+
+From GitHub (once published):
+```bash
 curl -fsSL https://raw.githubusercontent.com/randlee/synaptic-canvas/main/tools/sc-install.sh | \
   bash -s -- install git-worktree --dest /path/to/your-repo/.claude
 ```
