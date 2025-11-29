@@ -1,0 +1,42 @@
+name: git-worktree
+version: 1.0.0
+description: >
+  Manage git worktrees with optional tracking: create, scan, cleanup, and abort
+  worktrees using a standard sibling folder layout with tracking documents.
+author: randlee
+license: MIT
+tags:
+  - git
+  - worktree
+  - workflow
+  - agents
+  - branching
+
+# Files to install (relative to package root)
+artifacts:
+  commands:
+    - commands/git-worktree.md
+  skills:
+    - skills/managing-worktrees/SKILL.md
+  agents:
+    - agents/worktree-create.md
+    - agents/worktree-scan.md
+    - agents/worktree-cleanup.md
+    - agents/worktree-abort.md
+
+# Token substitution (Tier 1 package)
+variables:
+  REPO_NAME:
+    auto: git-repo-basename
+    description: Repository name used for default worktree and tracking paths
+
+# Install-time options
+options:
+  no-tracking:
+    type: boolean
+    default: false
+    description: Disable worktree tracking document references
+
+# Runtime requirements
+requires:
+  - git >= 2.20
