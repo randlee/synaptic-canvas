@@ -7,7 +7,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "src"
 sys.path.insert(0, str(SRC))
 
-from sc_cli.sc_install import main
+from sc_cli.install import main
 
 if __name__ == "__main__":
     raise SystemExit(main())

@@ -1,0 +1,5 @@
+workflows:
+  - name: example-local
+    description: Test local slash command that prints the current directory
+    tags: [demo]
+    command: echo "hello local world from $(pwd)"

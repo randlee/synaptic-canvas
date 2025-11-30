@@ -1,0 +1,7 @@
+# Agent registry - source of truth for agent paths and versions
+# Populate with your actual agents before running validation or Agent Runner.
+
+agents: {}
+
+# Optional: express skill -> agent dependency constraints
+skills: {}

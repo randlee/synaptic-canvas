@@ -1,11 +1,30 @@
 ---
 name: managing-worktrees
-description: Manage git worktrees with the required layout, naming, and tracking rules. Use for creating branches/worktrees, scanning/verification, cleanup after merge, or abandoning work.
+description: >
+  Create, manage, scan, and clean up git worktrees for parallel development.
+  Use when working on multiple branches simultaneously, isolating experiments,
+  or when user mentions "worktree", "parallel branches", "feature isolation",
+  "branch cleanup", or "worktree status".
 ---
 
 # Managing Git Worktrees
 
-Use this skill to manage worktrees with a standard structure and tracking. Keep commands simple; delegate long scans/cleanups to background agents.
+Use this skill to manage worktrees with a standard structure and tracking. Use the `/git-worktree` command to invoke this skill.
+
+## Agent Delegation
+
+This skill delegates to specialized agents via the **Task tool**:
+
+| Operation | Agent | Returns |
+|-----------|-------|---------|
+| Create | `worktree-create` | JSON: success, path, branch, tracking_row |
+| Scan | `worktree-scan` | JSON: success, worktrees list, recommendations |
+| Cleanup | `worktree-cleanup` | JSON: success, branch_deleted, tracking_update |
+| Abort | `worktree-abort` | JSON: success, worktree_removed, tracking_update |
+
+To invoke an agent, use the Task tool with:
+- Prompt file: `.claude/agents/<agent-name>.md`
+- Parameters as documented in each agent's Inputs section
 
 ## Standards and paths
 - Repo root: current directory.

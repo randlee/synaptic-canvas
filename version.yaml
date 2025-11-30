@@ -1,0 +1,3 @@
+# Single source of truth for Synaptic Canvas versioning
+# CLI, package manifests, and agent frontmatter should match this version
+version: "0.4.0"
