@@ -8,21 +8,11 @@ A marketplace for Claude Code skills, commands, and agents.
 
 ### Quick Install (single package)
 
-Python CLI (recommended):
 ```bash
 python3 tools/sc-install.py install git-worktree --dest /path/to/your-repo/.claude
 ```
 
-Bash wrapper (also available):
-```bash
-./tools/sc-install.sh install git-worktree --dest /path/to/your-repo/.claude
-```
-
-From GitHub (once published):
-```bash
-curl -fsSL https://raw.githubusercontent.com/randlee/synaptic-canvas/main/tools/sc-install.sh | \
-  bash -s -- install git-worktree --dest /path/to/your-repo/.claude
-```
+> **Note:** `tools/sc-install.sh` is deprecated. Use the Python CLI above.
 
 ### Manual Install
 

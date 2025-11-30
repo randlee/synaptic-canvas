@@ -1,11 +1,28 @@
 ---
 name: delaying-tasks
-description: Schedule a delayed or interval-based action with minimal heartbeats. Use to wait before running a check (e.g., GH Actions/pr status) or to poll on a bounded interval.
+description: >
+  Schedule a delayed or interval-based action with minimal heartbeats.
+  Use to wait before running a check (e.g., GH Actions, PR status, CI pipeline)
+  or to poll on a bounded interval. Trigger on: "wait", "delay", "poll", "check later",
+  "retry after", "schedule check".
 ---
 
 # Delaying Tasks Skill
 
-Use this skill to run a delayed one-shot or bounded polling loop, with minimal heartbeat output to indicate the task is alive. The action text is echoed at the end so the caller can perform the intended check. Use the `/delay` command to invoke this skill (delegates to `delay-once`/`delay-poll` agents).
+Use this skill to run a delayed one-shot or bounded polling loop. Use the `/delay` command to invoke this skill.
+
+## Agent Delegation
+
+This skill delegates to specialized agents via the **Task tool**:
+
+| Operation | Agent | Returns |
+|-----------|-------|---------|
+| One-shot delay | `delay-once` | JSON: success, duration, action |
+| Bounded polling | `delay-poll` | JSON: success, attempts, stopped_early, action |
+
+To invoke an agent, use the Task tool with:
+- Prompt file: `.claude/agents/<agent-name>.md`
+- Parameters as documented in each agent's Inputs section
 
 ## Modes
 - One-shot delay: `/delay --minutes N [--action "text"]` or `/delay --until HH:MM|ISO [--action "text"]`

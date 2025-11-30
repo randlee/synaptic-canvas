@@ -12,7 +12,7 @@ options:
     description: Max duration for polling (e.g., 10m); required with --every unless --attempts is provided.
   - name: --attempts
     description: Max attempts for polling; required with --every unless --for is provided.
-- name: --until
+  - name: --until
     description: One-shot until a target time (HH:MM or ISO); converted to seconds; ignores seconds/minutes if provided.
   - name: --action
     description: Action text to emit on completion (e.g., \"Verify GH PR actions passed\").
