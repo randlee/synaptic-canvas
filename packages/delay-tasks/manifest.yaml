@@ -22,6 +22,7 @@ artifacts:
   agents:
     - agents/delay-once.md
     - agents/delay-poll.md
+    - agents/git-pr-check-delay.md
   scripts:
     - scripts/delay-run.py
 

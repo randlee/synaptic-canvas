@@ -30,6 +30,10 @@ variables:
     auto: git-repo-basename
     description: Repository name used for default worktree and tracking paths
 
+# Installation policy/metadata
+install:
+  scope: local-only  # this package may only be installed in a repo's .claude (not global)
+
 # Install-time options
 options:
   no-tracking:
