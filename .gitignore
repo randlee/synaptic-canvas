@@ -1,2 +1,5 @@
 # Local temp files
 .tmp/
+
+# macOS
+.DS_Store
