@@ -1,0 +1,29 @@
+name: sc-manage
+version: 0.4.0
+description: >
+  Manage Synaptic Canvas Claude packages. List available packages and their install
+  status (local/global), and install or uninstall packages according to policy.
+author: synaptic-canvas
+license: MIT
+tags:
+  - management
+  - packages
+  - installer
+  - agents
+
+# Files to install (relative to package root)
+artifacts:
+  commands:
+    - commands/sc-manage.md
+  skills:
+    - skills/managing-sc-packages/SKILL.md
+  agents:
+    - agents/sc-packages-list.md
+    - agents/sc-package-install.md
+    - agents/sc-package-uninstall.md
+    - agents/sc-package-docs.md
+
+# Runtime requirements
+requires:
+  - python3
+  - git
