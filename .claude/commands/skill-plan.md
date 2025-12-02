@@ -1,5 +1,6 @@
 ---
 name: /skill-plan
+version: 0.1.0
 description: Start or resume a Claude Code skill plan using the planning wizard and agents while enforcing v0.4 guidelines.
 options:
   - name: --name

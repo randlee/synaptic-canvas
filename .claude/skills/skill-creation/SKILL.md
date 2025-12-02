@@ -1,5 +1,6 @@
 ---
 name: skill-creation
+version: 0.1.0
 description: Plan and review Claude Code skills/commands/agents with guided wizards and background agents aligned to v0.4 guidelines.
 ---
 
