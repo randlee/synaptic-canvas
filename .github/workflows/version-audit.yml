@@ -1,0 +1,115 @@
+name: Version Audit
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+
+jobs:
+  audit-versions:
+    name: Audit Version Consistency
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run version audit
+        run: |
+          chmod +x ./scripts/audit-versions.sh
+          ./scripts/audit-versions.sh --verbose
+
+      - name: Compare versions by package
+        run: |
+          chmod +x ./scripts/compare-versions.sh
+          ./scripts/compare-versions.sh --by-package
+        if: always()
+
+      - name: Check for version mismatches
+        run: |
+          # Run audit and capture exit code
+          chmod +x ./scripts/audit-versions.sh
+          ./scripts/audit-versions.sh > /tmp/audit.log 2>&1 || EXIT_CODE=$?
+
+          # Check if any failures occurred
+          if grep -q "check(s) failed" /tmp/audit.log; then
+            echo "❌ Version audit failed - mismatches detected"
+            cat /tmp/audit.log
+            exit 1
+          else
+            echo "✅ Version audit passed"
+            cat /tmp/audit.log
+            exit 0
+          fi
+
+  validate-manifests:
+    name: Validate Package Manifests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Validate manifest YAML format
+        run: |
+          python3 -c "
+          import yaml
+          import sys
+          from pathlib import Path
+
+          issues = 0
+          for manifest in Path('packages').glob('*/manifest.yaml'):
+              try:
+                  with open(manifest) as f:
+                      data = yaml.safe_load(f)
+                      if 'version' not in data:
+                          print(f'❌ {manifest}: Missing version field')
+                          issues += 1
+                      else:
+                          print(f'✅ {manifest}: version={data[\"version\"]}')
+              except Exception as e:
+                  print(f'❌ {manifest}: Parse error - {e}')
+                  issues += 1
+
+          if issues > 0:
+              sys.exit(1)
+          "
+
+  changelog-check:
+    name: Check for CHANGELOGs
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Verify CHANGELOG files exist
+        run: |
+          MISSING=0
+          for package in packages/*/; do
+              PACKAGE_NAME=$(basename "$package")
+              if [ ! -f "$package/CHANGELOG.md" ]; then
+                  echo "⚠️  Warning: Missing CHANGELOG.md in $PACKAGE_NAME"
+                  MISSING=$((MISSING+1))
+              else
+                  echo "✅ Found CHANGELOG.md in $PACKAGE_NAME"
+              fi
+          done
+
+          if [ $MISSING -gt 0 ]; then
+              echo ""
+              echo "⚠️  Note: Missing CHANGELOGs are warnings, not failures."
+              echo "Please create CHANGELOG.md for consistency with semantic versioning."
+          fi

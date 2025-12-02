@@ -1,7 +1,7 @@
 ---
 name: /git-worktree
 description: Manage git worktrees for this repo (create, list/status, cleanup, abort) while enforcing the repo's worktree/tracking rules.
-version: 1.0.0
+version: 0.4.0
 options:
   - name: --list
     description: List worktrees and show status/notes.

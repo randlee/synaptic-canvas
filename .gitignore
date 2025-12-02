@@ -1,5 +1,11 @@
 # Local temp files
 .tmp/
 
+# Archive directory (for historical reference, not in version control)
+.archive/
+
+# Local backup directories (developer machines only)
+.claude.local-backup*/
+
 # macOS
 .DS_Store

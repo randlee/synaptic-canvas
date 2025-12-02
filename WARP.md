@@ -1,10 +1,12 @@
+---
+
 # WARP.md
 
 This file provides guidance to WARP (warp.dev) when working with code in this repository.
 
 ## Overview
 
-Synaptic Canvas is a small Python-backed repo that packages “Claude Code” artifacts (commands, skills, agents) into installable bundles under `packages/`. Developers use the provided installer (`tools/sc-install.sh` or `tools/sc-install.py`) to copy a package’s artifacts into a target repository’s `.claude/` directory, optionally performing token substitution (e.g., `{{REPO_NAME}}`).
+Synaptic Canvas is a small Python-backed repo that packages "Claude Code" artifacts (commands, skills, agents) into installable bundles under `packages/`. Developers use the provided installer (`tools/sc-install.sh` or `tools/sc-install.py`) to copy a package's artifacts into a target repository's `.claude/` directory, optionally performing token substitution (e.g., `{{REPO_NAME}}`).
 
 Key components:
 - `packages/<name>/` contains a `manifest.yaml` plus artifacts:
@@ -54,7 +56,7 @@ Installer usage (from repo root):
   - Python: `python3 tools/sc-install.py list`
 - Show package manifest:
   - `python3 tools/sc-install.py info git-worktree`
-- Install to another repo’s `.claude/` directory (token substitution if defined in manifest):
+- Install to another repo's `.claude/` directory (token substitution if defined in manifest):
   - `python3 tools/sc-install.py install git-worktree --dest /path/to/your-repo/.claude`
 - Uninstall from `.claude/`:
   - `python3 tools/sc-install.py uninstall git-worktree --dest /path/to/your-repo/.claude`
@@ -65,7 +67,7 @@ Delay helper (local runs without installing):
 
 Lint/build:
 - Linting is not configured in this repository.
-- No build/package step is defined; the installer copies artifacts to the consumer repo’s `.claude/`.
+- No build/package step is defined; the installer copies artifacts to the consumer repo's `.claude/`.
 
 ## Big-picture architecture
 

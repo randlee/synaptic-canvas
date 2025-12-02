@@ -1,6 +1,6 @@
 ---
 name: worktree-cleanup
-version: 1.0.0
+version: 0.4.0
 description: Clean up a completed/merged worktree. Remove worktree, delete branch (local+remote) by default if merged/no unique commits, update tracking when enabled. Stop on dirty/unmerged without approval.
 model: sonnet
 color: orange
