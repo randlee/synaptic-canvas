@@ -1,7 +1,6 @@
 ---
 name: /git-worktree
-description: Manage git worktrees for this repo (create, list/status, cleanup, abort) while enforcing the repo's worktree/tracking rules.
-version: 1.0.0
+description: Manage git worktrees for this repo (create, list/status, cleanup, abort) while enforcing the repo’s worktree/tracking rules.
 options:
   - name: --list
     description: List worktrees and show status/notes.
@@ -32,8 +31,8 @@ options:
 
 Use this command to manage worktrees following the repo’s layout and tracking rules.
 - Repo root: current directory.
-- Default worktree path: `../{{REPO_NAME}}-worktrees/<branch>` (override in skill/agent config if needed).
-- Default tracking doc: `../{{REPO_NAME}}-worktrees/worktree-tracking.md` (toggle off or override if the repo doesn’t track worktrees).
+- Default worktree path: `../synaptic-canvas-worktrees/<branch>` (override in skill/agent config if needed).
+- Default tracking doc: `../synaptic-canvas-worktrees/worktree-tracking.md` (toggle off or override if the repo doesn’t track worktrees).
 - Branch strategy: configure per repo (e.g., master for release, develop/integration, feature off integration, hotfix off master).
 - Safety: never alter dirty worktrees without explicit approval; respect branch protections/hooks (no direct commits to protected branches).
 
@@ -53,7 +52,7 @@ If run with no options or `--help`: print a concise list of options (no git stat
 
 ### --create
 - Inputs: branch, base.
-- Path: `../{{REPO_NAME}}-worktrees/<branch>` by default.
+- Path: `../synaptic-canvas-worktrees/<branch>` by default.
 - If branch exists: `git worktree add <path> <branch>`; else `git worktree add -b <branch> <path> <base>`.
 - Verify hooks/branch protections apply; confirm `git status` clean.
 - Update tracking row (branch, path, base, purpose, owner, created, status, last checked, notes) when tracking is enabled.

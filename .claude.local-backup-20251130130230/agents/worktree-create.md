@@ -1,6 +1,6 @@
 ---
 name: worktree-create
-version: 1.0.0
+version: 0.4.0
 description: Create a git worktree (and branch if needed) using the mandated layout and update tracking. Use for new feature/hotfix/release worktrees; obey branch protections and dirty-worktree safeguards.
 model: sonnet
 color: green
@@ -22,7 +22,7 @@ Create a worktree (and branch if needed) in the required sibling worktrees folde
 - purpose: short reason.
 - owner: agent or user handle.
 - repo root: current repo.
-- worktree_base (optional): defaults to `../{{REPO_NAME}}-worktrees`.
+- worktree_base (optional): defaults to `../synaptic-canvas-worktrees`.
 - tracking_enabled: true/false (default true).
 - tracking_path (optional): defaults to `<worktree_base>/worktree-tracking.md` when tracking is enabled.
 

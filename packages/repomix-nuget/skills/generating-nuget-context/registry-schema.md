@@ -1,9 +1,9 @@
 # Registry Schema & Source
 
 Recommended registry location in your repo:
-- `docs/nuget/registry.json` (track in git)
+- `docs/registries/nuget/registry.json` (track in git)
 - Tools should fetch the raw JSON via:
-  - `https://raw.githubusercontent.com/<owner>/<repo>/main/docs/nuget/registry.json`
+-  - `https://raw.githubusercontent.com/<owner>/<repo>/main/docs/registries/nuget/registry.json`
   (raw.githubusercontent.com serves the raw file bytes; github.com serves HTML.)
 
 Behavior

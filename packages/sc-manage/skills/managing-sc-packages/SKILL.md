@@ -1,6 +1,7 @@
 ---
 name: managing-sc-packages
 description: List, install, or uninstall Synaptic Canvas packages. Use with the `/sc-manage` command.
+version: 0.4.0
 ---
 
 # Managing Synaptic Canvas Packages

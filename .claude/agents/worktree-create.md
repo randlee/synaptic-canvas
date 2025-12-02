@@ -22,7 +22,7 @@ Create a worktree (and branch if needed) in the required sibling worktrees folde
 - purpose: short reason.
 - owner: agent or user handle.
 - repo root: current repo.
-- worktree_base (optional): defaults to `../{{REPO_NAME}}-worktrees`.
+- worktree_base (optional): defaults to `../synaptic-canvas-worktrees`.
 - tracking_enabled: true/false (default true).
 - tracking_path (optional): defaults to `<worktree_base>/worktree-tracking.md` when tracking is enabled.
 

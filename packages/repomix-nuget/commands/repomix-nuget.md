@@ -1,6 +1,7 @@
 ---
 name: /repomix-nuget
 description: Generate AI-optimized NuGet package context using Repomix.
+version: 0.4.0
 options:
   - name: --help
     description: Show usage and options.

@@ -1,3 +1,20 @@
-# Single source of truth for Synaptic Canvas versioning
-# CLI, package manifests, and agent frontmatter should match this version
+# Marketplace Platform Version (NOT package versions)
+#
+# This is the version of the Synaptic Canvas marketplace platform/CLI infrastructure itself.
+# It is NOT the source of truth for individual package versions.
+#
+# Three-layer versioning system:
+# 1. Marketplace Version (this file): Platform/CLI version (e.g., sc-install.py, registry format)
+# 2. Package Version (manifest.yaml): Per-package version (independent for each package)
+# 3. Artifact Version (frontmatter): Individual command/skill/agent version (synchronized with package)
+#
+# See: docs/versioning-strategy.md for complete versioning policy
+#
+# When to bump this version:
+# - Major changes to installation system or marketplace infrastructure
+# - Breaking changes to registry format
+# - New marketplace-wide features
+#
+# Package versions are managed independently in packages/*/manifest.yaml
+#
 version: "0.4.0"

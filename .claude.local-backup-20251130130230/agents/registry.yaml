@@ -1,0 +1,14 @@
+agents:
+  worktree-abort:
+    path: .claude/agents/worktree-abort.md
+    version: 0.4.0
+  worktree-cleanup:
+    path: .claude/agents/worktree-cleanup.md
+    version: 0.4.0
+  worktree-create:
+    path: .claude/agents/worktree-create.md
+    version: 0.4.0
+  worktree-scan:
+    path: .claude/agents/worktree-scan.md
+    version: 0.4.0
+skills: {}

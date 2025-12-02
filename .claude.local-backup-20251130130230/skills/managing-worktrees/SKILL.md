@@ -5,7 +5,6 @@ description: >
   Use when working on multiple branches simultaneously, isolating experiments,
   or when user mentions "worktree", "parallel branches", "feature isolation",
   "branch cleanup", or "worktree status".
-version: 1.0.0
 ---
 
 # Managing Git Worktrees
@@ -29,7 +28,7 @@ To invoke an agent, use the Task tool with:
 
 ## Standards and paths
 - Repo root: current directory.
-- Default worktree base: `../{{REPO_NAME}}-worktrees`.
+- Default worktree base: `../synaptic-canvas-worktrees`.
 - Worktrees live in `<worktree_base>/<branch>`.
 - Tracking document (if used): `<worktree_base>/worktree-tracking.md` must be updated on create/scan/cleanup/abandon. Allow a toggle to disable tracking for repos that don’t use it.
 - Naming: worktree directory = branch name; branch naming follows repo policy (e.g., master release; develop/DevBranch integration; feature from integration; hotfix from master; release branches as needed).

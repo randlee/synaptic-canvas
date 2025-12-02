@@ -1,6 +1,6 @@
 ---
 name: git-pr-check-delay
-version: 0.4.0
+version: 1.0.0
 description: Poll a PR's required checks with bounded delays using the shared delay-run.py helper; stop on success, failure, or timeout.
 model: sonnet
 color: gray

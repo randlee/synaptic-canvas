@@ -33,11 +33,11 @@ python3 tools/sc-install.py install repomix-nuget --dest /path/to/your-repo/.cla
   /repomix-nuget --generate \
     --package-path . \
     --output ./nuget-context.xml \
-    --registry-url https://raw.githubusercontent.com/<owner>/<repo>/main/docs/nuget/registry.json
+--registry-url https://raw.githubusercontent.com/<owner>/<repo>/main/docs/registries/nuget/registry.json
   ```
   Notes:
   - `raw.githubusercontent.com` serves the raw JSON bytes for tools; `github.com` serves HTML pages.
-  - Create `docs/nuget/registry.json` in your repo when ready; until then, omit `--registry-url`.
+- Create `docs/registries/nuget/registry.json` in your repo when ready; until then, omit `--registry-url`.
 
 ## Defaults
 - Output file: `./nuget-context.xml`
