@@ -1,0 +1,22 @@
+{
+  "comment": "Add these settings to your .vscode/settings.json to enable JSON Schema validation for the registry",
+  "json.schemas": [
+    {
+      "fileMatch": ["docs/registries/nuget/registry.json"],
+      "url": "./registry.schema.json",
+      "description": "Synaptic Canvas Package Registry Schema"
+    }
+  ],
+  "comment2": "Alternative: if using remote/URL-based schema",
+  "json.schemas_alternative": [
+    {
+      "fileMatch": ["docs/registries/nuget/registry.json"],
+      "url": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/docs/registries/nuget/registry.schema.json",
+      "description": "Synaptic Canvas Package Registry Schema (Remote)"
+    }
+  ],
+  "comment3": "After adding these settings:",
+  "comment4": "1. Reload VS Code (Cmd+Shift+P > Reload Window)",
+  "comment5": "2. Open docs/registries/nuget/registry.json",
+  "comment6": "3. You should see autocomplete suggestions and validation"
+}

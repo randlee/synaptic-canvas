@@ -1,0 +1,414 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/randlee/synaptic-canvas/schemas/registry.schema.json",
+  "title": "Synaptic Canvas Package Registry Schema",
+  "description": "Comprehensive schema for the Synaptic Canvas package registry, defining structure for package metadata, artifacts, dependencies, and marketplace information. Used for validation and IDE support.",
+  "version": "1.0.0",
+  "type": "object",
+  "required": [
+    "$schema",
+    "version",
+    "generated",
+    "repo",
+    "marketplace",
+    "packages",
+    "metadata",
+    "versionCompatibility"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "format": "uri",
+      "description": "JSON Schema reference URL for this registry document. Should point to the canonical schema location for registry validation."
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d?)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$",
+      "description": "Semantic version of the registry format (X.Y.Z). Follows semver 2.0.0 standard. Major version changes indicate breaking changes to registry structure.",
+      "examples": ["2.0.0", "2.1.0", "3.0.0-beta.1"]
+    },
+    "generated": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp indicating when this registry was generated or last updated. Used to track registry freshness."
+    },
+    "repo": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+$",
+      "description": "GitHub repository identifier in format 'owner/repository'. This is the primary repository hosting the registry and packages.",
+      "examples": ["randlee/synaptic-canvas"]
+    },
+    "marketplace": {
+      "$ref": "#/definitions/marketplace",
+      "description": "Metadata about the package marketplace itself, including name, version, status, and URL."
+    },
+    "packages": {
+      "type": "object",
+      "description": "Collection of packages available in the registry. Each package is keyed by its unique package name (lowercase, hyphenated).",
+      "additionalProperties": {
+        "$ref": "#/definitions/package"
+      },
+      "minProperties": 0,
+      "examples": [
+        {
+          "delay-tasks": {
+            "name": "delay-tasks",
+            "version": "0.4.0"
+          }
+        }
+      ]
+    },
+    "metadata": {
+      "$ref": "#/definitions/metadata",
+      "description": "Aggregated metadata and statistics about the entire registry."
+    },
+    "versionCompatibility": {
+      "$ref": "#/definitions/versionCompatibility",
+      "description": "Version compatibility information between marketplace and packages, including minimum/maximum supported versions."
+    }
+  },
+  "definitions": {
+    "marketplace": {
+      "type": "object",
+      "title": "Marketplace Information",
+      "description": "Top-level metadata about the Synaptic Canvas marketplace and package distribution system.",
+      "required": ["name", "version", "status", "url"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Display name of the marketplace (e.g., 'Synaptic Canvas')."
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d?)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$",
+          "description": "Semantic version of the marketplace software. Updated when marketplace features change."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["alpha", "beta", "stable", "deprecated"],
+          "description": "Current lifecycle status of the marketplace. Used to communicate API stability and feature completeness."
+        },
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "description": "Primary URL for the marketplace repository or documentation."
+        }
+      }
+    },
+    "package": {
+      "type": "object",
+      "title": "Package Definition",
+      "description": "Complete package metadata including artifacts, dependencies, versioning, and status information.",
+      "required": [
+        "name",
+        "version",
+        "status",
+        "tier",
+        "description",
+        "github",
+        "repo",
+        "path",
+        "readme",
+        "license",
+        "author",
+        "tags",
+        "artifacts",
+        "dependencies",
+        "changelog",
+        "lastUpdated",
+        "dependents"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+          "minLength": 1,
+          "maxLength": 64,
+          "description": "Unique package identifier. Must be lowercase with hyphens only. Matches the key in the packages object."
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d?)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$",
+          "description": "Current version of the package following Semantic Versioning 2.0.0. Format: X.Y.Z with optional pre-release and build metadata."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["alpha", "beta", "stable", "deprecated", "archived"],
+          "description": "Package lifecycle status. 'alpha' for early development, 'beta' for feature complete but not production-ready, 'stable' for production use, 'deprecated' for planned removal, 'archived' for no longer maintained."
+        },
+        "tier": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 5,
+          "description": "Package tier/complexity level from 0 (basic/no dependencies) to 5 (highly complex). Used for discoverability and user expectations."
+        },
+        "description": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 500,
+          "description": "Comprehensive but concise description of what the package does, its primary use cases, and key features. Should be suitable for search indexing and marketplace display."
+        },
+        "github": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+$",
+          "description": "GitHub repository identifier (owner/repo) hosting the package source code."
+        },
+        "repo": {
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https://github\\.com/",
+          "description": "Full HTTPS URL to the GitHub repository. Must be a valid GitHub URL."
+        },
+        "path": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9/_-]+$",
+          "description": "Relative path to the package directory within the repository. Typically 'packages/package-name'."
+        },
+        "readme": {
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https://raw\\.githubusercontent\\.com/",
+          "description": "Raw GitHub URL to the package README.md file. Must point to the main branch for stable access."
+        },
+        "license": {
+          "type": "string",
+          "minLength": 1,
+          "description": "SPDX license identifier or license name (e.g., 'MIT', 'Apache-2.0'). Indicates usage rights and restrictions."
+        },
+        "author": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Author or organization maintaining the package (e.g., 'Anthropic', 'Community')."
+        },
+        "tags": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 20,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[.#a-z0-9]([a-z0-9.\\-#]*[a-z0-9])?$",
+            "minLength": 1,
+            "maxLength": 32
+          },
+          "description": "Array of searchable tags describing package purpose, technology, or category. Used for filtering and discovery. All lowercase, allowing hyphens, dots, and hash symbols (e.g., '.net', 'c#', 'asp.net', 'f#')."
+        },
+        "artifacts": {
+          "$ref": "#/definitions/artifacts",
+          "description": "Breakdown of included artifacts by type (commands, skills, agents, scripts)."
+        },
+        "variables": {
+          "$ref": "#/definitions/variables",
+          "description": "Optional environment or configuration variables that the package exposes or requires. May include auto-populated variables and their descriptions."
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9_+-]+(.*)$"
+          },
+          "description": "Array of system or package dependencies required for this package to function. Format: 'tool >= version' or 'package-name' for package dependencies.",
+          "examples": ["git >= 2.27", "python3 >= 3.12", "node >= 16.0.0"]
+        },
+        "changelog": {
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https://raw\\.githubusercontent\\.com/",
+          "description": "Raw GitHub URL to the package CHANGELOG.md file documenting version history and changes."
+        },
+        "lastUpdated": {
+          "type": "string",
+          "format": "date",
+          "description": "ISO 8601 date (YYYY-MM-DD) of the last package update. Used to show freshness and maintenance status."
+        },
+        "dependents": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+          },
+          "description": "Array of package names that depend on this package. Enables reverse dependency tracking and impact analysis."
+        }
+      }
+    },
+    "artifacts": {
+      "type": "object",
+      "title": "Artifact Counts",
+      "description": "Breakdown of different artifact types included in a package.",
+      "required": ["commands", "skills", "agents", "scripts"],
+      "additionalProperties": false,
+      "properties": {
+        "commands": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of slash commands provided by this package."
+        },
+        "skills": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of skills/capabilities provided by this package."
+        },
+        "agents": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of agents/workflows provided by this package."
+        },
+        "scripts": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of utility scripts included in this package."
+        }
+      }
+    },
+    "variables": {
+      "type": "object",
+      "title": "Package Variables",
+      "description": "Environment and configuration variables defined or used by a package. Each variable specifies how it's populated and what it's used for.",
+      "additionalProperties": {
+        "$ref": "#/definitions/variable"
+      },
+      "examples": [
+        {
+          "REPO_NAME": {
+            "auto": "git-repo-basename",
+            "description": "Repository name from git toplevel"
+          }
+        }
+      ]
+    },
+    "variable": {
+      "type": "object",
+      "title": "Variable Definition",
+      "description": "Specification for a single environment or configuration variable including its source and purpose.",
+      "required": ["description"],
+      "additionalProperties": false,
+      "properties": {
+        "auto": {
+          "type": "string",
+          "enum": [
+            "git-repo-basename",
+            "git-repo-root",
+            "current-user",
+            "timestamp",
+            "uuid"
+          ],
+          "description": "Auto-population method for the variable. Indicates how the value is automatically derived or generated."
+        },
+        "description": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 200,
+          "description": "Human-readable description of what this variable is used for and how to set it if not auto-populated."
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "title": "Registry Metadata",
+      "description": "Aggregated statistics and organizational information about the entire registry.",
+      "required": [
+        "registryVersion",
+        "schemaVersion",
+        "totalPackages",
+        "totalCommands",
+        "totalSkills",
+        "totalAgents",
+        "totalScripts",
+        "categories"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "registryVersion": {
+          "type": "string",
+          "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d?)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$",
+          "description": "Version of the registry data format. Should match the top-level 'version' field for consistency."
+        },
+        "schemaVersion": {
+          "type": "string",
+          "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d?)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$",
+          "description": "Version of this schema document. Used to track schema evolution and ensure compatible tools."
+        },
+        "totalPackages": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Total count of packages in the registry. Should equal the number of entries in the 'packages' object."
+        },
+        "totalCommands": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Aggregate count of all commands across all packages."
+        },
+        "totalSkills": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Aggregate count of all skills across all packages."
+        },
+        "totalAgents": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Aggregate count of all agents across all packages."
+        },
+        "totalScripts": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Aggregate count of all scripts across all packages."
+        },
+        "categories": {
+          "type": "object",
+          "title": "Package Categories",
+          "description": "Hierarchical organization of packages by category for marketplace browsing and filtering.",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+            },
+            "description": "Array of package names belonging to this category."
+          },
+          "examples": [
+            {
+              "automation": ["delay-tasks"],
+              "development-tools": ["git-worktree"]
+            }
+          ]
+        }
+      }
+    },
+    "versionCompatibility": {
+      "type": "object",
+      "title": "Version Compatibility",
+      "description": "Specifies version constraints between the marketplace and packages, including minimum and maximum supported versions and compatibility notes.",
+      "required": [
+        "marketplace",
+        "minimumPackageVersion",
+        "maximumPackageVersion"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "marketplace": {
+          "type": "string",
+          "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d?)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$",
+          "description": "Current marketplace version. Packages should be compatible with this version or earlier."
+        },
+        "minimumPackageVersion": {
+          "type": "string",
+          "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d?)$",
+          "description": "Minimum semantic version for packages in the registry. Packages below this version are not accepted. Format: X.Y.Z (no pre-release)."
+        },
+        "maximumPackageVersion": {
+          "type": "string",
+          "pattern": "^(0|[1-9]\\d*)\\.(x|[1-9]\\d*)\\.(x|[1-9]\\d?)$",
+          "description": "Maximum semantic version pattern for packages. Supports 'x' as wildcard (e.g., '0.x.x' means any 0.* version). Used to prevent major version upgrades during transition periods."
+        },
+        "note": {
+          "type": "string",
+          "description": "Human-readable note explaining version constraints and any special compatibility considerations or migration guidance."
+        }
+      }
+    }
+  }
+}

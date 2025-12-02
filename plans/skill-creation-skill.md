@@ -49,11 +49,12 @@ Last Updated: 2025-01-22
 - Plan document fields: Status, Context/Goals, Command UX, Agent inventory (name/version/path), Data contracts, File layout, Open questions.
 
 ## File Layout (proposed)
-- `plans/skill-creation-skill.md` (this plan; becomes Approved after user sign-off).
-- `skills/skill-creation/SKILL.md` (orchestrator with planning/review flows, uses Agent Runner).
-- `agents/skill-planning-agent.md`, `agents/skill-review-agent.md` with YAML frontmatter `name` + `version`.
-- `commands/skill-plan.md`, `commands/skill-review.md` defining slash commands and delegations.
-- `references/` for reusable templates (plan skeletons, review checklists); keep SKILL.md lean and point to references.
+- Plans: `plans/skill-creation-skill.md` (this plan; becomes Approved after user sign-off).
+- Commands: `.claude/commands/skill-plan.md`, `.claude/commands/skill-review.md` (thin wrappers).
+- Skill: `.claude/skills/skill-creation/SKILL.md` (planning/review orchestrator using Agent Runner).
+- Agents: `.claude/agents/skill-planning-agent.md`, `.claude/agents/skill-review-agent.md` with YAML frontmatter `name` + `version`.
+- References: `.claude/references/plan-skeleton.md`, `.claude/references/skill-patterns.md` (templates/patterns); keep SKILL.md lean and point here.
+- Reports: default to `reports/skill-reviews/...` (fallback `.tmp/skill-reviews/`).
 
 ## Safety & Validation
 - Enforce version sync with `.claude/agents/registry.yaml`; validate via `scripts/validate-agents.sh`.
