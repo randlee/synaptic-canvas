@@ -1,0 +1,27 @@
+{
+  "$schema": "https://yourcompany.github.io/schemas/package-registry.schema.json",
+  "generated": "2025-12-02T02:24:00Z",
+  "repo": "randlee/synaptic-canvas",
+  "packages": {
+    "delay-tasks": {
+      "github": "randlee/synaptic-canvas",
+      "repo": "https://github.com/randlee/synaptic-canvas",
+      "dependents": []
+    },
+    "git-worktree": {
+      "github": "randlee/synaptic-canvas",
+      "repo": "https://github.com/randlee/synaptic-canvas",
+      "dependents": []
+    },
+    "sc-manage": {
+      "github": "randlee/synaptic-canvas",
+      "repo": "https://github.com/randlee/synaptic-canvas",
+      "dependents": []
+    },
+    "repomix-nuget": {
+      "github": "randlee/synaptic-canvas",
+      "repo": "https://github.com/randlee/synaptic-canvas",
+      "dependents": []
+    }
+  }
+}
