@@ -244,6 +244,119 @@ requires:
 - Optionally specify version constraints
 - Document installation instructions in README
 
+## Version Management
+
+### Three-Layer Versioning System
+
+Synaptic Canvas uses a three-layer versioning system based on semantic versioning (SemVer):
+
+1. **Marketplace Platform Version** (`version.yaml`) - Infrastructure and CLI
+2. **Package Versions** (`manifest.yaml` in each package) - Per-package releases
+3. **Artifact Versions** (YAML frontmatter in `.md` files) - Individual commands, skills, and agents
+
+For details, see [Versioning Strategy](docs/versioning-strategy.md).
+
+### Semantic Versioning
+
+All versions follow MAJOR.MINOR.PATCH format:
+
+- **MAJOR (X)**: Breaking changes, major refactoring, incompatible API changes
+- **MINOR (Y)**: New features, new agents/commands/skills, backward-compatible improvements
+- **PATCH (Z)**: Bug fixes, documentation updates, minor refinements
+
+**Current Status:** All packages at 0.4.0 (beta/pre-release)
+
+### Versioning Your Package
+
+When creating or updating a package:
+
+1. **Set manifest version**:
+   ```yaml
+   # packages/my-package/manifest.yaml
+   name: my-package
+   version: 0.4.0  # Must match artifact versions
+   ```
+
+2. **Add version frontmatter to ALL artifacts**:
+   ```markdown
+   ---
+   name: /my-command
+   description: Description
+   version: 0.4.0      # Must match manifest
+   ---
+   ```
+
+3. **Keep versions synchronized**:
+   - All commands in a package → same version as manifest
+   - All skills in a package → same version as manifest
+   - All agents in a package → same version as manifest
+   - Use `python3 scripts/sync-versions.py --package NAME --version X.Y.Z` to bulk update
+
+4. **Document changes**:
+   - Create/update `packages/my-package/CHANGELOG.md`
+   - Document what changed in each version
+   - Include upgrade instructions if breaking changes
+
+### Version Examples
+
+#### Initial Release (Beta)
+```yaml
+version: 0.4.0  # Release candidate
+```
+
+#### Minor Feature Update
+```yaml
+version: 0.5.0  # New features (backward compatible)
+```
+
+#### Bug Fix
+```yaml
+version: 0.4.1  # Patch release
+```
+
+#### Production Ready
+```yaml
+version: 1.0.0  # First stable release
+```
+
+### Version Verification
+
+Before committing, verify all versions are synchronized:
+
+```bash
+# Audit all versions
+./scripts/audit-versions.sh
+
+# Compare versions by package
+./scripts/compare-versions.sh --by-package
+
+# Update versions in bulk
+python3 scripts/sync-versions.py --package my-package --version 0.5.0
+```
+
+### Releasing a New Version
+
+When ready to release a new version:
+
+1. **Update package version** in `manifest.yaml`
+2. **Run sync script** to update all artifacts:
+   ```bash
+   python3 scripts/sync-versions.py --package my-package --version 0.5.0
+   ```
+3. **Update CHANGELOG.md** with release notes
+4. **Run audit** to verify consistency:
+   ```bash
+   ./scripts/audit-versions.sh
+   ```
+5. **Commit with clear message**:
+   ```bash
+   git commit -m "chore(my-package): release v0.5.0 - add new feature"
+   ```
+6. **Tag release** (optional):
+   ```bash
+   git tag v0.5.0
+   ```
+
 ## Authoring Guidelines
 
 ### Command Layer Best Practices
