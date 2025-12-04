@@ -65,6 +65,16 @@ requires:
   - git >= 2.0
 ```
 
+## Security
+
+This repository prioritizes package security:
+- ✅ Publisher verified via GitHub organization
+- ✅ Automated security scanning on all releases
+- ✅ Dependency monitoring and vulnerability tracking
+- ✅ All packages follow security best practices
+
+See [SECURITY.md](SECURITY.md) for our security policy, [docs/PUBLISHER-VERIFICATION.md](docs/PUBLISHER-VERIFICATION.md) for verification details, and run `scripts/security-scan.sh` locally to verify your environment.
+
 ## License
 
 MIT

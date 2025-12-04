@@ -1,9 +1,16 @@
 # sc-manage
 
-Scope: Global (recommended)  
+[![Publisher Verified](https://img.shields.io/badge/publisher-verified-brightgreen)](https://github.com/randlee/synaptic-canvas/blob/main/docs/PUBLISHER-VERIFICATION.md)
+[![Security Scanned](https://img.shields.io/badge/security-scanned-blue)](https://github.com/randlee/synaptic-canvas/blob/main/SECURITY.md)
+[![License MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![Version 0.4.0](https://img.shields.io/badge/version-0.4.0-blue)](CHANGELOG.md)
+
+Scope: Global (recommended)
 Requires: python3, git
 
 Manage Synaptic Canvas packages: list installed packages and install or uninstall packages in local or global scopes.
+
+Security: See [SECURITY.md](../../../SECURITY.md) for security policy and practices.
 
 ## Summary
 - List packages with install status (no/local/global/both)

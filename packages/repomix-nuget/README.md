@@ -1,9 +1,16 @@
 # repomix-nuget
 
-Scope: Local-only  
+[![Publisher Verified](https://img.shields.io/badge/publisher-verified-brightgreen)](https://github.com/randlee/synaptic-canvas/blob/main/docs/PUBLISHER-VERIFICATION.md)
+[![Security Scanned](https://img.shields.io/badge/security-scanned-blue)](https://github.com/randlee/synaptic-canvas/blob/main/SECURITY.md)
+[![License MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![Version 0.4.0](https://img.shields.io/badge/version-0.4.0-blue)](CHANGELOG.md)
+
+Scope: Local-only
 Requires: node >= 18 (for `npx repomix`), bash
 
 Generate AI-optimized context for NuGet packages using Repomix with NuGet metadata enrichment (dependencies, dependents, frameworks, namespaces). Produces a compressed API surface designed for AI code tools.
+
+Security: See [SECURITY.md](../../../SECURITY.md) for security policy and practices.
 
 ## Quick Start
 1) Install into your repo’s `.claude`:

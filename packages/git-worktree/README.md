@@ -1,9 +1,16 @@
 # git-worktree
 
-Scope: Local-only  
+[![Publisher Verified](https://img.shields.io/badge/publisher-verified-brightgreen)](https://github.com/randlee/synaptic-canvas/blob/main/docs/PUBLISHER-VERIFICATION.md)
+[![Security Scanned](https://img.shields.io/badge/security-scanned-blue)](https://github.com/randlee/synaptic-canvas/blob/main/SECURITY.md)
+[![License MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![Version 0.4.0](https://img.shields.io/badge/version-0.4.0-blue)](CHANGELOG.md)
+
+Scope: Local-only
 Requires: git ≥ 2.20
 
 Manage git worktrees with a standard sibling-folder layout and optional tracking documents. Provides a user-facing command `/git-worktree` and a managing skill that delegates to focused agents.
+
+Security: See [SECURITY.md](../../../SECURITY.md) for security policy and practices.
 
 ## Summary
 Create, scan, clean up, and abort worktrees using predictable paths and safe defaults. Designed for multi-branch workflows and parallel development.

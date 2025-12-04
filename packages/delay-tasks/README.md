@@ -1,9 +1,16 @@
 # delay-tasks
 
-Scope: Global or Local  
+[![Publisher Verified](https://img.shields.io/badge/publisher-verified-brightgreen)](https://github.com/randlee/synaptic-canvas/blob/main/docs/PUBLISHER-VERIFICATION.md)
+[![Security Scanned](https://img.shields.io/badge/security-scanned-blue)](https://github.com/randlee/synaptic-canvas/blob/main/SECURITY.md)
+[![License MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![Version 0.4.0](https://img.shields.io/badge/version-0.4.0-blue)](CHANGELOG.md)
+
+Scope: Global or Local
 Requires: python3
 
 Schedule delayed one-shot waits or bounded polling with minimal heartbeats. Provides a `/delay` command and agents reusable by other skills (e.g., CI check delays).
+
+Security: See [SECURITY.md](../../../SECURITY.md) for security policy and practices.
 
 ## Summary
 - delay-once: single wait, emit a final action
