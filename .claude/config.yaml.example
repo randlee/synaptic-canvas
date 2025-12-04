@@ -1,0 +1,17 @@
+base_branch: main
+worktree_root: ../<repo-name>-worktrees
+
+github:
+  default_labels: []
+  auto_assign: false
+  branch_pattern: "fix-issue-{number}"
+  test_command: null
+  pr_template: |
+    ## Summary
+    Fixes #{issue_number}
+
+    ## Changes
+    {changes_summary}
+
+    ## Testing
+    {test_results}

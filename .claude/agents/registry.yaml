@@ -9,9 +9,52 @@ agents:
     version: 0.1.0
     path: .claude/agents/skill-review-agent.md
 
+  # Worktree management agents
+  worktree-create:
+    version: 0.4.0
+    path: .claude/agents/worktree-create.md
+  worktree-scan:
+    version: 0.4.0
+    path: .claude/agents/worktree-scan.md
+  worktree-cleanup:
+    version: 0.4.0
+    path: .claude/agents/worktree-cleanup.md
+  worktree-abort:
+    version: 0.4.0
+    path: .claude/agents/worktree-abort.md
+
+  # GitHub issue management agents
+  issue-intake-agent:
+    version: 0.1.0
+    path: .claude/agents/issue-intake-agent.md
+  issue-mutate-agent:
+    version: 0.1.0
+    path: .claude/agents/issue-mutate-agent.md
+  issue-fix-agent:
+    version: 0.1.0
+    path: .claude/agents/issue-fix-agent.md
+  issue-pr-agent:
+    version: 0.1.0
+    path: .claude/agents/issue-pr-agent.md
+
 # Optional: express skill -> agent dependency constraints
 skills:
   skill-creation:
     depends_on:
       skill-planning-agent: 0.x
       skill-review-agent: 0.x
+
+  managing-worktrees:
+    depends_on:
+      worktree-create: 0.x
+      worktree-scan: 0.x
+      worktree-cleanup: 0.x
+      worktree-abort: 0.x
+
+  github-issue:
+    depends_on:
+      issue-intake-agent: 0.x
+      issue-mutate-agent: 0.x
+      issue-fix-agent: 0.x
+      issue-pr-agent: 0.x
+      managing-worktrees: 0.x
