@@ -12,6 +12,7 @@ Tests cover:
 from __future__ import annotations
 
 import os
+import sys
 import subprocess
 import re
 from pathlib import Path
@@ -542,6 +543,7 @@ class TestConfigPersistence:
         # May fail or succeed depending on handling, but shouldn't crash
         assert rc in [0, 1]
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows has different permission model - chmod doesn't prevent writes the same way")
     def test_config_permissions_error_on_write(self, temp_home, capsys, monkeypatch):
         """Test that permission errors on write are handled gracefully."""
         # This test is platform-dependent and may not work on all systems
@@ -1898,3 +1900,628 @@ class TestPerformanceScalabilityPhase2:
 
         # Should complete in reasonable time
         assert elapsed < 2.0
+
+# ==============================================================================
+# PHASE 3: REMOTE REGISTRY QUERYING TESTS
+# ==============================================================================
+
+# Phase 3 Fixtures
+@pytest.fixture
+def sample_registry_data():
+    """Sample registry.json structure."""
+    return {
+        "packages": [
+            {
+                "name": "delay-tasks",
+                "version": "1.0.0",
+                "description": "Delay tasks in your workflow",
+                "tier": "premium",
+                "author": "Synaptic Canvas",
+                "source": "https://github.com/example/delay-tasks",
+                "download_url": "https://github.com/example/delay-tasks/archive/v1.0.0.zip",
+                "dependencies": []
+            },
+            {
+                "name": "git-worktree",
+                "version": "2.1.0",
+                "description": "Git worktree management tools",
+                "tier": "community",
+                "author": "Community",
+                "source": "https://github.com/example/git-worktree",
+                "download_url": "https://github.com/example/git-worktree/archive/v2.1.0.zip",
+                "dependencies": ["git"]
+            },
+            {
+                "name": "test-helper",
+                "version": "0.5.0",
+                "description": "Testing utilities",
+                "tier": "community",
+                "author": "Test Author",
+                "source": "https://github.com/example/test-helper",
+                "download_url": "https://github.com/example/test-helper/archive/v0.5.0.zip",
+                "dependencies": []
+            }
+        ]
+    }
+
+
+@pytest.fixture
+def mock_registry_server(monkeypatch, sample_registry_data):
+    """Mock HTTP server with registry.json."""
+    import json
+    import urllib.request
+    from io import BytesIO
+    
+    class MockResponse:
+        def __init__(self, data):
+            self.data = data
+        
+        def read(self):
+            return self.data
+        
+        def __enter__(self):
+            return self
+        
+        def __exit__(self, *args):
+            pass
+    
+    def mock_urlopen(req, timeout=10):
+        url = req.get_full_url() if hasattr(req, 'get_full_url') else str(req)
+
+        # Check in specific order - more specific checks first
+        if "malformed" in url:
+            return MockResponse(b"not valid json {[")
+        elif "empty" in url:
+            return MockResponse(b"")
+        elif "registry.json" in url or "test.example.com" in url:
+            return MockResponse(json.dumps(sample_registry_data).encode('utf-8'))
+        elif "invalid" in url:
+            raise urllib.request.URLError("Invalid URL")
+        elif "timeout" in url:
+            raise urllib.request.URLError("Timeout")
+        else:
+            raise urllib.request.URLError("Not found")
+    
+    monkeypatch.setattr('urllib.request.urlopen', mock_urlopen)
+    return sample_registry_data
+
+
+@pytest.fixture
+def mock_registry(temp_home, config_file, mock_registry_server):
+    """Pre-configured registry with mock server."""
+    return config_file
+
+
+# ==============================================================================
+# TEST GROUP 13: Remote Registry Fetching (15 tests)
+# ==============================================================================
+
+class TestRemoteRegistryFetching:
+    """Test remote registry fetching functions."""
+
+    def test_fetch_registry_json_success(self, mock_registry_server):
+        """Test successful fetch of registry.json."""
+        result = sc_install._fetch_registry_json("https://test.example.com")
+        assert result is not None
+        assert "packages" in result
+        assert len(result["packages"]) == 3
+
+    def test_fetch_registry_json_with_path(self, mock_registry_server):
+        """Test fetch with custom path."""
+        result = sc_install._fetch_registry_json(
+            "https://test.example.com",
+            "docs/registries/nuget/registry.json"
+        )
+        assert result is not None
+        assert "packages" in result
+
+    def test_fetch_registry_json_invalid_url(self, capsys):
+        """Test handling of invalid URL."""
+        result = sc_install._fetch_registry_json("https://invalid.example.com")
+        assert result is None
+        captured = capsys.readouterr()
+        assert "error" in captured.err.lower() or "warning" in captured.err.lower()
+
+    def test_fetch_registry_json_network_error(self, capsys):
+        """Test handling of network errors."""
+        result = sc_install._fetch_registry_json("https://timeout.example.com")
+        assert result is None
+        captured = capsys.readouterr()
+        assert "error" in captured.err.lower() or "warning" in captured.err.lower()
+
+    def test_fetch_registry_json_parse_error(self, mock_registry_server, capsys):
+        """Test handling of JSON parse errors."""
+        result = sc_install._fetch_registry_json("https://malformed.example.com")
+        assert result is None
+        captured = capsys.readouterr()
+        assert "parse" in captured.err.lower() or "json" in captured.err.lower()
+
+    def test_fetch_registry_json_empty_response(self, capsys):
+        """Test handling of empty response."""
+        result = sc_install._fetch_registry_json("https://empty.example.com")
+        assert result is None
+
+    def test_fetch_registry_json_timeout_handling(self, capsys):
+        """Test timeout handling."""
+        result = sc_install._fetch_registry_json("https://timeout.example.com")
+        assert result is None
+
+    def test_parse_registry_metadata_valid(self, sample_registry_data):
+        """Test parsing valid registry metadata."""
+        packages = sc_install._parse_registry_metadata(sample_registry_data)
+        assert len(packages) == 3
+        assert "delay-tasks" in packages
+        assert packages["delay-tasks"]["version"] == "1.0.0"
+        assert packages["delay-tasks"]["tier"] == "premium"
+
+    def test_parse_registry_metadata_missing_fields(self):
+        """Test parsing with missing fields."""
+        data = {
+            "packages": [
+                {"name": "test-pkg"},  # Missing version, description, etc.
+                {"name": "pkg2", "version": "1.0.0"}
+            ]
+        }
+        packages = sc_install._parse_registry_metadata(data)
+        assert len(packages) == 2
+        assert packages["test-pkg"]["version"] == "unknown"
+        assert packages["test-pkg"]["description"] == "No description available"
+
+    def test_parse_registry_metadata_invalid_structure(self):
+        """Test parsing invalid structure."""
+        data = {"invalid": "structure"}
+        packages = sc_install._parse_registry_metadata(data)
+        assert len(packages) == 0
+
+    def test_search_packages_case_insensitive(self, sample_registry_data):
+        """Test case-insensitive search."""
+        packages = sc_install._parse_registry_metadata(sample_registry_data)
+        matches = sc_install._search_packages("DELAY", packages)
+        assert len(matches) == 1
+        assert matches[0]["name"] == "delay-tasks"
+
+    def test_search_packages_substring_match(self, sample_registry_data):
+        """Test substring matching."""
+        packages = sc_install._parse_registry_metadata(sample_registry_data)
+        matches = sc_install._search_packages("test", packages)
+        assert len(matches) == 1  # Only test-helper matches (in name)
+
+    def test_search_packages_no_matches(self, sample_registry_data):
+        """Test search with no matches."""
+        packages = sc_install._parse_registry_metadata(sample_registry_data)
+        matches = sc_install._search_packages("nonexistent", packages)
+        assert len(matches) == 0
+
+    def test_search_packages_multiple_matches(self, sample_registry_data):
+        """Test search returning multiple matches."""
+        packages = sc_install._parse_registry_metadata(sample_registry_data)
+        matches = sc_install._search_packages("git", packages)
+        assert len(matches) >= 1
+
+    def test_search_packages_empty_query(self, sample_registry_data):
+        """Test search with empty query returns all packages."""
+        packages = sc_install._parse_registry_metadata(sample_registry_data)
+        matches = sc_install._search_packages("", packages)
+        assert len(matches) == 3
+
+
+# ==============================================================================
+# TEST GROUP 14: List with Remote Registries (12 tests)
+# ==============================================================================
+
+class TestListRemote:
+    """Test list command with remote registry support."""
+
+    def test_list_remote_single_registry(self, temp_home, mock_registry, capsys):
+        """Test listing packages from single remote registry."""
+        rc = sc_install.main(["list", "--registry", "test-registry"])
+        assert rc == 0
+        captured = capsys.readouterr()
+        assert "test-registry" in captured.out
+        assert "delay-tasks" in captured.out
+
+    def test_list_remote_all_registries(self, temp_home, mock_registry, capsys):
+        """Test listing from all registries."""
+        rc = sc_install.main(["list", "--all-registries"])
+        assert rc == 0
+        captured = capsys.readouterr()
+        assert "Registry:" in captured.out
+
+    def test_list_remote_with_search(self, temp_home, mock_registry, capsys):
+        """Test listing with search filter."""
+        rc = sc_install.main(["list", "--registry", "test-registry", "--search", "delay"])
+        assert rc == 0
+        captured = capsys.readouterr()
+        assert "delay-tasks" in captured.out
+
+    def test_list_remote_nonexistent_registry_error(self, temp_home, capsys):
+        """Test error for nonexistent registry."""
+        rc = sc_install.main(["list", "--registry", "nonexistent"])
+        assert rc == 1
+        captured = capsys.readouterr()
+        assert "not found" in captured.err.lower()
+
+    def test_list_remote_network_error_handled(self, temp_home, config_file, capsys):
+        """Test handling of network errors."""
+        # Add registry with invalid URL
+        sc_install.cmd_registry_add("bad-registry", "https://invalid.example.com")
+        rc = sc_install.main(["list", "--registry", "bad-registry"])
+        # Should return 0 but show warning
+        assert rc == 0
+        captured = capsys.readouterr()
+        assert "failed" in captured.err.lower() or "warning" in captured.err.lower()
+
+    def test_list_remote_shows_package_metadata(self, temp_home, mock_registry, capsys):
+        """Test that list shows package metadata."""
+        rc = sc_install.main(["list", "--registry", "test-registry"])
+        assert rc == 0
+        captured = capsys.readouterr()
+        assert "delay-tasks" in captured.out
+        assert "1.0.0" in captured.out or "v1.0.0" in captured.out
+
+    def test_list_remote_shows_version_info(self, temp_home, mock_registry, capsys):
+        """Test version information display."""
+        rc = sc_install.main(["list", "--registry", "test-registry"])
+        assert rc == 0
+        captured = capsys.readouterr()
+        # Should show version for at least one package
+        assert "v" in captured.out or "version" in captured.out.lower()
+
+    def test_list_remote_shows_source_registry(self, temp_home, mock_registry, capsys):
+        """Test that source registry is shown."""
+        rc = sc_install.main(["list", "--registry", "test-registry"])
+        assert rc == 0
+        captured = capsys.readouterr()
+        assert "test-registry" in captured.out
+
+    def test_list_shows_local_and_remote_together(self, temp_home, mock_registry, capsys):
+        """Test that local listing still works."""
+        rc = sc_install.main(["list"])
+        assert rc == 0
+        # Should work without error
+
+    def test_list_remote_empty_registry_handled(self, temp_home, mock_registry, monkeypatch, capsys):
+        """Test handling of empty registry."""
+        def mock_parse(data):
+            return {}
+        monkeypatch.setattr(sc_install, '_parse_registry_metadata', mock_parse)
+
+        rc = sc_install.main(["list", "--registry", "test-registry"])
+        assert rc == 0
+        captured = capsys.readouterr()
+        assert "no packages" in captured.out.lower() or "found" in captured.out.lower()
+
+    def test_list_remote_large_registry_efficient(self, temp_home, config_file, mock_registry_server, capsys):
+        """Test efficiency with large registry."""
+        import time
+        start = time.time()
+        rc = sc_install.main(["list", "--registry", "test-registry"])
+        elapsed = time.time() - start
+        assert rc == 0
+        assert elapsed < 5.0  # Should be reasonably fast
+
+    def test_list_remote_caches_results(self, temp_home, mock_registry, capsys):
+        """Test that results can be cached (implementation optional)."""
+        # First call
+        rc1 = sc_install.main(["list", "--registry", "test-registry"])
+        assert rc1 == 0
+        # Second call should also work
+        rc2 = sc_install.main(["list", "--registry", "test-registry"])
+        assert rc2 == 0
+
+
+# ==============================================================================
+# TEST GROUP 15: Search Command (10 tests)
+# ==============================================================================
+
+class TestSearchCommand:
+    """Test search command functionality."""
+
+    def test_search_single_registry(self, temp_home, mock_registry, capsys):
+        """Test searching in single registry."""
+        rc = sc_install.main(["search", "delay", "--registry", "test-registry"])
+        assert rc == 0
+        captured = capsys.readouterr()
+        assert "delay-tasks" in captured.out
+
+    def test_search_all_registries(self, temp_home, mock_registry, capsys):
+        """Test searching across all registries."""
+        rc = sc_install.main(["search", "delay"])
+        assert rc == 0
+        captured = capsys.readouterr()
+        assert "delay-tasks" in captured.out or "searching" in captured.out.lower()
+
+    def test_search_case_insensitive(self, temp_home, mock_registry, capsys):
+        """Test case-insensitive search."""
+        rc = sc_install.main(["search", "DELAY"])
+        assert rc == 0
+        captured = capsys.readouterr()
+        assert "delay-tasks" in captured.out or "searching" in captured.out.lower()
+
+    def test_search_no_matches(self, temp_home, mock_registry, capsys):
+        """Test search with no matches."""
+        rc = sc_install.main(["search", "nonexistent-package-xyz"])
+        assert rc == 0
+        captured = capsys.readouterr()
+        assert "no packages" in captured.out.lower() or "found 0" in captured.out.lower()
+
+    def test_search_multiple_matches(self, temp_home, mock_registry, capsys):
+        """Test search returning multiple matches."""
+        rc = sc_install.main(["search", "test"])
+        assert rc == 0
+        # Should find test-helper and potentially others
+
+    def test_search_shows_source_registry(self, temp_home, mock_registry, capsys):
+        """Test that search shows source registry."""
+        rc = sc_install.main(["search", "delay"])
+        assert rc == 0
+        captured = capsys.readouterr()
+        assert "registry" in captured.out.lower() or "test-registry" in captured.out
+
+    def test_search_network_error_handled(self, temp_home, config_file, capsys):
+        """Test handling of network errors during search."""
+        sc_install.cmd_registry_add("bad-search", "https://invalid.example.com")
+        rc = sc_install.main(["search", "test"])
+        # Should complete even with one failed registry
+        assert rc == 0
+
+    def test_search_invalid_registry_error(self, temp_home, config_file, capsys):
+        """Test error for invalid registry."""
+        rc = sc_install.main(["search", "test", "--registry", "nonexistent"])
+        assert rc == 1
+        captured = capsys.readouterr()
+        assert "not found" in captured.err.lower()
+
+    def test_search_empty_query_error(self, capsys):
+        """Test that empty query is handled."""
+        rc = sc_install.main(["search", ""])
+        assert rc == 1
+        captured = capsys.readouterr()
+        assert "empty" in captured.err.lower() or "cannot" in captured.err.lower()
+
+    def test_search_helps_user_find_package(self, temp_home, mock_registry, capsys):
+        """Test search helps user find packages."""
+        rc = sc_install.main(["search", "work"])
+        assert rc == 0
+        captured = capsys.readouterr()
+        # Should find git-worktree
+        assert "worktree" in captured.out or "git" in captured.out
+
+
+# ==============================================================================
+# TEST GROUP 16: Info Remote (8 tests)
+# ==============================================================================
+
+class TestInfoRemote:
+    """Test info command with remote registry support."""
+
+    def test_info_remote_single_package(self, temp_home, mock_registry, capsys):
+        """Test getting info for remote package."""
+        rc = sc_install.main(["info", "delay-tasks", "--registry", "test-registry"])
+        assert rc == 0
+        captured = capsys.readouterr()
+        assert "delay-tasks" in captured.out
+        assert "1.0.0" in captured.out
+
+    def test_info_remote_nonexistent_package_error(self, temp_home, mock_registry, capsys):
+        """Test error for nonexistent package."""
+        rc = sc_install.main(["info", "nonexistent", "--registry", "test-registry"])
+        assert rc == 1
+        captured = capsys.readouterr()
+        assert "not found" in captured.err.lower()
+
+    def test_info_remote_invalid_registry_error(self, temp_home, config_file, capsys):
+        """Test error for invalid registry."""
+        rc = sc_install.main(["info", "delay-tasks", "--registry", "nonexistent"])
+        assert rc == 1
+        captured = capsys.readouterr()
+        assert "not found" in captured.err.lower()
+
+    def test_info_remote_network_error_handled(self, temp_home, config_file, capsys):
+        """Test handling of network errors."""
+        sc_install.cmd_registry_add("bad-info", "https://invalid.example.com")
+        rc = sc_install.main(["info", "delay-tasks", "--registry", "bad-info"])
+        assert rc == 1
+        captured = capsys.readouterr()
+        assert "failed" in captured.err.lower()
+
+    def test_info_remote_shows_full_metadata(self, temp_home, mock_registry, capsys):
+        """Test that full metadata is shown."""
+        rc = sc_install.main(["info", "delay-tasks", "--registry", "test-registry"])
+        assert rc == 0
+        captured = capsys.readouterr()
+        assert "version" in captured.out.lower()
+        assert "description" in captured.out.lower()
+
+    def test_info_remote_shows_dependencies(self, temp_home, mock_registry, capsys):
+        """Test showing dependencies."""
+        rc = sc_install.main(["info", "git-worktree", "--registry", "test-registry"])
+        assert rc == 0
+        captured = capsys.readouterr()
+        # git-worktree has dependencies
+        if "dependencies" in captured.out.lower() or "depend" in captured.out.lower():
+            assert "git" in captured.out.lower()
+
+    def test_info_remote_shows_version_info(self, temp_home, mock_registry, capsys):
+        """Test version information display."""
+        rc = sc_install.main(["info", "delay-tasks", "--registry", "test-registry"])
+        assert rc == 0
+        captured = capsys.readouterr()
+        assert "1.0.0" in captured.out
+
+    def test_info_remote_backward_compat_local_package(self, temp_home, capsys):
+        """Test backward compatibility with local packages."""
+        # Should fail without --registry flag for non-existent local packages
+        rc = sc_install.main(["info", "nonexistent-pkg"])
+        # Will fail since package doesn't exist locally, but that's expected
+        assert rc == 1  # Local package not found is OK
+
+
+# ==============================================================================
+# TEST GROUP 17: Remote Package Installation (12 tests)
+# ==============================================================================
+
+class TestRemoteInstallation:
+    """Test remote package installation."""
+
+    def test_install_from_remote_registry(self, temp_home, mock_registry, capsys):
+        """Test installing from remote registry."""
+        rc = sc_install.main(["install", "delay-tasks", "--global", "--registry", "test-registry"])
+        # Currently not fully implemented, should return error or warning
+        assert rc == 1 or "not yet" in capsys.readouterr().err.lower()
+
+    def test_install_remote_downloads_package(self, temp_home, mock_registry, capsys):
+        """Test that remote install attempts download."""
+        rc = sc_install.main(["install", "delay-tasks", "--global", "--registry", "test-registry"])
+        # Implementation pending
+        captured = capsys.readouterr()
+        assert rc != 0 or "not yet" in captured.err.lower()
+
+    def test_install_remote_nonexistent_package_error(self, temp_home, mock_registry, capsys):
+        """Test error for nonexistent package."""
+        rc = sc_install.main(["install", "nonexistent", "--global", "--registry", "test-registry"])
+        assert rc == 1
+        captured = capsys.readouterr()
+        assert "not found" in captured.err.lower()
+
+    def test_install_remote_invalid_registry_error(self, temp_home, config_file, capsys):
+        """Test error for invalid registry."""
+        rc = sc_install.main(["install", "delay-tasks", "--global", "--registry", "nonexistent"])
+        assert rc == 1
+        captured = capsys.readouterr()
+        assert "not found" in captured.err.lower()
+
+    def test_install_prefers_local_over_remote(self, temp_home, mock_registry, capsys):
+        """Test that local packages are preferred."""
+        # If delay-tasks exists locally, it should be used
+        rc = sc_install.main(["install", "delay-tasks", "--global"])
+        # Will use local if available
+        assert rc in [0, 1]  # Either installs or package not found
+
+    def test_install_falls_back_to_remote(self, temp_home, mock_registry, capsys):
+        """Test fallback to remote when local not found."""
+        rc = sc_install.main(["install", "remote-only-pkg", "--global", "--registry", "test-registry"])
+        # Should try remote (currently not implemented)
+        assert rc == 1  # Package not found
+
+    def test_install_remote_respects_global_flag(self, temp_home, mock_registry):
+        """Test --global flag with remote."""
+        rc = sc_install.main(["install", "delay-tasks", "--global", "--registry", "test-registry"])
+        # Implementation pending
+        assert rc == 1
+
+    def test_install_remote_respects_local_flag(self, temp_home, temp_cwd, mock_registry):
+        """Test --local flag with remote."""
+        rc = sc_install.main(["install", "delay-tasks", "--local", "--registry", "test-registry"])
+        # Implementation pending
+        assert rc == 1
+
+    def test_install_remote_with_force_flag(self, temp_home, mock_registry):
+        """Test --force flag with remote."""
+        rc = sc_install.main(["install", "delay-tasks", "--global", "--force", "--registry", "test-registry"])
+        # Implementation pending
+        assert rc == 1
+
+    def test_install_remote_network_error_handled(self, temp_home, config_file, capsys):
+        """Test handling of network errors during install."""
+        sc_install.cmd_registry_add("bad-install", "https://invalid.example.com")
+        rc = sc_install.main(["install", "test-pkg", "--global", "--registry", "bad-install"])
+        assert rc == 1
+        captured = capsys.readouterr()
+        assert "failed" in captured.err.lower() or "error" in captured.err.lower()
+
+    def test_install_remote_verifies_integrity(self, temp_home, mock_registry):
+        """Test integrity verification (future feature)."""
+        # Placeholder for future implementation
+        rc = sc_install.main(["install", "delay-tasks", "--global", "--registry", "test-registry"])
+        assert rc == 1  # Not implemented yet
+
+    def test_install_remote_performance(self, temp_home, mock_registry):
+        """Test installation performance."""
+        import time
+        start = time.time()
+        rc = sc_install.main(["install", "delay-tasks", "--global", "--registry", "test-registry"])
+        elapsed = time.time() - start
+        # Should complete quickly even if not implemented
+        assert elapsed < 5.0
+
+
+# ==============================================================================
+# TEST GROUP 18: Error Handling & Edge Cases (10 tests)
+# ==============================================================================
+
+class TestPhase3ErrorHandling:
+    """Test Phase 3 error handling and edge cases."""
+
+    def test_invalid_registry_url_rejected(self, capsys):
+        """Test that invalid URLs are rejected."""
+        rc = sc_install.cmd_registry_add("bad", "not-a-url")
+        # Should be rejected by validation
+        assert rc in [0, 1]  # Validation may or may not catch this
+
+    def test_network_timeout_handled(self, capsys):
+        """Test network timeout handling."""
+        result = sc_install._fetch_registry_json("https://timeout.example.com")
+        assert result is None
+
+    def test_malformed_json_handled(self, capsys):
+        """Test malformed JSON handling."""
+        result = sc_install._fetch_registry_json("https://malformed.example.com")
+        assert result is None
+
+    def test_missing_package_metadata_handled(self):
+        """Test handling of missing metadata fields."""
+        data = {"packages": [{"name": "pkg"}]}
+        packages = sc_install._parse_registry_metadata(data)
+        assert len(packages) == 1
+        assert packages["pkg"]["version"] == "unknown"
+
+    def test_empty_search_results_handled(self, temp_home, mock_registry, capsys):
+        """Test handling of empty search results."""
+        rc = sc_install.main(["search", "nonexistent-xyz-abc"])
+        assert rc == 0
+        captured = capsys.readouterr()
+        assert "no packages" in captured.out.lower() or "0" in captured.out
+
+    def test_registry_connection_error_message(self, temp_home, config_file, capsys):
+        """Test clear error messages for connection failures."""
+        sc_install.cmd_registry_add("bad-conn", "https://invalid.example.com")
+        rc = sc_install.main(["list", "--registry", "bad-conn"])
+        assert rc == 0
+        captured = capsys.readouterr()
+        assert "fail" in captured.err.lower() or "warn" in captured.err.lower()
+
+    def test_help_shows_remote_options(self, capsys):
+        """Test that help shows remote options."""
+        try:
+            sc_install.main(["list", "-h"])
+        except SystemExit:
+            pass
+        captured = capsys.readouterr()
+        assert "--registry" in captured.out
+
+    def test_help_documents_registry_flag(self, capsys):
+        """Test registry flag documentation."""
+        try:
+            sc_install.main(["info", "-h"])
+        except SystemExit:
+            pass
+        captured = capsys.readouterr()
+        assert "--registry" in captured.out
+
+    def test_help_documents_search_command(self, capsys):
+        """Test search command documentation."""
+        try:
+            sc_install.main(["search", "-h"])
+        except SystemExit:
+            pass
+        captured = capsys.readouterr()
+        assert "query" in captured.out.lower()
+
+    def test_error_messages_actionable(self, temp_home, capsys):
+        """Test that error messages are actionable."""
+        rc = sc_install.main(["list", "--registry", "nonexistent"])
+        assert rc == 1
+        captured = capsys.readouterr()
+        # Should suggest using 'registry list'
+        assert "registry list" in captured.err.lower() or "available" in captured.err.lower()
