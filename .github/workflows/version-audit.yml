@@ -62,6 +62,9 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Install Python dependencies
+        run: pip install pyyaml
+
       - name: Validate manifest YAML format
         run: |
           python3 -c "

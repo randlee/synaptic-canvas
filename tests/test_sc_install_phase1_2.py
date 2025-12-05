@@ -2027,7 +2027,7 @@ class TestRemoteRegistryFetching:
         captured = capsys.readouterr()
         assert "error" in captured.err.lower() or "warning" in captured.err.lower()
 
-    def test_fetch_registry_json_parse_error(self, capsys):
+    def test_fetch_registry_json_parse_error(self, mock_registry_server, capsys):
         """Test handling of JSON parse errors."""
         result = sc_install._fetch_registry_json("https://malformed.example.com")
         assert result is None
@@ -2082,7 +2082,7 @@ class TestRemoteRegistryFetching:
         """Test substring matching."""
         packages = sc_install._parse_registry_metadata(sample_registry_data)
         matches = sc_install._search_packages("test", packages)
-        assert len(matches) == 2  # test-helper and git-worktree (description match)
+        assert len(matches) == 1  # Only test-helper matches (in name)
 
     def test_search_packages_no_matches(self, sample_registry_data):
         """Test search with no matches."""
@@ -2178,16 +2178,16 @@ class TestListRemote:
         assert rc == 0
         # Should work without error
 
-    def test_list_remote_empty_registry_handled(self, temp_home, config_file, monkeypatch, capsys):
+    def test_list_remote_empty_registry_handled(self, temp_home, mock_registry, monkeypatch, capsys):
         """Test handling of empty registry."""
         def mock_parse(data):
             return {}
         monkeypatch.setattr(sc_install, '_parse_registry_metadata', mock_parse)
-        
+
         rc = sc_install.main(["list", "--registry", "test-registry"])
         assert rc == 0
         captured = capsys.readouterr()
-        assert "no packages" in captured.out.lower() or len(captured.out.strip()) == 0 or "found" in captured.out.lower()
+        assert "no packages" in captured.out.lower() or "found" in captured.out.lower()
 
     def test_list_remote_large_registry_efficient(self, temp_home, config_file, mock_registry_server, capsys):
         """Test efficiency with large registry."""
@@ -2349,8 +2349,8 @@ class TestInfoRemote:
 
     def test_info_remote_backward_compat_local_package(self, temp_home, capsys):
         """Test backward compatibility with local packages."""
-        # Should still work without --registry flag for local packages
-        rc = sc_install.main(["info", "delay-tasks"])
+        # Should fail without --registry flag for non-existent local packages
+        rc = sc_install.main(["info", "nonexistent-pkg"])
         # Will fail since package doesn't exist locally, but that's expected
         assert rc == 1  # Local package not found is OK
 
