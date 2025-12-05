@@ -1,0 +1,10 @@
+ci_automation:
+  upstream_branch: main
+  build_command: ""
+  test_command: ""
+  validate_command: ""
+  warn_patterns: []
+  allow_warnings: false
+  auto_fix_enabled: false
+  pr_template_path: ""
+  repo_root: ""
