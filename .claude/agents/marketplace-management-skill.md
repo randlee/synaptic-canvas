@@ -208,9 +208,9 @@ Available packages:
   "Schedule delayed or interval-based actions..."
   Install: /marketplace install delay-tasks --global
 
-• git-worktree (v0.4.0)
+• sc-git-worktree (v0.4.0)
   "Create, manage, scan, and clean up git worktrees..."
-  Install: /marketplace install git-worktree --global
+  Install: /marketplace install sc-git-worktree --global
 
 [... more packages ...]
 
@@ -367,7 +367,7 @@ I can help you with git-related marketplace packages.
 
 Would you like to:
 1. Search for git-related packages
-2. Get information about the git-worktree package
+2. Get information about the sc-git-worktree package
 3. See all packages with the "git" tag
 
 Which option interests you?
@@ -380,7 +380,7 @@ Which option interests you?
 
 **Agent action:**
 1. Route to marketplace-package-discovery
-2. Request details for git-worktree
+2. Request details for sc-git-worktree
 3. Display full information
 
 ### Example 5: Multi-step Troubleshooting

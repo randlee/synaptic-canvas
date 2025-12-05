@@ -27,10 +27,10 @@ The github-issue skill (v0.1.0) has **successfully resolved all critical registr
 **Status**: ✅ All versions now match correctly
 
 #### Worktree Agents
-- **worktree-create**: Registry 0.4.0 ↔ File 0.4.0 ✅
-- **worktree-scan**: Registry 0.4.0 ↔ File 0.4.0 ✅
-- **worktree-cleanup**: Registry 0.4.0 ↔ File 0.4.0 ✅
-- **worktree-abort**: Registry 0.4.0 ↔ File 0.4.0 ✅
+- **sc-worktree-create**: Registry 0.4.0 ↔ File 0.4.0 ✅
+- **sc-worktree-scan**: Registry 0.4.0 ↔ File 0.4.0 ✅
+- **sc-worktree-cleanup**: Registry 0.4.0 ↔ File 0.4.0 ✅
+- **sc-worktree-abort**: Registry 0.4.0 ↔ File 0.4.0 ✅
 
 #### GitHub Issue Agents
 - **issue-intake-agent**: Registry 0.1.0 ↔ File 0.1.0 ✅
@@ -42,13 +42,13 @@ The github-issue skill (v0.1.0) has **successfully resolved all critical registr
 
 **Status**: ✅ All dependency constraints properly aligned
 
-#### managing-worktrees Skill
+#### sc-managing-worktrees Skill
 ```yaml
 depends_on:
-  worktree-create: 0.x     # ✅ Matches 0.4.0
-  worktree-scan: 0.x       # ✅ Matches 0.4.0
-  worktree-cleanup: 0.x    # ✅ Matches 0.4.0
-  worktree-abort: 0.x      # ✅ Matches 0.4.0
+  sc-worktree-create: 0.x     # ✅ Matches 0.4.0
+  sc-worktree-scan: 0.x       # ✅ Matches 0.4.0
+  sc-worktree-cleanup: 0.x    # ✅ Matches 0.4.0
+  sc-worktree-abort: 0.x      # ✅ Matches 0.4.0
 ```
 
 #### github-issue Skill
@@ -58,10 +58,10 @@ depends_on:
   issue-mutate-agent: 0.x   # ✅ Matches 0.1.0
   issue-fix-agent: 0.x      # ✅ Matches 0.1.0
   issue-pr-agent: 0.x       # ✅ Matches 0.1.0
-  managing-worktrees: 0.x   # ✅ Cross-skill dependency properly declared
+  sc-managing-worktrees: 0.x   # ✅ Cross-skill dependency properly declared
 ```
 
-**Analysis**: The change from `1.x` to `0.x` constraints was correctly applied throughout, enabling proper dependency resolution. The cross-skill dependency on `managing-worktrees` is properly declared.
+**Analysis**: The change from `1.x` to `0.x` constraints was correctly applied throughout, enabling proper dependency resolution. The cross-skill dependency on `sc-managing-worktrees` is properly declared.
 
 ---
 
@@ -103,7 +103,7 @@ depends_on:
 - **Progressive disclosure**: References external docs instead of duplicating
 - **Clear agent listing**: All four agents identified
 - **Data contract specified**: Fenced JSON with minimal envelope
-- **Dependency declaration**: managing-worktrees skill listed
+- **Dependency declaration**: sc-managing-worktrees skill listed
 
 #### Compliance
 - ✅ Proper naming convention
@@ -304,10 +304,10 @@ agents:
   issue-pr-agent: 0.1.0        ✅
 
   # Worktree agents - all 0.4.0
-  worktree-create: 0.4.0       ✅
-  worktree-scan: 0.4.0         ✅
-  worktree-cleanup: 0.4.0      ✅
-  worktree-abort: 0.4.0        ✅
+  sc-worktree-create: 0.4.0       ✅
+  sc-worktree-scan: 0.4.0         ✅
+  sc-worktree-cleanup: 0.4.0      ✅
+  sc-worktree-abort: 0.4.0        ✅
 
 skills:
   github-issue:
@@ -316,14 +316,14 @@ skills:
       issue-mutate-agent: 0.x   ✅
       issue-fix-agent: 0.x      ✅
       issue-pr-agent: 0.x       ✅
-      managing-worktrees: 0.x   ✅
+      sc-managing-worktrees: 0.x   ✅
 
-  managing-worktrees:
+  sc-managing-worktrees:
     depends_on:
-      worktree-create: 0.x      ✅
-      worktree-scan: 0.x        ✅
-      worktree-cleanup: 0.x     ✅
-      worktree-abort: 0.x       ✅
+      sc-worktree-create: 0.x      ✅
+      sc-worktree-scan: 0.x        ✅
+      sc-worktree-cleanup: 0.x     ✅
+      sc-worktree-abort: 0.x       ✅
 ```
 
 #### Compliance

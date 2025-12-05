@@ -29,7 +29,7 @@ Manage GitHub issues from listing to fixing to PR creation with clean worktree i
 
 ## Dependencies
 
-- **Skills**: managing-worktrees (worktree operations)
+- **Skills**: sc-managing-worktrees (worktree operations)
 - **CLI**: GitHub CLI (`gh`) required
 - **Config**: `.claude/config.yaml` (base_branch, worktree_root, github settings)
 

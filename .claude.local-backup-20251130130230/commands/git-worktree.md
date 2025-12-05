@@ -1,5 +1,5 @@
 ---
-name: /git-worktree
+name: /sc-git-worktree
 description: Manage git worktrees for this repo (create, list/status, cleanup, abort) while enforcing the repo’s worktree/tracking rules.
 options:
   - name: --list
@@ -27,7 +27,7 @@ options:
     description: Show available options and guidance.
 ---
 
-# /git-worktree command
+# /sc-git-worktree command
 
 Use this command to manage worktrees following the repo’s layout and tracking rules.
 - Repo root: current directory.
@@ -48,7 +48,7 @@ If run with no options or `--help`: print a concise list of options (no git stat
 ### --list / --status
 - `git worktree list --porcelain`.
 - Cross-check tracking doc; report missing/stale entries and dirty states via `git -C <path> status --short`.
-- Agent option: call `worktree-scan` and render its JSON as a table and bullet recommendations.
+- Agent option: call `sc-worktree-scan` and render its JSON as a table and bullet recommendations.
 
 ### --create
 - Inputs: branch, base.
@@ -56,7 +56,7 @@ If run with no options or `--help`: print a concise list of options (no git stat
 - If branch exists: `git worktree add <path> <branch>`; else `git worktree add -b <branch> <path> <base>`.
 - Verify hooks/branch protections apply; confirm `git status` clean.
 - Update tracking row (branch, path, base, purpose, owner, created, status, last checked, notes) when tracking is enabled.
-- Agent option: call `worktree-create`; render as a table plus warnings/errors.
+- Agent option: call `sc-worktree-create`; render as a table plus warnings/errors.
 
 ### --cleanup
 - Check `git -C <path> status`; if dirty, stop and request explicit approval/coordination.
@@ -65,14 +65,14 @@ If run with no options or `--help`: print a concise list of options (no git stat
 - If merged and has no unique commits, delete the branch locally (`git branch -d <branch>`) and remotely (`git push origin --delete <branch>`) by default. Only retain the branch if the user explicitly opts out. If the remote branch is already gone, continue without error.
 - If not merged, only delete branches (local/remote) with explicit approval.
 - Update tracking (remove or mark cleaned with merge SHA/date) when tracking is enabled.
-- Agent option: call `worktree-cleanup`; render its JSON as a short summary list.
+- Agent option: call `sc-worktree-cleanup`; render its JSON as a short summary list.
 
 ### --abort
 - Check `git -C <path> status`; if dirty, stop and request explicit approval/coordination.
 - `git worktree remove <path>` (force only with approval).
 - If requested, delete branch locally (`git branch -D <branch>`) and remotely (`git push origin --delete <branch>`).
 - Update tracking to remove the entry and note abandonment when tracking is enabled.
-- Agent option: call `worktree-abort`; render its JSON as a short summary list.
+- Agent option: call `sc-worktree-abort`; render its JSON as a short summary list.
 
 ### --help
 - Show options and remind about base branches, paths, tracking toggles, and dirty-worktree safeguards. Keep output concise (no tool traces).

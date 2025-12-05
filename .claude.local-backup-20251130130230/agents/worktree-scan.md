@@ -1,5 +1,5 @@
 ---
-name: worktree-scan
+name: sc-worktree-scan
 version: 0.4.0
 description: Scan git worktrees vs tracking; report status (clean/dirty), missing/stale tracking rows, and recommended actions. No mutations.
 model: sonnet

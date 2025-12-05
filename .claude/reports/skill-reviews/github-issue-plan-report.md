@@ -64,7 +64,7 @@ owner: TBD
 **Rule**: `ARCH.REGISTRY.DEPENDENCY_FORMAT`
 **Location**: Plan section "Skill Dependencies" (lines 125-136)
 
-**Issue**: The plan shows dependency format as `managing-worktrees: 0.x` but the request document specifies `manage-worktree: "0.x"` (singular form with quotes).
+**Issue**: The plan shows dependency format as `sc-managing-worktrees: 0.x` but the request document specifies `manage-worktree: "0.x"` (singular form with quotes).
 
 **Current**:
 ```yaml
@@ -75,7 +75,7 @@ skills:
       issue-mutate-agent: 0.x
       issue-fix-agent: 0.x
       issue-pr-agent: 0.x
-      managing-worktrees: 0.x  # ⚠️ Should be 'manage-worktree' (singular) with quotes
+      sc-managing-worktrees: 0.x  # ⚠️ Should be 'manage-worktree' (singular) with quotes
 ```
 
 **Recommended**:
@@ -385,17 +385,17 @@ skills:
       issue-mutate-agent: 0.x
       issue-fix-agent: 0.x
       issue-pr-agent: 0.x
-      managing-worktrees: 0.x  # ⚠️ Plural, no quotes
+      sc-managing-worktrees: 0.x  # ⚠️ Plural, no quotes
 ```
 
 **Guidelines Pattern** (line 618-624):
 ```yaml
 skills:
-  managing-worktrees:
+  sc-managing-worktrees:
     depends_on:
-      worktree-create: "1.x"    # ✅ Quoted
-      worktree-scan: "1.x"
-      worktree-cleanup: "1.x"
+      sc-worktree-create: "1.x"    # ✅ Quoted
+      sc-worktree-scan: "1.x"
+      sc-worktree-cleanup: "1.x"
 ```
 
 **Request Document** (line 13):
@@ -404,7 +404,7 @@ manage-worktree: "0.x"  # Singular with quotes
 ```
 
 **Issues**:
-1. Skill name: `managing-worktrees` vs `manage-worktree` (inconsistent)
+1. Skill name: `sc-managing-worktrees` vs `manage-worktree` (inconsistent)
 2. Missing quotes around version constraints
 3. Path not specified (should add `path:` field per registry pattern)
 
@@ -514,7 +514,7 @@ If `.claude/config.yaml` doesn't exist, use defaults:
    - Display test output
    - Prompt: "Tests failed. Proceed anyway? (y/n)"
 
-3. Before cleanup (worktree-cleanup):
+3. Before cleanup (sc-worktree-cleanup):
    - Verify no uncommitted changes
    - Prompt for explicit approval if dirty
 ```
@@ -698,7 +698,7 @@ owner: TBD
    ```
 
 2. **[HIGH] Correct registry dependency syntax** (lines 127-136)
-   - Change `managing-worktrees` to `manage-worktree` (singular)
+   - Change `sc-managing-worktrees` to `manage-worktree` (singular)
    - Add quotes around version constraints: `"0.x"`
    - Add `path:` field for each agent
 

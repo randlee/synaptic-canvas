@@ -319,7 +319,7 @@ Successfully installed delay-tasks (v0.4.0)
 
 **User request:**
 ```
-/marketplace install git-worktree
+/marketplace install sc-git-worktree
 ```
 
 **Agent action:**
@@ -330,7 +330,7 @@ Successfully installed delay-tasks (v0.4.0)
 
 **Response:**
 ```
-Installing git-worktree...
+Installing sc-git-worktree...
 
 Where would you like to install this package?
 1. Global (--global) - Available in all projects

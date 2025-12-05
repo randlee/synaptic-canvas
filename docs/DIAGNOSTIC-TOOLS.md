@@ -247,8 +247,8 @@ Syncing all packages to version 1.0.0...
 Syncing delay-tasks to version 1.0.0...
   ✓ Updated: /path/to/packages/delay-tasks/manifest.yaml
   ...
-Syncing git-worktree to version 1.0.0...
-  ✓ Updated: /path/to/packages/git-worktree/manifest.yaml
+Syncing sc-git-worktree to version 1.0.0...
+  ✓ Updated: /path/to/packages/sc-git-worktree/manifest.yaml
   ...
 ```
 
@@ -336,7 +336,7 @@ Marketplace Version: 0.4.0
 
 Package: delay-tasks (manifest: 0.4.0)
 
-Package: git-worktree (manifest: 0.4.0)
+Package: sc-git-worktree (manifest: 0.4.0)
 
 Package: sc-manage (manifest: 0.4.0)
 
@@ -375,13 +375,13 @@ Package: delay-tasks (manifest: 0.4.0)
   ✓ agent/delay-poll: 0.4.0
   ✓ agent/git-pr-check-delay: 0.4.0
 
-Package: git-worktree (manifest: 0.4.0)
-  ✓ command/git-worktree: 0.4.0
-  ✓ skill/managing-worktrees: 0.4.0
-  ✓ agent/worktree-create: 0.4.0
-  ✓ agent/worktree-scan: 0.4.0
-  ✓ agent/worktree-cleanup: 0.4.0
-  ✓ agent/worktree-abort: 0.4.0
+Package: sc-git-worktree (manifest: 0.4.0)
+  ✓ command/sc-git-worktree: 0.4.0
+  ✓ skill/sc-managing-worktrees: 0.4.0
+  ✓ agent/sc-worktree-create: 0.4.0
+  ✓ agent/sc-worktree-scan: 0.4.0
+  ✓ agent/sc-worktree-cleanup: 0.4.0
+  ✓ agent/sc-worktree-abort: 0.4.0
 
 ...
 
@@ -402,8 +402,8 @@ Package: delay-tasks (manifest: 0.4.0)
   ✗ skill/delaying-tasks: 0.3.0
   ✓ agent/delay-once: 0.4.0
 
-Package: git-worktree (manifest: 0.4.0)
-  ✓ command/git-worktree: 0.4.0
+Package: sc-git-worktree (manifest: 0.4.0)
+  ✓ command/sc-git-worktree: 0.4.0
 
 Version mismatches found
 ```
@@ -417,7 +417,7 @@ Version mismatches found
   "marketplace": "0.4.0",
   "packages": [
     {"name": "delay-tasks", "version": "0.4.0", "consistent": true},
-    {"name": "git-worktree", "version": "0.4.0", "consistent": true},
+    {"name": "sc-git-worktree", "version": "0.4.0", "consistent": true},
     {"name": "sc-manage", "version": "0.4.0", "consistent": true},
     {"name": "repomix-nuget", "version": "0.4.0", "consistent": true}
   ]
@@ -514,7 +514,7 @@ STATUS: INVALID
 Found 3 validation error(s):
 
   1. Package 'delay-tasks': Invalid version format '0.4'
-  2. Package 'git-worktree': Missing required field: 'description'
+  2. Package 'sc-git-worktree': Missing required field: 'description'
   3. Package 'repomix-nuget': Invalid repo URL (must be https://github.com/...)
 
 ======================================================================
@@ -554,7 +554,7 @@ python3 docs/registries/nuget/validate-registry.py --json
   "error_count": 2,
   "errors": [
     "Package 'delay-tasks': Invalid version format '0.4'",
-    "Package 'git-worktree': Missing required field: 'description'"
+    "Package 'sc-git-worktree': Missing required field: 'description'"
   ],
   "registry": {
     "version": "0.4.0",
@@ -843,7 +843,7 @@ packages/  scripts/  docs/  .claude/
 ls packages/
 
 # Expected output:
-delay-tasks/  git-worktree/  repomix-nuget/  sc-manage/
+delay-tasks/  sc-git-worktree/  repomix-nuget/  sc-manage/
 ```
 
 ---
@@ -864,7 +864,7 @@ commands/  skills/  agents/  scripts/
 ls .claude/commands/
 
 # Example output:
-delay.md  git-worktree.md  repomix-nuget.md  sc-manage.md
+delay.md  sc-git-worktree.md  repomix-nuget.md  sc-manage.md
 ```
 
 **Check installed skills:**
@@ -872,7 +872,7 @@ delay.md  git-worktree.md  repomix-nuget.md  sc-manage.md
 ls .claude/skills/
 
 # Example output:
-delaying-tasks/  managing-worktrees/  managing-sc-packages/  generating-nuget-context/
+delaying-tasks/  sc-managing-worktrees/  managing-sc-packages/  generating-nuget-context/
 ```
 
 **Check installed agents:**
@@ -880,7 +880,7 @@ delaying-tasks/  managing-worktrees/  managing-sc-packages/  generating-nuget-co
 ls .claude/agents/
 
 # Example output:
-delay-once.md  delay-poll.md  git-pr-check-delay.md  worktree-create.md  ...
+delay-once.md  delay-poll.md  git-pr-check-delay.md  sc-worktree-create.md  ...
 ```
 
 **Check installed scripts:**
@@ -993,7 +993,7 @@ done
 
 # Output:
 delay-tasks: 0.4.0
-git-worktree: 0.4.0
+sc-git-worktree: 0.4.0
 repomix-nuget: 0.4.0
 sc-manage: 0.4.0
 ```
@@ -1044,7 +1044,7 @@ done
 
 # Output:
 delay-tasks/delay: 0.4.0
-git-worktree/git-worktree: 0.4.0
+sc-git-worktree/sc-git-worktree: 0.4.0
 repomix-nuget/repomix-nuget: 0.4.0
 sc-manage/sc-manage: 0.4.0
 ```
@@ -1063,7 +1063,7 @@ done
 
 # Output:
 delay-tasks/delaying-tasks: 0.4.0
-git-worktree/managing-worktrees: 0.4.0
+sc-git-worktree/sc-managing-worktrees: 0.4.0
 repomix-nuget/generating-nuget-context: 0.4.0
 sc-manage/managing-sc-packages: 0.4.0
 ```
@@ -1083,7 +1083,7 @@ done
 delay-once: 0.4.0
 delay-poll: 0.4.0
 git-pr-check-delay: 0.4.0
-worktree-create: 0.4.0
+sc-worktree-create: 0.4.0
 ...
 ```
 
@@ -1195,7 +1195,7 @@ python3 -c "import json; print('\n'.join(json.load(open('docs/registries/nuget/r
 
 # Output:
 delay-tasks
-git-worktree
+sc-git-worktree
 repomix-nuget
 sc-manage
 ```
@@ -1210,10 +1210,10 @@ python3 -c "import json; import pprint; pprint.pprint(json.load(open('docs/regis
 
 # Output:
 {'categories': {'automation': ['delay-tasks'],
-                'git': ['git-worktree'],
+                'git': ['sc-git-worktree'],
                 'management': ['sc-manage'],
                 'nuget': ['repomix-nuget'],
-                'workflow': ['delay-tasks', 'git-worktree']},
+                'workflow': ['delay-tasks', 'sc-git-worktree']},
  'registryVersion': '0.4.0',
  'schemaVersion': '1.0.0',
  'totalAgents': 16,
@@ -1479,7 +1479,7 @@ du -sh packages/*
 
 # Output:
 1.2M    packages/delay-tasks
-800K    packages/git-worktree
+800K    packages/sc-git-worktree
 2.5M    packages/repomix-nuget
 1.0M    packages/sc-manage
 ```
@@ -1687,7 +1687,7 @@ Currently, `audit-versions.sh` does not output JSON. Consider using `compare-ver
       "consistent": true
     },
     {
-      "name": "git-worktree",
+      "name": "sc-git-worktree",
       "version": "0.4.0",
       "consistent": true
     },
@@ -1716,7 +1716,7 @@ Currently, `audit-versions.sh` does not output JSON. Consider using `compare-ver
       "consistent": false
     },
     {
-      "name": "git-worktree",
+      "name": "sc-git-worktree",
       "version": "0.4.0",
       "consistent": true
     }
@@ -1753,7 +1753,7 @@ python3 docs/registries/nuget/validate-registry.py --json
   "error_count": 3,
   "errors": [
     "Package 'delay-tasks': Invalid version format '0.4'",
-    "Package 'git-worktree': Missing required field: 'description'",
+    "Package 'sc-git-worktree': Missing required field: 'description'",
     "Package 'repomix-nuget': Invalid repo URL (must be https://github.com/...)"
   ],
   "registry": {

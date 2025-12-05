@@ -3,8 +3,8 @@
 Agent Runner CLI
 
 Usage examples:
-  python3 tools/agent-runner.py validate --agent worktree-create
-  python3 tools/agent-runner.py invoke --agent worktree-create \
+  python3 tools/agent-runner.py validate --agent sc-worktree-create
+  python3 tools/agent-runner.py invoke --agent sc-worktree-create \
       --param branch=feature-x --param base=main --timeout 120
 
 This CLI does not launch Claude's Task tool. It validates and prepares a

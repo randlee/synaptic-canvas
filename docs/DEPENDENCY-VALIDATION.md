@@ -69,7 +69,7 @@ git version 2.39.0 (or higher)
 **Why This Version:**
 - Git 2.7.0+ required for `git worktree` command
 - Earlier versions don't support worktree functionality
-- Used by: git-worktree package, all version control operations
+- Used by: sc-git-worktree package, all version control operations
 
 **Validation Command:**
 ```bash
@@ -466,7 +466,7 @@ fi
 
 ---
 
-### git-worktree
+### sc-git-worktree
 
 **Description:** Manage git worktrees with optional tracking
 
@@ -493,7 +493,7 @@ fi
 
 **Validation:**
 ```bash
-echo "=== git-worktree Dependencies ==="
+echo "=== sc-git-worktree Dependencies ==="
 
 # Check Git version (critical)
 git_version=$(git --version | awk '{print $3}')
@@ -762,7 +762,7 @@ npm --version
 | Package | Git | Python 3 | Bash | Node.js | npm | .NET SDK |
 |---------|-----|----------|------|---------|-----|----------|
 | **delay-tasks** | ⚠️ | ✅ | ✅ | ❌ | ❌ | ❌ |
-| **git-worktree** | ✅ >= 2.7.0 | ✅ | ✅ | ❌ | ❌ | ❌ |
+| **sc-git-worktree** | ✅ >= 2.7.0 | ✅ | ✅ | ❌ | ❌ | ❌ |
 | **sc-manage** | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
 | **repomix-nuget** | ⚠️ | ⚠️ | ✅ | ✅ >= 18 | ✅ >= 8 | ⚠️ optional |
 
@@ -1045,8 +1045,8 @@ case "$package" in
         bash --version | head -1 && echo "  ✓ Bash" || echo "  ✗ Bash"
         ;;
 
-    "git-worktree")
-        echo "Checking git-worktree dependencies..."
+    "sc-git-worktree")
+        echo "Checking sc-git-worktree dependencies..."
         git_version=$(git --version | awk '{print $3}')
         if [[ "$(printf '%s\n' "2.7.0" "$git_version" | sort -V | head -n1)" = "2.7.0" ]]; then
             echo "  ✓ Git >= 2.7.0"
@@ -1087,7 +1087,7 @@ esac
 ```bash
 chmod +x check-package-deps.sh
 ./check-package-deps.sh delay-tasks
-./check-package-deps.sh git-worktree
+./check-package-deps.sh sc-git-worktree
 ./check-package-deps.sh repomix-nuget
 ```
 
@@ -1682,7 +1682,7 @@ case "$package" in
     "delay-tasks")
         python3 --version > /dev/null 2>&1 || { echo "Error: Python 3 required"; exit 1; }
         ;;
-    "git-worktree")
+    "sc-git-worktree")
         git worktree --help > /dev/null 2>&1 || { echo "Error: Git >= 2.7.0 required for worktree support"; exit 1; }
         python3 --version > /dev/null 2>&1 || { echo "Error: Python 3 required"; exit 1; }
         ;;

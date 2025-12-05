@@ -32,7 +32,7 @@ This section helps you upgrade existing skills/agents to v2.4 patterns. For comp
 
 ```yaml
 ---
-name: worktree-create
+name: sc-worktree-create
 version: 1.0.0
 description: Creates a git worktree for parallel development.
 ---
@@ -76,12 +76,12 @@ Create `.claude/agents/registry.yaml`:
 
 ```yaml
 agents:
-  worktree-create:
+  sc-worktree-create:
     version: 1.0.0
-    path: .claude/agents/worktree-create.md
-  worktree-scan:
+    path: .claude/agents/sc-worktree-create.md
+  sc-worktree-scan:
     version: 1.0.0
-    path: .claude/agents/worktree-scan.md
+    path: .claude/agents/sc-worktree-scan.md
 ```
 
 Run validation via CI or pre-commit hook (see [Version Management](#version-management)).
@@ -155,12 +155,12 @@ When a skill's SKILL.md instructs to invoke an agent, Claude uses the Task tool 
 ## Agent Delegation
 
 To create a worktree:
-1. Use the Agent Runner tool to invoke the `worktree-create` agent.
+1. Use the Agent Runner tool to invoke the `sc-worktree-create` agent.
 2. Provide parameters: branch name, base branch.
 3. The agent returns JSON; format the result for the user.
 
 Runner prompt example:
-"Invoke agent 'worktree-create' as defined in .claude/agents/registry.yaml
+"Invoke agent 'sc-worktree-create' as defined in .claude/agents/registry.yaml
 with params:
 - branch: feature-x
 - base: main"
@@ -169,12 +169,12 @@ with params:
 **What happens:**
 
 ```
-Skill instructs: "Use Agent Runner to invoke worktree-create agent"
+Skill instructs: "Use Agent Runner to invoke sc-worktree-create agent"
     ↓
 Agent Runner: Resolves path+version from registry, computes file hash, launches Task tool
     ↓
 Agent context (isolated):
-    - Loads worktree-create.md instructions
+    - Loads sc-worktree-create.md instructions
     - Runs git commands
     - Handles errors/retries internally
     - Returns fenced JSON result
@@ -245,7 +245,7 @@ User thinks: "I need to manage my git worktrees"
            ↓
 Skill:     "manage-worktrees" (orchestrates workflow)
            ↓
-Agents:    worktree-create, worktree-scan, worktree-cleanup
+Agents:    sc-worktree-create, sc-worktree-scan, sc-worktree-cleanup
            (invoked via Agent Runner from the skill)
 ```
 
@@ -325,9 +325,9 @@ This skill delegates to specialized agents via the Agent Runner (Task tool under
 
 | Operation | Agent | Returns |
 |-----------|-------|---------|
-| Create    | `worktree-create`  | JSON: path, branch, success |
-| Scan      | `worktree-scan`    | JSON: list of worktrees |
-| Cleanup   | `worktree-cleanup` | JSON: cleanup summary |
+| Create    | `sc-worktree-create`  | JSON: path, branch, success |
+| Scan      | `sc-worktree-scan`    | JSON: list of worktrees |
+| Cleanup   | `sc-worktree-cleanup` | JSON: cleanup summary |
 
 To invoke an agent, instruct:
 "Use the Agent Runner to invoke `<agent-name>` as defined in `.claude/agents/registry.yaml` with parameters: ..."
@@ -344,7 +344,7 @@ When the user requests worktree operations:
 
 Use gerund form (verb + -ing) for clarity:
 
-- ✓ `processing-pdfs`, `managing-worktrees`, `publishing-nuget`
+- ✓ `processing-pdfs`, `sc-managing-worktrees`, `publishing-nuget`
 - ✗ `pdf-processor`, `worktree-manager`, `nuget-publisher`
 
 ### Description Best Practices
@@ -369,9 +369,9 @@ description: Helps with git operations.
 
 ```
 .claude/agents/
-├── worktree-create.md
-├── worktree-scan.md
-├── worktree-cleanup.md
+├── sc-worktree-create.md
+├── sc-worktree-scan.md
+├── sc-worktree-cleanup.md
 ├── nuget-publish.md
 └── nuget-validation.md
 ```
@@ -395,7 +395,7 @@ Every agent MUST declare version in YAML frontmatter:
 
 ```yaml
 ---
-name: worktree-create
+name: sc-worktree-create
 version: 1.0.0
 description: Creates a git worktree for parallel development.
 ---
@@ -475,10 +475,10 @@ Each agent invocation via Agent Runner (Task tool under the hood) is a disposabl
 ```
 Main Session: "Create a worktree for feature-x"
     ↓
-Skill: Use Agent Runner to invoke worktree-create agent
+Skill: Use Agent Runner to invoke sc-worktree-create agent
     ↓
 Agent Context (temporary, isolated):
-    - Loads worktree-create.md instructions
+    - Loads sc-worktree-create.md instructions
     - Runs git commands
     - Handles errors/retries
     - Returns fenced JSON
@@ -605,25 +605,25 @@ Agents declare version in YAML frontmatter only. Version checking happens outsid
 ```yaml
 # .claude/agents/registry.yaml
 agents:
-  worktree-create:
+  sc-worktree-create:
     version: 1.0.0
-    path: .claude/agents/worktree-create.md
-  worktree-scan:
+    path: .claude/agents/sc-worktree-create.md
+  sc-worktree-scan:
     version: 1.0.0
-    path: .claude/agents/worktree-scan.md
+    path: .claude/agents/sc-worktree-scan.md
   nuget-validation:
     version: 1.2.0
     path: .claude/agents/nuget-validation.md
 
 skills:
-  managing-worktrees:
+  sc-managing-worktrees:
     depends_on:
-      worktree-create: "1.x"
-      worktree-scan: "1.x"
-      worktree-cleanup: "1.x"
+      sc-worktree-create: "1.x"
+      sc-worktree-scan: "1.x"
+      sc-worktree-cleanup: "1.x"
 ```
 
-**Path format**: Registry paths are relative to the project root (e.g., `.claude/agents/worktree-create.md`).
+**Path format**: Registry paths are relative to the project root (e.g., `.claude/agents/sc-worktree-create.md`).
 
 ### Dependency Constraint Syntax
 
@@ -682,7 +682,7 @@ Audit record example:
 ```json
 {
   "timestamp": "2025-11-29T23:58:00Z",
-  "agent": "worktree-create",
+  "agent": "sc-worktree-create",
   "version_frontmatter": "1.0.0",
   "file_sha256": "1f3a...c9",
   "invoker": "agent-runner",
@@ -783,7 +783,7 @@ This section covers architectural patterns for state. Complex scenarios (concurr
 ```
 .claude/
 ├── skills/
-│   ├── managing-worktrees/
+│   ├── sc-managing-worktrees/
 │   │   ├── SKILL.md
 │   │   └── workflows.md
 │   └── publishing-nuget/
@@ -791,8 +791,8 @@ This section covers architectural patterns for state. Complex scenarios (concurr
 │       └── registry-config.md
 ├── agents/
 │   ├── registry.yaml           # Version registry + skill constraints
-│   ├── worktree-create.md
-│   ├── worktree-scan.md
+│   ├── sc-worktree-create.md
+│   ├── sc-worktree-scan.md
 │   ├── nuget-publish.md
 │   └── nuget-validation.md
 ├── state/                      # Optional: for file-based state
@@ -803,8 +803,8 @@ This section covers architectural patterns for state. Complex scenarios (concurr
 
 ### Naming Conventions
 
-- **Skills**: `<verb-ing>-<noun>/` e.g., `managing-worktrees/`
-- **Agents**: `<noun>-<verb>.md` e.g., `worktree-create.md`
+- **Skills**: `<verb-ing>-<noun>/` e.g., `sc-managing-worktrees/`
+- **Agents**: `<noun>-<verb>.md` e.g., `sc-worktree-create.md`
 - **State files**: `<operation>-<identifier>.json`
 
 ---

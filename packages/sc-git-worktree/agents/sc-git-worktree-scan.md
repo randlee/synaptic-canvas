@@ -1,5 +1,5 @@
 ---
-name: worktree-scan
+name: sc-worktree-scan
 version: 0.4.0
 description: Scan git worktrees vs tracking; report status (clean/dirty), missing/stale tracking rows, and recommended actions. No mutations.
 model: sonnet
@@ -18,7 +18,7 @@ List worktrees, cross-check the tracking doc, and report issues. Do not modify a
 
 ## Inputs
 - repo root: current repo.
-- worktree_base (optional): defaults to `../synaptic-canvas-worktrees`.
+- worktree_base (optional): defaults to `../{{REPO_NAME}}-worktrees`.
 - tracking_enabled: true/false (default true).
 - tracking_path (optional): defaults to `<worktree_base>/worktree-tracking.md` when tracking is enabled.
 

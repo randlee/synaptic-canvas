@@ -150,7 +150,7 @@ v1.0.0 API is stable. Full semver enforced from now on.
 - Key sections: System Requirements, Installation, Dependency troubleshooting
 - Example new feature: `/delay --adaptive --poll --every 30`
 
-### git-worktree (Tier 1 + Local-only)
+### sc-git-worktree (Tier 1 + Local-only)
 - Use: **Tier 1 Template** + **Universal Template**
 - Key sections: Variable Substitution ({{REPO_NAME}}), Token expansion troubleshooting
 - Example new feature: Worktree layout options, tracking document automation
@@ -288,7 +288,7 @@ packages/
 │   ├── CHANGELOG.md                 ← Detailed change log
 │   ├── RELEASE-NOTES-v0.5.0.md      ← User-friendly release (optional)
 │   └── TROUBLESHOOTING.md           ← Common issues
-├── git-worktree/
+├── sc-git-worktree/
 ├── sc-manage/
 └── repomix-nuget/
 
@@ -351,7 +351,7 @@ docs/
 
 **By Package:**
 - [delay-tasks](#package-specific-quick-picks)
-- [git-worktree](#package-specific-quick-picks)
+- [sc-git-worktree](#package-specific-quick-picks)
 - [sc-manage](#package-specific-quick-picks)
 - [repomix-nuget](#package-specific-quick-picks)
 
@@ -366,7 +366,7 @@ docs/
 2. Tier 2 (needs Python) → Add **Tier 2 section** about system requirements
 3. Copy template → Fill in {{PLACEHOLDERS}} → Test commands → Publish!
 
-**You:** "I'm releasing v0.4.1 patch of git-worktree with a token expansion bug fix"
+**You:** "I'm releasing v0.4.1 patch of sc-git-worktree with a token expansion bug fix"
 
 **Answer:**
 1. Patch release (0.4.0 → 0.4.1) → Use **Patch Release template**

@@ -1,4 +1,4 @@
-name: git-worktree
+name: sc-git-worktree
 version: 0.4.0
 description: >
   Manage git worktrees with optional tracking: create, scan, cleanup, and abort
@@ -15,14 +15,14 @@ tags:
 # Files to install (relative to package root)
 artifacts:
   commands:
-    - commands/git-worktree.md
+    - commands/sc-git-worktree.md
   skills:
-    - skills/managing-worktrees/SKILL.md
+    - skills/sc-git-worktree/SKILL.md
   agents:
-    - agents/worktree-create.md
-    - agents/worktree-scan.md
-    - agents/worktree-cleanup.md
-    - agents/worktree-abort.md
+    - agents/sc-git-sc-worktree-create.md
+    - agents/sc-git-sc-worktree-scan.md
+    - agents/sc-git-sc-worktree-cleanup.md
+    - agents/sc-git-sc-worktree-abort.md
 
 # Token substitution (Tier 1 package)
 variables:

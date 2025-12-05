@@ -1,6 +1,6 @@
-# git-worktree Troubleshooting Guide
+# sc-git-worktree Troubleshooting Guide
 
-This guide helps diagnose and resolve common issues with the git-worktree package for Synaptic Canvas.
+This guide helps diagnose and resolve common issues with the sc-git-worktree package for Synaptic Canvas.
 
 ## Quick Diagnostics
 
@@ -10,9 +10,9 @@ Run these commands to verify your setup:
 # Verify git version (requires >= 2.20)
 git --version
 
-# Check if git-worktree package is installed
-ls -la .claude/commands/git-worktree.md
-ls -la .claude/skills/managing-worktrees/
+# Check if sc-git-worktree package is installed
+ls -la .claude/commands/sc-git-worktree.md
+ls -la .claude/skills/sc-managing-worktrees/
 
 # List existing worktrees
 git worktree list
@@ -29,13 +29,13 @@ cat .claude/agents/registry.yaml | grep worktree
 
 ## Common Issues
 
-### 1. Command Not Found: `/git-worktree` Not Recognized
+### 1. Command Not Found: `/sc-git-worktree` Not Recognized
 
-**Problem:** When you run `/git-worktree`, Claude doesn't recognize the command.
+**Problem:** When you run `/sc-git-worktree`, Claude doesn't recognize the command.
 
 **Symptoms:**
 ```
-Unknown command: /git-worktree
+Unknown command: /sc-git-worktree
 ```
 
 **Root Causes:**
@@ -51,28 +51,28 @@ git rev-parse --git-dir
 # Should output: .git
 ```
 
-2. Install locally (git-worktree is local-only):
+2. Install locally (sc-git-worktree is local-only):
 ```bash
 # WRONG - global install not supported
-python3 tools/sc-install.py install git-worktree --dest ~/Documents/.claude
+python3 tools/sc-install.py install sc-git-worktree --dest ~/Documents/.claude
 
 # CORRECT - local install
-python3 tools/sc-install.py install git-worktree --dest ./.claude
+python3 tools/sc-install.py install sc-git-worktree --dest ./.claude
 ```
 
 3. Verify installation:
 ```bash
-ls .claude/commands/git-worktree.md
+ls .claude/commands/sc-git-worktree.md
 ls .claude/agents/worktree-*.md
 ```
 
 4. If missing, reinstall:
 ```bash
-python3 tools/sc-install.py install git-worktree --dest ./.claude
+python3 tools/sc-install.py install sc-git-worktree --dest ./.claude
 ```
 
 **Prevention:**
-- git-worktree is local-only by design (repo-specific operations)
+- sc-git-worktree is local-only by design (repo-specific operations)
 - Always install in the repository's `.claude` directory
 
 ---
@@ -132,12 +132,12 @@ awk -F'|' 'NR>2 {print $2}' "$TRACKING_FILE" | sort | uniq -d
 mv "$TRACKING_FILE" "$TRACKING_FILE.old"
 
 # Scan worktrees to rebuild
-/git-worktree --scan
+/sc-git-worktree --scan
 ```
 
 **Prevention:**
 - Don't manually edit tracking file during agent operations
-- Use `/git-worktree --scan` to rebuild from actual worktrees
+- Use `/sc-git-worktree --scan` to rebuild from actual worktrees
 - Enable tracking only if you need audit trail
 
 ---
@@ -203,7 +203,7 @@ rm -f .git/worktrees/*/locked
 **Prevention:**
 - Always let git operations complete
 - Don't Ctrl+C during git commands
-- Use `/git-worktree --abort` for safe cancellation
+- Use `/sc-git-worktree --abort` for safe cancellation
 
 ---
 
@@ -239,7 +239,7 @@ git worktree list
 cd "$WORKTREE_PATH"
 
 # Or remove properly
-/git-worktree --cleanup feature-x
+/sc-git-worktree --cleanup feature-x
 ```
 
 3. **If it's not registered but directory exists:**
@@ -275,7 +275,7 @@ git worktree prune
 ```
 
 **Prevention:**
-- Always use `/git-worktree --cleanup` or `--abort` to remove worktrees
+- Always use `/sc-git-worktree --cleanup` or `--abort` to remove worktrees
 - Never manually delete worktree directories without `git worktree remove`
 - Check path before creating: `ls -la ../repo-worktrees/`
 
@@ -310,10 +310,10 @@ git ls-remote --heads origin
 2. **Never commit directly to protected branches:**
 ```bash
 # WRONG - creating worktree for main
-/git-worktree --create main main
+/sc-git-worktree --create main main
 
 # CORRECT - create feature branch from main
-/git-worktree --create feature-x main
+/sc-git-worktree --create feature-x main
 ```
 
 3. **If accidentally in protected branch:**
@@ -326,8 +326,8 @@ git push origin feature-x  # Push to new branch
 4. **Use proper workflow:**
 ```bash
 # Create feature branches from protected base
-/git-worktree --create feature-123 main
-/git-worktree --create hotfix-456 release/1.0
+/sc-git-worktree --create feature-123 main
+/sc-git-worktree --create hotfix-456 release/1.0
 ```
 
 **Prevention:**
@@ -386,7 +386,7 @@ git clean -fd
 5. **Return to main repo and cleanup:**
 ```bash
 cd -  # Back to main repo
-/git-worktree --cleanup feature-x
+/sc-git-worktree --cleanup feature-x
 ```
 
 **Prevention:**
@@ -433,7 +433,7 @@ basename $(git rev-parse --show-toplevel)
 git rev-parse --show-toplevel
 
 # Reinstall (expansion is default)
-python3 tools/sc-install.py install git-worktree --dest ./.claude --force
+python3 tools/sc-install.py install sc-git-worktree --dest ./.claude --force
 ```
 
 4. **Manual fix (if needed):**
@@ -457,7 +457,7 @@ find .claude/ -name "*.bak" -delete
 
 ### 8. Cleanup Failures
 
-**Problem:** `/git-worktree --cleanup` fails to remove worktree.
+**Problem:** `/sc-git-worktree --cleanup` fails to remove worktree.
 
 **Symptoms:**
 ```
@@ -498,7 +498,7 @@ fuser -v ../repo-worktrees/feature-x
 4. **Try cleanup again:**
 ```bash
 cd -  # Back to main repo
-/git-worktree --cleanup feature-x
+/sc-git-worktree --cleanup feature-x
 ```
 
 5. **Force cleanup (CAUTION):**
@@ -608,14 +608,14 @@ Package installed to ~/Documents/.claude but commands not found
 
 **Resolution:**
 
-git-worktree is **local-only**:
+sc-git-worktree is **local-only**:
 ```bash
 # WRONG - global install
-python3 tools/sc-install.py install git-worktree --dest ~/Documents/.claude
+python3 tools/sc-install.py install sc-git-worktree --dest ~/Documents/.claude
 
 # CORRECT - local install
 cd /path/to/your/repo
-python3 tools/sc-install.py install git-worktree --dest ./.claude
+python3 tools/sc-install.py install sc-git-worktree --dest ./.claude
 ```
 
 ---
@@ -814,8 +814,8 @@ git sparse-checkout set src/
 git worktree list
 
 # Remove unused
-/git-worktree --cleanup old-feature-1
-/git-worktree --cleanup old-feature-2
+/sc-git-worktree --cleanup old-feature-1
+/sc-git-worktree --cleanup old-feature-2
 ```
 
 2. Use tracking to audit:
@@ -925,7 +925,7 @@ basename $(git rev-parse --show-toplevel)
 
 2. **Installation details:**
 ```bash
-ls -la .claude/commands/git-worktree.md
+ls -la .claude/commands/sc-git-worktree.md
 ls -la .claude/agents/worktree-*.md
 cat .claude/agents/registry.yaml | grep worktree
 ```
@@ -940,7 +940,7 @@ ls -la ../$(basename $(git rev-parse --show-toplevel))-worktrees/
 4. **Command that failed:**
 ```bash
 # Exact command
-/git-worktree --create feature-x main
+/sc-git-worktree --create feature-x main
 ```
 
 5. **Error output:**
@@ -964,9 +964,9 @@ git status
 git remote -v
 
 # Installation check
-ls -la .claude/commands/git-worktree.md
+ls -la .claude/commands/sc-git-worktree.md
 ls -la .claude/agents/worktree-*.md
-ls -la .claude/skills/managing-worktrees/
+ls -la .claude/skills/sc-managing-worktrees/
 
 # Token expansion check
 grep -r "{{REPO_NAME}}" .claude/ || echo "No tokens found (good)"
@@ -1003,7 +1003,7 @@ head -5 "$TRACKING"
 
 ### Q: Can I use worktrees outside the default sibling folder?
 
-**A:** The git-worktree package enforces a standard layout for consistency:
+**A:** The sc-git-worktree package enforces a standard layout for consistency:
 ```
 parent/
   ├── your-repo/           # Main repo
@@ -1028,7 +1028,7 @@ But you'll lose tracking and agent management features.
 
 **Always use:**
 ```bash
-/git-worktree --cleanup branch-name
+/sc-git-worktree --cleanup branch-name
 # or
 git worktree remove path/to/worktree
 ```
@@ -1039,7 +1039,7 @@ git worktree remove path/to/worktree
 
 **A:** No, worktrees are tied to their path. To "move":
 1. Commit and push all changes
-2. Cleanup old worktree: `/git-worktree --cleanup old-branch`
+2. Cleanup old worktree: `/sc-git-worktree --cleanup old-branch`
 3. Create new worktree at new location (requires custom git commands)
 
 Or just create a new worktree and delete the old one.
@@ -1089,7 +1089,7 @@ But many worktrees (>20) may slow down some operations.
 
 ---
 
-### Q: Can I use git-worktree for monorepos?
+### Q: Can I use sc-git-worktree for monorepos?
 
 **A:** Yes, excellent for monorepos:
 - Work on multiple features simultaneously
@@ -1100,7 +1100,7 @@ But tracking may become verbose with many worktrees.
 
 ---
 
-### Q: How do I update git-worktree package?
+### Q: How do I update sc-git-worktree package?
 
 **A:**
 ```bash
@@ -1111,7 +1111,7 @@ git pull origin main
 # Reinstall (force overwrites existing)
 cd /path/to/your/repo
 python3 /path/to/synaptic-canvas/tools/sc-install.py \
-  install git-worktree --dest ./.claude --force
+  install sc-git-worktree --dest ./.claude --force
 ```
 
 ---
@@ -1134,15 +1134,15 @@ git add .worktrees/
 
 ## Additional Resources
 
-- **Package README:** `packages/git-worktree/README.md`
-- **Use Cases:** `packages/git-worktree/USE-CASES.md`
-- **Changelog:** `packages/git-worktree/CHANGELOG.md`
-- **Skill Documentation:** `packages/git-worktree/skills/managing-worktrees/SKILL.md`
+- **Package README:** `packages/sc-git-worktree/README.md`
+- **Use Cases:** `packages/sc-git-worktree/USE-CASES.md`
+- **Changelog:** `packages/sc-git-worktree/CHANGELOG.md`
+- **Skill Documentation:** `packages/sc-git-worktree/skills/sc-managing-worktrees/SKILL.md`
 - **Agent Specifications:**
-  - `packages/git-worktree/agents/worktree-create.md`
-  - `packages/git-worktree/agents/worktree-scan.md`
-  - `packages/git-worktree/agents/worktree-cleanup.md`
-  - `packages/git-worktree/agents/worktree-abort.md`
+  - `packages/sc-git-worktree/agents/sc-worktree-create.md`
+  - `packages/sc-git-worktree/agents/sc-worktree-scan.md`
+  - `packages/sc-git-worktree/agents/sc-worktree-cleanup.md`
+  - `packages/sc-git-worktree/agents/sc-worktree-abort.md`
 - **Git Worktree Docs:** `git help worktree`
 - **Repository:** https://github.com/randlee/synaptic-canvas
 - **Issues:** https://github.com/randlee/synaptic-canvas/issues

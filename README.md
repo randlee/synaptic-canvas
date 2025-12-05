@@ -34,7 +34,7 @@ python3 tools/sc-install.py list
 python3 tools/sc-install.py install delay-tasks
 
 # Or specify destination for repo-specific setup
-python3 tools/sc-install.py install git-worktree --dest /path/to/repo/.claude
+python3 tools/sc-install.py install sc-git-worktree --dest /path/to/repo/.claude
 ```
 
 > **💡 Tip:** Need help? Run `scripts/security-scan.sh` to diagnose installation issues.
@@ -60,11 +60,11 @@ python3 tools/sc-install.py install git-worktree --dest /path/to/repo/.claude
 
 ---
 
-### [git-worktree](packages/git-worktree/)
-[![Stable](https://img.shields.io/badge/status-stable-green)](packages/git-worktree/CHANGELOG.md)
-[![v1.0.0](https://img.shields.io/badge/version-1.0.0-blue)](packages/git-worktree/CHANGELOG.md)
+### [sc-git-worktree](packages/sc-git-worktree/)
+[![Stable](https://img.shields.io/badge/status-stable-green)](packages/sc-git-worktree/CHANGELOG.md)
+[![v1.0.0](https://img.shields.io/badge/version-1.0.0-blue)](packages/sc-git-worktree/CHANGELOG.md)
 [![Tier 1](https://img.shields.io/badge/tier-1-yellow)](README.md#-package-tiers-explained)
-[![MIT License](https://img.shields.io/badge/license-MIT-green)](packages/git-worktree/LICENSE)
+[![MIT License](https://img.shields.io/badge/license-MIT-green)](packages/sc-git-worktree/LICENSE)
 
 **Git worktree management** — Manage parallel development with automatic tracking and safety checks.
 
@@ -74,7 +74,7 @@ python3 tools/sc-install.py install git-worktree --dest /path/to/repo/.claude
 - Track worktree state across your team
 - Clean up old worktrees with built-in safety checks
 
-📖 **[Full README](packages/git-worktree/README.md)** | 💡 **[7 Use Cases](packages/git-worktree/USE-CASES.md)** | 🔧 **[Troubleshooting](packages/git-worktree/TROUBLESHOOTING.md)** | 📋 **[Changelog](packages/git-worktree/CHANGELOG.md)**
+📖 **[Full README](packages/sc-git-worktree/README.md)** | 💡 **[7 Use Cases](packages/sc-git-worktree/USE-CASES.md)** | 🔧 **[Troubleshooting](packages/sc-git-worktree/TROUBLESHOOTING.md)** | 📋 **[Changelog](packages/sc-git-worktree/CHANGELOG.md)**
 
 ---
 
@@ -121,7 +121,7 @@ python3 tools/sc-install.py install git-worktree --dest /path/to/repo/.claude
 | Goal | Package | Link |
 |------|---------|------|
 | **Wait before checking if something is ready** | delay-tasks | [Examples](packages/delay-tasks/USE-CASES.md) |
-| **Work on multiple branches simultaneously** | git-worktree | [Guide](packages/git-worktree/USE-CASES.md) |
+| **Work on multiple branches simultaneously** | sc-git-worktree | [Guide](packages/sc-git-worktree/USE-CASES.md) |
 | **Analyze a C# project with AI** | repomix-nuget | [Examples](packages/repomix-nuget/USE-CASES.md) |
 | **Discover & install packages** | sc-manage | [Guide](packages/sc-manage/USE-CASES.md) |
 | **See all available packages** | Any | [Registry](docs/registries/nuget/registry.json) |
@@ -133,7 +133,7 @@ python3 tools/sc-install.py install git-worktree --dest /path/to/repo/.claude
 | Package | Type | Status | Version | Tier | Requirements |
 |---------|------|--------|---------|------|--------------|
 | delay-tasks | Utilities | ✅ Stable | 1.0.0 | 0 | Python 3.6+ |
-| git-worktree | Git Tools | ✅ Stable | 1.0.0 | 1 | Git 2.7.0+ |
+| sc-git-worktree | Git Tools | ✅ Stable | 1.0.0 | 1 | Git 2.7.0+ |
 | sc-manage | Package Mgr | 🟡 Beta | 0.4.0 | 0 | Python 3.6+ |
 | repomix-nuget | Analysis | 🟡 Beta | 0.4.0 | 2 | Node 18+, .NET SDK |
 
@@ -211,7 +211,7 @@ Every package in Synaptic Canvas is:
 ### Tier 1: Token Substitution
 - Auto-replaces variables like `{{REPO_NAME}}`
 - Customizes to your project automatically
-- Example: `git-worktree`
+- Example: `sc-git-worktree`
 - Setup time: 1-2 minutes
 
 ### Tier 2: Runtime Dependencies

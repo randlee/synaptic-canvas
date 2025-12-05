@@ -117,12 +117,12 @@ Available packages:
 
   Install with: /marketplace install delay-tasks --global
 
-• git-worktree (v0.4.0) - beta
+• sc-git-worktree (v0.4.0) - beta
   "Create, manage, scan, and clean up git worktrees for parallel development"
   Tags: git, worktree, branches, development, parallel
   Artifacts: 1 command, 1 skill, 4 agents
 
-  Install with: /marketplace install git-worktree --global
+  Install with: /marketplace install sc-git-worktree --global
 ```
 
 **Details format:**
@@ -292,7 +292,7 @@ Found 1 package matching "delay scheduling":
 ```
 Found 1 package with tag "git":
 
-• git-worktree (v0.4.0)
+• sc-git-worktree (v0.4.0)
   [details...]
 ```
 
@@ -316,7 +316,7 @@ Tell me more about delay-tasks
 
 **User request:**
 ```
-Compare delay-tasks and git-worktree
+Compare delay-tasks and sc-git-worktree
 ```
 
 **Agent action:**
@@ -335,7 +335,7 @@ delay-tasks (v0.4.0)
 - Tags: delay, polling, tasks, ci, automation
 - Use for: CI/CD workflows, polling, scheduled checks
 
-git-worktree (v0.4.0)
+sc-git-worktree (v0.4.0)
 - Purpose: Git worktree management
 - Artifacts: 1 command, 1 skill, 4 agents
 - Tags: git, worktree, branches, development, parallel

@@ -154,7 +154,7 @@ Marketplace Version: 0.4.0 → 0.5.0 (MINOR - new features)
 
 Packages:
   - delay-tasks: 0.4.0 → 0.5.0 (new agent, feature)
-  - git-worktree: 0.4.0 → 0.4.1 (bugfix only)
+  - sc-git-worktree: 0.4.0 → 0.4.1 (bugfix only)
   - sc-manage: 0.4.0 (no change)
   - repomix-nuget: 0.4.0 (no change)
 
@@ -324,7 +324,7 @@ done
   # Manual verification:
   python3 -c "
   import yaml
-  for pkg in ['delay-tasks', 'git-worktree', 'sc-manage', 'repomix-nuget']:
+  for pkg in ['delay-tasks', 'sc-git-worktree', 'sc-manage', 'repomix-nuget']:
     with open(f'packages/{pkg}/manifest.yaml') as f:
       data = yaml.safe_load(f)
       print(f'{pkg}: v{data[\"version\"]}')
@@ -641,7 +641,7 @@ See packages/delay-tasks/CHANGELOG.md"
 git tag -a v0.5.0-all -m "All packages v0.5.0 release
 
 - delay-tasks v0.5.0
-- git-worktree v0.5.0
+- sc-git-worktree v0.5.0
 - sc-manage v0.5.0
 - repomix-nuget v0.5.0
 
@@ -801,7 +801,7 @@ New registry format (v2.0.0), enhanced installer, and improved error handling.
 
 **[View full CHANGELOG](https://github.com/randlee/synaptic-canvas/blob/main/packages/delay-tasks/CHANGELOG.md)**
 
-#### git-worktree v0.4.0 (no changes)
+#### sc-git-worktree v0.4.0 (no changes)
 
 #### sc-manage v0.4.0 (no changes)
 
@@ -1046,7 +1046,7 @@ with open('docs/registries/nuget/registry.json') as f:
 
 ### Scenario 3: All Packages Simultaneous Release
 
-**Example:** Release delay-tasks v0.5.0, git-worktree v0.4.1, repomix-nuget v0.5.0
+**Example:** Release delay-tasks v0.5.0, sc-git-worktree v0.4.1, repomix-nuget v0.5.0
 
 **Note:** Marketplace version stays at 0.4.0
 
@@ -1060,7 +1060,7 @@ with open('docs/registries/nuget/registry.json') as f:
 2. **Update packages individually:**
    ```bash
    python3 scripts/sync-versions.py --package delay-tasks --version 0.5.0
-   python3 scripts/sync-versions.py --package git-worktree --version 0.4.1
+   python3 scripts/sync-versions.py --package sc-git-worktree --version 0.4.1
    python3 scripts/sync-versions.py --package repomix-nuget --version 0.5.0
    ```
 
@@ -1069,7 +1069,7 @@ with open('docs/registries/nuget/registry.json') as f:
    DATE=$(date +%Y-%m-%d)
 
    sed -i "s/## \[Unreleased\]/## [0.5.0] - $DATE/" packages/delay-tasks/CHANGELOG.md
-   sed -i "s/## \[Unreleased\]/## [0.4.1] - $DATE/" packages/git-worktree/CHANGELOG.md
+   sed -i "s/## \[Unreleased\]/## [0.4.1] - $DATE/" packages/sc-git-worktree/CHANGELOG.md
    sed -i "s/## \[Unreleased\]/## [0.5.0] - $DATE/" packages/repomix-nuget/CHANGELOG.md
    ```
 
@@ -1084,14 +1084,14 @@ with open('docs/registries/nuget/registry.json') as f:
    git commit -m "chore: release multiple packages
 
 - delay-tasks v0.5.0 with new scheduler
-- git-worktree v0.4.1 with bugfixes
+- sc-git-worktree v0.4.1 with bugfixes
 - repomix-nuget v0.5.0 with enhancements"
    ```
 
 6. **Create individual tags:**
    ```bash
    git tag -a v0.5.0-delay-tasks -m "delay-tasks v0.5.0"
-   git tag -a v0.4.1-git-worktree -m "git-worktree v0.4.1"
+   git tag -a v0.4.1-sc-git-worktree -m "sc-git-worktree v0.4.1"
    git tag -a v0.5.0-repomix-nuget -m "repomix-nuget v0.5.0"
    git push origin --tags
    ```
@@ -1331,7 +1331,7 @@ fi
 
 ### Package Updates
 - **delay-tasks v0.5.0** - New persistent scheduler
-- **git-worktree v0.4.0** - No changes
+- **sc-git-worktree v0.4.0** - No changes
 - **sc-manage v0.4.0** - No changes
 - **repomix-nuget v0.4.0** - No changes
 

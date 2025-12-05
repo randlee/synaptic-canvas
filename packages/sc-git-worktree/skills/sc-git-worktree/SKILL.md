@@ -1,5 +1,5 @@
 ---
-name: managing-worktrees
+name: sc-managing-worktrees
 description: >
   Create, manage, scan, and clean up git worktrees for parallel development.
   Use when working on multiple branches simultaneously, isolating experiments,
@@ -10,7 +10,7 @@ version: 0.4.0
 
 # Managing Git Worktrees
 
-Use this skill to manage worktrees with a standard structure and tracking. Use the `/git-worktree` command to invoke this skill.
+Use this skill to manage worktrees with a standard structure and tracking. Use the `/sc-git-worktree` command to invoke this skill.
 
 ## Agent Delegation
 
@@ -18,10 +18,10 @@ This skill delegates to specialized agents via the **Task tool**:
 
 | Operation | Agent | Returns |
 |-----------|-------|---------|
-| Create | `worktree-create` | JSON: success, path, branch, tracking_row |
-| Scan | `worktree-scan` | JSON: success, worktrees list, recommendations |
-| Cleanup | `worktree-cleanup` | JSON: success, branch_deleted, tracking_update |
-| Abort | `worktree-abort` | JSON: success, worktree_removed, tracking_update |
+| Create | `sc-worktree-create` | JSON: success, path, branch, tracking_row |
+| Scan | `sc-worktree-scan` | JSON: success, worktrees list, recommendations |
+| Cleanup | `sc-worktree-cleanup` | JSON: success, branch_deleted, tracking_update |
+| Abort | `sc-worktree-abort` | JSON: success, worktree_removed, tracking_update |
 
 To invoke an agent, use the Task tool with:
 - Prompt file: `.claude/agents/<agent-name>.md`
@@ -52,7 +52,7 @@ To invoke an agent, use the Task tool with:
    - If branch exists: `git worktree add <path> <branch>`.
 6) In the new worktree, ensure hooks apply and verify status is clean.
 7) If tracking enabled, add/refresh entry in tracking doc (branch, path, base, purpose, owner, created date, status).
-8) Agent option: delegate to `worktree-create` agent; it returns structured JSON (tracking row, status).
+8) Agent option: delegate to `sc-worktree-create` agent; it returns structured JSON (tracking row, status).
 
 ### Scan/verify worktrees
 1) List worktrees: `git worktree list --porcelain`.
@@ -63,7 +63,7 @@ To invoke an agent, use the Task tool with:
    - `git branch --remotes --contains <branch>` to see if merged.
 4) Identify issues: untracked changes, diverged branches, merged-but-not-cleaned worktrees, missing tracking entries.
 5) Update tracking doc with current state and issues (if enabled); propose cleanup where appropriate.
-6) Agent option: delegate to `worktree-scan` agent; it returns structured JSON.
+6) Agent option: delegate to `sc-worktree-scan` agent; it returns structured JSON.
 
 ### Clean-up worktree (post-merge or finished work)
 1) If `git status` is not clean, stop and request explicit approval/coordination.
@@ -72,7 +72,7 @@ To invoke an agent, use the Task tool with:
 4) Remove worktree: `git worktree remove <path>` (use `--force` only with approval).
 5) If merged and no unique commits, delete the branch locally (`git branch -d <branch>`) and remotely (`git push origin --delete <branch>`) by default; only skip if the user explicitly opts out. If the remote branch is already absent, continue without error. If not merged, only delete with explicit approval.
 6) If tracking enabled, update tracking doc to remove/mark cleaned with merge SHA/date.
-7) Agent option: delegate to `worktree-cleanup` agent; it returns structured JSON.
+7) Agent option: delegate to `sc-worktree-cleanup` agent; it returns structured JSON.
 
 ### Abandon worktree (discard work)
 1) If `git status` is not clean, stop and request explicit approval/coordination.
@@ -80,7 +80,7 @@ To invoke an agent, use the Task tool with:
 2) Remove worktree: `git worktree remove <path>` (force only with approval).
 3) If instructed, delete the branch locally (`git branch -D <branch>`) and remotely (`git push origin --delete <branch>`).
 4) If tracking enabled, update tracking doc to remove the entry and note abandonment.
-5) Agent option: delegate to `worktree-abort` agent; it returns structured JSON.
+5) Agent option: delegate to `sc-worktree-abort` agent; it returns structured JSON.
 
 ## Safety and reminders
 - Never delete branches or force-remove worktrees without explicit approval.

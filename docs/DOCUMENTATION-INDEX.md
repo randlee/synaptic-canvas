@@ -59,7 +59,7 @@ Each package in `packages/*/` maintains its own documentation:
 | Package | Version | Purpose | Key Files |
 |---------|---------|---------|-----------|
 | **delay-tasks** | 0.4.0 | Delayed/polled task execution | [README](../packages/delay-tasks/README.md) |
-| **git-worktree** | 0.4.0 | Git worktree management | [README](../packages/git-worktree/README.md) |
+| **sc-git-worktree** | 0.4.0 | Git worktree management | [README](../packages/sc-git-worktree/README.md) |
 | **sc-manage** | 0.4.0 | Synaptic Canvas package manager | [README](../packages/sc-manage/README.md) |
 | **repomix-nuget** | 0.4.0 | NuGet context generation | [README](../packages/repomix-nuget/README.md) |
 
@@ -122,7 +122,7 @@ synaptic-canvas/
 │   └── ...
 ├── packages/                      # Installable packages
 │   ├── delay-tasks/               # Package 1
-│   ├── git-worktree/              # Package 2
+│   ├── sc-git-worktree/              # Package 2
 │   ├── sc-manage/                 # Package 3
 │   └── repomix-nuget/             # Package 4
 ├── scripts/                       # Utility scripts
@@ -169,7 +169,7 @@ python3 tools/sc-install.py install delay-tasks --dest /path/to/.claude
 
 **Updating package version:**
 ```bash
-python3 scripts/sync-versions.py --package git-worktree --version 0.5.0
+python3 scripts/sync-versions.py --package sc-git-worktree --version 0.5.0
 ```
 
 **Running tests:**

@@ -24,7 +24,7 @@ Key components:
 - `.github/workflows/tests.yml` runs CI across major OSes on Python 3.12
 
 Representative packages:
-- `packages/git-worktree/` (Tier 1): installs commands/skills/agents to manage Git worktrees; uses `{{REPO_NAME}}` tokens resolved from the Git toplevel
+- `packages/sc-git-worktree/` (Tier 1): installs commands/skills/agents to manage Git worktrees; uses `{{REPO_NAME}}` tokens resolved from the Git toplevel
 - `packages/delay-tasks/` (Tier 0): installs delay commands/skills/agents and a helper script; no token substitution
 
 ## Dev environment and prerequisites
@@ -55,11 +55,11 @@ Installer usage (from repo root):
   - Bash: `./tools/sc-install.sh list`
   - Python: `python3 tools/sc-install.py list`
 - Show package manifest:
-  - `python3 tools/sc-install.py info git-worktree`
+  - `python3 tools/sc-install.py info sc-git-worktree`
 - Install to another repo's `.claude/` directory (token substitution if defined in manifest):
-  - `python3 tools/sc-install.py install git-worktree --dest /path/to/your-repo/.claude`
+  - `python3 tools/sc-install.py install sc-git-worktree --dest /path/to/your-repo/.claude`
 - Uninstall from `.claude/`:
-  - `python3 tools/sc-install.py uninstall git-worktree --dest /path/to/your-repo/.claude`
+  - `python3 tools/sc-install.py uninstall sc-git-worktree --dest /path/to/your-repo/.claude`
 
 Delay helper (local runs without installing):
 - Python module: `python3 -m sc_cli.delay_run --minutes 2 --action "go"`
@@ -72,7 +72,7 @@ Lint/build:
 ## Big-picture architecture
 
 1) Packages and manifests
-- Each package has a `manifest.yaml` that declares `artifacts` to copy into a target `.claude/` directory. Optional `variables` allow token substitution during install. In Tier 1 packages (e.g., `git-worktree`), `REPO_NAME` is auto-resolved from the Git toplevel of the destination repo.
+- Each package has a `manifest.yaml` that declares `artifacts` to copy into a target `.claude/` directory. Optional `variables` allow token substitution during install. In Tier 1 packages (e.g., `sc-git-worktree`), `REPO_NAME` is auto-resolved from the Git toplevel of the destination repo.
 
 2) Installer flow (Bash or Python)
 - list/info: enumerates packages and prints `manifest.yaml`

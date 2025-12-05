@@ -10,18 +10,18 @@ agents:
     path: .claude/agents/skill-review-agent.md
 
   # Worktree management agents
-  worktree-create:
+  sc-worktree-create:
     version: 0.4.0
-    path: .claude/agents/worktree-create.md
-  worktree-scan:
+    path: .claude/agents/sc-worktree-create.md
+  sc-worktree-scan:
     version: 0.4.0
-    path: .claude/agents/worktree-scan.md
-  worktree-cleanup:
+    path: .claude/agents/sc-worktree-scan.md
+  sc-worktree-cleanup:
     version: 0.4.0
-    path: .claude/agents/worktree-cleanup.md
-  worktree-abort:
+    path: .claude/agents/sc-worktree-cleanup.md
+  sc-worktree-abort:
     version: 0.4.0
-    path: .claude/agents/worktree-abort.md
+    path: .claude/agents/sc-worktree-abort.md
 
   # GitHub issue management agents
   issue-intake-agent:
@@ -67,12 +67,12 @@ skills:
       skill-planning-agent: 0.x
       skill-review-agent: 0.x
 
-  managing-worktrees:
+  sc-managing-worktrees:
     depends_on:
-      worktree-create: 0.x
-      worktree-scan: 0.x
-      worktree-cleanup: 0.x
-      worktree-abort: 0.x
+      sc-worktree-create: 0.x
+      sc-worktree-scan: 0.x
+      sc-worktree-cleanup: 0.x
+      sc-worktree-abort: 0.x
 
   github-issue:
     depends_on:
@@ -80,7 +80,7 @@ skills:
       issue-mutate-agent: 0.x
       issue-fix-agent: 0.x
       issue-pr-agent: 0.x
-      managing-worktrees: 0.x
+      sc-managing-worktrees: 0.x
 
   ci-automation:
     depends_on:
@@ -91,5 +91,5 @@ skills:
       ci-fix-agent: 0.x
       ci-root-cause-agent: 0.x
       ci-pr-agent: 0.x
-      managing-worktrees: 0.x
+      sc-managing-worktrees: 0.x
     entry_point: /ci-automation

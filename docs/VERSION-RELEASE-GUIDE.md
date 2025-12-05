@@ -54,7 +54,7 @@ Synaptic Canvas uses **Semantic Versioning (SemVer)** format: `MAJOR.MINOR.PATCH
 |-----------|---------|--------|----------|
 | **Marketplace** | 0.4.0 | Beta | `version.yaml` |
 | **delay-tasks** | 0.4.0 | Beta | `packages/delay-tasks/manifest.yaml` |
-| **git-worktree** | 0.4.0 | Beta | `packages/git-worktree/manifest.yaml` |
+| **sc-git-worktree** | 0.4.0 | Beta | `packages/sc-git-worktree/manifest.yaml` |
 | **sc-manage** | 0.4.0 | Beta | `packages/sc-manage/manifest.yaml` |
 | **repomix-nuget** | 0.4.0 | Beta | `packages/repomix-nuget/manifest.yaml` |
 | **Registry Format** | 2.0.0 | Stable | `docs/registries/nuget/registry.json` |
@@ -201,7 +201,7 @@ Before making any version changes, audit the current state using provided script
 # === Synaptic Canvas Version Comparison ===
 # Marketplace Version: 0.4.0
 # Package: delay-tasks (manifest: 0.4.0)
-# Package: git-worktree (manifest: 0.4.0)
+# Package: sc-git-worktree (manifest: 0.4.0)
 # ...
 
 # Find only packages with mismatches
@@ -427,8 +427,8 @@ python3 scripts/sync-versions.py --all --version 1.0.0 --dry-run
 #   ✓ Updated: packages/delay-tasks/commands/delay.md
 #   ... (5 more files)
 # Updated 6 file(s) in delay-tasks
-# Syncing git-worktree to version 1.0.0...
-#   ✓ Updated: packages/git-worktree/manifest.yaml
+# Syncing sc-git-worktree to version 1.0.0...
+#   ✓ Updated: packages/sc-git-worktree/manifest.yaml
 # ... (repeated for each package)
 
 # Apply changes and commit
@@ -470,7 +470,7 @@ for f in Path('.').glob('packages/*/manifest.yaml'):
 # Step 3: Spot-check a few files
 grep "^version:" packages/delay-tasks/manifest.yaml
 grep "^version:" packages/delay-tasks/commands/delay.md
-grep "^version:" packages/git-worktree/manifest.yaml
+grep "^version:" packages/sc-git-worktree/manifest.yaml
 
 # Step 4: Run audit to confirm consistency
 ./scripts/audit-versions.sh
@@ -546,7 +546,7 @@ Shows versions across packages side-by-side.
 Marketplace Version: 0.4.0
 
 Package: delay-tasks (manifest: 0.4.0)
-Package: git-worktree (manifest: 0.4.0)
+Package: sc-git-worktree (manifest: 0.4.0)
 Package: repomix-nuget (manifest: 0.4.0)
 Package: sc-manage (manifest: 0.4.0)
 
@@ -705,7 +705,7 @@ git checkout -b release/v1.0.0
 # - Update all descriptions
 # Example for each package:
 vim packages/delay-tasks/CHANGELOG.md      # Update to [1.0.0] - 2025-12-15
-vim packages/git-worktree/CHANGELOG.md
+vim packages/sc-git-worktree/CHANGELOG.md
 vim packages/sc-manage/CHANGELOG.md
 vim packages/repomix-nuget/CHANGELOG.md
 
@@ -724,7 +724,7 @@ git commit -m "chore(release): v1.0.0 - Production Release
 
 All packages and marketplace upgraded to v1.0.0:
 - delay-tasks: Added exponential backoff support
-- git-worktree: Enhanced worktree cleanup
+- sc-git-worktree: Enhanced worktree cleanup
 - sc-manage: Improved package resolution
 - repomix-nuget: Production-ready NuGet integration"
 
@@ -754,11 +754,11 @@ git push origin main
 
 ### Scenario 2: Single Package with Dependencies
 
-**Situation:** Release new version of delay-tasks that requires specific git-worktree version
+**Situation:** Release new version of delay-tasks that requires specific sc-git-worktree version
 
 **Release Plan:**
 - delay-tasks 0.4.0 → 0.5.0 (new features)
-- git-worktree remains 0.4.0 (no changes)
+- sc-git-worktree remains 0.4.0 (no changes)
 - Document dependency relationship
 
 **Execution Steps:**
@@ -775,7 +775,7 @@ vim packages/delay-tasks/CHANGELOG.md
 # - Exponential backoff agent
 # - Conditional delay support
 # ### Dependencies
-# - Requires: git-worktree >= 0.4.0
+# - Requires: sc-git-worktree >= 0.4.0
 
 # Step 3: Sync delay-tasks version only
 python3 scripts/sync-versions.py --package delay-tasks --version 0.5.0
@@ -783,7 +783,7 @@ python3 scripts/sync-versions.py --package delay-tasks --version 0.5.0
 # Step 4: Verify no cross-package impact
 ./scripts/compare-versions.sh --verbose
 
-# Expected: git-worktree still 0.4.0, delay-tasks now 0.5.0
+# Expected: sc-git-worktree still 0.4.0, delay-tasks now 0.5.0
 
 # Step 5: Commit
 git add packages/delay-tasks/
@@ -794,7 +794,7 @@ Added:
 - Conditional delay with environment variable support
 - Improved timeout handling
 
-Depends on: git-worktree >= 0.4.0"
+Depends on: sc-git-worktree >= 0.4.0"
 
 git push origin feature/delay-tasks-v0.5
 
@@ -802,7 +802,7 @@ git push origin feature/delay-tasks-v0.5
 gh pr create --title "Release delay-tasks v0.5.0" \
   --body "New features for delay-tasks
 
-Dependencies: Requires git-worktree v0.4.0 or later
+Dependencies: Requires sc-git-worktree v0.4.0 or later
 
 This release is backward compatible with existing installations."
 ```
@@ -812,7 +812,7 @@ This release is backward compatible with existing installations."
 **Situation:** Different packages have different release schedules
 
 **Release Plan:**
-- Week 1: git-worktree 0.4.0 → 0.4.1 (bug fix)
+- Week 1: sc-git-worktree 0.4.0 → 0.4.1 (bug fix)
 - Week 2: delay-tasks 0.4.0 → 0.5.0 (new features)
 - Week 3: sc-manage 0.4.0 → 0.5.0 (new features)
 - Week 4: repomix-nuget 0.4.0 → 0.5.0 (new features)
@@ -820,21 +820,21 @@ This release is backward compatible with existing installations."
 **Execution (per package):**
 
 ```bash
-# WEEK 1: git-worktree patch
+# WEEK 1: sc-git-worktree patch
 
-git checkout -b hotfix/git-worktree-0.4.1
-vim packages/git-worktree/CHANGELOG.md  # Add [0.4.1] entry
-python3 scripts/sync-versions.py --package git-worktree --version 0.4.1
+git checkout -b hotfix/sc-git-worktree-0.4.1
+vim packages/sc-git-worktree/CHANGELOG.md  # Add [0.4.1] entry
+python3 scripts/sync-versions.py --package sc-git-worktree --version 0.4.1
 ./scripts/audit-versions.sh
-git add packages/git-worktree/
-git commit -m "fix(release): git-worktree v0.4.1 - Worktree cleanup fix"
-git push origin hotfix/git-worktree-0.4.1
+git add packages/sc-git-worktree/
+git commit -m "fix(release): sc-git-worktree v0.4.1 - Worktree cleanup fix"
+git push origin hotfix/sc-git-worktree-0.4.1
 
 # (After PR review and merge)
 git checkout main
-git merge hotfix/git-worktree-0.4.1
-git tag -a v0.4.1-git-worktree -m "git-worktree v0.4.1"
-git push origin main v0.4.1-git-worktree
+git merge hotfix/sc-git-worktree-0.4.1
+git tag -a v0.4.1-sc-git-worktree -m "sc-git-worktree v0.4.1"
+git push origin main v0.4.1-sc-git-worktree
 
 ---
 
@@ -850,7 +850,7 @@ git push origin feature/delay-tasks-0.5
 
 # (After PR review and merge)
 git checkout main
-git pull  # Get latest including git-worktree 0.4.1
+git pull  # Get latest including sc-git-worktree 0.4.1
 git merge feature/delay-tasks-0.5
 git tag -a v0.5.0-delay-tasks -m "delay-tasks v0.5.0"
 git push origin main v0.5.0-delay-tasks
@@ -861,27 +861,27 @@ git push origin main v0.5.0-delay-tasks
 **Version state over time:**
 
 ```
-Week 1 (git-worktree 0.4.1):
+Week 1 (sc-git-worktree 0.4.1):
   delay-tasks:    0.4.0 → 0.4.0
-  git-worktree:   0.4.0 → 0.4.1  ← moved
+  sc-git-worktree:   0.4.0 → 0.4.1  ← moved
   sc-manage:      0.4.0 → 0.4.0
   repomix-nuget:  0.4.0 → 0.4.0
 
 Week 2 (delay-tasks 0.5.0):
   delay-tasks:    0.4.0 → 0.5.0  ← moved
-  git-worktree:   0.4.1 → 0.4.1
+  sc-git-worktree:   0.4.1 → 0.4.1
   sc-manage:      0.4.0 → 0.4.0
   repomix-nuget:  0.4.0 → 0.4.0
 
 Week 3 (sc-manage 0.5.0):
   delay-tasks:    0.5.0 → 0.5.0
-  git-worktree:   0.4.1 → 0.4.1
+  sc-git-worktree:   0.4.1 → 0.4.1
   sc-manage:      0.4.0 → 0.5.0  ← moved
   repomix-nuget:  0.4.0 → 0.4.0
 
 Week 4 (repomix-nuget 0.5.0):
   delay-tasks:    0.5.0 → 0.5.0
-  git-worktree:   0.4.1 → 0.4.1
+  sc-git-worktree:   0.4.1 → 0.4.1
   sc-manage:      0.5.0 → 0.5.0
   repomix-nuget:  0.4.0 → 0.5.0  ← moved
 ```
@@ -918,7 +918,7 @@ done
 
 # Step 4: Update each package individually
 python3 scripts/sync-versions.py --package delay-tasks --version 0.5.1
-python3 scripts/sync-versions.py --package git-worktree --version 0.4.2
+python3 scripts/sync-versions.py --package sc-git-worktree --version 0.4.2
 python3 scripts/sync-versions.py --package sc-manage --version 0.5.1
 python3 scripts/sync-versions.py --package repomix-nuget --version 0.5.1
 
@@ -933,7 +933,7 @@ URGENT: All users must upgrade immediately
 
 Security fixes:
 - delay-tasks v0.5.1: Fixed XYZ vulnerability
-- git-worktree v0.4.2: Fixed XYZ vulnerability
+- sc-git-worktree v0.4.2: Fixed XYZ vulnerability
 - sc-manage v0.5.1: Fixed XYZ vulnerability
 - repomix-nuget v0.5.1: Fixed XYZ vulnerability
 
@@ -975,8 +975,8 @@ git push origin main v0.5.1-security-patch
 Marketplace v1.0.0 can install:
   ✓ delay-tasks v0.5.0
   ✓ delay-tasks v0.5.1
-  ✓ git-worktree v0.4.1
-  ✓ git-worktree v0.5.0
+  ✓ sc-git-worktree v0.4.1
+  ✓ sc-git-worktree v0.5.0
   ✓ Any package in registry
 ```
 
@@ -1000,7 +1000,7 @@ Document dependencies between packages clearly:
 ```yaml
 # In manifest.yaml for dependent packages
 dependencies:
-  - name: git-worktree
+  - name: sc-git-worktree
     version: ">=0.4.0"
     required_for: "Worktree context features"
 ```
@@ -1091,14 +1091,14 @@ If releasing multiple packages, ensure feature consistency:
 ```
 BEFORE v1.0.0 release:
   delay-tasks:    0.4.0 (beta)
-  git-worktree:   0.4.0 (beta)
+  sc-git-worktree:   0.4.0 (beta)
   sc-manage:      0.4.0 (beta)
   repomix-nuget:  0.4.0 (beta)
   Marketplace:    0.4.0 (beta)
 
 AFTER v1.0.0 release:
   delay-tasks:    1.0.0 (stable) ← aligned
-  git-worktree:   1.0.0 (stable) ← aligned
+  sc-git-worktree:   1.0.0 (stable) ← aligned
   sc-manage:      1.0.0 (stable) ← aligned
   repomix-nuget:  1.0.0 (stable) ← aligned
   Marketplace:    1.0.0 (stable) ← aligned
@@ -1509,7 +1509,7 @@ git push origin main --follow-tags
 - [x] Local testing complete
 
 ### Dependency Notes
-- Requires: git-worktree >= 0.4.0
+- Requires: sc-git-worktree >= 0.4.0
 - Marketplace: >= 0.4.0
 
 ### Breaking Changes
@@ -1667,7 +1667,7 @@ git push origin main
 # All versions consistent!
 ```
 
-### Example 2: Patch git-worktree v0.4.1 (Bug Fix)
+### Example 2: Patch sc-git-worktree v0.4.1 (Bug Fix)
 
 **Scenario:** Critical bug fix only, no new features.
 
@@ -1679,10 +1679,10 @@ git checkout main
 git pull
 
 # 2. Create hotfix branch (even though not emergency, use for consistency)
-git checkout -b feature/git-worktree-v0.4.1
+git checkout -b feature/sc-git-worktree-v0.4.1
 
 # 3. Update CHANGELOG.md
-vim packages/git-worktree/CHANGELOG.md
+vim packages/sc-git-worktree/CHANGELOG.md
 # Change:
 #   ## [Unreleased]
 # To:
@@ -1691,36 +1691,36 @@ vim packages/git-worktree/CHANGELOG.md
 #   - Incorrect worktree path resolution on Windows
 #   - Status check timeout in cleanup operation
 
-git add packages/git-worktree/CHANGELOG.md
+git add packages/sc-git-worktree/CHANGELOG.md
 git commit -m "docs: prepare CHANGELOG for v0.4.1 release"
 
 # 4. Make bug fix
-vim packages/git-worktree/scripts/worktree-cleanup.sh
+vim packages/sc-git-worktree/scripts/sc-worktree-cleanup.sh
 # Fix: Update path resolution logic
-git add packages/git-worktree/scripts/
+git add packages/sc-git-worktree/scripts/
 git commit -m "fix: correct worktree path resolution on Windows"
 
-vim packages/git-worktree/agents/worktree-cleanup.md
+vim packages/sc-git-worktree/agents/sc-worktree-cleanup.md
 # Fix: Add timeout parameter to status check
-git add packages/git-worktree/agents/
+git add packages/sc-git-worktree/agents/
 git commit -m "fix: add configurable timeout to status check in cleanup"
 
 # 5. Sync versions to 0.4.1
-python3 scripts/sync-versions.py --package git-worktree --version 0.4.1
+python3 scripts/sync-versions.py --package sc-git-worktree --version 0.4.1
 
 # 6. Verify
 ./scripts/audit-versions.sh
 
 # 7. Commit version sync
-git add packages/git-worktree/
-git commit -m "chore: bump git-worktree to v0.4.1"
+git add packages/sc-git-worktree/
+git commit -m "chore: bump sc-git-worktree to v0.4.1"
 
 # 8. Push
-git push origin feature/git-worktree-v0.4.1
+git push origin feature/sc-git-worktree-v0.4.1
 
 # 9. Create PR (note: patch release = faster review)
 gh pr create \
-  --title "Patch git-worktree v0.4.1 - Bug fixes" \
+  --title "Patch sc-git-worktree v0.4.1 - Bug fixes" \
   --body "## Summary
 
 Patch release with critical bug fixes.
@@ -1741,10 +1741,10 @@ Patch release with critical bug fixes.
 
 # 10. After review, merge
 git checkout main
-git merge --ff-only feature/git-worktree-v0.4.1
+git merge --ff-only feature/sc-git-worktree-v0.4.1
 
 # 11. Tag release
-git tag -a v0.4.1-git-worktree -m "git-worktree v0.4.1
+git tag -a v0.4.1-sc-git-worktree -m "sc-git-worktree v0.4.1
 
 Bug fixes:
 - Windows path resolution
@@ -1752,14 +1752,14 @@ Bug fixes:
 
 # 12. Push
 git push origin main
-git push origin v0.4.1-git-worktree
+git push origin v0.4.1-sc-git-worktree
 
 # 13. Update registry
 vim docs/registries/nuget/registry.json
-# Change git-worktree version from 0.4.0 to 0.4.1
+# Change sc-git-worktree version from 0.4.0 to 0.4.1
 
 git add docs/registries/nuget/registry.json
-git commit -m "chore(registry): update git-worktree to v0.4.1"
+git commit -m "chore(registry): update sc-git-worktree to v0.4.1"
 git push origin main
 ```
 
@@ -1779,7 +1779,7 @@ git status  # Should show nothing to commit
 git checkout -b release/v1.0.0
 
 # 3. Update all CHANGELOGs to version 1.0.0
-for pkg in packages/{delay-tasks,git-worktree,sc-manage,repomix-nuget}; do
+for pkg in packages/{delay-tasks,sc-git-worktree,sc-manage,repomix-nuget}; do
   vim "$pkg/CHANGELOG.md"
   # Change all [Unreleased] → [1.0.0] - 2025-12-15
   # Add status: "Production Release - Stable"
@@ -1844,7 +1844,7 @@ Production release of Synaptic Canvas v1.0.0.
 ## Version Changes
 - Marketplace: 0.4.0 → 1.0.0
 - delay-tasks: 0.4.0 → 1.0.0
-- git-worktree: 0.4.0 → 1.0.0
+- sc-git-worktree: 0.4.0 → 1.0.0
 - sc-manage: 0.4.0 → 1.0.0
 - repomix-nuget: 0.4.0 → 1.0.0
 
@@ -1861,7 +1861,7 @@ Production release of Synaptic Canvas v1.0.0.
 - Conditional delay support
 - Improved timeout handling
 
-### git-worktree
+### sc-git-worktree
 - Full worktree lifecycle management
 - Cross-platform path resolution
 - Enhanced status tracking
@@ -1907,7 +1907,7 @@ All packages upgraded to production-ready status.
 
 Included:
 - delay-tasks v1.0.0
-- git-worktree v1.0.0
+- sc-git-worktree v1.0.0
 - sc-manage v1.0.0
 - repomix-nuget v1.0.0
 - Marketplace v1.0.0
@@ -1929,7 +1929,7 @@ git push origin --delete release/v1.0.0
 # === Synaptic Canvas Version Comparison ===
 # Marketplace Version: 1.0.0
 # Package: delay-tasks (manifest: 1.0.0)
-# Package: git-worktree (manifest: 1.0.0)
+# Package: sc-git-worktree (manifest: 1.0.0)
 # Package: repomix-nuget (manifest: 1.0.0)
 # Package: sc-manage (manifest: 1.0.0)
 # All versions consistent!
@@ -1948,7 +1948,7 @@ git pull
 git checkout -b hotfix/CVE-2025-XXXXX
 
 # 2. Update all CHANGELOGs with security notice
-# Current versions: delay-tasks 0.5.0, git-worktree 0.4.1,
+# Current versions: delay-tasks 0.5.0, sc-git-worktree 0.4.1,
 #                  sc-manage 0.5.0, repomix-nuget 0.5.0
 # New versions:    all get patch bump (0.5.1, 0.4.2, etc.)
 
@@ -1958,7 +1958,7 @@ vim packages/delay-tasks/CHANGELOG.md
 # ### Security
 # - CRITICAL: Fixed XYZ vulnerability that allows arbitrary code execution
 
-vim packages/git-worktree/CHANGELOG.md
+vim packages/sc-git-worktree/CHANGELOG.md
 # Add section:
 # ## [0.4.2] - 2025-12-10 (URGENT SECURITY PATCH)
 # ### Security
@@ -1985,10 +1985,10 @@ vim packages/delay-tasks/commands/delay.md
 git add packages/delay-tasks/commands/
 git commit -m "SECURITY: patch delay-tasks CVE-2025-XXXXX"
 
-vim packages/git-worktree/scripts/worktree-git.py
+vim packages/sc-git-worktree/scripts/worktree-git.py
 # Add security check fix
-git add packages/git-worktree/scripts/
-git commit -m "SECURITY: patch git-worktree CVE-2025-XXXXX"
+git add packages/sc-git-worktree/scripts/
+git commit -m "SECURITY: patch sc-git-worktree CVE-2025-XXXXX"
 
 vim packages/sc-manage/src/manager.py
 # Add security check fix
@@ -2002,7 +2002,7 @@ git commit -m "SECURITY: patch repomix-nuget CVE-2025-XXXXX"
 
 # 4. Update versions for all affected packages
 python3 scripts/sync-versions.py --package delay-tasks --version 0.5.1
-python3 scripts/sync-versions.py --package git-worktree --version 0.4.2
+python3 scripts/sync-versions.py --package sc-git-worktree --version 0.4.2
 python3 scripts/sync-versions.py --package sc-manage --version 0.5.1
 python3 scripts/sync-versions.py --package repomix-nuget --version 0.5.1
 
@@ -2018,7 +2018,7 @@ git add packages/*/
 git commit -m "chore: bump security patch versions for CVE-2025-XXXXX
 
 - delay-tasks: 0.5.0 → 0.5.1
-- git-worktree: 0.4.1 → 0.4.2
+- sc-git-worktree: 0.4.1 → 0.4.2
 - sc-manage: 0.5.0 → 0.5.1
 - repomix-nuget: 0.5.0 → 0.5.1"
 
@@ -2040,7 +2040,7 @@ All packages contain a critical vulnerability that allows arbitrary code executi
 
 ### Affected Packages
 - delay-tasks: 0.5.0 → 0.5.1
-- git-worktree: 0.4.1 → 0.4.2
+- sc-git-worktree: 0.4.1 → 0.4.2
 - sc-manage: 0.5.0 → 0.5.1
 - repomix-nuget: 0.5.0 → 0.5.1
 
@@ -2071,7 +2071,7 @@ All packages patched for critical vulnerability.
 
 Versions:
 - delay-tasks v0.5.1
-- git-worktree v0.4.2
+- sc-git-worktree v0.4.2
 - sc-manage v0.5.1
 - repomix-nuget v0.5.1
 
@@ -2100,7 +2100,7 @@ git push origin main
 
 # Expected:
 # Package: delay-tasks (manifest: 0.5.1)  ← patched
-# Package: git-worktree (manifest: 0.4.2) ← patched
+# Package: sc-git-worktree (manifest: 0.4.2) ← patched
 # Package: sc-manage (manifest: 0.5.1)    ← patched
 # Package: repomix-nuget (manifest: 0.5.1) ← patched
 # All versions consistent!

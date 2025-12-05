@@ -592,7 +592,7 @@ python3 .claude/scripts/delay-run.py --every 60 --for 10m
 
 ### Using with Other Synaptic Canvas Packages
 
-**Problem:** Conflicts with git-worktree or other packages.
+**Problem:** Conflicts with sc-git-worktree or other packages.
 
 **Resolution:**
 
@@ -603,11 +603,11 @@ python3 .claude/scripts/delay-run.py --every 60 --for 10m
 python3 tools/sc-install.py install delay-tasks --dest ~/Documents/.claude
 ```
 
-2. For PR check delays with git-worktree:
+2. For PR check delays with sc-git-worktree:
 ```bash
 # Both packages should be installed locally in the repo
 python3 tools/sc-install.py install delay-tasks --dest ./.claude
-python3 tools/sc-install.py install git-worktree --dest ./.claude
+python3 tools/sc-install.py install sc-git-worktree --dest ./.claude
 ```
 
 ---

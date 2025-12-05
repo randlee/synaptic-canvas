@@ -98,7 +98,7 @@ No packages found
 ```bash
 # Should list package directories
 ls packages/
-# Expected: delay-tasks/ git-worktree/ sc-manage/ repomix-nuget/
+# Expected: delay-tasks/ sc-git-worktree/ sc-manage/ repomix-nuget/
 ```
 
 2. Check manifest files exist:
@@ -321,7 +321,7 @@ Package not found in current scope
 
 **Root Causes:**
 - Misunderstanding scope requirements
-- Package policy restrictions (git-worktree is local-only)
+- Package policy restrictions (sc-git-worktree is local-only)
 - Installation path confusion
 
 **Resolution:**
@@ -331,19 +331,19 @@ Package not found in current scope
 | Package | Global | Local | Recommended |
 |---------|--------|-------|-------------|
 | delay-tasks | Yes | Yes | Global |
-| git-worktree | No | Yes | Local-only |
+| sc-git-worktree | No | Yes | Local-only |
 | sc-manage | Yes | Yes | Global |
 | repomix-nuget | No | Yes | Local-only |
 
-2. **For git-worktree (local-only):**
+2. **For sc-git-worktree (local-only):**
 ```bash
-# WRONG - git-worktree cannot be global
-python3 tools/sc-install.py install git-worktree --dest ~/Documents/.claude
-# Error: git-worktree is local-only
+# WRONG - sc-git-worktree cannot be global
+python3 tools/sc-install.py install sc-git-worktree --dest ~/Documents/.claude
+# Error: sc-git-worktree is local-only
 
 # CORRECT
 cd /path/to/your/repo
-python3 tools/sc-install.py install git-worktree --dest ./.claude
+python3 tools/sc-install.py install sc-git-worktree --dest ./.claude
 ```
 
 3. **For global packages:**
@@ -364,14 +364,14 @@ ls .claude/commands/
 5. **Verify package policy:**
 ```bash
 # Check manifest for scope restrictions
-cat packages/git-worktree/manifest.yaml | grep -i scope
+cat packages/sc-git-worktree/manifest.yaml | grep -i scope
 # Output: Scope: Local-only
 ```
 
 **Prevention:**
 - Read package README for scope requirements
 - Use global for utility packages (delay-tasks, sc-manage)
-- Use local for repo-specific packages (git-worktree, repomix-nuget)
+- Use local for repo-specific packages (sc-git-worktree, repomix-nuget)
 
 ---
 
@@ -381,7 +381,7 @@ cat packages/git-worktree/manifest.yaml | grep -i scope
 
 **Symptoms:**
 ```
-Error: git-worktree is local-only, cannot install globally
+Error: sc-git-worktree is local-only, cannot install globally
 Error: Package policy violation
 ```
 
@@ -395,7 +395,7 @@ Error: Package policy violation
 1. Check package requirements:
 ```bash
 # View package README
-cat packages/git-worktree/README.md | head -10
+cat packages/sc-git-worktree/README.md | head -10
 # Shows: Scope: Local-only
 ```
 
@@ -403,7 +403,7 @@ cat packages/git-worktree/README.md | head -10
 ```bash
 # For local-only packages
 cd /path/to/your/repo
-python3 tools/sc-install.py install git-worktree --dest ./.claude
+python3 tools/sc-install.py install sc-git-worktree --dest ./.claude
 
 # For global packages
 python3 tools/sc-install.py install sc-manage --dest ~/Documents/.claude
@@ -411,7 +411,7 @@ python3 tools/sc-install.py install sc-manage --dest ~/Documents/.claude
 
 3. If you need functionality globally:
 ```bash
-# Some packages just can't be global (e.g., git-worktree)
+# Some packages just can't be global (e.g., sc-git-worktree)
 # They require repo context
 # Install locally in each repo where needed
 ```
@@ -478,7 +478,7 @@ git init
 
 5. Retry installation:
 ```bash
-python3 tools/sc-install.py install git-worktree --dest ./.claude
+python3 tools/sc-install.py install sc-git-worktree --dest ./.claude
 ```
 
 **Prevention:**
@@ -596,7 +596,7 @@ ls packages/delay-tasks/scripts/
 
 **Symptoms:**
 ```bash
-cat .claude/agents/worktree-create.md | grep REPO_NAME
+cat .claude/agents/sc-worktree-create.md | grep REPO_NAME
 # Shows: {{REPO_NAME}} (not expanded)
 ```
 
@@ -605,7 +605,7 @@ cat .claude/agents/worktree-create.md | grep REPO_NAME
 1. Ensure installation uses expansion (default):
 ```bash
 # Don't use --no-expand
-python3 tools/sc-install.py install git-worktree --dest ./.claude
+python3 tools/sc-install.py install sc-git-worktree --dest ./.claude
 ```
 
 2. Verify git repository detection:
@@ -616,7 +616,7 @@ basename $(git rev-parse --show-toplevel)
 
 3. Reinstall with forced expansion:
 ```bash
-python3 tools/sc-install.py install git-worktree --dest ./.claude --force
+python3 tools/sc-install.py install sc-git-worktree --dest ./.claude --force
 ```
 
 4. Check installed files:
@@ -647,7 +647,7 @@ grep -r "{{REPO_NAME}}" .claude/
 # For sc-manage (global recommended)
 --dest ~/Documents/.claude
 
-# For git-worktree (local required)
+# For sc-git-worktree (local required)
 --dest ./.claude  # (from repo root)
 ```
 
@@ -1010,7 +1010,7 @@ with open('.claude/agents/registry.yaml') as f:
 
 **Local installation** (`/path/to/repo/.claude`):
 - Specific to one repository
-- Required for repo-specific packages (git-worktree, repomix-nuget)
+- Required for repo-specific packages (sc-git-worktree, repomix-nuget)
 - Isolated per project
 
 ---
@@ -1100,7 +1100,7 @@ python3 tools/sc-install.py list
 # Uninstall each (no bulk uninstall)
 python3 tools/sc-install.py uninstall delay-tasks --dest ~/Documents/.claude
 python3 tools/sc-install.py uninstall sc-manage --dest ~/Documents/.claude
-python3 tools/sc-install.py uninstall git-worktree --dest ./.claude
+python3 tools/sc-install.py uninstall sc-git-worktree --dest ./.claude
 
 # Or remove directory (nuclear option)
 rm -rf ~/Documents/.claude

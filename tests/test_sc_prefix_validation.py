@@ -30,13 +30,13 @@ PACKAGES = {
         'path': 'packages/sc-delay-tasks',
         'artifact_counts': {'agents': 3, 'commands': 1, 'skills': 1}
     },
-    'git-worktree': {
-        'package_name': 'git-worktree',
-        'agents': ['worktree-create', 'worktree-scan', 'worktree-cleanup', 'worktree-abort'],
-        'commands': ['git-worktree'],
-        'skills': ['managing-worktrees'],
+    'sc-git-worktree': {
+        'package_name': 'sc-git-worktree',
+        'agents': ['sc-git-worktree-create', 'sc-git-worktree-scan', 'sc-git-worktree-cleanup', 'sc-git-worktree-abort'],
+        'commands': ['sc-git-worktree'],
+        'skills': ['sc-managing-worktrees'],
         'version': '0.4.0',
-        'path': 'packages/git-worktree',
+        'path': 'packages/sc-git-worktree',
         'artifact_counts': {'agents': 4, 'commands': 1, 'skills': 1}
     },
     'repomix-nuget': {
