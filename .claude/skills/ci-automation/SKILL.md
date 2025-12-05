@@ -7,7 +7,7 @@ entry_point: /ci-automation
 
 # CI Automation Skill
 
-Coordinates pull → build → test → fix → PR. Keeps instructions lean; heavy details live in references.
+Coordinates pull → build → test → fix → PR. Keeps instructions lean; heavy details live in references and contracts file. Agent Runner is required for all agent calls (registry-enforced, audited).
 
 ## Commands
 - `/ci-automation` (flags: `--build`, `--test`, `--dest`, `--src`, `--allow-warnings`, `--yolo`, `--help`)
@@ -30,30 +30,6 @@ Coordinates pull → build → test → fix → PR. Keeps instructions lean; hea
 5. On test/warn fail: Agent Runner → `ci-fix-agent` if straightforward, else `ci-root-cause-agent`
 6. If clean and confirmed (or `--yolo`): Agent Runner → `ci-pr-agent` to commit/push/PR
 
-## Data Contracts
-All agents return fenced JSON minimal envelope:
-```json
-{
-  "success": true,
-  "data": { "summary": "", "actions": [] },
-  "error": null
-}
-```
-Error schema:
-```json
-{
-  "success": false,
-  "data": null,
-  "error": {
-    "code": "NAMESPACE.CODE",
-    "message": "Human-readable detail",
-    "recoverable": false,
-    "suggested_action": "Next step"
-  }
-}
-```
-Namespaces: `VALIDATION.*`, `GIT.*`, `BUILD.*`, `TEST.*`, `PR.*`, `EXECUTION.*`.
-
 ## Config
 Preferred: `.claude/ci-automation.yaml` (fallback: `.claude/config.yaml`) with `upstream_branch`, `build_command`, `test_command`, `warn_patterns`, `allow_warnings`, `auto_fix_enabled`, `pr_template_path`, `repo_root`. Detect stack (e.g., .NET/Python/Node) and prompt to save suggested commands.
 
@@ -68,6 +44,7 @@ Preferred: `.claude/ci-automation.yaml` (fallback: `.claude/config.yaml`) with `
 ## References
 - `.claude/references/ci-automation-commands.md`
 - `.claude/references/ci-automation-checklists.md`
+- `.claude/references/ci-automation-contracts.md`
 
 ## Size Guidance
 - Keep SKILL.md under ~2KB: overview, flags, agent list, flow summary, contracts, config, safety, references.

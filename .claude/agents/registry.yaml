@@ -92,3 +92,4 @@ skills:
       ci-root-cause-agent: 0.x
       ci-pr-agent: 0.x
       managing-worktrees: 0.x
+    entry_point: /ci-automation
