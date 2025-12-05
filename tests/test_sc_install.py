@@ -16,12 +16,12 @@ def test_list_and_info(capsys):
     assert sc_install.main(["list"]) == 0
     out = capsys.readouterr().out
     assert "delay-tasks" in out
-    assert "sc-sc-git-worktree" in out
+    assert "sc-git-worktree" in out
 
-    assert sc_install.main(["info", "sc-sc-git-worktree"]) == 0
+    assert sc_install.main(["info", "sc-git-worktree"]) == 0
     out = capsys.readouterr().out
-    assert "Package: sc-sc-git-worktree" in out
-    assert "name: sc-sc-git-worktree" in out  # manifest content printed
+    assert "Package: sc-git-worktree" in out
+    assert "name: sc-git-worktree" in out  # manifest content printed
 
 
 def test_install_and_uninstall_delay_tasks(tmp_path: Path):
@@ -51,9 +51,9 @@ def test_token_expansion_repo_name(tmp_path: Path):
     repo.mkdir()
     _init_git_repo(repo)
     dest = repo / ".claude"
-    rc = sc_install.main(["install", "sc-sc-git-worktree", "--dest", str(dest)])
+    rc = sc_install.main(["install", "sc-git-worktree", "--dest", str(dest)])
     assert rc == 0
-    f = dest / "commands/sc-sc-git-worktree.md"
+    f = dest / "commands/sc-git-worktree.md"
     assert f.exists()
     content = f.read_text(encoding="utf-8")
     assert f"../{repo.name}-worktrees" in content

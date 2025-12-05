@@ -669,10 +669,10 @@ class TestInstallWithRegistries:
         """Test that --global expands {{REPO_NAME}} token."""
         # Install to git repo
         dest = git_repo / ".claude"
-        rc = sc_install.main(["install", "sc-sc-git-worktree", "--dest", str(dest)])
+        rc = sc_install.main(["install", "sc-git-worktree", "--dest", str(dest)])
         assert rc == 0
 
-        cmd_file = dest / "commands" / "sc-sc-git-worktree.md"
+        cmd_file = dest / "commands" / "sc-git-worktree.md"
         content = cmd_file.read_text(encoding="utf-8")
         assert "{{REPO_NAME}}" not in content
         assert "repo-worktrees" in content
@@ -682,10 +682,10 @@ class TestInstallWithRegistries:
         # Change to git repo directory
         monkeypatch.chdir(git_repo)
 
-        rc = sc_install.main(["install", "sc-sc-git-worktree", "--local"])
+        rc = sc_install.main(["install", "sc-git-worktree", "--local"])
         assert rc == 0
 
-        cmd_file = git_repo / ".claude-local" / "commands" / "sc-sc-git-worktree.md"
+        cmd_file = git_repo / ".claude-local" / "commands" / "sc-git-worktree.md"
         content = cmd_file.read_text(encoding="utf-8")
         assert "{{REPO_NAME}}" not in content
         assert "repo-worktrees" in content
@@ -973,12 +973,12 @@ class TestBackwardCompatibility:
         assert rc == 0
 
         # Install with --global
-        rc = sc_install.main(["install", "sc-sc-git-worktree", "--global"])
+        rc = sc_install.main(["install", "sc-git-worktree", "--global"])
         assert rc == 0
 
         # Both should exist
         assert (dest1 / "agents" / "delay-once.md").exists()
-        assert (temp_home / ".claude" / "commands" / "sc-sc-git-worktree.md").exists()
+        assert (temp_home / ".claude" / "commands" / "sc-git-worktree.md").exists()
 
 
 # ============================================================================
@@ -1922,13 +1922,13 @@ def sample_registry_data():
                 "dependencies": []
             },
             {
-                "name": "sc-sc-git-worktree",
+                "name": "sc-git-worktree",
                 "version": "2.1.0",
                 "description": "Git worktree management tools",
                 "tier": "community",
                 "author": "Community",
-                "source": "https://github.com/example/sc-sc-git-worktree",
-                "download_url": "https://github.com/example/sc-sc-git-worktree/archive/v2.1.0.zip",
+                "source": "https://github.com/example/sc-git-worktree",
+                "download_url": "https://github.com/example/sc-git-worktree/archive/v2.1.0.zip",
                 "dependencies": ["git"]
             },
             {
@@ -2290,7 +2290,7 @@ class TestSearchCommand:
         rc = sc_install.main(["search", "work"])
         assert rc == 0
         captured = capsys.readouterr()
-        # Should find sc-sc-git-worktree
+        # Should find sc-git-worktree
         assert "worktree" in captured.out or "git" in captured.out
 
 
@@ -2341,10 +2341,10 @@ class TestInfoRemote:
 
     def test_info_remote_shows_dependencies(self, temp_home, mock_registry, capsys):
         """Test showing dependencies."""
-        rc = sc_install.main(["info", "sc-sc-git-worktree", "--registry", "test-registry"])
+        rc = sc_install.main(["info", "sc-git-worktree", "--registry", "test-registry"])
         assert rc == 0
         captured = capsys.readouterr()
-        # sc-sc-git-worktree has dependencies
+        # sc-git-worktree has dependencies
         if "dependencies" in captured.out.lower() or "depend" in captured.out.lower():
             assert "git" in captured.out.lower()
 
