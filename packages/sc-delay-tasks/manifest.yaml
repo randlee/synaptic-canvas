@@ -1,4 +1,4 @@
-name: delay-tasks
+name: sc-delay-tasks
 version: 0.4.0
 description: >
   Schedule delayed one-shot or bounded polling actions with minimal heartbeats.
@@ -16,15 +16,15 @@ tags:
 # Files to install (relative to package root)
 artifacts:
   commands:
-    - commands/delay.md
+    - commands/sc-delay.md
   skills:
-    - skills/delaying-tasks/SKILL.md
+    - skills/sc-delaying-tasks/SKILL.md
   agents:
-    - agents/delay-once.md
-    - agents/delay-poll.md
-    - agents/git-pr-check-delay.md
+    - agents/sc-delay-once.md
+    - agents/sc-delay-poll.md
+    - agents/sc-git-pr-check-delay.md
   scripts:
-    - scripts/delay-run.py
+    - scripts/sc-delay-run.py
 
 # No variables — Tier 0 package (direct copy)
 
