@@ -368,7 +368,7 @@ Successfully updated delay-tasks to v0.4.0
 
 **User request:**
 ```
-Install repomix-nuget globally
+Install sc-repomix-nuget globally
 ```
 
 **Agent action:**
@@ -380,7 +380,7 @@ Install repomix-nuget globally
 
 **Response:**
 ```
-Warning: repomix-nuget requires Python 3.12+
+Warning: sc-repomix-nuget requires Python 3.12+
 Found: Python 3.11.5
 
 This package may not work correctly with your Python version.

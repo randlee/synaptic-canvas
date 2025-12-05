@@ -1,7 +1,7 @@
 # Repomix NuGet Skill Specification
 
-> **Purpose**: This document provides a complete specification for implementing the `repomix-nuget` skill. Use this in a Claude Code session with filesystem access to generate the skill at:
-> `/Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/repomix/packages/repomix-nuget`
+> **Purpose**: This document provides a complete specification for implementing the `sc-repomix-nuget` skill. Use this in a Claude Code session with filesystem access to generate the skill at:
+> `/Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/repomix/packages/sc-repomix-nuget`
 
 ---
 
@@ -58,7 +58,7 @@ Generates an AI-optimized representation of a NuGet package's public API surface
 ### File Organization
 
 ```
-packages/repomix-nuget/
+packages/sc-repomix-nuget/
 ├── .claude/
 │   ├── skills/
 │   │   └── generating-nuget-context/

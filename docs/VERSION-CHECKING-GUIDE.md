@@ -283,7 +283,7 @@ Each package maintains its own version independently in its `manifest.yaml` file
 ```
 packages/delay-tasks/manifest.yaml
 packages/git-worktree/manifest.yaml
-packages/repomix-nuget/manifest.yaml
+packages/sc-repomix-nuget/manifest.yaml
 packages/sc-manage/manifest.yaml
 ```
 
@@ -304,14 +304,14 @@ packages/sc-manage/manifest.yaml
 Marketplace: 0.4.0
 delay-tasks: 0.4.0
 git-worktree: 0.4.0
-repomix-nuget: 0.4.0  ← Gets bug fix
+sc-repomix-nuget: 0.4.0  ← Gets bug fix
 sc-manage: 0.4.0
 
 After bug fix:
 Marketplace: 0.4.0  (no change)
 delay-tasks: 0.4.0  (no change)
 git-worktree: 0.4.0  (no change)
-repomix-nuget: 0.4.1  ← Version bumped
+sc-repomix-nuget: 0.4.1  ← Version bumped
 sc-manage: 0.4.0  (no change)
 ```
 
@@ -333,7 +333,7 @@ done
 ```
 delay-tasks: 0.4.0
 git-worktree: 0.4.0
-repomix-nuget: 0.4.0
+sc-repomix-nuget: 0.4.0
 sc-manage: 0.4.0
 ```
 
@@ -352,7 +352,7 @@ Marketplace Version: 0.4.0
 Package: delay-tasks (manifest: 0.4.0)
 Package: git-worktree (manifest: 0.4.0)
 Package: sc-manage (manifest: 0.4.0)
-Package: repomix-nuget (manifest: 0.4.0)
+Package: sc-repomix-nuget (manifest: 0.4.0)
 
 All versions consistent!
 ```
@@ -371,7 +371,7 @@ All versions consistent!
     {"name": "delay-tasks", "version": "0.4.0", "consistent": true},
     {"name": "git-worktree", "version": "0.4.0", "consistent": true},
     {"name": "sc-manage", "version": "0.4.0", "consistent": true},
-    {"name": "repomix-nuget", "version": "0.4.0", "consistent": true}
+    {"name": "sc-repomix-nuget", "version": "0.4.0", "consistent": true}
   ]
 }
 ```
@@ -650,7 +650,7 @@ done
 Checking commands...
 ✓ Command: delay (v0.4.0)
 ✓ Command: git-worktree (v0.4.0)
-✓ Command: repomix-nuget (v0.4.0)
+✓ Command: sc-repomix-nuget (v0.4.0)
 ✓ Command: sc-manage (v0.4.0)
 
 Checking skills...
@@ -673,7 +673,7 @@ Checking version consistency...
 Checking CHANGELOGs...
 ✓ CHANGELOG for delay-tasks
 ✓ CHANGELOG for git-worktree
-✓ CHANGELOG for repomix-nuget
+✓ CHANGELOG for sc-repomix-nuget
 ✓ CHANGELOG for sc-manage
 
 Checking marketplace version...
@@ -738,7 +738,7 @@ packages/delay-tasks/agents/delay-once.md:   version: 0.4.0
 version.yaml:                               version: 0.4.0
 packages/delay-tasks/manifest.yaml:         version: 0.4.0
 packages/git-worktree/manifest.yaml:        version: 0.4.1  ← Different OK
-packages/repomix-nuget/manifest.yaml:       version: 0.3.0  ← Different OK
+packages/sc-repomix-nuget/manifest.yaml:       version: 0.3.0  ← Different OK
 packages/sc-manage/manifest.yaml:           version: 0.5.0  ← Different OK
 ```
 
@@ -1218,7 +1218,7 @@ python3 scripts/sync-versions.py --package delay-tasks --version 0.4.0
 ```
 Package: delay-tasks (manifest: 0.4.0)
 Package: git-worktree (manifest: 0.3.0)
-Package: repomix-nuget (manifest: 0.4.0)
+Package: sc-repomix-nuget (manifest: 0.4.0)
 Package: sc-manage (manifest: 0.4.0)
 ```
 

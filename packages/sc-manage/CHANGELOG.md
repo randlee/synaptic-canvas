@@ -128,8 +128,8 @@ python3 tools/sc-install.py uninstall sc-manage --dest /path/to/your-repo/.claud
 # Install git-worktree locally in current repo
 /sc-manage --install git-worktree --local
 
-# View documentation and ask questions about repomix-nuget
-/sc-manage --docs repomix-nuget
+# View documentation and ask questions about sc-repomix-nuget
+/sc-manage --docs sc-repomix-nuget
 
 # Uninstall a package from global scope
 /sc-manage --uninstall delay-tasks --global

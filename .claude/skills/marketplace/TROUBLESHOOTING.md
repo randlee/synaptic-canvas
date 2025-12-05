@@ -110,7 +110,7 @@ curl -L https://github.com/randlee/synaptic-canvas/raw/main/docs/registries/nuge
 # Common package names:
 # - delay-tasks (not "delay" or "tasks")
 # - git-worktree (not "worktree" or "git")
-# - repomix-nuget (not "repomix" or "nuget")
+# - sc-repomix-nuget (not "repomix" or "nuget")
 # - sc-manage (not "sc-manager" or "manage")
 ```
 

@@ -56,7 +56,7 @@ Synaptic Canvas uses **Semantic Versioning (SemVer)** format: `MAJOR.MINOR.PATCH
 | **delay-tasks** | 0.4.0 | Beta | `packages/delay-tasks/manifest.yaml` |
 | **git-worktree** | 0.4.0 | Beta | `packages/git-worktree/manifest.yaml` |
 | **sc-manage** | 0.4.0 | Beta | `packages/sc-manage/manifest.yaml` |
-| **repomix-nuget** | 0.4.0 | Beta | `packages/repomix-nuget/manifest.yaml` |
+| **sc-repomix-nuget** | 0.4.0 | Beta | `packages/sc-repomix-nuget/manifest.yaml` |
 | **Registry Format** | 2.0.0 | Stable | `docs/registries/nuget/registry.json` |
 
 ### When to Bump MAJOR Version
@@ -547,7 +547,7 @@ Marketplace Version: 0.4.0
 
 Package: delay-tasks (manifest: 0.4.0)
 Package: git-worktree (manifest: 0.4.0)
-Package: repomix-nuget (manifest: 0.4.0)
+Package: sc-repomix-nuget (manifest: 0.4.0)
 Package: sc-manage (manifest: 0.4.0)
 
 All versions consistent!
@@ -707,7 +707,7 @@ git checkout -b release/v1.0.0
 vim packages/delay-tasks/CHANGELOG.md      # Update to [1.0.0] - 2025-12-15
 vim packages/git-worktree/CHANGELOG.md
 vim packages/sc-manage/CHANGELOG.md
-vim packages/repomix-nuget/CHANGELOG.md
+vim packages/sc-repomix-nuget/CHANGELOG.md
 
 # Step 3: Sync all package versions
 python3 scripts/sync-versions.py --all --version 1.0.0
@@ -726,7 +726,7 @@ All packages and marketplace upgraded to v1.0.0:
 - delay-tasks: Added exponential backoff support
 - git-worktree: Enhanced worktree cleanup
 - sc-manage: Improved package resolution
-- repomix-nuget: Production-ready NuGet integration"
+- sc-repomix-nuget: Production-ready NuGet integration"
 
 git push origin release/v1.0.0
 
@@ -815,7 +815,7 @@ This release is backward compatible with existing installations."
 - Week 1: git-worktree 0.4.0 → 0.4.1 (bug fix)
 - Week 2: delay-tasks 0.4.0 → 0.5.0 (new features)
 - Week 3: sc-manage 0.4.0 → 0.5.0 (new features)
-- Week 4: repomix-nuget 0.4.0 → 0.5.0 (new features)
+- Week 4: sc-repomix-nuget 0.4.0 → 0.5.0 (new features)
 
 **Execution (per package):**
 
@@ -865,25 +865,25 @@ Week 1 (git-worktree 0.4.1):
   delay-tasks:    0.4.0 → 0.4.0
   git-worktree:   0.4.0 → 0.4.1  ← moved
   sc-manage:      0.4.0 → 0.4.0
-  repomix-nuget:  0.4.0 → 0.4.0
+  sc-repomix-nuget:  0.4.0 → 0.4.0
 
 Week 2 (delay-tasks 0.5.0):
   delay-tasks:    0.4.0 → 0.5.0  ← moved
   git-worktree:   0.4.1 → 0.4.1
   sc-manage:      0.4.0 → 0.4.0
-  repomix-nuget:  0.4.0 → 0.4.0
+  sc-repomix-nuget:  0.4.0 → 0.4.0
 
 Week 3 (sc-manage 0.5.0):
   delay-tasks:    0.5.0 → 0.5.0
   git-worktree:   0.4.1 → 0.4.1
   sc-manage:      0.4.0 → 0.5.0  ← moved
-  repomix-nuget:  0.4.0 → 0.4.0
+  sc-repomix-nuget:  0.4.0 → 0.4.0
 
-Week 4 (repomix-nuget 0.5.0):
+Week 4 (sc-repomix-nuget 0.5.0):
   delay-tasks:    0.5.0 → 0.5.0
   git-worktree:   0.4.1 → 0.4.1
   sc-manage:      0.5.0 → 0.5.0
-  repomix-nuget:  0.4.0 → 0.5.0  ← moved
+  sc-repomix-nuget:  0.4.0 → 0.5.0  ← moved
 ```
 
 ### Scenario 4: Emergency Hotfix for All Packages
@@ -920,7 +920,7 @@ done
 python3 scripts/sync-versions.py --package delay-tasks --version 0.5.1
 python3 scripts/sync-versions.py --package git-worktree --version 0.4.2
 python3 scripts/sync-versions.py --package sc-manage --version 0.5.1
-python3 scripts/sync-versions.py --package repomix-nuget --version 0.5.1
+python3 scripts/sync-versions.py --package sc-repomix-nuget --version 0.5.1
 
 # Step 5: Verify all changes
 ./scripts/audit-versions.sh
@@ -935,7 +935,7 @@ Security fixes:
 - delay-tasks v0.5.1: Fixed XYZ vulnerability
 - git-worktree v0.4.2: Fixed XYZ vulnerability
 - sc-manage v0.5.1: Fixed XYZ vulnerability
-- repomix-nuget v0.5.1: Fixed XYZ vulnerability
+- sc-repomix-nuget v0.5.1: Fixed XYZ vulnerability
 
 CVE: CVE-2025-XXXXX
 Severity: Critical
@@ -1093,14 +1093,14 @@ BEFORE v1.0.0 release:
   delay-tasks:    0.4.0 (beta)
   git-worktree:   0.4.0 (beta)
   sc-manage:      0.4.0 (beta)
-  repomix-nuget:  0.4.0 (beta)
+  sc-repomix-nuget:  0.4.0 (beta)
   Marketplace:    0.4.0 (beta)
 
 AFTER v1.0.0 release:
   delay-tasks:    1.0.0 (stable) ← aligned
   git-worktree:   1.0.0 (stable) ← aligned
   sc-manage:      1.0.0 (stable) ← aligned
-  repomix-nuget:  1.0.0 (stable) ← aligned
+  sc-repomix-nuget:  1.0.0 (stable) ← aligned
   Marketplace:    1.0.0 (stable) ← aligned
 ```
 
@@ -1779,7 +1779,7 @@ git status  # Should show nothing to commit
 git checkout -b release/v1.0.0
 
 # 3. Update all CHANGELOGs to version 1.0.0
-for pkg in packages/{delay-tasks,git-worktree,sc-manage,repomix-nuget}; do
+for pkg in packages/{delay-tasks,git-worktree,sc-manage,sc-repomix-nuget}; do
   vim "$pkg/CHANGELOG.md"
   # Change all [Unreleased] → [1.0.0] - 2025-12-15
   # Add status: "Production Release - Stable"
@@ -1846,7 +1846,7 @@ Production release of Synaptic Canvas v1.0.0.
 - delay-tasks: 0.4.0 → 1.0.0
 - git-worktree: 0.4.0 → 1.0.0
 - sc-manage: 0.4.0 → 1.0.0
-- repomix-nuget: 0.4.0 → 1.0.0
+- sc-repomix-nuget: 0.4.0 → 1.0.0
 
 ## Key Achievements
 - [x] All packages feature-complete
@@ -1871,7 +1871,7 @@ Production release of Synaptic Canvas v1.0.0.
 - Dependency resolution
 - Version compatibility checking
 
-### repomix-nuget
+### sc-repomix-nuget
 - NuGet package generation
 - Automated registry updates
 - Version synchronization
@@ -1909,7 +1909,7 @@ Included:
 - delay-tasks v1.0.0
 - git-worktree v1.0.0
 - sc-manage v1.0.0
-- repomix-nuget v1.0.0
+- sc-repomix-nuget v1.0.0
 - Marketplace v1.0.0
 
 This release enters long-term support."
@@ -1930,7 +1930,7 @@ git push origin --delete release/v1.0.0
 # Marketplace Version: 1.0.0
 # Package: delay-tasks (manifest: 1.0.0)
 # Package: git-worktree (manifest: 1.0.0)
-# Package: repomix-nuget (manifest: 1.0.0)
+# Package: sc-repomix-nuget (manifest: 1.0.0)
 # Package: sc-manage (manifest: 1.0.0)
 # All versions consistent!
 ```
@@ -1949,7 +1949,7 @@ git checkout -b hotfix/CVE-2025-XXXXX
 
 # 2. Update all CHANGELOGs with security notice
 # Current versions: delay-tasks 0.5.0, git-worktree 0.4.1,
-#                  sc-manage 0.5.0, repomix-nuget 0.5.0
+#                  sc-manage 0.5.0, sc-repomix-nuget 0.5.0
 # New versions:    all get patch bump (0.5.1, 0.4.2, etc.)
 
 vim packages/delay-tasks/CHANGELOG.md
@@ -1970,7 +1970,7 @@ vim packages/sc-manage/CHANGELOG.md
 # ### Security
 # - CRITICAL: Fixed XYZ vulnerability that allows arbitrary code execution
 
-vim packages/repomix-nuget/CHANGELOG.md
+vim packages/sc-repomix-nuget/CHANGELOG.md
 # Add section:
 # ## [0.5.1] - 2025-12-10 (URGENT SECURITY PATCH)
 # ### Security
@@ -1995,16 +1995,16 @@ vim packages/sc-manage/src/manager.py
 git add packages/sc-manage/src/
 git commit -m "SECURITY: patch sc-manage CVE-2025-XXXXX"
 
-vim packages/repomix-nuget/src/generator.py
+vim packages/sc-repomix-nuget/src/generator.py
 # Add security check fix
-git add packages/repomix-nuget/src/
-git commit -m "SECURITY: patch repomix-nuget CVE-2025-XXXXX"
+git add packages/sc-repomix-nuget/src/
+git commit -m "SECURITY: patch sc-repomix-nuget CVE-2025-XXXXX"
 
 # 4. Update versions for all affected packages
 python3 scripts/sync-versions.py --package delay-tasks --version 0.5.1
 python3 scripts/sync-versions.py --package git-worktree --version 0.4.2
 python3 scripts/sync-versions.py --package sc-manage --version 0.5.1
-python3 scripts/sync-versions.py --package repomix-nuget --version 0.5.1
+python3 scripts/sync-versions.py --package sc-repomix-nuget --version 0.5.1
 
 # 5. Verify all changes
 ./scripts/audit-versions.sh
@@ -2020,7 +2020,7 @@ git commit -m "chore: bump security patch versions for CVE-2025-XXXXX
 - delay-tasks: 0.5.0 → 0.5.1
 - git-worktree: 0.4.1 → 0.4.2
 - sc-manage: 0.5.0 → 0.5.1
-- repomix-nuget: 0.5.0 → 0.5.1"
+- sc-repomix-nuget: 0.5.0 → 0.5.1"
 
 # 8. Push immediately
 git push origin hotfix/CVE-2025-XXXXX
@@ -2042,7 +2042,7 @@ All packages contain a critical vulnerability that allows arbitrary code executi
 - delay-tasks: 0.5.0 → 0.5.1
 - git-worktree: 0.4.1 → 0.4.2
 - sc-manage: 0.5.0 → 0.5.1
-- repomix-nuget: 0.5.0 → 0.5.1
+- sc-repomix-nuget: 0.5.0 → 0.5.1
 
 ### Action Required
 **ALL USERS MUST UPDATE IMMEDIATELY**
@@ -2073,7 +2073,7 @@ Versions:
 - delay-tasks v0.5.1
 - git-worktree v0.4.2
 - sc-manage v0.5.1
-- repomix-nuget v0.5.1
+- sc-repomix-nuget v0.5.1
 
 Users must upgrade immediately."
 
@@ -2102,7 +2102,7 @@ git push origin main
 # Package: delay-tasks (manifest: 0.5.1)  ← patched
 # Package: git-worktree (manifest: 0.4.2) ← patched
 # Package: sc-manage (manifest: 0.5.1)    ← patched
-# Package: repomix-nuget (manifest: 0.5.1) ← patched
+# Package: sc-repomix-nuget (manifest: 0.5.1) ← patched
 # All versions consistent!
 
 # 17. Clean up hotfix branch

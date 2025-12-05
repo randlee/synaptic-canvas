@@ -230,7 +230,7 @@ ls packages/
 
 **Expected Output:**
 ```
-delay-tasks/  git-worktree/  repomix-nuget/  sc-manage/
+delay-tasks/  git-worktree/  sc-repomix-nuget/  sc-manage/
 ```
 
 **✅ Success Criteria:** All 4 packages are present
@@ -346,7 +346,7 @@ If validation fails, see [Registry Integrity Check](#registry-integrity-check) w
 
 ### Step 10: Check for Node.js (Optional)
 
-**Purpose:** Required only for `repomix-nuget` package
+**Purpose:** Required only for `sc-repomix-nuget` package
 
 **Command:**
 ```bash
@@ -362,7 +362,7 @@ v18.17.0 (or higher)
 
 **✅ Success Criteria:** Node.js >= 18.0.0 and npm are installed
 
-**⚠️ Note:** This is optional unless you plan to use repomix-nuget
+**⚠️ Note:** This is optional unless you plan to use sc-repomix-nuget
 
 **❌ Common Issues:**
 
@@ -394,7 +394,7 @@ npm --version
 - ✅ Scripts are executable
 - ✅ Version audit passes
 - ✅ Registry validation passes
-- ✅ Node.js installed (optional, for repomix-nuget)
+- ✅ Node.js installed (optional, for sc-repomix-nuget)
 
 **Next Steps:**
 - Read [DIAGNOSTIC-TOOLS.md](DIAGNOSTIC-TOOLS.md) for available tools
@@ -527,7 +527,7 @@ If versions are inconsistent, see [Version Mismatch Investigation](#version-mism
 Checking commands...
 ✓ Command: delay (v0.4.0)
 ✓ Command: git-worktree (v0.4.0)
-✓ Command: repomix-nuget (v0.4.0)
+✓ Command: sc-repomix-nuget (v0.4.0)
 ✓ Command: sc-manage (v0.4.0)
 
 Checking skills...
@@ -545,7 +545,7 @@ Checking version consistency...
 Checking CHANGELOGs...
 ✓ CHANGELOG for delay-tasks
 ✓ CHANGELOG for git-worktree
-✓ CHANGELOG for repomix-nuget
+✓ CHANGELOG for sc-repomix-nuget
 ✓ CHANGELOG for sc-manage
 
 Checking marketplace version...
@@ -671,7 +671,7 @@ done
 ```
 ✓ delay-tasks: README.md exists
 ✓ git-worktree: README.md exists
-✓ repomix-nuget: README.md exists
+✓ sc-repomix-nuget: README.md exists
 ✓ sc-manage: README.md exists
 ```
 
@@ -873,7 +873,7 @@ ls -la .claude/commands/
 
 **Expected Output:**
 ```
-delay.md  git-worktree.md  repomix-nuget.md  sc-manage.md
+delay.md  git-worktree.md  sc-repomix-nuget.md  sc-manage.md
 ```
 
 **✅ Success Criteria:** Expected command files are present
@@ -1650,7 +1650,7 @@ sudo apt-get install python3
 
 ---
 
-### Step 3: Check Node.js (for repomix-nuget)
+### Step 3: Check Node.js (for sc-repomix-nuget)
 
 **Command:**
 ```bash
@@ -1708,7 +1708,7 @@ node_version=$(node --version 2>/dev/null)
 if [[ -n "$node_version" ]]; then
     echo "✓ Node.js: $node_version"
 else
-    echo "⚠ Node.js: NOT FOUND (optional, needed for repomix-nuget)"
+    echo "⚠ Node.js: NOT FOUND (optional, needed for sc-repomix-nuget)"
 fi
 
 # npm (optional)
@@ -1716,7 +1716,7 @@ npm_version=$(npm --version 2>/dev/null)
 if [[ -n "$npm_version" ]]; then
     echo "✓ npm: $npm_version"
 else
-    echo "⚠ npm: NOT FOUND (optional, needed for repomix-nuget)"
+    echo "⚠ npm: NOT FOUND (optional, needed for sc-repomix-nuget)"
 fi
 
 echo ""
@@ -1735,8 +1735,8 @@ chmod +x /tmp/check-deps.sh
 **Summary Checklist:**
 - ✅ Git installed and correct version
 - ✅ Python 3 installed and correct version
-- ✅ Node.js installed (if using repomix-nuget)
-- ✅ npm installed (if using repomix-nuget)
+- ✅ Node.js installed (if using sc-repomix-nuget)
+- ✅ npm installed (if using sc-repomix-nuget)
 
 See [DEPENDENCY-VALIDATION.md](DEPENDENCY-VALIDATION.md) for more details.
 

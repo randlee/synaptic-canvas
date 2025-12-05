@@ -98,7 +98,7 @@ No packages found
 ```bash
 # Should list package directories
 ls packages/
-# Expected: delay-tasks/ git-worktree/ sc-manage/ repomix-nuget/
+# Expected: delay-tasks/ git-worktree/ sc-manage/ sc-repomix-nuget/
 ```
 
 2. Check manifest files exist:
@@ -333,7 +333,7 @@ Package not found in current scope
 | delay-tasks | Yes | Yes | Global |
 | git-worktree | No | Yes | Local-only |
 | sc-manage | Yes | Yes | Global |
-| repomix-nuget | No | Yes | Local-only |
+| sc-repomix-nuget | No | Yes | Local-only |
 
 2. **For git-worktree (local-only):**
 ```bash
@@ -371,7 +371,7 @@ cat packages/git-worktree/manifest.yaml | grep -i scope
 **Prevention:**
 - Read package README for scope requirements
 - Use global for utility packages (delay-tasks, sc-manage)
-- Use local for repo-specific packages (git-worktree, repomix-nuget)
+- Use local for repo-specific packages (git-worktree, sc-repomix-nuget)
 
 ---
 
@@ -1010,7 +1010,7 @@ with open('.claude/agents/registry.yaml') as f:
 
 **Local installation** (`/path/to/repo/.claude`):
 - Specific to one repository
-- Required for repo-specific packages (git-worktree, repomix-nuget)
+- Required for repo-specific packages (git-worktree, sc-repomix-nuget)
 - Isolated per project
 
 ---

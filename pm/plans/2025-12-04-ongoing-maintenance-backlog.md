@@ -102,7 +102,7 @@ This document consolidates remaining action items identified from completed mark
 - `packages/delay-tasks/CHANGELOG.md`
 - `packages/git-worktree/CHANGELOG.md`
 - `packages/sc-manage/CHANGELOG.md`
-- `packages/repomix-nuget/CHANGELOG.md`
+- `packages/sc-repomix-nuget/CHANGELOG.md`
 
 **Checklist:**
 - [ ] CHANGELOG entries match code changes

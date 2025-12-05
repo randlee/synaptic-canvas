@@ -47,7 +47,7 @@ This document provides comprehensive version compatibility information for the S
 | `delay-tasks` | 0 | 0.4.0 | None |
 | `sc-manage` | 0 | 0.4.0 | None |
 | `git-worktree` | 1 | 0.4.0 | git >= 2.27 |
-| `repomix-nuget` | 2 | 0.4.0 | python3 >= 3.12 |
+| `sc-repomix-nuget` | 2 | 0.4.0 | python3 >= 3.12 |
 
 ---
 
@@ -101,7 +101,7 @@ This matrix shows which package versions are compatible with each marketplace ve
 **Breaking Changes:** None yet
 **Last Updated:** 2025-12-02
 
-#### repomix-nuget
+#### sc-repomix-nuget
 
 | Version | Marketplace | Status | Notes |
 |---------|-------------|--------|-------|
@@ -519,7 +519,7 @@ packages:
   - delay-tasks: 0.4.0
   - git-worktree: 0.4.0
   - sc-manage: 0.4.0
-  - repomix-nuget: 0.4.0
+  - sc-repomix-nuget: 0.4.0
 registry_format: 2.0.0
 cli_version: 0.4.0
 status: "Beta - Actively Tested"
@@ -579,7 +579,7 @@ status: "UNSUPPORTED"
 ```yaml
 marketplace: 0.4.0
 packages:
-  - repomix-nuget: 0.4.0      # Requires python3 >= 3.12
+  - sc-repomix-nuget: 0.4.0      # Requires python3 >= 3.12
 installed_python: "3.8"       # Too old
 status: "UNSUPPORTED"
 ```
@@ -778,7 +778,7 @@ python3 tools/sc-install.py install \
   delay-tasks \
   git-worktree \
   sc-manage \
-  repomix-nuget
+  sc-repomix-nuget
 
 # Verify
 python3 tools/sc-install.py verify
@@ -791,7 +791,7 @@ marketplace: 0.4.0 ✓
 delay-tasks: 0.4.0 ✓
 git-worktree: 0.4.0 ✓
 sc-manage: 0.4.0 ✓
-repomix-nuget: 0.4.0 ✓
+sc-repomix-nuget: 0.4.0 ✓
 All versions compatible.
 ```
 
@@ -852,19 +852,19 @@ Use --force to override (not recommended)
 
 ### Example 4: Unsupported - Missing Runtime Dependency
 
-**Goal:** Install repomix-nuget without Python 3.12
+**Goal:** Install sc-repomix-nuget without Python 3.12
 **Marketplace:** 0.4.0
-**Package:** repomix-nuget 0.4.0
+**Package:** sc-repomix-nuget 0.4.0
 **System Python:** 3.8
 
 ```bash
-python3 tools/sc-install.py install repomix-nuget
+python3 tools/sc-install.py install sc-repomix-nuget
 ```
 
 **Result:** UNSUPPORTED ✗
 **Error Output:**
 ```
-ERROR: Runtime dependency not satisfied for repomix-nuget 0.4.0
+ERROR: Runtime dependency not satisfied for sc-repomix-nuget 0.4.0
 Missing: python3 >= 3.12
 Found: python3 3.8
 
@@ -877,7 +877,7 @@ To fix:
 
 Example:
   export PYTHON3_VERSION=/usr/local/bin/python3.12
-  python3 tools/sc-install.py install repomix-nuget
+  python3 tools/sc-install.py install sc-repomix-nuget
 ```
 
 ---
@@ -889,13 +889,13 @@ Example:
 **Packages:**
 - delay-tasks (Tier 0 - no dependencies)
 - git-worktree (Tier 1 - token substitution)
-- repomix-nuget (Tier 2 - runtime dependencies)
+- sc-repomix-nuget (Tier 2 - runtime dependencies)
 
 ```bash
 python3 tools/sc-install.py install \
   delay-tasks \
   git-worktree \
-  repomix-nuget
+  sc-repomix-nuget
 
 # Verify all
 python3 tools/sc-install.py verify
@@ -913,7 +913,7 @@ Installation Report:
       Token substitution: REPO_NAME={{git-repo-basename}}
 
   Tier 2 packages (runtime dependencies):
-    - repomix-nuget 0.4.0 ✓
+    - sc-repomix-nuget 0.4.0 ✓
       Dependencies satisfied:
         - python3 >= 3.12: Found 3.12.1 ✓
 
@@ -924,7 +924,7 @@ Overall: SUPPORTED
 
 ### Example 6: Conditional Support - Partial Installation
 
-**Goal:** Install repomix-nuget only if Python 3.12+ available
+**Goal:** Install sc-repomix-nuget only if Python 3.12+ available
 **Marketplace:** 0.4.0
 
 ```bash
@@ -939,11 +939,11 @@ MIN_PYTHON="3.12"
 
 if [[ "$PYTHON_VERSION" > "$MIN_PYTHON" ]]; then
     echo "Installing tier 2 packages..."
-    python3 tools/sc-install.py install repomix-nuget
+    python3 tools/sc-install.py install sc-repomix-nuget
 else
-    echo "Python $MIN_PYTHON+ required for repomix-nuget"
+    echo "Python $MIN_PYTHON+ required for sc-repomix-nuget"
     echo "Current: Python $PYTHON_VERSION"
-    echo "Skipping repomix-nuget installation"
+    echo "Skipping sc-repomix-nuget installation"
 fi
 ```
 
@@ -1039,7 +1039,7 @@ python3 tools/sc-install.py install delay-tasks
 
 **Symptoms:**
 ```
-ERROR: Package repomix-nuget requires:
+ERROR: Package sc-repomix-nuget requires:
   python3 >= 3.12
   Found: python3 3.8
 ```
@@ -1071,7 +1071,7 @@ Option B - Use system Python:
 ```bash
 # If Python 3.12 installed elsewhere
 export PYTHON3_VERSION=/usr/local/bin/python3.12
-python3 tools/sc-install.py install repomix-nuget
+python3 tools/sc-install.py install sc-repomix-nuget
 ```
 
 Option C - Skip tier 2 packages:

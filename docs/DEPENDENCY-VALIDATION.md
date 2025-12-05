@@ -39,9 +39,9 @@ Core (Required for all packages):
 └─ Bash/POSIX shell
 
 Package-Specific (Optional):
-├─ Node.js >= 18.0 (repomix-nuget only)
-├─ npm >= 8.0 (repomix-nuget only)
-└─ .NET SDK (repomix-nuget, for C# projects)
+├─ Node.js >= 18.0 (sc-repomix-nuget only)
+├─ npm >= 8.0 (sc-repomix-nuget only)
+└─ .NET SDK (sc-repomix-nuget, for C# projects)
 ```
 
 ---
@@ -599,7 +599,7 @@ fi
 
 ---
 
-### repomix-nuget
+### sc-repomix-nuget
 
 **Description:** Generate AI-optimized NuGet package context using Repomix
 
@@ -623,7 +623,7 @@ fi
 
 **Validation:**
 ```bash
-echo "=== repomix-nuget Dependencies ==="
+echo "=== sc-repomix-nuget Dependencies ==="
 
 # Check Node.js (critical)
 if command -v node > /dev/null 2>&1; then
@@ -764,7 +764,7 @@ npm --version
 | **delay-tasks** | ⚠️ | ✅ | ✅ | ❌ | ❌ | ❌ |
 | **git-worktree** | ✅ >= 2.7.0 | ✅ | ✅ | ❌ | ❌ | ❌ |
 | **sc-manage** | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
-| **repomix-nuget** | ⚠️ | ⚠️ | ✅ | ✅ >= 18 | ✅ >= 8 | ⚠️ optional |
+| **sc-repomix-nuget** | ⚠️ | ⚠️ | ✅ | ✅ >= 18 | ✅ >= 8 | ⚠️ optional |
 
 **Legend:**
 - ✅ Required
@@ -917,8 +917,8 @@ echo ""
 echo "=== Optional Dependencies ==="
 echo ""
 
-# Node.js (for repomix-nuget)
-echo "Checking Node.js (optional, for repomix-nuget)..."
+# Node.js (for sc-repomix-nuget)
+echo "Checking Node.js (optional, for sc-repomix-nuget)..."
 if command -v node > /dev/null 2>&1; then
     node_version=$(node --version | sed 's/v//')
     echo "  ✓ Node.js installed: $node_version"
@@ -931,13 +931,13 @@ if command -v node > /dev/null 2>&1; then
         WARNINGS=$((WARNINGS + 1))
     fi
 else
-    echo "  ⚠ Node.js not found (optional, needed for repomix-nuget)"
+    echo "  ⚠ Node.js not found (optional, needed for sc-repomix-nuget)"
     WARNINGS=$((WARNINGS + 1))
 fi
 echo ""
 
-# npm (for repomix-nuget)
-echo "Checking npm (optional, for repomix-nuget)..."
+# npm (for sc-repomix-nuget)
+echo "Checking npm (optional, for sc-repomix-nuget)..."
 if command -v npm > /dev/null 2>&1; then
     npm_version=$(npm --version)
     echo "  ✓ npm installed: $npm_version"
@@ -950,12 +950,12 @@ if command -v npm > /dev/null 2>&1; then
         WARNINGS=$((WARNINGS + 1))
     fi
 else
-    echo "  ⚠ npm not found (optional, needed for repomix-nuget)"
+    echo "  ⚠ npm not found (optional, needed for sc-repomix-nuget)"
     WARNINGS=$((WARNINGS + 1))
 fi
 echo ""
 
-# .NET SDK (for C# projects with repomix-nuget)
+# .NET SDK (for C# projects with sc-repomix-nuget)
 echo "Checking .NET SDK (optional, for C# projects)..."
 if command -v dotnet > /dev/null 2>&1; then
     dotnet_version=$(dotnet --version)
@@ -1064,8 +1064,8 @@ case "$package" in
         bash --version | head -1 && echo "  ✓ Bash" || echo "  ✗ Bash"
         ;;
 
-    "repomix-nuget")
-        echo "Checking repomix-nuget dependencies..."
+    "sc-repomix-nuget")
+        echo "Checking sc-repomix-nuget dependencies..."
         node_version=$(node --version 2>/dev/null | sed 's/v//')
         if [[ -n "$node_version" ]] && [[ "$(printf '%s\n' "18.0.0" "$node_version" | sort -V | head -n1)" = "18.0.0" ]]; then
             echo "  ✓ Node.js >= 18"
@@ -1088,7 +1088,7 @@ esac
 chmod +x check-package-deps.sh
 ./check-package-deps.sh delay-tasks
 ./check-package-deps.sh git-worktree
-./check-package-deps.sh repomix-nuget
+./check-package-deps.sh sc-repomix-nuget
 ```
 
 ---
@@ -1274,7 +1274,7 @@ jobs:
           python3 --version
           pip3 --version
 
-      - name: Set up Node.js (for repomix-nuget)
+      - name: Set up Node.js (for sc-repomix-nuget)
         uses: actions/setup-node@v3
         with:
           node-version: '18'
@@ -1317,7 +1317,7 @@ RUN apt-get update && apt-get install -y \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Node.js (optional, for repomix-nuget)
+# Install Node.js (optional, for sc-repomix-nuget)
 RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
     && apt-get install -y nodejs
 
@@ -1686,7 +1686,7 @@ case "$package" in
         git worktree --help > /dev/null 2>&1 || { echo "Error: Git >= 2.7.0 required for worktree support"; exit 1; }
         python3 --version > /dev/null 2>&1 || { echo "Error: Python 3 required"; exit 1; }
         ;;
-    "repomix-nuget")
+    "sc-repomix-nuget")
         node --version > /dev/null 2>&1 || { echo "Error: Node.js >= 18 required"; exit 1; }
         npm --version > /dev/null 2>&1 || { echo "Error: npm required"; exit 1; }
         ;;

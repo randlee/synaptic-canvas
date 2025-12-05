@@ -43,7 +43,7 @@ git --version
 # Check Python version
 python3 --version
 
-# Check Node.js version (for repomix-nuget)
+# Check Node.js version (for sc-repomix-nuget)
 node --version
 npm --version
 ```
@@ -136,7 +136,7 @@ Checking version consistency...
 ✗ FAIL Command in delay-tasks: Version mismatch: command=0.3.0, package=0.4.0
 
 Checking CHANGELOGs...
-⚠ WARN CHANGELOG for repomix-nuget: No CHANGELOG.md found
+⚠ WARN CHANGELOG for sc-repomix-nuget: No CHANGELOG.md found
 
 Checking marketplace version...
 
@@ -180,7 +180,7 @@ python3 scripts/sync-versions.py --package delay-tasks --version 0.4.0
 
 ⚠️ **Missing CHANGELOG:**
 ```
-⚠ WARN CHANGELOG for repomix-nuget: No CHANGELOG.md found
+⚠ WARN CHANGELOG for sc-repomix-nuget: No CHANGELOG.md found
 ```
 **Fix:** Create CHANGELOG.md in package directory following template.
 
@@ -340,7 +340,7 @@ Package: git-worktree (manifest: 0.4.0)
 
 Package: sc-manage (manifest: 0.4.0)
 
-Package: repomix-nuget (manifest: 0.4.0)
+Package: sc-repomix-nuget (manifest: 0.4.0)
 
 All versions consistent!
 ```
@@ -419,7 +419,7 @@ Version mismatches found
     {"name": "delay-tasks", "version": "0.4.0", "consistent": true},
     {"name": "git-worktree", "version": "0.4.0", "consistent": true},
     {"name": "sc-manage", "version": "0.4.0", "consistent": true},
-    {"name": "repomix-nuget", "version": "0.4.0", "consistent": true}
+    {"name": "sc-repomix-nuget", "version": "0.4.0", "consistent": true}
   ]
 }
 ```
@@ -515,7 +515,7 @@ Found 3 validation error(s):
 
   1. Package 'delay-tasks': Invalid version format '0.4'
   2. Package 'git-worktree': Missing required field: 'description'
-  3. Package 'repomix-nuget': Invalid repo URL (must be https://github.com/...)
+  3. Package 'sc-repomix-nuget': Invalid repo URL (must be https://github.com/...)
 
 ======================================================================
 ```
@@ -736,7 +736,7 @@ python3 -c "import jsonschema; print('jsonschema: OK')" 2>/dev/null || echo "jso
 
 #### Node.js and npm Version Check
 
-**Required for:** `repomix-nuget` package
+**Required for:** `sc-repomix-nuget` package
 
 **Check Node.js installation:**
 ```bash
@@ -843,7 +843,7 @@ packages/  scripts/  docs/  .claude/
 ls packages/
 
 # Expected output:
-delay-tasks/  git-worktree/  repomix-nuget/  sc-manage/
+delay-tasks/  git-worktree/  sc-repomix-nuget/  sc-manage/
 ```
 
 ---
@@ -864,7 +864,7 @@ commands/  skills/  agents/  scripts/
 ls .claude/commands/
 
 # Example output:
-delay.md  git-worktree.md  repomix-nuget.md  sc-manage.md
+delay.md  git-worktree.md  sc-repomix-nuget.md  sc-manage.md
 ```
 
 **Check installed skills:**
@@ -994,7 +994,7 @@ done
 # Output:
 delay-tasks: 0.4.0
 git-worktree: 0.4.0
-repomix-nuget: 0.4.0
+sc-repomix-nuget: 0.4.0
 sc-manage: 0.4.0
 ```
 
@@ -1045,7 +1045,7 @@ done
 # Output:
 delay-tasks/delay: 0.4.0
 git-worktree/git-worktree: 0.4.0
-repomix-nuget/repomix-nuget: 0.4.0
+sc-repomix-nuget/sc-repomix-nuget: 0.4.0
 sc-manage/sc-manage: 0.4.0
 ```
 
@@ -1064,7 +1064,7 @@ done
 # Output:
 delay-tasks/delaying-tasks: 0.4.0
 git-worktree/managing-worktrees: 0.4.0
-repomix-nuget/generating-nuget-context: 0.4.0
+sc-repomix-nuget/generating-nuget-context: 0.4.0
 sc-manage/managing-sc-packages: 0.4.0
 ```
 
@@ -1196,7 +1196,7 @@ python3 -c "import json; print('\n'.join(json.load(open('docs/registries/nuget/r
 # Output:
 delay-tasks
 git-worktree
-repomix-nuget
+sc-repomix-nuget
 sc-manage
 ```
 
@@ -1212,7 +1212,7 @@ python3 -c "import json; import pprint; pprint.pprint(json.load(open('docs/regis
 {'categories': {'automation': ['delay-tasks'],
                 'git': ['git-worktree'],
                 'management': ['sc-manage'],
-                'nuget': ['repomix-nuget'],
+                'nuget': ['sc-repomix-nuget'],
                 'workflow': ['delay-tasks', 'git-worktree']},
  'registryVersion': '0.4.0',
  'schemaVersion': '1.0.0',
@@ -1480,7 +1480,7 @@ du -sh packages/*
 # Output:
 1.2M    packages/delay-tasks
 800K    packages/git-worktree
-2.5M    packages/repomix-nuget
+2.5M    packages/sc-repomix-nuget
 1.0M    packages/sc-manage
 ```
 
@@ -1697,7 +1697,7 @@ Currently, `audit-versions.sh` does not output JSON. Consider using `compare-ver
       "consistent": true
     },
     {
-      "name": "repomix-nuget",
+      "name": "sc-repomix-nuget",
       "version": "0.4.0",
       "consistent": true
     }
@@ -1754,7 +1754,7 @@ python3 docs/registries/nuget/validate-registry.py --json
   "errors": [
     "Package 'delay-tasks': Invalid version format '0.4'",
     "Package 'git-worktree': Missing required field: 'description'",
-    "Package 'repomix-nuget': Invalid repo URL (must be https://github.com/...)"
+    "Package 'sc-repomix-nuget': Invalid repo URL (must be https://github.com/...)"
   ],
   "registry": {
     "version": "0.4.0",
@@ -2093,7 +2093,7 @@ jobs:
 |------|----------------|-------------|---------|
 | Git | 2.7.0 | 2.30+ | Worktree support |
 | Python 3 | 3.6 | 3.11+ | Scripts |
-| Node.js | 18.0 | 18.17+ | repomix-nuget |
+| Node.js | 18.0 | 18.17+ | sc-repomix-nuget |
 | npm | 8.0 | 9.6+ | Package management |
 | Bash | 4.0 | 5.0+ | Shell scripts |
 

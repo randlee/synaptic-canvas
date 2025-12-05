@@ -38,7 +38,7 @@ The following versions of our packages are actively maintained and receive secur
 | delay-tasks | 0.4.0 | ✅ Current/Beta | Active |
 | git-worktree | 0.4.0 | ✅ Current/Beta | Active |
 | sc-manage | 0.4.0 | ✅ Current/Beta | Active |
-| repomix-nuget | 0.4.0 | ✅ Current/Beta | Active |
+| sc-repomix-nuget | 0.4.0 | ✅ Current/Beta | Active |
 
 ### Version Support Policy
 
@@ -344,11 +344,11 @@ Users should be aware of these limitations:
 - Network access required for registry queries
 - See [packages/sc-manage/TROUBLESHOOTING.md](packages/sc-manage/TROUBLESHOOTING.md)
 
-**repomix-nuget**:
+**sc-repomix-nuget**:
 - Analyzes NuGet packages and assemblies
 - Executes Python scripts for extraction
 - Requires Python 3.12+ and appropriate permissions
-- See [packages/repomix-nuget/TROUBLESHOOTING.md](packages/repomix-nuget/TROUBLESHOOTING.md)
+- See [packages/sc-repomix-nuget/TROUBLESHOOTING.md](packages/sc-repomix-nuget/TROUBLESHOOTING.md)
 
 ### General Limitations
 
@@ -416,7 +416,7 @@ python3 tools/sc-install.py install package-name --dest /path/to/.claude
 # Verify git version for git-worktree
 git --version  # Should be >= 2.27
 
-# Verify Python version for repomix-nuget
+# Verify Python version for sc-repomix-nuget
 python3 --version  # Should be >= 3.12
 ```
 
@@ -573,7 +573,7 @@ Additional security information:
 - [delay-tasks/TROUBLESHOOTING.md](packages/delay-tasks/TROUBLESHOOTING.md)
 - [git-worktree/TROUBLESHOOTING.md](packages/git-worktree/TROUBLESHOOTING.md)
 - [sc-manage/TROUBLESHOOTING.md](packages/sc-manage/TROUBLESHOOTING.md)
-- [repomix-nuget/TROUBLESHOOTING.md](packages/repomix-nuget/TROUBLESHOOTING.md)
+- [sc-repomix-nuget/TROUBLESHOOTING.md](packages/sc-repomix-nuget/TROUBLESHOOTING.md)
 
 ### External Resources
 

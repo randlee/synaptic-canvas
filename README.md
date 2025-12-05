@@ -96,11 +96,11 @@ python3 tools/sc-install.py install git-worktree --dest /path/to/repo/.claude
 
 ---
 
-### [repomix-nuget](packages/repomix-nuget/)
-[![Beta](https://img.shields.io/badge/status-beta-yellow)](packages/repomix-nuget/CHANGELOG.md)
-[![v0.4.0](https://img.shields.io/badge/version-0.4.0-blue)](packages/repomix-nuget/CHANGELOG.md)
+### [sc-repomix-nuget](packages/sc-repomix-nuget/)
+[![Beta](https://img.shields.io/badge/status-beta-yellow)](packages/sc-repomix-nuget/CHANGELOG.md)
+[![v0.4.0](https://img.shields.io/badge/version-0.4.0-blue)](packages/sc-repomix-nuget/CHANGELOG.md)
 [![Tier 2](https://img.shields.io/badge/tier-2-orange)](README.md#-package-tiers-explained)
-[![MIT License](https://img.shields.io/badge/license-MIT-green)](packages/repomix-nuget/LICENSE)
+[![MIT License](https://img.shields.io/badge/license-MIT-green)](packages/sc-repomix-nuget/LICENSE)
 
 **NuGet & C# analysis** — Generate AI-ready context from .NET projects for code review and documentation.
 
@@ -110,7 +110,7 @@ python3 tools/sc-install.py install git-worktree --dest /path/to/repo/.claude
 - Check framework and dependency compatibility
 - Create AI-ready context from large codebases
 
-📖 **[Full README](packages/repomix-nuget/README.md)** | 💡 **[7 Use Cases](packages/repomix-nuget/USE-CASES.md)** | 🔧 **[Troubleshooting](packages/repomix-nuget/TROUBLESHOOTING.md)** | 📋 **[Changelog](packages/repomix-nuget/CHANGELOG.md)**
+📖 **[Full README](packages/sc-repomix-nuget/README.md)** | 💡 **[7 Use Cases](packages/sc-repomix-nuget/USE-CASES.md)** | 🔧 **[Troubleshooting](packages/sc-repomix-nuget/TROUBLESHOOTING.md)** | 📋 **[Changelog](packages/sc-repomix-nuget/CHANGELOG.md)**
 
 ---
 
@@ -122,7 +122,7 @@ python3 tools/sc-install.py install git-worktree --dest /path/to/repo/.claude
 |------|---------|------|
 | **Wait before checking if something is ready** | delay-tasks | [Examples](packages/delay-tasks/USE-CASES.md) |
 | **Work on multiple branches simultaneously** | git-worktree | [Guide](packages/git-worktree/USE-CASES.md) |
-| **Analyze a C# project with AI** | repomix-nuget | [Examples](packages/repomix-nuget/USE-CASES.md) |
+| **Analyze a C# project with AI** | sc-repomix-nuget | [Examples](packages/sc-repomix-nuget/USE-CASES.md) |
 | **Discover & install packages** | sc-manage | [Guide](packages/sc-manage/USE-CASES.md) |
 | **See all available packages** | Any | [Registry](docs/registries/nuget/registry.json) |
 
@@ -135,7 +135,7 @@ python3 tools/sc-install.py install git-worktree --dest /path/to/repo/.claude
 | delay-tasks | Utilities | ✅ Stable | 1.0.0 | 0 | Python 3.6+ |
 | git-worktree | Git Tools | ✅ Stable | 1.0.0 | 1 | Git 2.7.0+ |
 | sc-manage | Package Mgr | 🟡 Beta | 0.4.0 | 0 | Python 3.6+ |
-| repomix-nuget | Analysis | 🟡 Beta | 0.4.0 | 2 | Node 18+, .NET SDK |
+| sc-repomix-nuget | Analysis | 🟡 Beta | 0.4.0 | 2 | Node 18+, .NET SDK |
 
 **Status:** ✅ Stable (production-ready) | 🟡 Beta (active development) | 🔴 Deprecated (not recommended)
 
@@ -217,7 +217,7 @@ Every package in Synaptic Canvas is:
 ### Tier 2: Runtime Dependencies
 - Requires external tools (Python, Node, .NET SDK, etc.)
 - Most powerful capabilities
-- Example: `repomix-nuget`
+- Example: `sc-repomix-nuget`
 - Setup time: 5-10 minutes (depends on your environment)
 
 ---

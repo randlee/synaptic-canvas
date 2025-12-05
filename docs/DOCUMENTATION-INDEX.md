@@ -61,7 +61,7 @@ Each package in `packages/*/` maintains its own documentation:
 | **delay-tasks** | 0.4.0 | Delayed/polled task execution | [README](../packages/delay-tasks/README.md) |
 | **git-worktree** | 0.4.0 | Git worktree management | [README](../packages/git-worktree/README.md) |
 | **sc-manage** | 0.4.0 | Synaptic Canvas package manager | [README](../packages/sc-manage/README.md) |
-| **repomix-nuget** | 0.4.0 | NuGet context generation | [README](../packages/repomix-nuget/README.md) |
+| **sc-repomix-nuget** | 0.4.0 | NuGet context generation | [README](../packages/sc-repomix-nuget/README.md) |
 
 **→ See each package's README.md for details on usage, features, and skills**
 
@@ -124,7 +124,7 @@ synaptic-canvas/
 │   ├── delay-tasks/               # Package 1
 │   ├── git-worktree/              # Package 2
 │   ├── sc-manage/                 # Package 3
-│   └── repomix-nuget/             # Package 4
+│   └── sc-repomix-nuget/             # Package 4
 ├── scripts/                       # Utility scripts
 │   ├── audit-versions.sh
 │   ├── sync-versions.py

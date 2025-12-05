@@ -288,7 +288,7 @@ Complete schema for a single publisher:
   "delay-tasks",
   "git-worktree",
   "sc-manage",
-  "repomix-nuget"
+  "sc-repomix-nuget"
 ]
 ```
 
@@ -360,7 +360,7 @@ Here's a complete, valid publisher profile:
       "packages": [
         "delay-tasks",
         "git-worktree",
-        "repomix-nuget",
+        "sc-repomix-nuget",
         "sc-manage"
       ],
       "total_packages": 4
