@@ -15,7 +15,7 @@ def _init_git_repo(path: Path) -> None:
 def test_list_and_info(capsys):
     assert sc_install.main(["list"]) == 0
     out = capsys.readouterr().out
-    assert "delay-tasks" in out
+    assert "sc-delay-tasks" in out
     assert "sc-git-worktree" in out
 
     assert sc_install.main(["info", "sc-git-worktree"]) == 0
@@ -31,19 +31,19 @@ def test_install_and_uninstall_delay_tasks(tmp_path: Path):
     dest = repo / ".claude"
 
     # Install
-    rc = sc_install.main(["install", "delay-tasks", "--dest", str(dest)])
+    rc = sc_install.main(["install", "sc-delay-tasks", "--dest", str(dest)])
     assert rc == 0
     # Files exist
-    assert (dest / "agents/delay-once.md").exists()
-    py = dest / "scripts/delay-run.py"
+    assert (dest / "agents/sc-delay-once.md").exists()
+    py = dest / "scripts/sc-delay-run.py"
     assert py.exists()
     # Executable bit set (at least for user)
     assert os.access(py, os.X_OK)
 
     # Uninstall
-    rc = sc_install.main(["uninstall", "delay-tasks", "--dest", str(dest)])
+    rc = sc_install.main(["uninstall", "sc-delay-tasks", "--dest", str(dest)])
     assert rc == 0
-    assert not (dest / "agents/delay-once.md").exists()
+    assert not (dest / "agents/sc-delay-once.md").exists()
 
 
 def test_token_expansion_repo_name(tmp_path: Path):

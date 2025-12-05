@@ -100,7 +100,7 @@ class TestGlobalLocalFlags:
         """Test that --global installs to home directory."""
         rc = sc_install.main(["install", "sc-delay-tasks", "--global"])
         assert rc == 0
-        assert (temp_home / ".claude" / "agents" / "delay-once.md").exists()
+        assert (temp_home / ".claude" / "agents" / "sc-delay-once.md").exists()
 
         out = capsys.readouterr().out
         assert str(temp_home / ".claude") in out
@@ -116,7 +116,7 @@ class TestGlobalLocalFlags:
         """Test that --local installs to project .claude-local."""
         rc = sc_install.main(["install", "sc-delay-tasks", "--local"])
         assert rc == 0
-        assert (temp_cwd / ".claude-local" / "agents" / "delay-once.md").exists()
+        assert (temp_cwd / ".claude-local" / "agents" / "sc-delay-once.md").exists()
 
         out = capsys.readouterr().out
         assert ".claude-local" in out
@@ -126,7 +126,7 @@ class TestGlobalLocalFlags:
         dest = tmp_path / "custom" / ".claude"
         rc = sc_install.main(["install", "sc-delay-tasks", "--dest", str(dest)])
         assert rc == 0
-        assert (dest / "agents" / "delay-once.md").exists()
+        assert (dest / "agents" / "sc-delay-once.md").exists()
 
     def test_install_global_and_local_conflict_error(self, capsys):
         """Test that --global and --local together produce error."""
@@ -173,7 +173,7 @@ class TestGlobalLocalFlags:
         assert rc == 0
 
         # Should use actual home, not literal ~
-        assert (temp_home / ".claude" / "agents" / "delay-once.md").exists()
+        assert (temp_home / ".claude" / "agents" / "sc-delay-once.md").exists()
 
     def test_install_local_uses_cwd(self, temp_cwd, capsys):
         """Test that --local uses current working directory."""
@@ -183,7 +183,7 @@ class TestGlobalLocalFlags:
         # Should be in cwd
         local_path = Path.cwd() / ".claude-local"
         assert local_path.exists()
-        assert (local_path / "agents" / "delay-once.md").exists()
+        assert (local_path / "agents" / "sc-delay-once.md").exists()
 
     def test_install_multiple_flags_error(self, temp_home, capsys):
         """Test that multiple destination flags produce error."""
@@ -597,7 +597,7 @@ class TestInstallWithRegistries:
         assert rc == 0
 
         base = temp_home / ".claude"
-        assert (base / "agents" / "delay-once.md").exists()
+        assert (base / "agents" / "sc-delay-once.md").exists()
         assert (base / "scripts" / "delay-run.py").exists()
 
     def test_install_local_files_installed(self, temp_cwd):
@@ -606,7 +606,7 @@ class TestInstallWithRegistries:
         assert rc == 0
 
         base = temp_cwd / ".claude-local"
-        assert (base / "agents" / "delay-once.md").exists()
+        assert (base / "agents" / "sc-delay-once.md").exists()
         assert (base / "scripts" / "delay-run.py").exists()
 
     def test_install_global_respects_force_flag(self, temp_home, capsys):
@@ -616,7 +616,7 @@ class TestInstallWithRegistries:
         assert rc == 0
 
         # Modify file
-        agent_file = temp_home / ".claude" / "agents" / "delay-once.md"
+        agent_file = temp_home / ".claude" / "agents" / "sc-delay-once.md"
         agent_file.write_text("modified", encoding="utf-8")
 
         # Install without --force (should skip)
@@ -636,7 +636,7 @@ class TestInstallWithRegistries:
         assert rc == 0
 
         # Modify file
-        agent_file = temp_cwd / ".claude-local" / "agents" / "delay-once.md"
+        agent_file = temp_cwd / ".claude-local" / "agents" / "sc-delay-once.md"
         agent_file.write_text("modified", encoding="utf-8")
 
         # Install without --force (should skip)
@@ -699,7 +699,7 @@ class TestInstallWithRegistries:
         assert registry.exists()
 
         content = registry.read_text(encoding="utf-8")
-        assert "delay-once" in content
+        assert "sc-delay-once" in content
 
     def test_install_local_updates_agent_registry(self, temp_cwd):
         """Test that --local updates agent registry."""
@@ -710,7 +710,7 @@ class TestInstallWithRegistries:
         assert registry.exists()
 
         content = registry.read_text(encoding="utf-8")
-        assert "delay-once" in content
+        assert "sc-delay-once" in content
 
 
 # ==============================================================================
@@ -899,7 +899,7 @@ class TestBackwardCompatibility:
         dest = tmp_path / "custom" / ".claude"
         rc = sc_install.main(["install", "sc-delay-tasks", "--dest", str(dest)])
         assert rc == 0
-        assert (dest / "agents" / "delay-once.md").exists()
+        assert (dest / "agents" / "sc-delay-once.md").exists()
 
     def test_dest_flag_takes_precedence(self, temp_home, capsys):
         """Test that --dest works independently."""
@@ -908,8 +908,8 @@ class TestBackwardCompatibility:
         assert rc == 0
 
         # Should be in custom location, not ~/.claude
-        assert (dest / "agents" / "delay-once.md").exists()
-        assert not (temp_home / ".claude" / "agents" / "delay-once.md").exists()
+        assert (dest / "agents" / "sc-delay-once.md").exists()
+        assert not (temp_home / ".claude" / "agents" / "sc-delay-once.md").exists()
 
     def test_old_tests_still_pass(self):
         """Verify that original test suite patterns still work."""
@@ -977,7 +977,7 @@ class TestBackwardCompatibility:
         assert rc == 0
 
         # Both should exist
-        assert (dest1 / "agents" / "delay-once.md").exists()
+        assert (dest1 / "agents" / "sc-delay-once.md").exists()
         assert (temp_home / ".claude" / "commands" / "sc-git-worktree.md").exists()
 
 
