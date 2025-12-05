@@ -939,7 +939,7 @@ class TestBackwardCompatibility:
 
         # Uninstall without --dest should fail (argparse catches this)
         with pytest.raises(SystemExit) as exc_info:
-            sc_install.main(["uninstall", "delay-tasks"])
+            sc_install.main(["uninstall", "sc-delay-tasks"])
 
         assert exc_info.value.code != 0
 
@@ -1912,13 +1912,13 @@ def sample_registry_data():
     return {
         "packages": [
             {
-                "name": "delay-tasks",
+                "name": "sc-delay-tasks",
                 "version": "1.0.0",
                 "description": "Delay tasks in your workflow",
                 "tier": "premium",
                 "author": "Synaptic Canvas",
-                "source": "https://github.com/example/delay-tasks",
-                "download_url": "https://github.com/example/delay-tasks/archive/v1.0.0.zip",
+                "source": "https://github.com/example/sc-delay-tasks",
+                "download_url": "https://github.com/example/sc-delay-tasks/archive/v1.0.0.zip",
                 "dependencies": []
             },
             {
@@ -2052,9 +2052,9 @@ class TestRemoteRegistryFetching:
         """Test parsing valid registry metadata."""
         packages = sc_install._parse_registry_metadata(sample_registry_data)
         assert len(packages) == 3
-        assert "delay-tasks" in packages
-        assert packages["delay-tasks"]["version"] == "1.0.0"
-        assert packages["delay-tasks"]["tier"] == "premium"
+        assert "sc-delay-tasks" in packages
+        assert packages["sc-delay-tasks"]["version"] == "1.0.0"
+        assert packages["sc-delay-tasks"]["tier"] == "premium"
 
     def test_parse_registry_metadata_missing_fields(self):
         """Test parsing with missing fields."""
@@ -2080,7 +2080,7 @@ class TestRemoteRegistryFetching:
         packages = sc_install._parse_registry_metadata(sample_registry_data)
         matches = sc_install._search_packages("DELAY", packages)
         assert len(matches) == 1
-        assert matches[0]["name"] == "delay-tasks"
+        assert matches[0]["name"] == "sc-delay-tasks"
 
     def test_search_packages_substring_match(self, sample_registry_data):
         """Test substring matching."""

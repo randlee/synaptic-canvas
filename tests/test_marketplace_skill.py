@@ -973,9 +973,9 @@ def sample_marketplace_packages():
     """Sample package data for testing."""
     return [
         {
-            "name": "delay-tasks",
-            "version": "0.4.0",
-            "status": "beta",
+            "name": "sc-delay-tasks",
+            "version": "0.5.0",
+            "status": "stable",
             "description": "Schedule delayed or interval-based actions",
             "tags": ["delay", "polling", "tasks", "ci", "automation"],
             "artifacts": {"commands": 1, "skills": 1, "agents": 3, "scripts": 1},
