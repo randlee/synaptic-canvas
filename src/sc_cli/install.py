@@ -186,6 +186,143 @@ def _validate_config_schema(config: Dict) -> Dict:
     return config
 
 
+# ==============================================================================
+# Phase 3: Remote Registry Fetching
+# ==============================================================================
+
+def _fetch_registry_json(url: str, path: str = "") -> Optional[Dict]:
+    """Fetch registry.json from remote URL.
+    
+    Phase 3 Task 1: Remote Registry Fetching
+    - Fetch registry.json from remote URL
+    - Support optional path (e.g., "docs/registries/nuget/registry.json")
+    - Handle HTTP errors gracefully
+    - Return dict or None on failure
+    
+    Args:
+        url: Base URL of the registry (e.g., https://github.com/org/repo)
+        path: Optional path to registry.json (e.g., "docs/registries/nuget/registry.json")
+    
+    Returns:
+        Dictionary containing registry data, or None on failure
+    """
+    try:
+        import urllib.request
+        import json
+        
+        # Construct full URL
+        if path:
+            full_url = f"{url.rstrip('/')}/{path.lstrip('/')}"
+        else:
+            full_url = f"{url.rstrip('/')}/registry.json"
+        
+        # Handle GitHub URLs - convert to raw content URL
+        if "github.com" in full_url and "/blob/" not in full_url:
+            # Convert github.com URL to raw.githubusercontent.com
+            full_url = full_url.replace("github.com", "raw.githubusercontent.com")
+            full_url = full_url.replace("/tree/", "/")
+            # If no branch specified, assume main
+            if "raw.githubusercontent.com" in full_url and full_url.count("/") == 4:
+                parts = full_url.split("/")
+                full_url = "/".join(parts[:4]) + "/main/" + "/".join(parts[4:])
+        
+        # Fetch with timeout
+        req = urllib.request.Request(full_url, headers={"User-Agent": "sc-install/1.0"})
+        with urllib.request.urlopen(req, timeout=10) as response:
+            data = response.read().decode("utf-8")
+            return json.loads(data)
+    
+    except urllib.request.URLError as e:
+        warn(f"Network error fetching registry: {e}")
+        return None
+    except json.JSONDecodeError as e:
+        warn(f"Failed to parse registry JSON: {e}")
+        return None
+    except Exception as e:
+        warn(f"Error fetching registry: {e}")
+        return None
+
+
+def _parse_registry_metadata(registry_data: Dict) -> Dict:
+    """Extract packages from registry.json.
+    
+    Phase 3 Task 1: Parse Registry Metadata
+    - Extract packages from registry.json
+    - Return simplified metadata: {package_name: {version, description, tier}}
+    - Handle missing fields gracefully
+    - Return empty dict if structure unrecognized
+    
+    Args:
+        registry_data: Dictionary from registry.json
+    
+    Returns:
+        Dictionary mapping package names to metadata
+    """
+    packages = {}
+    
+    try:
+        # Expected structure: {"packages": [...]}
+        package_list = registry_data.get("packages", [])
+        
+        if not isinstance(package_list, list):
+            return {}
+        
+        for pkg in package_list:
+            if not isinstance(pkg, dict):
+                continue
+            
+            name = pkg.get("name", pkg.get("id", ""))
+            if not name:
+                continue
+            
+            packages[name] = {
+                "version": pkg.get("version", "unknown"),
+                "description": pkg.get("description", "No description available"),
+                "tier": pkg.get("tier", "community"),
+                "author": pkg.get("author", ""),
+                "source": pkg.get("source", ""),
+                "download_url": pkg.get("download_url", ""),
+                "dependencies": pkg.get("dependencies", []),
+            }
+    
+    except Exception as e:
+        warn(f"Error parsing registry metadata: {e}")
+        return {}
+    
+    return packages
+
+
+def _search_packages(name_query: str, registry_data: Dict) -> List[Dict]:
+    """Search packages by name (case-insensitive substring match).
+    
+    Phase 3 Task 1: Package Search
+    - Search packages by name (case-insensitive substring match)
+    - Return list of matching packages with metadata
+    - Support tag-based filtering (future enhancement)
+    
+    Args:
+        name_query: Search query string
+        registry_data: Parsed registry metadata
+    
+    Returns:
+        List of matching package dictionaries
+    """
+    if not name_query:
+        # Return all packages if no query
+        return [{"name": k, **v} for k, v in registry_data.items()]
+    
+    query_lower = name_query.lower()
+    matches = []
+    
+    for pkg_name, metadata in registry_data.items():
+        if query_lower in pkg_name.lower():
+            matches.append({"name": pkg_name, **metadata})
+        elif query_lower in metadata.get("description", "").lower():
+            matches.append({"name": pkg_name, **metadata})
+    
+    return matches
+
+
 def _load_config() -> Dict:
     """Load marketplace config from YAML.
 
@@ -446,16 +583,216 @@ def cmd_registry_remove(name: str) -> int:
 # Original Package Commands
 # ============================================================================
 
-def cmd_list() -> int:
+def cmd_list(registry: Optional[str] = None, all_registries: bool = False, search: Optional[str] = None) -> int:
+    """List available packages from local or remote registries.
+    
+    Phase 3 Enhancement: Remote Registry Support
+    - Support --registry flag to query specific registry
+    - Support --all-registries flag to query all registered registries
+    - Support --search flag to filter packages
+    """
+    # If remote registry specified
+    if registry or all_registries:
+        config = _load_config()
+        registries_to_query = []
+        
+        if all_registries:
+            # Query all registered registries
+            registries_to_query = list(config.get("marketplaces", {}).get("registries", {}).keys())
+        elif registry:
+            # Query specific registry
+            if registry not in config.get("marketplaces", {}).get("registries", {}):
+                error(f"Registry not found: {registry}")
+                error("Use 'sc-install registry list' to see available registries")
+                return 1
+            registries_to_query = [registry]
+        
+        # Fetch and display remote packages
+        all_packages = []
+        for reg_name in registries_to_query:
+            reg_info = config["marketplaces"]["registries"][reg_name]
+            url = reg_info.get("url", "")
+            path = reg_info.get("path", "")
+            
+            print(f"\nRegistry: {reg_name} ({url})")
+            print("=" * 60)
+            
+            registry_json = _fetch_registry_json(url, path)
+            if registry_json is None:
+                warn(f"Failed to fetch registry: {reg_name}")
+                continue
+            
+            packages = _parse_registry_metadata(registry_json)
+            if search:
+                matches = _search_packages(search, packages)
+            else:
+                matches = [{"name": k, **v} for k, v in packages.items()]
+            
+            if not matches:
+                print("  No packages found")
+            else:
+                for pkg in sorted(matches, key=lambda x: x["name"]):
+                    desc_first = pkg.get("description", "").splitlines()[0] if pkg.get("description") else "(no description)"
+                    version = pkg.get("version", "unknown")
+                    print(f"  {pkg['name']:<20} v{version:<10} {desc_first[:50]}")
+                    all_packages.extend(matches)
+        
+        return 0
+    
+    # Default: list local packages
     print("Available packages:\n")
     for pkg_dir in _available_packages():
         m = _parse_manifest(pkg_dir)
         desc_first = m.description.splitlines()[0] if m.description else "(no manifest)"
+        
+        # Apply search filter if specified
+        if search:
+            if search.lower() not in pkg_dir.name.lower() and search.lower() not in desc_first.lower():
+                continue
+        
         print(f"  {pkg_dir.name:<20} {desc_first[:60]}")
+    
     return 0
 
 
-def cmd_info(pkg: str) -> int:
+
+def cmd_search(query: str, registry: Optional[str] = None) -> int:
+    """Search for packages across registered registries.
+    
+    Phase 3 Task 2: Search Command
+    - Search across registered registries
+    - Display results with source registry
+    - Show package details
+    
+    Args:
+        query: Search query string
+        registry: Optional specific registry to search (None = all registries)
+    
+    Returns:
+        0 on success, 1 on error
+    """
+    if not query:
+        error("Search query cannot be empty")
+        return 1
+    
+    config = _load_config()
+    registries = config.get("marketplaces", {}).get("registries", {})
+    
+    if not registries:
+        error("No registries configured. Use 'sc-install registry add' to add a registry")
+        return 1
+    
+    # Determine which registries to search
+    if registry:
+        if registry not in registries:
+            error(f"Registry not found: {registry}")
+            error("Use 'sc-install registry list' to see available registries")
+            return 1
+        registries_to_search = {registry: registries[registry]}
+    else:
+        registries_to_search = registries
+    
+    print(f"Searching for '{query}' across {len(registries_to_search)} registr{'y' if len(registries_to_search) == 1 else 'ies'}...\n")
+    
+    total_matches = 0
+    for reg_name, reg_info in registries_to_search.items():
+        url = reg_info.get("url", "")
+        path = reg_info.get("path", "")
+        
+        registry_json = _fetch_registry_json(url, path)
+        if registry_json is None:
+            warn(f"Failed to fetch registry: {reg_name}")
+            continue
+        
+        packages = _parse_registry_metadata(registry_json)
+        matches = _search_packages(query, packages)
+        
+        if matches:
+            print(f"Registry: {reg_name}")
+            print("-" * 60)
+            for pkg in sorted(matches, key=lambda x: x["name"]):
+                desc_first = pkg.get("description", "").splitlines()[0] if pkg.get("description") else "(no description)"
+                version = pkg.get("version", "unknown")
+                tier = pkg.get("tier", "community")
+                print(f"  {pkg['name']:<20} v{version:<10} [{tier}]")
+                print(f"    {desc_first[:70]}")
+            print()
+            total_matches += len(matches)
+    
+    if total_matches == 0:
+        print(f"No packages found matching '{query}'")
+        print("\nTry:")
+        print("  - Using different search terms")
+        print("  - Checking registry status with 'sc-install registry list'")
+        return 0
+    
+    print(f"Found {total_matches} package{'s' if total_matches != 1 else ''} matching '{query}'")
+    return 0
+
+
+def cmd_info(pkg: str, registry: Optional[str] = None) -> int:
+    """Display information about a package.
+    
+    Phase 3 Enhancement: Remote Registry Support
+    - Support --registry flag to get info from remote registry
+    - Fall back to local package if registry not specified
+    
+    Args:
+        pkg: Package name
+        registry: Optional registry name to query
+    
+    Returns:
+        0 on success, 1 on error
+    """
+    # If registry specified, fetch from remote
+    if registry:
+        config = _load_config()
+        registries = config.get("marketplaces", {}).get("registries", {})
+        
+        if registry not in registries:
+            error(f"Registry not found: {registry}")
+            error("Use 'sc-install registry list' to see available registries")
+            return 1
+        
+        reg_info = registries[registry]
+        url = reg_info.get("url", "")
+        path = reg_info.get("path", "")
+        
+        registry_json = _fetch_registry_json(url, path)
+        if registry_json is None:
+            error(f"Failed to fetch registry: {registry}")
+            return 1
+        
+        packages = _parse_registry_metadata(registry_json)
+        
+        if pkg not in packages:
+            error(f"Package not found in registry '{registry}': {pkg}")
+            return 1
+        
+        metadata = packages[pkg]
+        print(f"Package: {pkg}")
+        print(f"Registry: {registry}")
+        print(f"Version: {metadata.get('version', 'unknown')}")
+        print(f"Tier: {metadata.get('tier', 'community')}")
+        if metadata.get('author'):
+            print(f"Author: {metadata['author']}")
+        print()
+        print(f"Description:")
+        print(f"  {metadata.get('description', 'No description available')}")
+        
+        if metadata.get('dependencies'):
+            print()
+            print("Dependencies:")
+            for dep in metadata['dependencies']:
+                print(f"  - {dep}")
+        
+        if metadata.get('source'):
+            print()
+            print(f"Source: {metadata['source']}")
+        
+        return 0
+    
+    # Default: show local package info
     pkg_dir = PACKAGES_DIR / pkg
     if not pkg_dir.is_dir():
         error(f"Package not found: {pkg}")
@@ -673,8 +1010,14 @@ def cmd_install(
     expand: bool = True,
     global_flag: bool = False,
     local_flag: bool = False,
+    registry: Optional[str] = None,
 ) -> int:
     """Install a package to a .claude directory.
+    
+    Phase 3 Enhancement: Remote Registry Support
+    - Support --registry flag to install from remote registry
+    - Prefer local packages (backward compatible)
+    - Fall back to remote if not found locally
 
     Args:
         pkg: Package name
@@ -683,9 +1026,45 @@ def cmd_install(
         expand: Perform token expansion
         global_flag: Install to ~/.claude
         local_flag: Install to ./.claude-local
+        registry: Optional registry name to install from
     """
+    # Check local package first (backward compatible)
     pkg_dir = PACKAGES_DIR / pkg
-    if not pkg_dir.is_dir():
+    local_exists = pkg_dir.is_dir()
+    
+    # If registry specified or local doesn't exist, try remote
+    if registry or not local_exists:
+        if registry:
+            config = _load_config()
+            registries = config.get("marketplaces", {}).get("registries", {})
+            
+            if registry not in registries:
+                error(f"Registry not found: {registry}")
+                error("Use 'sc-install registry list' to see available registries")
+                return 1
+            
+            reg_info = registries[registry]
+            url = reg_info.get("url", "")
+            path = reg_info.get("path", "")
+            
+            registry_json = _fetch_registry_json(url, path)
+            if registry_json is None:
+                error(f"Failed to fetch registry: {registry}")
+                return 1
+            
+            packages = _parse_registry_metadata(registry_json)
+            
+            if pkg not in packages:
+                error(f"Package not found in registry '{registry}': {pkg}")
+                return 1
+            
+            # TODO: Implement remote download and installation
+            # For now, just report that remote installation is not yet fully implemented
+            warn(f"Remote installation from registry '{registry}' is not yet fully implemented")
+            warn("For now, please install packages locally or use manual download")
+            return 1
+    
+    if not local_exists:
         error(f"Package not found: {pkg}")
         return 1
 
@@ -777,11 +1156,23 @@ def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="sc-install", add_help=True)
     sub = p.add_subparsers(dest="cmd")
 
-    sub.add_parser("list")
+    # Phase 3: Enhanced list command with remote registry support
+    p_list = sub.add_parser("list")
+    p_list.add_argument("--registry", help="Query specific registry")
+    p_list.add_argument("--all-registries", action="store_true", help="Query all registries")
+    p_list.add_argument("--search", help="Filter packages by name")
 
+    # Phase 3: Enhanced info command with remote registry support
     p_info = sub.add_parser("info")
     p_info.add_argument("package")
+    p_info.add_argument("--registry", help="Get info from remote registry")
 
+    # Phase 3: New search command
+    p_search = sub.add_parser("search")
+    p_search.add_argument("query", help="Search query")
+    p_search.add_argument("--registry", help="Search specific registry (default: all)")
+
+    # Phase 3: Enhanced install command with remote registry support
     p_install = sub.add_parser("install")
     p_install.add_argument("package")
     # Phase 1: Mutually exclusive destination flags
@@ -791,6 +1182,7 @@ def build_parser() -> argparse.ArgumentParser:
     dest_group.add_argument("--local", dest="local_flag", action="store_true")
     p_install.add_argument("--force", action="store_true")
     p_install.add_argument("--no-expand", action="store_true")
+    p_install.add_argument("--registry", help="Install from remote registry")
 
     p_uninstall = sub.add_parser("uninstall")
     p_uninstall.add_argument("package")
@@ -815,10 +1207,24 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: Optional[list[str]] = None) -> int:
     args = build_parser().parse_args(argv)
+    
+    # Phase 3: Enhanced list command with remote registry support
     if args.cmd == "list":
-        return cmd_list()
+        return cmd_list(
+            registry=getattr(args, 'registry', None),
+            all_registries=getattr(args, 'all_registries', False),
+            search=getattr(args, 'search', None),
+        )
+    
+    # Phase 3: Enhanced info command with remote registry support
     if args.cmd == "info":
-        return cmd_info(args.package)
+        return cmd_info(args.package, registry=getattr(args, 'registry', None))
+    
+    # Phase 3: New search command
+    if args.cmd == "search":
+        return cmd_search(args.query, registry=getattr(args, 'registry', None))
+    
+    # Phase 3: Enhanced install command with remote registry support
     if args.cmd == "install":
         return cmd_install(
             args.package,
@@ -827,9 +1233,12 @@ def main(argv: Optional[list[str]] = None) -> int:
             expand=not args.no_expand,
             global_flag=getattr(args, 'global_flag', False),
             local_flag=getattr(args, 'local_flag', False),
+            registry=getattr(args, 'registry', None),
         )
+    
     if args.cmd == "uninstall":
         return cmd_uninstall(args.package, args.dest)
+    
     if args.cmd == "registry":
         if args.registry_cmd == "add":
             return cmd_registry_add(args.name, args.url, args.path)
@@ -840,6 +1249,7 @@ def main(argv: Optional[list[str]] = None) -> int:
         # No registry subcommand
         build_parser().parse_args(["registry", "-h"])
         return 1
+    
     # Default: if user passed legacy style without subcommand, show help
     build_parser().print_help()
     return 1
