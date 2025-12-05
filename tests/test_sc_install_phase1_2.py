@@ -12,6 +12,7 @@ Tests cover:
 from __future__ import annotations
 
 import os
+import sys
 import subprocess
 import re
 from pathlib import Path
@@ -542,6 +543,7 @@ class TestConfigPersistence:
         # May fail or succeed depending on handling, but shouldn't crash
         assert rc in [0, 1]
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows has different permission model - chmod doesn't prevent writes the same way")
     def test_config_permissions_error_on_write(self, temp_home, capsys, monkeypatch):
         """Test that permission errors on write are handled gracefully."""
         # This test is platform-dependent and may not work on all systems
