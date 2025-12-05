@@ -31,10 +31,10 @@ python3 tools/sc-install.py list
 
 ```bash
 # Quick install (recommended)
-python3 tools/sc-install.py install delay-tasks
+python3 tools/sc-install.py install sc-delay-tasks
 
 # Or specify destination for repo-specific setup
-python3 tools/sc-install.py install git-worktree --dest /path/to/repo/.claude
+python3 tools/sc-install.py install sc-git-worktree --dest /path/to/repo/.claude
 ```
 
 > **💡 Tip:** Need help? Run `scripts/security-scan.sh` to diagnose installation issues.
@@ -43,11 +43,11 @@ python3 tools/sc-install.py install git-worktree --dest /path/to/repo/.claude
 
 ## 📦 Available Packages
 
-### [delay-tasks](packages/delay-tasks/)
-[![Stable](https://img.shields.io/badge/status-stable-green)](packages/delay-tasks/CHANGELOG.md)
-[![v1.0.0](https://img.shields.io/badge/version-1.0.0-blue)](packages/delay-tasks/CHANGELOG.md)
+### [sc-delay-tasks](packages/sc-delay-tasks/)
+[![Stable](https://img.shields.io/badge/status-stable-green)](packages/sc-delay-tasks/CHANGELOG.md)
+[![v1.0.0](https://img.shields.io/badge/version-1.0.0-blue)](packages/sc-delay-tasks/CHANGELOG.md)
 [![Tier 0](https://img.shields.io/badge/tier-0-green)](README.md#-package-tiers-explained)
-[![MIT License](https://img.shields.io/badge/license-MIT-green)](packages/delay-tasks/LICENSE)
+[![MIT License](https://img.shields.io/badge/license-MIT-green)](packages/sc-delay-tasks/LICENSE)
 
 **Polling and delay utilities** — Wait for conditions and check on intervals with minimal overhead.
 
@@ -56,15 +56,15 @@ python3 tools/sc-install.py install git-worktree --dest /path/to/repo/.claude
 - Poll on bounded intervals for external system readiness
 - Wait for GitHub Actions, PR reviews, or deployment completion
 
-📖 **[Full README](packages/delay-tasks/README.md)** | 💡 **[7 Use Cases](packages/delay-tasks/USE-CASES.md)** | 🔧 **[Troubleshooting](packages/delay-tasks/TROUBLESHOOTING.md)** | 📋 **[Changelog](packages/delay-tasks/CHANGELOG.md)**
+📖 **[Full README](packages/sc-delay-tasks/README.md)** | 💡 **[7 Use Cases](packages/sc-delay-tasks/USE-CASES.md)** | 🔧 **[Troubleshooting](packages/sc-delay-tasks/TROUBLESHOOTING.md)** | 📋 **[Changelog](packages/sc-delay-tasks/CHANGELOG.md)**
 
 ---
 
-### [git-worktree](packages/git-worktree/)
-[![Stable](https://img.shields.io/badge/status-stable-green)](packages/git-worktree/CHANGELOG.md)
-[![v1.0.0](https://img.shields.io/badge/version-1.0.0-blue)](packages/git-worktree/CHANGELOG.md)
+### [sc-git-worktree](packages/sc-git-worktree/)
+[![Stable](https://img.shields.io/badge/status-stable-green)](packages/sc-git-worktree/CHANGELOG.md)
+[![v1.0.0](https://img.shields.io/badge/version-1.0.0-blue)](packages/sc-git-worktree/CHANGELOG.md)
 [![Tier 1](https://img.shields.io/badge/tier-1-yellow)](README.md#-package-tiers-explained)
-[![MIT License](https://img.shields.io/badge/license-MIT-green)](packages/git-worktree/LICENSE)
+[![MIT License](https://img.shields.io/badge/license-MIT-green)](packages/sc-git-worktree/LICENSE)
 
 **Git worktree management** — Manage parallel development with automatic tracking and safety checks.
 
@@ -74,7 +74,7 @@ python3 tools/sc-install.py install git-worktree --dest /path/to/repo/.claude
 - Track worktree state across your team
 - Clean up old worktrees with built-in safety checks
 
-📖 **[Full README](packages/git-worktree/README.md)** | 💡 **[7 Use Cases](packages/git-worktree/USE-CASES.md)** | 🔧 **[Troubleshooting](packages/git-worktree/TROUBLESHOOTING.md)** | 📋 **[Changelog](packages/git-worktree/CHANGELOG.md)**
+📖 **[Full README](packages/sc-git-worktree/README.md)** | 💡 **[7 Use Cases](packages/sc-git-worktree/USE-CASES.md)** | 🔧 **[Troubleshooting](packages/sc-git-worktree/TROUBLESHOOTING.md)** | 📋 **[Changelog](packages/sc-git-worktree/CHANGELOG.md)**
 
 ---
 
@@ -120,8 +120,8 @@ python3 tools/sc-install.py install git-worktree --dest /path/to/repo/.claude
 
 | Goal | Package | Link |
 |------|---------|------|
-| **Wait before checking if something is ready** | delay-tasks | [Examples](packages/delay-tasks/USE-CASES.md) |
-| **Work on multiple branches simultaneously** | git-worktree | [Guide](packages/git-worktree/USE-CASES.md) |
+| **Wait before checking if something is ready** | sc-delay-tasks | [Examples](packages/sc-delay-tasks/USE-CASES.md) |
+| **Work on multiple branches simultaneously** | sc-git-worktree | [Guide](packages/sc-git-worktree/USE-CASES.md) |
 | **Analyze a C# project with AI** | sc-repomix-nuget | [Examples](packages/sc-repomix-nuget/USE-CASES.md) |
 | **Discover & install packages** | sc-manage | [Guide](packages/sc-manage/USE-CASES.md) |
 | **See all available packages** | Any | [Registry](docs/registries/nuget/registry.json) |
@@ -167,7 +167,7 @@ Installs to a specific repository's `.claude/` folder. Use this for repo-specifi
 
 ### For Users
 - **[Getting Started Guide](docs/DOCUMENTATION-INDEX.md)** — Complete introduction
-- **[Use Cases by Package](packages/delay-tasks/USE-CASES.md)** — Real-world examples (28 total)
+- **[Use Cases by Package](packages/sc-delay-tasks/USE-CASES.md)** — Real-world examples (28 total)
 - **[Troubleshooting Guide](docs/DIAGNOSTIC-TOOLS.md)** — Common issues and solutions
 - **[Installation Help](docs/DEPENDENCY-VALIDATION.md)** — Dependencies and requirements
 - **[Diagnostic Tools](docs/DIAGNOSTIC-TOOLS.md)** — Debug installation and version issues
@@ -249,7 +249,7 @@ scripts/security-scan.sh
 ### More help needed?
 → See [Complete Troubleshooting Guide](docs/TROUBLESHOOTING.md)
 → See [Diagnostic Tools](docs/DIAGNOSTIC-TOOLS.md)
-→ Check [Package-Specific Guides](packages/delay-tasks/TROUBLESHOOTING.md)
+→ Check [Package-Specific Guides](packages/sc-delay-tasks/TROUBLESHOOTING.md)
 
 ---
 
