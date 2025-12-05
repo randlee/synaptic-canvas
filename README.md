@@ -1,80 +1,296 @@
 # Synaptic Canvas
 
-[![tests](https://github.com/randlee/synaptic-canvas/actions/workflows/tests.yml/badge.svg)](https://github.com/randlee/synaptic-canvas/actions/workflows/tests.yml)
+[![Build Status](https://github.com/randlee/synaptic-canvas/actions/workflows/tests.yml/badge.svg)](https://github.com/randlee/synaptic-canvas/actions/workflows/tests.yml)
+[![License MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![Publisher Verified](https://img.shields.io/badge/publisher-verified-brightgreen)](docs/PUBLISHER-VERIFICATION.md)
 
-A marketplace for Claude Code skills, commands, and agents.
+**A marketplace for Claude Code skills, agents, and commands.**
 
-## Installation
+Discover and install productivity packages for Claude development workflows. Register once, use across all your projects.
 
-### Quick Install (single package)
+---
+
+## 🚀 Quick Start (30 Seconds)
+
+### Step 1: Register the Marketplace
+
+Run once on any computer to add Synaptic Canvas:
 
 ```bash
-python3 tools/sc-install.py install git-worktree --dest /path/to/your-repo/.claude
+python3 tools/sc-install.py registry add synaptic-canvas \
+  https://raw.githubusercontent.com/randlee/synaptic-canvas/main/docs/registries/nuget/registry.json
 ```
 
-> **Note:** `tools/sc-install.sh` is deprecated. Use the Python CLI above.
+### Step 2: Discover Available Packages
 
-### Manual Install
+```bash
+python3 tools/sc-install.py list
+```
 
+### Step 3: Install a Package
+
+```bash
+# Quick install (recommended)
+python3 tools/sc-install.py install delay-tasks
+
+# Or specify destination for repo-specific setup
+python3 tools/sc-install.py install git-worktree --dest /path/to/repo/.claude
+```
+
+> **💡 Tip:** Need help? Run `scripts/security-scan.sh` to diagnose installation issues.
+
+---
+
+## 📦 Available Packages
+
+### [delay-tasks](packages/delay-tasks/)
+[![Stable](https://img.shields.io/badge/status-stable-green)](packages/delay-tasks/CHANGELOG.md)
+[![v1.0.0](https://img.shields.io/badge/version-1.0.0-blue)](packages/delay-tasks/CHANGELOG.md)
+[![Tier 0](https://img.shields.io/badge/tier-0-green)](README.md#-package-tiers-explained)
+[![MIT License](https://img.shields.io/badge/license-MIT-green)](packages/delay-tasks/LICENSE)
+
+**Polling and delay utilities** — Wait for conditions and check on intervals with minimal overhead.
+
+**Use when you need to:**
+- Delay execution before running checks (perfect for CI/CD pipelines)
+- Poll on bounded intervals for external system readiness
+- Wait for GitHub Actions, PR reviews, or deployment completion
+
+📖 **[Full README](packages/delay-tasks/README.md)** | 💡 **[7 Use Cases](packages/delay-tasks/USE-CASES.md)** | 🔧 **[Troubleshooting](packages/delay-tasks/TROUBLESHOOTING.md)** | 📋 **[Changelog](packages/delay-tasks/CHANGELOG.md)**
+
+---
+
+### [git-worktree](packages/git-worktree/)
+[![Stable](https://img.shields.io/badge/status-stable-green)](packages/git-worktree/CHANGELOG.md)
+[![v1.0.0](https://img.shields.io/badge/version-1.0.0-blue)](packages/git-worktree/CHANGELOG.md)
+[![Tier 1](https://img.shields.io/badge/tier-1-yellow)](README.md#-package-tiers-explained)
+[![MIT License](https://img.shields.io/badge/license-MIT-green)](packages/git-worktree/LICENSE)
+
+**Git worktree management** — Manage parallel development with automatic tracking and safety checks.
+
+**Use when you need to:**
+- Work on multiple branches simultaneously without context switching
+- Isolate experiments in separate worktrees for safety
+- Track worktree state across your team
+- Clean up old worktrees with built-in safety checks
+
+📖 **[Full README](packages/git-worktree/README.md)** | 💡 **[7 Use Cases](packages/git-worktree/USE-CASES.md)** | 🔧 **[Troubleshooting](packages/git-worktree/TROUBLESHOOTING.md)** | 📋 **[Changelog](packages/git-worktree/CHANGELOG.md)**
+
+---
+
+### [sc-manage](packages/sc-manage/)
+[![Beta](https://img.shields.io/badge/status-beta-yellow)](packages/sc-manage/CHANGELOG.md)
+[![v0.4.0](https://img.shields.io/badge/version-0.4.0-blue)](packages/sc-manage/CHANGELOG.md)
+[![Tier 0](https://img.shields.io/badge/tier-0-green)](README.md#-package-tiers-explained)
+[![MIT License](https://img.shields.io/badge/license-MIT-green)](packages/sc-manage/LICENSE)
+
+**Package management** — Discover, install, and manage Synaptic Canvas packages.
+
+**Use when you need to:**
+- Discover packages available in the marketplace registry
+- List installed packages and check their versions
+- Install packages globally or locally in specific repos
+- Check package compatibility with your environment
+
+📖 **[Full README](packages/sc-manage/README.md)** | 💡 **[7 Use Cases](packages/sc-manage/USE-CASES.md)** | 🔧 **[Troubleshooting](packages/sc-manage/TROUBLESHOOTING.md)** | 📋 **[Changelog](packages/sc-manage/CHANGELOG.md)**
+
+---
+
+### [repomix-nuget](packages/repomix-nuget/)
+[![Beta](https://img.shields.io/badge/status-beta-yellow)](packages/repomix-nuget/CHANGELOG.md)
+[![v0.4.0](https://img.shields.io/badge/version-0.4.0-blue)](packages/repomix-nuget/CHANGELOG.md)
+[![Tier 2](https://img.shields.io/badge/tier-2-orange)](README.md#-package-tiers-explained)
+[![MIT License](https://img.shields.io/badge/license-MIT-green)](packages/repomix-nuget/LICENSE)
+
+**NuGet & C# analysis** — Generate AI-ready context from .NET projects for code review and documentation.
+
+**Use when you need to:**
+- Analyze .NET/NuGet projects with AI assistance
+- Generate documentation from C# code automatically
+- Check framework and dependency compatibility
+- Create AI-ready context from large codebases
+
+📖 **[Full README](packages/repomix-nuget/README.md)** | 💡 **[7 Use Cases](packages/repomix-nuget/USE-CASES.md)** | 🔧 **[Troubleshooting](packages/repomix-nuget/TROUBLESHOOTING.md)** | 📋 **[Changelog](packages/repomix-nuget/CHANGELOG.md)**
+
+---
+
+## 🎯 Find the Right Package
+
+### I want to...
+
+| Goal | Package | Link |
+|------|---------|------|
+| **Wait before checking if something is ready** | delay-tasks | [Examples](packages/delay-tasks/USE-CASES.md) |
+| **Work on multiple branches simultaneously** | git-worktree | [Guide](packages/git-worktree/USE-CASES.md) |
+| **Analyze a C# project with AI** | repomix-nuget | [Examples](packages/repomix-nuget/USE-CASES.md) |
+| **Discover & install packages** | sc-manage | [Guide](packages/sc-manage/USE-CASES.md) |
+| **See all available packages** | Any | [Registry](docs/registries/nuget/registry.json) |
+
+---
+
+## 📊 Package Overview
+
+| Package | Type | Status | Version | Tier | Requirements |
+|---------|------|--------|---------|------|--------------|
+| delay-tasks | Utilities | ✅ Stable | 1.0.0 | 0 | Python 3.6+ |
+| git-worktree | Git Tools | ✅ Stable | 1.0.0 | 1 | Git 2.7.0+ |
+| sc-manage | Package Mgr | 🟡 Beta | 0.4.0 | 0 | Python 3.6+ |
+| repomix-nuget | Analysis | 🟡 Beta | 0.4.0 | 2 | Node 18+, .NET SDK |
+
+**Status:** ✅ Stable (production-ready) | 🟡 Beta (active development) | 🔴 Deprecated (not recommended)
+
+---
+
+## 🔧 Installation Methods
+
+### Method 1: Quick Install (Recommended)
+```bash
+python3 tools/sc-install.py install PACKAGE_NAME
+```
+Installs to your global Claude configuration. Use this for tools you want everywhere.
+
+### Method 2: Repository-Specific Install
+```bash
+python3 tools/sc-install.py install PACKAGE_NAME --dest /path/to/repo/.claude
+```
+Installs to a specific repository's `.claude/` folder. Use this for repo-specific tools.
+
+### Method 3: Manual Copy
 1. Clone or download the package folder
-2. Copy contents to your repo's `.claude/` directory
-3. Replace `{{REPO_NAME}}` tokens with your repository name
+2. Copy contents to your project's `.claude/` directory
+3. If Tier 1: Replace `{{REPO_NAME}}` tokens with your repository name
+4. If Tier 2: Verify all dependencies are installed
 
-## Packages
+---
 
-| Package | Description | Tier |
-|---------|-------------|------|
-| [git-worktree](packages/git-worktree/) | Manage git worktrees with optional tracking | 1 (token substitution) |
+## 📚 Documentation
 
-## Package Tiers
+### For Users
+- **[Getting Started Guide](docs/DOCUMENTATION-INDEX.md)** — Complete introduction
+- **[Use Cases by Package](packages/delay-tasks/USE-CASES.md)** — Real-world examples (28 total)
+- **[Troubleshooting Guide](docs/DIAGNOSTIC-TOOLS.md)** — Common issues and solutions
+- **[Installation Help](docs/DEPENDENCY-VALIDATION.md)** — Dependencies and requirements
+- **[Diagnostic Tools](docs/DIAGNOSTIC-TOOLS.md)** — Debug installation and version issues
 
-- **Tier 0**: Direct copy — no substitution needed
-- **Tier 1**: Token substitution — `{{REPO_NAME}}` and similar auto-detected values
-- **Tier 2**: Runtime dependencies — requires external tools (Python, Node, etc.)
+### For Contributors
+- **[CONTRIBUTING.md](CONTRIBUTING.md)** — How to create and submit packages
+- **[Versioning Strategy](docs/versioning-strategy.md)** — How versions work across layers
+- **[Release Process](docs/RELEASE-PROCESS.md)** — How packages are released
+- **[Package Manifest Guide](docs/version-compatibility-matrix.md)** — manifest.yaml format
 
-## Creating a Package
+### For Security-Conscious Users
+- **[Security Policy](SECURITY.md)** — Our security commitment and practices
+- **[Publisher Verification](docs/PUBLISHER-VERIFICATION.md)** — How we verify publishers
+- **[Dependency Information](docs/DEPENDENCY-VALIDATION.md)** — All package requirements
+- **[Security Scanning](docs/SECURITY-SCANNING-GUIDE.md)** — How we scan for vulnerabilities
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for package authoring guidelines.
+---
 
-### Manifest Format
+## 🔒 Security & Trust
 
-Each package requires a `manifest.yaml`:
+Every package in Synaptic Canvas is:
 
-```yaml
-name: my-package
-version: 1.0.0
-description: What it does
-author: your-handle
-tags: [relevant, tags]
+✅ **Publisher Verified** — Published by verified GitHub organization
+✅ **Security Scanned** — Automated vulnerability checks on every release
+✅ **Dependency Audited** — All requirements documented and tracked
+✅ **Openly Licensed** — MIT licensed, full source available
+✅ **Actively Maintained** — Regular updates and community support
 
-artifacts:
-  commands:
-    - commands/my-command.md
-  skills:
-    - skills/my-skill/SKILL.md
-  agents:
-    - agents/my-agent.md
+[Learn more about our security practices →](SECURITY.md)
 
-# Optional: token substitution (makes it Tier 1)
-variables:
-  REPO_NAME:
-    auto: git-repo-basename
+---
 
-# Optional: runtime requirements (makes it Tier 2)
-requires:
-  - git >= 2.0
+## 🧭 Package Tiers Explained
+
+### Tier 0: Direct Copy
+- No setup or substitution needed
+- Ready to use immediately
+- Example: `delay-tasks`
+- Setup time: < 1 minute
+
+### Tier 1: Token Substitution
+- Auto-replaces variables like `{{REPO_NAME}}`
+- Customizes to your project automatically
+- Example: `git-worktree`
+- Setup time: 1-2 minutes
+
+### Tier 2: Runtime Dependencies
+- Requires external tools (Python, Node, .NET SDK, etc.)
+- Most powerful capabilities
+- Example: `repomix-nuget`
+- Setup time: 5-10 minutes (depends on your environment)
+
+---
+
+## 🚨 Troubleshooting
+
+### "python3 not found"
+You need Python 3.6 or later. See [Dependency Guide](docs/DEPENDENCY-VALIDATION.md) for installation instructions.
+
+### "Package not found in registry"
+Make sure you've registered the marketplace first:
+```bash
+python3 tools/sc-install.py registry add synaptic-canvas \
+  https://raw.githubusercontent.com/randlee/synaptic-canvas/main/docs/registries/nuget/registry.json
 ```
 
-## Security
+### "Installation failed with permission error"
+Try installing to a specific repository instead of globally:
+```bash
+python3 tools/sc-install.py install PACKAGE --dest /path/to/repo/.claude
+```
 
-This repository prioritizes package security:
-- ✅ Publisher verified via GitHub organization
-- ✅ Automated security scanning on all releases
-- ✅ Dependency monitoring and vulnerability tracking
-- ✅ All packages follow security best practices
+### "Can't find diagnostic info"
+Run the diagnostic tool:
+```bash
+scripts/security-scan.sh
+```
 
-See [SECURITY.md](SECURITY.md) for our security policy, [docs/PUBLISHER-VERIFICATION.md](docs/PUBLISHER-VERIFICATION.md) for verification details, and run `scripts/security-scan.sh` locally to verify your environment.
+### More help needed?
+→ See [Complete Troubleshooting Guide](docs/TROUBLESHOOTING.md)
+→ See [Diagnostic Tools](docs/DIAGNOSTIC-TOOLS.md)
+→ Check [Package-Specific Guides](packages/delay-tasks/TROUBLESHOOTING.md)
 
-## License
+---
 
-MIT
+## 🏗️ Creating Your Own Package
+
+Want to contribute a new package to the marketplace? We'd love to have it!
+
+### Getting Started
+1. Read [CONTRIBUTING.md](CONTRIBUTING.md) — Complete package authoring guide
+2. Review a [sample manifest.yaml](packages/delay-tasks/manifest.yaml) — See the format
+3. Check [Package Manifest Guide](docs/version-compatibility-matrix.md) — Field reference
+4. Look at [existing packages](packages/) — Use as templates
+
+### Package Checklist
+- [ ] Create `manifest.yaml` with package metadata
+- [ ] Write commands, skills, and agents in `.claude/`
+- [ ] Create comprehensive `README.md` with examples
+- [ ] Add `USE-CASES.md` with real workflows (7+ scenarios)
+- [ ] Include `TROUBLESHOOTING.md` with common issues
+- [ ] Create `CHANGELOG.md` documenting all versions
+- [ ] Test on Windows, macOS, and Linux
+- [ ] Open a pull request to contribute
+
+---
+
+## 💬 Support & Community
+
+- 🐛 **Found a bug?** → [GitHub Issues](https://github.com/randlee/synaptic-canvas/issues)
+- 💡 **Have an idea?** → [GitHub Discussions](https://github.com/randlee/synaptic-canvas/discussions)
+- 📖 **Need help?** → See [Troubleshooting](README.md#-troubleshooting) above
+- 🔒 **Security concern?** → See [SECURITY.md](SECURITY.md)
+- 🤝 **Want to contribute?** → See [CONTRIBUTING.md](CONTRIBUTING.md)
+
+---
+
+## 📄 License
+
+MIT — See [LICENSE](LICENSE) for details
+
+---
+
+## 📚 Full Documentation
+
+[Complete documentation index with all guides and references →](docs/DOCUMENTATION-INDEX.md)
