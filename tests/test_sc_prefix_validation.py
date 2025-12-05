@@ -21,13 +21,13 @@ import yaml
 # ===========================
 
 PACKAGES = {
-    'delay-tasks': {
-        'package_name': 'delay-tasks',
-        'agents': ['delay-once', 'delay-poll', 'git-pr-check-delay'],
-        'commands': ['delay'],
-        'skills': ['delaying-tasks'],
+    'sc-delay-tasks': {
+        'package_name': 'sc-delay-tasks',
+        'agents': ['sc-delay-once', 'sc-delay-poll', 'sc-git-pr-check-delay'],
+        'commands': ['sc-delay'],
+        'skills': ['sc-delaying-tasks'],
         'version': '0.4.0',
-        'path': 'packages/delay-tasks',
+        'path': 'packages/sc-delay-tasks',
         'artifact_counts': {'agents': 3, 'commands': 1, 'skills': 1}
     },
     'git-worktree': {
