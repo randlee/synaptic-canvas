@@ -166,7 +166,7 @@ Aggregated statistics and organizational information:
   "totalScripts": 2,
   "categories": {
     "automation": ["delay-tasks"],
-    "development-tools": ["git-worktree"],
+    "development-tools": ["sc-git-worktree"],
     "package-management": ["sc-manage"],
     "documentation": ["repomix-nuget"]
   }
@@ -232,7 +232,7 @@ Pattern: `^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d?)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z
 Package names and tags must be lowercase with hyphens only:
 
 - Pattern: `^[a-z0-9]+(-[a-z0-9]+)*$`
-- Examples: `delay-tasks`, `git-worktree`, `package-name`
+- Examples: `delay-tasks`, `sc-git-worktree`, `package-name`
 - Invalid: `DelayTasks`, `delay_tasks`, `delay.tasks`
 
 ### URL Formats

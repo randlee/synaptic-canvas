@@ -16,7 +16,7 @@ Security: See [SECURITY.md](../../../SECURITY.md) for security policy and practi
 - List packages with install status (no/local/global/both)
 - Install packages into a repo's `.claude` (local) or the global `.claude`
 - Uninstall packages from selected scope
-- Enforces package policy (e.g., git-worktree is local-only)
+- Enforces package policy (e.g., sc-git-worktree is local-only)
 
 ## Quick Start (Global install)
 ```bash

@@ -47,7 +47,7 @@ Before any GitHub operation:
 - [ ] Fetch issue details via `issue-fetch-agent`
 - [ ] Display issue summary to user
 - [ ] Get confirmation (unless `--yolo`)
-- [ ] Invoke `worktree-create` agent via Agent Runner
+- [ ] Invoke `sc-worktree-create` agent via Agent Runner
 - [ ] Verify worktree created successfully
 
 ### Phase 2: Implementation

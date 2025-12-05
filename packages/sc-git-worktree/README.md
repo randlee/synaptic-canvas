@@ -1,4 +1,4 @@
-# git-worktree
+# sc-git-worktree
 
 [![Publisher Verified](https://img.shields.io/badge/publisher-verified-brightgreen)](https://github.com/randlee/synaptic-canvas/blob/main/docs/PUBLISHER-VERIFICATION.md)
 [![Security Scanned](https://img.shields.io/badge/security-scanned-blue)](https://github.com/randlee/synaptic-canvas/blob/main/SECURITY.md)
@@ -8,7 +8,7 @@
 Scope: Local-only
 Requires: git ≥ 2.20
 
-Manage git worktrees with a standard sibling-folder layout and optional tracking documents. Provides a user-facing command `/git-worktree` and a managing skill that delegates to focused agents.
+Manage git worktrees with a standard sibling-folder layout and optional tracking documents. Provides a user-facing command `/sc-git-worktree` and a managing skill that delegates to focused agents.
 
 Security: See [SECURITY.md](../../../SECURITY.md) for security policy and practices.
 
@@ -18,22 +18,22 @@ Create, scan, clean up, and abort worktrees using predictable paths and safe def
 ## Quick Start (Local-only)
 1) Install into a repo's `.claude` directory:
    ```bash
-   python3 tools/sc-install.py install git-worktree --dest /path/to/your-repo/.claude
+   python3 tools/sc-install.py install sc-git-worktree --dest /path/to/your-repo/.claude
    ```
 2) In your repo, run:
    ```
-   /git-worktree --status
+   /sc-git-worktree --status
    ```
 3) Create a worktree:
    ```
-   /git-worktree --create feature-x main
+   /sc-git-worktree --create feature-x main
    ```
 
 ## Usage
-- `/git-worktree --list` or `--status`
-- `/git-worktree --create <branch> <base>`
-- `/git-worktree --cleanup <branch>`
-- `/git-worktree --abort <branch>`
+- `/sc-git-worktree --list` or `--status`
+- `/sc-git-worktree --create <branch> <base>`
+- `/sc-git-worktree --cleanup <branch>`
+- `/sc-git-worktree --abort <branch>`
 
 Defaults
 - Worktree base: `../{{REPO_NAME}}-worktrees/<branch>`
@@ -46,11 +46,11 @@ Safety
 ## Install / Uninstall
 - Install (local-only):
   ```bash
-  python3 tools/sc-install.py install git-worktree --dest /path/to/your-repo/.claude
+  python3 tools/sc-install.py install sc-git-worktree --dest /path/to/your-repo/.claude
   ```
 - Uninstall:
   ```bash
-  python3 tools/sc-install.py uninstall git-worktree --dest /path/to/your-repo/.claude
+  python3 tools/sc-install.py uninstall sc-git-worktree --dest /path/to/your-repo/.claude
   ```
 
 ## Troubleshooting
@@ -59,9 +59,9 @@ Safety
 - Token expansion: `{{REPO_NAME}}` is auto-detected from the repo toplevel (via git)
 
 ## Components
-- Command: `commands/git-worktree.md`
-- Skill: `skills/managing-worktrees/SKILL.md`
-- Agents: `worktree-create`, `worktree-scan`, `worktree-cleanup`, `worktree-abort`
+- Command: `commands/sc-git-worktree.md`
+- Skill: `skills/sc-managing-worktrees/SKILL.md`
+- Agents: `sc-worktree-create`, `sc-worktree-scan`, `sc-worktree-cleanup`, `sc-worktree-abort`
 
 ## Version & Changelog
 - 0.4.0 — Initial v0.x publication

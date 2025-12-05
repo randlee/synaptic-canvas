@@ -224,7 +224,7 @@ def install_marketplace_package(
         ...     print(f"Installed {len(result['installed_files'])} files")
 
         >>> result = install_marketplace_package(
-        ...     "git-worktree",
+        ...     "sc-git-worktree",
         ...     registry="synaptic-canvas",
         ...     scope="local",
         ...     force=True

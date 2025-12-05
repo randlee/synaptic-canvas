@@ -8,7 +8,7 @@ options:
   - name: --install
     args:
       - name: package
-        description: Package name to install (e.g., delay-tasks, git-worktree).
+        description: Package name to install (e.g., delay-tasks, sc-git-worktree).
     description: Install a package. Use --local or --global to choose scope.
   - name: --uninstall
     args:
@@ -34,5 +34,5 @@ Manage Synaptic Canvas packages:
 - Use `--uninstall <package>` with `--local` or `--global` to remove.
 
 Notes:
-- Some packages are local-only (e.g., git-worktree). The manager will block global installation for those.
+- Some packages are local-only (e.g., sc-git-worktree). The manager will block global installation for those.
 - Listing includes: Package | Installed | Description.

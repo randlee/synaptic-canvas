@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to the **git-worktree** package will be documented in this file.
+All notable changes to the **sc-git-worktree** package will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -20,25 +20,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Beta release - initial v0.x publication. Local-only scope (repo-level installation only).
 
 ### Added
-- **worktree-create** agent: Create new git worktrees with safe defaults
+- **sc-worktree-create** agent: Create new git worktrees with safe defaults
   - Standard sibling-folder layout: `../{{REPO_NAME}}-worktrees/<branch>`
   - Automatic base branch resolution
   - Validation before creation
   - Tracking document integration (optional)
-- **worktree-scan** agent: List and inspect all worktrees in the repo
+- **sc-worktree-scan** agent: List and inspect all worktrees in the repo
   - Detailed status for each worktree (clean/dirty, branch, head commit)
   - Hierarchical worktree structure display
   - Optional tracking document reference
-- **worktree-cleanup** agent: Safe removal of worktrees
+- **sc-worktree-cleanup** agent: Safe removal of worktrees
   - Checks for uncommitted changes before cleanup
   - Respects branch protection rules
   - Graceful error handling for protected branches
   - Optional dry-run mode
-- **worktree-abort** agent: Force-abort worktrees with explicit approval
+- **sc-worktree-abort** agent: Force-abort worktrees with explicit approval
   - Requires confirmation for destructive operations
   - Discards uncommitted changes with user acknowledgment
   - Useful for orphaned or damaged worktrees
-- `/git-worktree` command: User-facing command for worktree management
+- `/sc-git-worktree` command: User-facing command for worktree management
   - `--list` or `--status`: Show worktree inventory
   - `--create <branch> <base>`: Create a new worktree
   - `--cleanup <branch>`: Remove a worktree safely
@@ -48,13 +48,13 @@ Beta release - initial v0.x publication. Local-only scope (repo-level installati
   - Optional feature (disable with `no-tracking` option)
 
 ### Components
-- Command: `commands/git-worktree.md`
-- Skill: `skills/managing-worktrees/SKILL.md`
+- Command: `commands/sc-git-worktree.md`
+- Skill: `skills/sc-managing-worktrees/SKILL.md`
 - Agents:
-  - `agents/worktree-create.md` (v0.4.0)
-  - `agents/worktree-scan.md` (v0.4.0)
-  - `agents/worktree-cleanup.md` (v0.4.0)
-  - `agents/worktree-abort.md` (v0.4.0)
+  - `agents/sc-worktree-create.md` (v0.4.0)
+  - `agents/sc-worktree-scan.md` (v0.4.0)
+  - `agents/sc-worktree-cleanup.md` (v0.4.0)
+  - `agents/sc-worktree-abort.md` (v0.4.0)
 
 ### Dependencies
 - **git** >= 2.20 (git worktree support and `git rev-parse` for repo detection)
@@ -83,15 +83,15 @@ Beta release - initial v0.x publication. Local-only scope (repo-level installati
 ### Installation
 ```bash
 # Local installation (inside a git repository)
-python3 tools/sc-install.py install git-worktree --dest /path/to/your-repo/.claude
+python3 tools/sc-install.py install sc-git-worktree --dest /path/to/your-repo/.claude
 
 # Optional: disable tracking document generation
-python3 tools/sc-install.py install git-worktree --dest /path/to/your-repo/.claude --no-tracking
+python3 tools/sc-install.py install sc-git-worktree --dest /path/to/your-repo/.claude --no-tracking
 ```
 
 ### Uninstallation
 ```bash
-python3 tools/sc-install.py uninstall git-worktree --dest /path/to/your-repo/.claude
+python3 tools/sc-install.py uninstall sc-git-worktree --dest /path/to/your-repo/.claude
 ```
 
 ### Troubleshooting
@@ -111,19 +111,19 @@ python3 tools/sc-install.py uninstall git-worktree --dest /path/to/your-repo/.cl
 ### Usage Examples
 ```bash
 # Check current worktree status
-/git-worktree --status
+/sc-git-worktree --status
 
 # Create a new worktree for feature development
-/git-worktree --create feature-auth main
+/sc-git-worktree --create feature-auth main
 
 # Inspect all worktrees and their status
-/git-worktree --list
+/sc-git-worktree --list
 
 # Clean up a completed feature worktree
-/git-worktree --cleanup feature-auth
+/sc-git-worktree --cleanup feature-auth
 
 # Force-abort an orphaned worktree
-/git-worktree --abort stale-branch
+/sc-git-worktree --abort stale-branch
 ```
 
 ### Future Roadmap

@@ -21,7 +21,7 @@ Create a new skill package (`github-issue`) version 0.1.0 that provides a unifie
 - References:
   - `.claude/references/github-issue-apis.md` (GitHub CLI commands and API patterns)
   - `.claude/references/github-issue-checklists.md` (workflow checklists and best practices)
-- Dependencies: `managing-worktrees` skill (version 0.x) for branch/worktree operations
+- Dependencies: `sc-managing-worktrees` skill (version 0.x) for branch/worktree operations
 
 ### Constraints
 - Version 0.1.0 for all components (command, skill, agents)
@@ -132,7 +132,7 @@ skills:
       issue-mutate-agent: 0.x
       issue-fix-agent: 0.x
       issue-pr-agent: 0.x
-      managing-worktrees: 0.x
+      sc-managing-worktrees: 0.x
 ```
 
 ## Data Contracts
@@ -344,7 +344,7 @@ All agents return fenced JSON with minimal envelope:
 
 **Phase 2: Worktree Setup**
 5. Generate branch name from pattern (e.g., `fix-issue-42`)
-6. Invoke `worktree-create` agent from `managing-worktrees` skill:
+6. Invoke `sc-worktree-create` agent from `sc-managing-worktrees` skill:
    ```json
    {
      "branch": "fix-issue-42",
@@ -397,7 +397,7 @@ All agents return fenced JSON with minimal envelope:
    - Display test output
    - Prompt: "Tests failed. Proceed anyway? (y/n)"
 
-3. **Before cleanup** (worktree-cleanup):
+3. **Before cleanup** (sc-worktree-cleanup):
    - Verify no uncommitted changes
    - Prompt for explicit approval if dirty
 
@@ -410,10 +410,10 @@ All agents return fenced JSON with minimal envelope:
 
 ## Integration Points
 
-### managing-worktrees Skill
-- Use `worktree-create` for branch/worktree setup
-- Use `worktree-cleanup` for post-PR cleanup (optional)
-- Use `worktree-abort` if user cancels mid-fix
+### sc-managing-worktrees Skill
+- Use `sc-worktree-create` for branch/worktree setup
+- Use `sc-worktree-cleanup` for post-PR cleanup (optional)
+- Use `sc-worktree-abort` if user cancels mid-fix
 
 ### GitHub CLI
 - All operations use `gh` CLI with `--json` flag
@@ -514,7 +514,7 @@ All agents return fenced JSON with minimal envelope:
    - **Recommendation**: Yes, if `github.auto_assign: true` in config
 
 4. **Branch cleanup**: After PR merged, should we auto-cleanup worktree?
-   - **Recommendation**: No, leave to manual `/git-worktree --cleanup` or separate automation
+   - **Recommendation**: No, leave to manual `/sc-git-worktree --cleanup` or separate automation
 
 5. **Repository detection**: How to detect current repo if `--repo` not provided?
    - **Recommendation**: Use `gh repo view --json nameWithOwner -q .nameWithOwner`

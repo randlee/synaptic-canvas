@@ -986,7 +986,7 @@ def sample_marketplace_packages():
             "lastUpdated": "2025-12-04",
         },
         {
-            "name": "sc-git-worktree",
+            "name": "sc-sc-git-worktree",
             "version": "0.4.0",
             "status": "beta",
             "description": "Create, manage, scan, and clean up git worktrees",

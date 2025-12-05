@@ -41,7 +41,7 @@ Synaptic Canvas uses a **three-layer versioning system** based on semantic versi
 │  Layer 2: Package Versions                                  │
 │  Location: packages/*/manifest.yaml                         │
 │  Scope: Individual packages (independent versioning)        │
-│  Current: delay-tasks=0.4.0, git-worktree=0.4.0, etc.     │
+│  Current: delay-tasks=0.4.0, sc-git-worktree=0.4.0, etc.     │
 └─────────────────────────────────────────────────────────────┘
                               │
                               │ contains
@@ -282,7 +282,7 @@ Each package maintains its own version independently in its `manifest.yaml` file
 
 ```
 packages/delay-tasks/manifest.yaml
-packages/git-worktree/manifest.yaml
+packages/sc-git-worktree/manifest.yaml
 packages/repomix-nuget/manifest.yaml
 packages/sc-manage/manifest.yaml
 ```
@@ -303,14 +303,14 @@ packages/sc-manage/manifest.yaml
 ```
 Marketplace: 0.4.0
 delay-tasks: 0.4.0
-git-worktree: 0.4.0
+sc-git-worktree: 0.4.0
 repomix-nuget: 0.4.0  ← Gets bug fix
 sc-manage: 0.4.0
 
 After bug fix:
 Marketplace: 0.4.0  (no change)
 delay-tasks: 0.4.0  (no change)
-git-worktree: 0.4.0  (no change)
+sc-git-worktree: 0.4.0  (no change)
 repomix-nuget: 0.4.1  ← Version bumped
 sc-manage: 0.4.0  (no change)
 ```
@@ -332,7 +332,7 @@ done
 **Output:**
 ```
 delay-tasks: 0.4.0
-git-worktree: 0.4.0
+sc-git-worktree: 0.4.0
 repomix-nuget: 0.4.0
 sc-manage: 0.4.0
 ```
@@ -350,7 +350,7 @@ sc-manage: 0.4.0
 Marketplace Version: 0.4.0
 
 Package: delay-tasks (manifest: 0.4.0)
-Package: git-worktree (manifest: 0.4.0)
+Package: sc-git-worktree (manifest: 0.4.0)
 Package: sc-manage (manifest: 0.4.0)
 Package: repomix-nuget (manifest: 0.4.0)
 
@@ -369,7 +369,7 @@ All versions consistent!
   "marketplace": "0.4.0",
   "packages": [
     {"name": "delay-tasks", "version": "0.4.0", "consistent": true},
-    {"name": "git-worktree", "version": "0.4.0", "consistent": true},
+    {"name": "sc-git-worktree", "version": "0.4.0", "consistent": true},
     {"name": "sc-manage", "version": "0.4.0", "consistent": true},
     {"name": "repomix-nuget", "version": "0.4.0", "consistent": true}
   ]
@@ -649,13 +649,13 @@ done
 
 Checking commands...
 ✓ Command: delay (v0.4.0)
-✓ Command: git-worktree (v0.4.0)
+✓ Command: sc-git-worktree (v0.4.0)
 ✓ Command: repomix-nuget (v0.4.0)
 ✓ Command: sc-manage (v0.4.0)
 
 Checking skills...
 ✓ Skill: delaying-tasks (v0.4.0)
-✓ Skill: managing-worktrees (v0.4.0)
+✓ Skill: sc-managing-worktrees (v0.4.0)
 ✓ Skill: generating-nuget-context (v0.4.0)
 ✓ Skill: managing-sc-packages (v0.4.0)
 
@@ -663,16 +663,16 @@ Checking agents...
 ✓ Agent: delay-once (v0.4.0)
 ✓ Agent: delay-poll (v0.4.0)
 ✓ Agent: git-pr-check-delay (v0.4.0)
-✓ Agent: worktree-create (v0.4.0)
-✓ Agent: worktree-scan (v0.4.0)
-✓ Agent: worktree-cleanup (v0.4.0)
-✓ Agent: worktree-abort (v0.4.0)
+✓ Agent: sc-worktree-create (v0.4.0)
+✓ Agent: sc-worktree-scan (v0.4.0)
+✓ Agent: sc-worktree-cleanup (v0.4.0)
+✓ Agent: sc-worktree-abort (v0.4.0)
 ... (all agents)
 
 Checking version consistency...
 Checking CHANGELOGs...
 ✓ CHANGELOG for delay-tasks
-✓ CHANGELOG for git-worktree
+✓ CHANGELOG for sc-git-worktree
 ✓ CHANGELOG for repomix-nuget
 ✓ CHANGELOG for sc-manage
 
@@ -737,7 +737,7 @@ packages/delay-tasks/agents/delay-once.md:   version: 0.4.0
 ✓ CORRECT:
 version.yaml:                               version: 0.4.0
 packages/delay-tasks/manifest.yaml:         version: 0.4.0
-packages/git-worktree/manifest.yaml:        version: 0.4.1  ← Different OK
+packages/sc-git-worktree/manifest.yaml:        version: 0.4.1  ← Different OK
 packages/repomix-nuget/manifest.yaml:       version: 0.3.0  ← Different OK
 packages/sc-manage/manifest.yaml:           version: 0.5.0  ← Different OK
 ```
@@ -748,7 +748,7 @@ packages/sc-manage/manifest.yaml:           version: 0.5.0  ← Different OK
 ✓ CORRECT:
 version.yaml:                               version: 0.5.0  ← Different OK
 packages/delay-tasks/manifest.yaml:         version: 0.4.0
-packages/git-worktree/manifest.yaml:        version: 0.4.0
+packages/sc-git-worktree/manifest.yaml:        version: 0.4.0
 ```
 
 ---
@@ -1217,7 +1217,7 @@ python3 scripts/sync-versions.py --package delay-tasks --version 0.4.0
 **Symptom:**
 ```
 Package: delay-tasks (manifest: 0.4.0)
-Package: git-worktree (manifest: 0.3.0)
+Package: sc-git-worktree (manifest: 0.3.0)
 Package: repomix-nuget (manifest: 0.4.0)
 Package: sc-manage (manifest: 0.4.0)
 ```
@@ -1231,8 +1231,8 @@ This may not be a problem! Packages can have different versions.
 
 **Fix (if updating is desired):**
 ```bash
-# Update git-worktree to 0.4.0
-python3 scripts/sync-versions.py --package git-worktree --version 0.4.0
+# Update sc-git-worktree to 0.4.0
+python3 scripts/sync-versions.py --package sc-git-worktree --version 0.4.0
 ```
 
 ---

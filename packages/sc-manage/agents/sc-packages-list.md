@@ -35,7 +35,7 @@ List available packages and detect whether each is installed locally (current re
   "data": {
     "packages": [
       { "name": "delay-tasks", "installed": "global", "description": "Schedule delayed one-shot or bounded polling actions" },
-      { "name": "git-worktree", "installed": "local", "description": "Manage git worktrees with optional tracking" }
+      { "name": "sc-git-worktree", "installed": "local", "description": "Manage git worktrees with optional tracking" }
     ]
   },
   "error": null

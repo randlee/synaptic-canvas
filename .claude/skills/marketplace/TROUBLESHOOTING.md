@@ -109,7 +109,7 @@ curl -L https://github.com/randlee/synaptic-canvas/raw/main/docs/registries/nuge
 
 # Common package names:
 # - delay-tasks (not "delay" or "tasks")
-# - git-worktree (not "worktree" or "git")
+# - sc-git-worktree (not "worktree" or "git")
 # - repomix-nuget (not "repomix" or "nuget")
 # - sc-manage (not "sc-manager" or "manage")
 ```
@@ -237,7 +237,7 @@ ls -la ~/.claude/commands/
 
 # Should see command files like:
 # delay.md
-# git-worktree.md
+# sc-git-worktree.md
 # sc-manage.md
 ```
 
@@ -245,7 +245,7 @@ ls -la ~/.claude/commands/
 ```bash
 # Command file should match command name
 # /delay requires commands/delay.md
-# /git-worktree requires commands/git-worktree.md
+# /sc-git-worktree requires commands/sc-git-worktree.md
 
 # Check installed files
 cat ~/.claude/commands/delay.md | head -n 5

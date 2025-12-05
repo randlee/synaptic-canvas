@@ -36,7 +36,7 @@ The following versions of our packages are actively maintained and receive secur
 | Package | Version | Status | Security Updates |
 |---------|---------|--------|-----------------|
 | delay-tasks | 0.4.0 | ✅ Current/Beta | Active |
-| git-worktree | 0.4.0 | ✅ Current/Beta | Active |
+| sc-git-worktree | 0.4.0 | ✅ Current/Beta | Active |
 | sc-manage | 0.4.0 | ✅ Current/Beta | Active |
 | repomix-nuget | 0.4.0 | ✅ Current/Beta | Active |
 
@@ -332,11 +332,11 @@ Users should be aware of these limitations:
 - Review delay-run.py script before use
 - See [packages/delay-tasks/TROUBLESHOOTING.md](packages/delay-tasks/TROUBLESHOOTING.md)
 
-**git-worktree**:
+**sc-git-worktree**:
 - Creates and manipulates git worktrees
 - Requires appropriate filesystem permissions
 - Can modify repository structure
-- See [packages/git-worktree/TROUBLESHOOTING.md](packages/git-worktree/TROUBLESHOOTING.md)
+- See [packages/sc-git-worktree/TROUBLESHOOTING.md](packages/sc-git-worktree/TROUBLESHOOTING.md)
 
 **sc-manage**:
 - Interfaces with package registry
@@ -413,7 +413,7 @@ python3 tools/sc-install.py install package-name --dest /path/to/.claude
 
 **Example**:
 ```bash
-# Verify git version for git-worktree
+# Verify git version for sc-git-worktree
 git --version  # Should be >= 2.27
 
 # Verify Python version for repomix-nuget
@@ -571,7 +571,7 @@ Additional security information:
 ### Package Documentation
 
 - [delay-tasks/TROUBLESHOOTING.md](packages/delay-tasks/TROUBLESHOOTING.md)
-- [git-worktree/TROUBLESHOOTING.md](packages/git-worktree/TROUBLESHOOTING.md)
+- [sc-git-worktree/TROUBLESHOOTING.md](packages/sc-git-worktree/TROUBLESHOOTING.md)
 - [sc-manage/TROUBLESHOOTING.md](packages/sc-manage/TROUBLESHOOTING.md)
 - [repomix-nuget/TROUBLESHOOTING.md](packages/repomix-nuget/TROUBLESHOOTING.md)
 

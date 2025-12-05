@@ -52,7 +52,7 @@ What packages help with documentation?
 **Natural language:**
 ```
 Install delay-tasks globally
-Add the git-worktree package to my global Claude setup
+Add the sc-git-worktree package to my global Claude setup
 Install repomix-nuget for this project
 ```
 
@@ -115,12 +115,12 @@ Install repomix-nuget for this project
 
 3. **Get package details:**
    ```
-   Tell me more about the git-worktree package
+   Tell me more about the sc-git-worktree package
    ```
 
 4. **Install if useful:**
    ```
-   /marketplace install git-worktree --global
+   /marketplace install sc-git-worktree --global
    ```
 
 ### Workflow 3: Custom Registry Setup
@@ -263,7 +263,7 @@ The marketplace skill understands natural language queries. Here are examples:
 
 ### Installation
 - "Install delay-tasks globally"
-- "Add git-worktree to my Claude setup"
+- "Add sc-git-worktree to my Claude setup"
 - "Install the repomix-nuget package"
 - "Set up delay-tasks for this project"
 
@@ -275,7 +275,7 @@ The marketplace skill understands natural language queries. Here are examples:
 
 ### Information
 - "Tell me about the delay-tasks package"
-- "What does git-worktree do?"
+- "What does sc-git-worktree do?"
 - "Show details for repomix-nuget"
 - "What's included in sc-manage?"
 
@@ -288,8 +288,8 @@ Install with: `/marketplace install delay-tasks --global`
 
 Use for: Scheduling delayed actions, CI/CD polling, interval-based tasks
 
-### git-worktree
-Install with: `/marketplace install git-worktree --global`
+### sc-git-worktree
+Install with: `/marketplace install sc-git-worktree --global`
 
 Use for: Managing parallel git worktrees, branch management, development workflows
 
@@ -367,10 +367,10 @@ If you encounter issues:
 /marketplace search git
 
 # Install worktree manager
-/marketplace install git-worktree --global
+/marketplace install sc-git-worktree --global
 
 # Create worktrees for parallel development
-/git-worktree create feature/new-feature
+/sc-git-worktree create feature/new-feature
 ```
 
 ### For Documentation Generation

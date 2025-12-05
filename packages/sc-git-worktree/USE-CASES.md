@@ -1,10 +1,10 @@
-# git-worktree Use Cases
+# sc-git-worktree Use Cases
 
 ## Introduction
 
-The `git-worktree` package enables efficient parallel development workflows by allowing you to create, manage, and clean up isolated git worktrees. Instead of constantly switching branches in a single directory, you can work on multiple branches simultaneously in separate directories with full git context and safety guarantees.
+The `sc-git-worktree` package enables efficient parallel development workflows by allowing you to create, manage, and clean up isolated git worktrees. Instead of constantly switching branches in a single directory, you can work on multiple branches simultaneously in separate directories with full git context and safety guarantees.
 
-These use cases demonstrate how `git-worktree` streamlines feature development, release management, hotfix workflows, and team collaboration while maintaining a clean repository state.
+These use cases demonstrate how `sc-git-worktree` streamlines feature development, release management, hotfix workflows, and team collaboration while maintaining a clean repository state.
 
 ---
 
@@ -17,7 +17,7 @@ You're working on a project with multiple concurrent features: Feature X, Featur
 
 1. Check current worktree status:
    ```
-   /git-worktree --status
+   /sc-git-worktree --status
    ```
    Output:
    ```
@@ -32,7 +32,7 @@ You're working on a project with multiple concurrent features: Feature X, Featur
 
 2. Create worktree for Feature X based on develop:
    ```
-   /git-worktree --create feature-x develop
+   /sc-git-worktree --create feature-x develop
    ```
    Expected output:
    ```
@@ -54,12 +54,12 @@ You're working on a project with multiple concurrent features: Feature X, Featur
 4. While working on feature-x, create worktree for Feature Y:
    ```bash
    # From original repo directory (or use absolute path)
-   /git-worktree --create feature-y develop
+   /sc-git-worktree --create feature-y develop
    ```
 
 5. Similarly, create a hotfix branch:
    ```
-   /git-worktree --create bug-fix-critical develop
+   /sc-git-worktree --create bug-fix-critical develop
    ```
 
 6. Now you have parallel directories for all three features:
@@ -90,9 +90,9 @@ You're working on a project with multiple concurrent features: Feature X, Featur
 - Clear isolation of work
 
 **Related Documentation:**
-- [/git-worktree command reference](commands/git-worktree.md)
-- [worktree-create agent](agents/worktree-create.md)
-- [worktree-scan agent](agents/worktree-scan.md)
+- [/sc-git-worktree command reference](commands/sc-git-worktree.md)
+- [sc-worktree-create agent](agents/sc-worktree-create.md)
+- [sc-worktree-scan agent](agents/sc-worktree-scan.md)
 
 **Tips and Best Practices:**
 - Worktree base directory: `../{{REPO_NAME}}-worktrees/` (sibling to repo)
@@ -111,21 +111,21 @@ You're working on a project with multiple concurrent features: Feature X, Featur
 
 **Creating multiple features quickly:**
 ```
-/git-worktree --create feature-auth develop
-/git-worktree --create feature-payment develop
-/git-worktree --create feature-notifications develop
+/sc-git-worktree --create feature-auth develop
+/sc-git-worktree --create feature-payment develop
+/sc-git-worktree --create feature-notifications develop
 ```
 
 **Long-running research branch:**
 ```
-/git-worktree --create research-ml-integration develop
+/sc-git-worktree --create research-ml-integration develop
 # Work for weeks without affecting main codebase
 ```
 
 **Parallel version work (v1 vs. v2):**
 ```
-/git-worktree --create maintenance-v1.x release/v1.x
-/git-worktree --create development-v2 develop
+/sc-git-worktree --create maintenance-v1.x release/v1.x
+/sc-git-worktree --create development-v2 develop
 # Maintain both versions simultaneously
 ```
 
@@ -142,7 +142,7 @@ Your project has two active release branches: `release/v0.4.0` (stable, maintena
 
 2. Create isolated worktree for v0.4.0 maintenance:
    ```
-   /git-worktree --create maintenance-v0.4 release/v0.4.0
+   /sc-git-worktree --create maintenance-v0.4 release/v0.4.0
    ```
    Output:
    ```
@@ -180,7 +180,7 @@ Your project has two active release branches: `release/v0.4.0` (stable, maintena
 
 6. Submit PR for v0.4 patch, then clean up:
    ```
-   /git-worktree --cleanup maintenance-v0.4
+   /sc-git-worktree --cleanup maintenance-v0.4
    ```
    Output:
    ```
@@ -210,9 +210,9 @@ Your project has two active release branches: `release/v0.4.0` (stable, maintena
 - Production hotfixes don't interrupt active development
 
 **Related Documentation:**
-- [/git-worktree command reference](commands/git-worktree.md)
-- [worktree-create agent](agents/worktree-create.md)
-- [worktree-cleanup agent](agents/worktree-cleanup.md)
+- [/sc-git-worktree command reference](commands/sc-git-worktree.md)
+- [sc-worktree-create agent](agents/sc-worktree-create.md)
+- [sc-worktree-cleanup agent](agents/sc-worktree-cleanup.md)
 
 **Tips and Best Practices:**
 - Use version numbers in worktree names (maintenance-v0.4, dev-v0.5)
@@ -231,15 +231,15 @@ Your project has two active release branches: `release/v0.4.0` (stable, maintena
 
 **Three concurrent versions (stable, RC, beta):**
 ```
-/git-worktree --create stable-v1.0 release/v1.0
-/git-worktree --create rc-v1.1 release/v1.1-rc
-/git-worktree --create beta-v2.0 develop
+/sc-git-worktree --create stable-v1.0 release/v1.0
+/sc-git-worktree --create rc-v1.1 release/v1.1-rc
+/sc-git-worktree --create beta-v2.0 develop
 ```
 
 **LTS + current version management:**
 ```
-/git-worktree --create lts-maintenance release/v1.x
-/git-worktree --create current-development release/v2.x
+/sc-git-worktree --create lts-maintenance release/v1.x
+/sc-git-worktree --create current-development release/v2.x
 ```
 
 ---
@@ -262,7 +262,7 @@ This workflow ensures production fixes don't interfere with ongoing development.
 
 2. Create hotfix worktree from main:
    ```
-   /git-worktree --create hotfix-db-pool main
+   /sc-git-worktree --create hotfix-db-pool main
    ```
    Output:
    ```
@@ -324,7 +324,7 @@ This workflow ensures production fixes don't interfere with ongoing development.
 
 9. Clean up hotfix worktree:
    ```
-   /git-worktree --cleanup hotfix-db-pool
+   /sc-git-worktree --cleanup hotfix-db-pool
    ```
    Output:
    ```
@@ -353,9 +353,9 @@ This workflow ensures production fixes don't interfere with ongoing development.
 - Automatic tracking of hotfix progress
 
 **Related Documentation:**
-- [/git-worktree command reference](commands/git-worktree.md)
-- [worktree-create agent](agents/worktree-create.md)
-- [worktree-cleanup agent](agents/worktree-cleanup.md)
+- [/sc-git-worktree command reference](commands/sc-git-worktree.md)
+- [sc-worktree-create agent](agents/sc-worktree-create.md)
+- [sc-worktree-cleanup agent](agents/sc-worktree-cleanup.md)
 
 **Tips and Best Practices:**
 - Always create from main branch for production hotfixes
@@ -376,20 +376,20 @@ This workflow ensures production fixes don't interfere with ongoing development.
 
 **Multiple concurrent hotfixes:**
 ```
-/git-worktree --create hotfix-auth main
-/git-worktree --create hotfix-payment main
-/git-worktree --create hotfix-dashboard main
+/sc-git-worktree --create hotfix-auth main
+/sc-git-worktree --create hotfix-payment main
+/sc-git-worktree --create hotfix-dashboard main
 ```
 (Each independently fixed and merged)
 
 **Urgent security patch with escalation:**
 ```bash
-/git-worktree --create security-patch-critical main
+/sc-git-worktree --create security-patch-critical main
 # (Fix and test in isolation)
 git checkout main
 git pull && git merge security-patch-critical && git push origin main
 # (Trigger emergency deployment)
-/git-worktree --cleanup security-patch-critical
+/sc-git-worktree --cleanup security-patch-critical
 ```
 
 ---
@@ -405,7 +405,7 @@ You want to experiment with a significant architectural change (e.g., switching 
 
 2. Create long-running experiment worktree:
    ```
-   /git-worktree --create experiment-mongodb-migration develop
+   /sc-git-worktree --create experiment-mongodb-migration develop
    ```
    Output:
    ```
@@ -459,7 +459,7 @@ You want to experiment with a significant architectural change (e.g., switching 
 7. Or, experiment fails: discard and continue:
    ```bash
    # Experiment didn't yield expected performance
-   /git-worktree --abort experiment-mongodb-migration
+   /sc-git-worktree --abort experiment-mongodb-migration
    ```
    Output:
    ```
@@ -486,9 +486,9 @@ You want to experiment with a significant architectural change (e.g., switching 
 - No cluttered branch namespace
 
 **Related Documentation:**
-- [/git-worktree command reference](commands/git-worktree.md)
-- [worktree-create agent](agents/worktree-create.md)
-- [worktree-abort agent](agents/worktree-abort.md)
+- [/sc-git-worktree command reference](commands/sc-git-worktree.md)
+- [sc-worktree-create agent](agents/sc-worktree-create.md)
+- [sc-worktree-abort agent](agents/sc-worktree-abort.md)
 
 **Tips and Best Practices:**
 - Use "experiment-" prefix for easy identification
@@ -509,7 +509,7 @@ You want to experiment with a significant architectural change (e.g., switching 
 
 **Framework upgrade experiment (e.g., React 18 → React 19):**
 ```
-/git-worktree --create experiment-react-19-upgrade develop
+/sc-git-worktree --create experiment-react-19-upgrade develop
 # Upgrade React and all dependencies
 # Run full test suite
 # Benchmark performance
@@ -518,7 +518,7 @@ You want to experiment with a significant architectural change (e.g., switching 
 
 **New language feature experiment (TypeScript 5.0 features):**
 ```
-/git-worktree --create experiment-ts5-features develop
+/sc-git-worktree --create experiment-ts5-features develop
 # Implement new types and patterns
 # Measure type safety improvements
 # Decide if worth adopting project-wide
@@ -544,27 +544,27 @@ You manage a team of 5 developers. Each is working on different features simulta
 
    Alice:
    ```
-   /git-worktree --create feature-user-authentication develop
+   /sc-git-worktree --create feature-user-authentication develop
    ```
 
    Bob:
    ```
-   /git-worktree --create feature-payment-integration develop
+   /sc-git-worktree --create feature-payment-integration develop
    ```
 
    Carol:
    ```
-   /git-worktree --create feature-notifications develop
+   /sc-git-worktree --create feature-notifications develop
    ```
 
    David:
    ```
-   /git-worktree --create bug-fix-performance develop
+   /sc-git-worktree --create bug-fix-performance develop
    ```
 
    You:
    ```
-   /git-worktree --create feature-dashboard-redesign develop
+   /sc-git-worktree --create feature-dashboard-redesign develop
    ```
 
 3. Tracking document auto-populated (`../my-app-worktrees/worktree-tracking.md`):
@@ -582,7 +582,7 @@ You manage a team of 5 developers. Each is working on different features simulta
 
 4. Daily standup: check worktree status:
    ```
-   /git-worktree --status
+   /sc-git-worktree --status
    ```
    Output shows all active worktrees and who's working on what
 
@@ -597,13 +597,13 @@ You manage a team of 5 developers. Each is working on different features simulta
 
 6. Clean up Alice's worktree:
    ```
-   /git-worktree --cleanup feature-user-authentication
+   /sc-git-worktree --cleanup feature-user-authentication
    ```
    Tracking document updated: branch marked as completed
 
 7. Continuous visibility into team progress via tracking document:
    ```
-   /git-worktree --status
+   /sc-git-worktree --status
    ```
 
 8. Daily snapshot of which features are done, in progress, blocked, etc.
@@ -624,9 +624,9 @@ You manage a team of 5 developers. Each is working on different features simulta
 - Git-based audit trail for all work
 
 **Related Documentation:**
-- [/git-worktree command reference](commands/git-worktree.md)
-- [worktree-scan agent](agents/worktree-scan.md)
-- [worktree-cleanup agent](agents/worktree-cleanup.md)
+- [/sc-git-worktree command reference](commands/sc-git-worktree.md)
+- [sc-worktree-scan agent](agents/sc-worktree-scan.md)
+- [sc-worktree-cleanup agent](agents/sc-worktree-cleanup.md)
 
 **Tips and Best Practices:**
 - Update owner field with GitHub username
@@ -648,7 +648,7 @@ You manage a team of 5 developers. Each is working on different features simulta
 **Large team (20+ developers):**
 ```bash
 # Group by feature area
-/git-worktree --status | grep active
+/sc-git-worktree --status | grep active
 # Or filter by owner in tracking document
 grep "| frontend-" ../my-app-worktrees/worktree-tracking.md
 ```
@@ -676,7 +676,7 @@ After a week of development with multiple worktrees active, you want to get a co
 
 1. Scan all worktrees for health and status:
    ```
-   /git-worktree --list
+   /sc-git-worktree --list
    ```
    Output:
    ```
@@ -715,12 +715,12 @@ After a week of development with multiple worktrees active, you want to get a co
 
    - feature-x is ready to merge:
      ```
-     /git-worktree --cleanup feature-x
+     /sc-git-worktree --cleanup feature-x
      ```
 
 3. After cleanup, check status again:
    ```
-   /git-worktree --status
+   /sc-git-worktree --status
    ```
    Output shows feature-x removed, tracking updated
 
@@ -739,8 +739,8 @@ After a week of development with multiple worktrees active, you want to get a co
 - Prevent accidental loss of work
 
 **Related Documentation:**
-- [/git-worktree command reference](commands/git-worktree.md)
-- [worktree-scan agent](agents/worktree-scan.md)
+- [/sc-git-worktree command reference](commands/sc-git-worktree.md)
+- [sc-worktree-scan agent](agents/sc-worktree-scan.md)
 
 **Tips and Best Practices:**
 - Run status check at end of each day
@@ -774,13 +774,13 @@ After completing features and merging PRs, you want to clean up the worktrees. T
 
 2. Verify status before cleanup:
    ```
-   /git-worktree --status
+   /sc-git-worktree --status
    ```
    Output confirms feature-api-v2 is clean and merged
 
 3. Clean up the completed worktree:
    ```
-   /git-worktree --cleanup feature-api-v2
+   /sc-git-worktree --cleanup feature-api-v2
    ```
    Output:
    ```
@@ -802,7 +802,7 @@ After completing features and merging PRs, you want to clean up the worktrees. T
 
 4. Verify cleanup successful:
    ```
-   /git-worktree --status
+   /sc-git-worktree --status
    ```
    Output: feature-api-v2 no longer listed
 
@@ -829,8 +829,8 @@ After completing features and merging PRs, you want to clean up the worktrees. T
 - Audit trail of all completed work
 
 **Related Documentation:**
-- [/git-worktree command reference](commands/git-worktree.md)
-- [worktree-cleanup agent](agents/worktree-cleanup.md)
+- [/sc-git-worktree command reference](commands/sc-git-worktree.md)
+- [sc-worktree-cleanup agent](agents/sc-worktree-cleanup.md)
 
 **Tips and Best Practices:**
 - Always verify branch is merged before cleanup
@@ -850,16 +850,16 @@ After completing features and merging PRs, you want to clean up the worktrees. T
 **Cleanup with force option (unmerged work):**
 ```bash
 # Use --abort instead for unmerged/abandoned work
-/git-worktree --abort experimental-branch-that-failed
+/sc-git-worktree --abort experimental-branch-that-failed
 # Forces deletion even if not merged
 ```
 
 **Batch cleanup multiple worktrees:**
 ```bash
 # Clean multiple completed features
-/git-worktree --cleanup feature-one
-/git-worktree --cleanup feature-two
-/git-worktree --cleanup bug-fix-one
+/sc-git-worktree --cleanup feature-one
+/sc-git-worktree --cleanup feature-two
+/sc-git-worktree --cleanup bug-fix-one
 ```
 
 ---
@@ -868,40 +868,40 @@ After completing features and merging PRs, you want to clean up the worktrees. T
 
 ### Pattern 1: Standard Feature Workflow
 ```
-/git-worktree --create feature-name develop
+/sc-git-worktree --create feature-name develop
 # Work in isolation
 # Commit and push
-/git-worktree --cleanup feature-name
+/sc-git-worktree --cleanup feature-name
 ```
 
 ### Pattern 2: Hotfix from Main
 ```
-/git-worktree --create hotfix-issue main
+/sc-git-worktree --create hotfix-issue main
 # Fix and test
 # Merge to main and develop
-/git-worktree --cleanup hotfix-issue
+/sc-git-worktree --cleanup hotfix-issue
 ```
 
 ### Pattern 3: Long-Running Experiment
 ```
-/git-worktree --create experiment-new-arch develop
+/sc-git-worktree --create experiment-new-arch develop
 # Work for extended period
 # Decide: merge or abort
-/git-worktree --cleanup experiment-new-arch  # or --abort
+/sc-git-worktree --cleanup experiment-new-arch  # or --abort
 ```
 
 ### Pattern 4: Release Management
 ```
-/git-worktree --create maintenance-v1 release/v1.0
-/git-worktree --create development-v2 develop
+/sc-git-worktree --create maintenance-v1 release/v1.0
+/sc-git-worktree --create development-v2 develop
 # Parallel maintenance and development
 ```
 
 ### Pattern 5: Parallel Feature Development
 ```
-/git-worktree --create feature-a develop
-/git-worktree --create feature-b develop
-/git-worktree --create feature-c develop
+/sc-git-worktree --create feature-a develop
+/sc-git-worktree --create feature-b develop
+/sc-git-worktree --create feature-c develop
 # Three developers work simultaneously
 ```
 
@@ -914,11 +914,11 @@ In CI/CD, you might create a worktree for release verification:
 ```yaml
 - name: Create release verification worktree
   run: |
-    /git-worktree --create verify-release release/v1.0.0
+    /sc-git-worktree --create verify-release release/v1.0.0
     cd ../my-app-worktrees/verify-release
     npm run test:full
     npm run build
-    /git-worktree --cleanup verify-release
+    /sc-git-worktree --cleanup verify-release
 ```
 
 ### With Development Scripts
@@ -930,7 +930,7 @@ FEATURE_NAME=$1
 BASE=${2:-develop}
 
 # Create isolated worktree
-/git-worktree --create feature-$FEATURE_NAME $BASE
+/sc-git-worktree --create feature-$FEATURE_NAME $BASE
 
 # Install dependencies
 cd ../my-app-worktrees/feature-$FEATURE_NAME
@@ -947,7 +947,7 @@ In README:
 
 1. Create feature worktree:
    ```
-   /git-worktree --create feature-name develop
+   /sc-git-worktree --create feature-name develop
    ```
 
 2. Work in the new directory:
@@ -957,12 +957,12 @@ In README:
 
 3. Check status anytime:
    ```
-   /git-worktree --status
+   /sc-git-worktree --status
    ```
 
 4. After PR merge:
    ```
-   /git-worktree --cleanup feature-name
+   /sc-git-worktree --cleanup feature-name
    ```
 ```
 
@@ -973,7 +973,7 @@ In README:
 ### Small Team (2-3 developers)
 Each developer has 1-2 active worktrees. Status check via:
 ```
-/git-worktree --status
+/sc-git-worktree --status
 ```
 
 ### Medium Team (5-10 developers)
@@ -1000,8 +1000,8 @@ Distributed worktrees across multiple workstations, central registry:
 Error: ../my-app-worktrees/feature-name already exists
 ```
 **Solution:**
-- Use unique branch name: `/git-worktree --create feature-name-v2 develop`
-- Or delete old worktree: `/git-worktree --cleanup feature-name`
+- Use unique branch name: `/sc-git-worktree --create feature-name-v2 develop`
+- Or delete old worktree: `/sc-git-worktree --cleanup feature-name`
 
 ### Scenario: Dirty worktree prevents cleanup
 ```
@@ -1013,13 +1013,13 @@ cd ../my-app-worktrees/branch-name
 git add .
 git commit -m "Save work"
 # Then cleanup
-/git-worktree --cleanup branch-name
+/sc-git-worktree --cleanup branch-name
 ```
 
 ### Scenario: Tracking document out of sync
 **Solution:**
 ```
-/git-worktree --status
+/sc-git-worktree --status
 # Will show mismatches and suggest fixes
 ```
 
@@ -1037,7 +1037,7 @@ git merge origin/develop
 **Solution:**
 Either merge the branch first, or use abort to discard work:
 ```
-/git-worktree --abort feature-name
+/sc-git-worktree --abort feature-name
 ```
 
 ---
@@ -1046,38 +1046,38 @@ Either merge the branch first, or use abort to discard work:
 
 ### Minimum Setup
 ```bash
-# Install git-worktree in repo
-python3 tools/sc-install.py install git-worktree --dest /path/to/your-repo/.claude
+# Install sc-git-worktree in repo
+python3 tools/sc-install.py install sc-git-worktree --dest /path/to/your-repo/.claude
 
 # Check status
-/git-worktree --status
+/sc-git-worktree --status
 
 # Create first worktree
-/git-worktree --create my-feature develop
+/sc-git-worktree --create my-feature develop
 ```
 
 ### First Use
-1. Check repository status: `/git-worktree --status`
-2. Create a worktree: `/git-worktree --create test-feature develop`
+1. Check repository status: `/sc-git-worktree --status`
+2. Create a worktree: `/sc-git-worktree --create test-feature develop`
 3. Work in the new directory: `cd ../my-app-worktrees/test-feature`
 4. Make changes and commit
-5. Cleanup when done: `/git-worktree --cleanup test-feature`
+5. Cleanup when done: `/sc-git-worktree --cleanup test-feature`
 
 ### Common Starting Patterns
-- **Simple feature**: `/git-worktree --create feature-name develop`
-- **Hotfix**: `/git-worktree --create hotfix-name main`
-- **Release work**: `/git-worktree --create maintenance-v1 release/v1.0`
-- **Experiment**: `/git-worktree --create experiment-idea develop`
+- **Simple feature**: `/sc-git-worktree --create feature-name develop`
+- **Hotfix**: `/sc-git-worktree --create hotfix-name main`
+- **Release work**: `/sc-git-worktree --create maintenance-v1 release/v1.0`
+- **Experiment**: `/sc-git-worktree --create experiment-idea develop`
 
 ---
 
 ## See Also
 
-- [git-worktree README](README.md)
-- [/git-worktree Command Reference](commands/git-worktree.md)
-- [Worktree Tracking Document Format](../git-worktree/worktree-tracking.md)
+- [sc-git-worktree README](README.md)
+- [/sc-git-worktree Command Reference](commands/sc-git-worktree.md)
+- [Worktree Tracking Document Format](../sc-git-worktree/worktree-tracking.md)
 - [Synaptic Canvas Contributing Guide](/CONTRIBUTING.md)
-- [Git Worktrees Official Documentation](https://git-scm.com/docs/git-worktree)
+- [Git Worktrees Official Documentation](https://git-scm.com/docs/sc-git-worktree)
 - [Synaptic Canvas Repository](https://github.com/randlee/synaptic-canvas)
 
 ---

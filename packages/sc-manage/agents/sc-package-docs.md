@@ -9,7 +9,7 @@ color: blue
 # sc-package-docs
 
 ## Inputs
-- `package`: required package name (e.g., delay-tasks, git-worktree)
+- `package`: required package name (e.g., delay-tasks, sc-git-worktree)
 - `sc_repo_path`: absolute path to the Synaptic Canvas repo. Default: `/Users/randlee/Documents/github/synaptic-canvas`.
 
 ## Execution
@@ -23,7 +23,7 @@ color: blue
 ```json
 {
   "success": true,
-  "data": { "package": "git-worktree", "readme_path": "/abs/path/packages/git-worktree/README.md", "size_bytes": 2048 },
+  "data": { "package": "sc-git-worktree", "readme_path": "/abs/path/packages/sc-git-worktree/README.md", "size_bytes": 2048 },
   "error": null
 }
 ```

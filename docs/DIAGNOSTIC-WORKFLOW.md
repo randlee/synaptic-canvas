@@ -230,7 +230,7 @@ ls packages/
 
 **Expected Output:**
 ```
-delay-tasks/  git-worktree/  repomix-nuget/  sc-manage/
+delay-tasks/  sc-git-worktree/  repomix-nuget/  sc-manage/
 ```
 
 **✅ Success Criteria:** All 4 packages are present
@@ -492,13 +492,13 @@ Package: delay-tasks (manifest: 0.4.0)
   ✓ agent/delay-poll: 0.4.0
   ✓ agent/git-pr-check-delay: 0.4.0
 
-Package: git-worktree (manifest: 0.4.0)
-  ✓ command/git-worktree: 0.4.0
-  ✓ skill/managing-worktrees: 0.4.0
-  ✓ agent/worktree-create: 0.4.0
-  ✓ agent/worktree-scan: 0.4.0
-  ✓ agent/worktree-cleanup: 0.4.0
-  ✓ agent/worktree-abort: 0.4.0
+Package: sc-git-worktree (manifest: 0.4.0)
+  ✓ command/sc-git-worktree: 0.4.0
+  ✓ skill/sc-managing-worktrees: 0.4.0
+  ✓ agent/sc-worktree-create: 0.4.0
+  ✓ agent/sc-worktree-scan: 0.4.0
+  ✓ agent/sc-worktree-cleanup: 0.4.0
+  ✓ agent/sc-worktree-abort: 0.4.0
 
 ...
 
@@ -526,13 +526,13 @@ If versions are inconsistent, see [Version Mismatch Investigation](#version-mism
 
 Checking commands...
 ✓ Command: delay (v0.4.0)
-✓ Command: git-worktree (v0.4.0)
+✓ Command: sc-git-worktree (v0.4.0)
 ✓ Command: repomix-nuget (v0.4.0)
 ✓ Command: sc-manage (v0.4.0)
 
 Checking skills...
 ✓ Skill: delaying-tasks (v0.4.0)
-✓ Skill: managing-worktrees (v0.4.0)
+✓ Skill: sc-managing-worktrees (v0.4.0)
 ✓ Skill: generating-nuget-context (v0.4.0)
 ✓ Skill: managing-sc-packages (v0.4.0)
 
@@ -544,7 +544,7 @@ Checking agents...
 Checking version consistency...
 Checking CHANGELOGs...
 ✓ CHANGELOG for delay-tasks
-✓ CHANGELOG for git-worktree
+✓ CHANGELOG for sc-git-worktree
 ✓ CHANGELOG for repomix-nuget
 ✓ CHANGELOG for sc-manage
 
@@ -670,7 +670,7 @@ done
 **Expected Output:**
 ```
 ✓ delay-tasks: README.md exists
-✓ git-worktree: README.md exists
+✓ sc-git-worktree: README.md exists
 ✓ repomix-nuget: README.md exists
 ✓ sc-manage: README.md exists
 ```
@@ -873,7 +873,7 @@ ls -la .claude/commands/
 
 **Expected Output:**
 ```
-delay.md  git-worktree.md  repomix-nuget.md  sc-manage.md
+delay.md  sc-git-worktree.md  repomix-nuget.md  sc-manage.md
 ```
 
 **✅ Success Criteria:** Expected command files are present
@@ -889,7 +889,7 @@ ls -la .claude/skills/
 
 **Expected Output:**
 ```
-delaying-tasks/  managing-worktrees/  generating-nuget-context/  managing-sc-packages/
+delaying-tasks/  sc-managing-worktrees/  generating-nuget-context/  managing-sc-packages/
 ```
 
 **✅ Success Criteria:** Expected skill directories are present

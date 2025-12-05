@@ -39,7 +39,7 @@ The Synaptic Canvas ecosystem categorizes packages by complexity:
 | Tier | Complexity | Dependencies | Characteristics | Examples |
 |------|-----------|--------------|-----------------|----------|
 | **Tier 0** | Minimal | None or built-in | Self-contained, simple usage | Simple utilities |
-| **Tier 1** | Low | Optional variables/tokens | Uses token substitution | `git-worktree` ({{REPO_NAME}}) |
+| **Tier 1** | Low | Optional variables/tokens | Uses token substitution | `sc-git-worktree` ({{REPO_NAME}}) |
 | **Tier 2** | Medium | External dependencies | Requires setup (git, Node, Python) | `delay-tasks`, `repomix-nuget` |
 
 ### Installation Scopes
@@ -1101,12 +1101,12 @@ Thanks to everyone
 
 ### Real-World Scenarios
 
-#### Scenario 1: User with git-worktree (Tier 1 - Token Substitution)
+#### Scenario 1: User with sc-git-worktree (Tier 1 - Token Substitution)
 
 **Release:** v0.4.1 (Patch - bug fix)
 
 ```markdown
-# Release Notes: git-worktree v0.4.1
+# Release Notes: sc-git-worktree v0.4.1
 
 **Release Date:** 2025-12-08
 **Status:** beta
@@ -1127,7 +1127,7 @@ in certain git configurations. Fully backward compatible with v0.4.0.
 ## Upgrade
 
 ```bash
-python3 tools/sc-install.py install git-worktree --dest /path/to/your-repo/.claude --upgrade
+python3 tools/sc-install.py install sc-git-worktree --dest /path/to/your-repo/.claude --upgrade
 ```
 
 No action required. Token expansion now handles Unicode characters correctly.
@@ -1345,7 +1345,7 @@ Quick reference for finding the right template for each package:
 - Use: [Tier 2 Template](#tier-2-external-dependencies) + [Universal Template](#universal-template)
 - Example scenario: Polling, scheduling, CI delays
 
-### git-worktree (Tier 1)
+### sc-git-worktree (Tier 1)
 - Token substitution: `{{REPO_NAME}}`
 - Installation scopes: Local-only (enforced)
 - Use: [Tier 1 Template](#tier-1-token-substitution) + [Universal Template](#universal-template)

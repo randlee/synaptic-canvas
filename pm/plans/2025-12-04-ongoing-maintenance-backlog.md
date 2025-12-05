@@ -100,7 +100,7 @@ This document consolidates remaining action items identified from completed mark
 
 **Files to Update:**
 - `packages/delay-tasks/CHANGELOG.md`
-- `packages/git-worktree/CHANGELOG.md`
+- `packages/sc-git-worktree/CHANGELOG.md`
 - `packages/sc-manage/CHANGELOG.md`
 - `packages/repomix-nuget/CHANGELOG.md`
 
