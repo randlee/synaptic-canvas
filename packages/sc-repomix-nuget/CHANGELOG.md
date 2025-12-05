@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to the **repomix-nuget** package will be documented in this file.
+All notable changes to the **sc-repomix-nuget** package will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -40,7 +40,7 @@ Beta release - initial v0.x publication. Local-only scope (repo-level installati
   - Enumerate public namespaces from source code
   - Merge Repomix output with metadata in structured XML format
   - Produce final context at ~500KB (compressed tier)
-- `/repomix-nuget` command: User-facing command for context generation
+- `/sc-repomix-nuget` command: User-facing command for context generation
   - `--help`: Display usage information
   - `--generate`: Trigger context generation workflow
   - `--package-path <path>`: Root path for package analysis (default: `.`)
@@ -58,11 +58,11 @@ Beta release - initial v0.x publication. Local-only scope (repo-level installati
   - Optional cache invalidation
 
 ### Components
-- Command: `commands/repomix-nuget.md`
-- Skill: `skills/generating-nuget-context/SKILL.md`
+- Command: `commands/sc-repomix-nuget.md`
+- Skill: `skills/sc-repomix-nuget/SKILL.md`
 - Skills Documentation:
-  - `skills/generating-nuget-context/output-formats.md`: Output format reference
-  - `skills/generating-nuget-context/registry-schema.md`: Registry structure and metadata
+  - `skills/sc-repomix-nuget/output-formats.md`: Output format reference
+  - `skills/sc-repomix-nuget/registry-schema.md`: Registry structure and metadata
 - Agents:
   - `agents/repomix-generate.md` (v0.4.0)
   - `agents/registry-resolve.md` (v0.4.0)
@@ -110,12 +110,12 @@ Beta release - initial v0.x publication. Local-only scope (repo-level installati
 ### Installation
 ```bash
 # Local installation (inside a git repository with .NET project)
-python3 tools/sc-install.py install repomix-nuget --dest /path/to/your-repo/.claude
+python3 tools/sc-install.py install sc-repomix-nuget --dest /path/to/your-repo/.claude
 ```
 
 ### Uninstallation
 ```bash
-python3 tools/sc-install.py uninstall repomix-nuget --dest /path/to/your-repo/.claude
+python3 tools/sc-install.py uninstall sc-repomix-nuget --dest /path/to/your-repo/.claude
 ```
 
 ### Troubleshooting
@@ -128,7 +128,7 @@ python3 tools/sc-install.py uninstall repomix-nuget --dest /path/to/your-repo/.c
 - **"Output file too large (>500KB)"**: Compression failed or codebase too large
   - Solution: Reduce source code scope or use `--no-compress` for debugging
 - **"Invalid registry format"**: Central registry schema mismatch
-  - Solution: Validate registry against schema in `skills/generating-nuget-context/registry-schema.md`
+  - Solution: Validate registry against schema in `skills/sc-repomix-nuget/registry-schema.md`
 
 ### Requirements
 - **node** >= 18 (for `npx repomix` access)
@@ -138,16 +138,16 @@ python3 tools/sc-install.py uninstall repomix-nuget --dest /path/to/your-repo/.c
 ### Usage Examples
 ```bash
 # Basic generation in current repo
-/repomix-nuget --generate --package-path . --output ./nuget-context.xml
+/sc-repomix-nuget --generate --package-path . --output ./nuget-context.xml
 
 # With registry enrichment
-/repomix-nuget --generate \
+/sc-repomix-nuget --generate \
   --package-path . \
   --output ./nuget-context.xml \
   --registry-url https://raw.githubusercontent.com/randlee/synaptic-canvas/main/docs/registries/nuget/registry.json
 
 # With documentation inclusion
-/repomix-nuget --generate \
+/sc-repomix-nuget --generate \
   --package-path . \
   --output ./nuget-context.xml \
   --include-docs
@@ -195,7 +195,7 @@ When updating this changelog:
 ---
 
 ## Registry Format
-The central package registry (`docs/registries/nuget/registry.json`) documents NuGet packages with metadata for AI context enrichment. See `skills/generating-nuget-context/registry-schema.md` for full schema reference.
+The central package registry (`docs/registries/nuget/registry.json`) documents NuGet packages with metadata for AI context enrichment. See `skills/sc-repomix-nuget/registry-schema.md` for full schema reference.
 
 ## Repository
 - **Repository**: [synaptic-canvas](https://github.com/randlee/synaptic-canvas)

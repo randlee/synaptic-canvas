@@ -1,6 +1,6 @@
-# repomix-nuget Troubleshooting Guide
+# sc-repomix-nuget Troubleshooting Guide
 
-This guide helps diagnose and resolve common issues with the repomix-nuget package for Synaptic Canvas.
+This guide helps diagnose and resolve common issues with the sc-repomix-nuget package for Synaptic Canvas.
 
 ## Quick Diagnostics
 
@@ -13,8 +13,8 @@ node --version  # Should be >= 18
 # Verify npm/npx
 npx --version
 
-# Check if repomix-nuget is installed
-ls -la .claude/commands/repomix-nuget.md
+# Check if sc-repomix-nuget is installed
+ls -la .claude/commands/sc-repomix-nuget.md
 ls -la .claude/scripts/generate.sh
 
 # Test repomix availability
@@ -32,13 +32,13 @@ bash .claude/scripts/generate.sh --help
 
 ## Common Issues
 
-### 1. Command Not Found: `/repomix-nuget` Not Recognized
+### 1. Command Not Found: `/sc-repomix-nuget` Not Recognized
 
-**Problem:** When you run `/repomix-nuget`, Claude doesn't recognize the command.
+**Problem:** When you run `/sc-repomix-nuget`, Claude doesn't recognize the command.
 
 **Symptoms:**
 ```
-Unknown command: /repomix-nuget
+Unknown command: /sc-repomix-nuget
 ```
 
 **Root Causes:**
@@ -54,27 +54,27 @@ git rev-parse --git-dir
 # Should output: .git
 ```
 
-2. Install locally (repomix-nuget is local-only):
+2. Install locally (sc-repomix-nuget is local-only):
 ```bash
 cd /path/to/your/nuget/repo
 python3 /path/to/synaptic-canvas/tools/sc-install.py \
-  install repomix-nuget --dest ./.claude
+  install sc-repomix-nuget --dest ./.claude
 ```
 
 3. Verify installation:
 ```bash
-ls .claude/commands/repomix-nuget.md
+ls .claude/commands/sc-repomix-nuget.md
 ls .claude/scripts/generate.sh
-ls .claude/agents/repomix-generate.md
+ls .claude/agents/sc-repomix-nuget-generate.md
 ```
 
 4. If missing, reinstall:
 ```bash
-python3 tools/sc-install.py install repomix-nuget --dest ./.claude --force
+python3 tools/sc-install.py install sc-repomix-nuget --dest ./.claude --force
 ```
 
 **Prevention:**
-- repomix-nuget is local-only (repo-specific)
+- sc-repomix-nuget is local-only (repo-specific)
 - Always install in NuGet package repository root
 - Verify git repo exists first
 
@@ -181,7 +181,7 @@ find . -name "*.csproj"
 2. **If .csproj exists but not detected:**
 ```bash
 # Specify package path explicitly
-/repomix-nuget --generate --package-path ./src/MyPackage --output ./nuget-context.xml
+/sc-repomix-nuget --generate --package-path ./src/MyPackage --output ./nuget-context.xml
 ```
 
 3. **If .csproj in root:**
@@ -195,7 +195,7 @@ ls *.csproj
 # If you have multiple packages in a solution
 # Run from individual package directory
 cd src/MyPackage
-/repomix-nuget --generate --output ../../artifacts/nuget-context.xml
+/sc-repomix-nuget --generate --output ../../artifacts/nuget-context.xml
 ```
 
 5. **Create .nuget-context.json for explicit config:**
@@ -483,8 +483,8 @@ EOF
 5. **Split into multiple contexts:**
 ```bash
 # Generate separate contexts for different namespaces
-/repomix-nuget --generate --package-path ./src/Core --output ./core-context.xml
-/repomix-nuget --generate --package-path ./src/Extensions --output ./ext-context.xml
+/sc-repomix-nuget --generate --package-path ./src/Core --output ./core-context.xml
+/sc-repomix-nuget --generate --package-path ./src/Extensions --output ./ext-context.xml
 ```
 
 **Prevention:**
@@ -561,7 +561,7 @@ bash .claude/scripts/validate-registry.sh docs/registries/nuget/registry.json
 6. **Generate without registry (degraded mode):**
 ```bash
 # Works fine without registry, just less metadata
-/repomix-nuget --generate --package-path . --output ./nuget-context.xml
+/sc-repomix-nuget --generate --package-path . --output ./nuget-context.xml
 # (omit --registry-url)
 ```
 
@@ -659,7 +659,7 @@ cd /path/to/your/nuget/package
 ls *.csproj
 
 # Then install
-python3 tools/sc-install.py install repomix-nuget --dest ./.claude
+python3 tools/sc-install.py install sc-repomix-nuget --dest ./.claude
 ```
 
 ---
@@ -726,18 +726,18 @@ ls -la .nuget-context.json
 
 2. **Specify explicit output:**
 ```bash
-/repomix-nuget --generate --output ./artifacts/nuget-context.xml
+/sc-repomix-nuget --generate --output ./artifacts/nuget-context.xml
 ```
 
 3. **Ensure output directory exists:**
 ```bash
 mkdir -p ./artifacts
-/repomix-nuget --generate --output ./artifacts/nuget-context.xml
+/sc-repomix-nuget --generate --output ./artifacts/nuget-context.xml
 ```
 
 4. **Use absolute paths if needed:**
 ```bash
-/repomix-nuget --generate --output /tmp/nuget-context.xml
+/sc-repomix-nuget --generate --output /tmp/nuget-context.xml
 ```
 
 ---
@@ -799,11 +799,11 @@ npx repomix@3.0.0 --style xml --output ./nuget-context.xml
 ```bash
 # Package 1
 cd src/Package1
-/repomix-nuget --generate --output ../../artifacts/package1-context.xml
+/sc-repomix-nuget --generate --output ../../artifacts/package1-context.xml
 
 # Package 2
 cd ../Package2
-/repomix-nuget --generate --output ../../artifacts/package2-context.xml
+/sc-repomix-nuget --generate --output ../../artifacts/package2-context.xml
 ```
 
 2. **Or combine contexts:**
@@ -1040,7 +1040,7 @@ ls -la .claude/scripts/generate.sh
 
 3. **Command that failed:**
 ```bash
-/repomix-nuget --generate --package-path . --output ./nuget-context.xml
+/sc-repomix-nuget --generate --package-path . --output ./nuget-context.xml
 ```
 
 4. **Error output:**
@@ -1064,7 +1064,7 @@ npm --version
 npx repomix --version
 
 # Installation
-ls -la .claude/commands/repomix-nuget.md
+ls -la .claude/commands/sc-repomix-nuget.md
 ls -la .claude/scripts/generate.sh
 ls -la .claude/agents/repomix-*.md
 
@@ -1116,9 +1116,9 @@ npm install -g repomix
 
 ---
 
-### Q: Can I use repomix-nuget for other languages?
+### Q: Can I use sc-repomix-nuget for other languages?
 
-**A:** No, repomix-nuget is specific to .NET/NuGet packages:
+**A:** No, sc-repomix-nuget is specific to .NET/NuGet packages:
 - Expects .csproj files
 - Includes C# file patterns
 - Parses NuGet metadata
@@ -1189,7 +1189,7 @@ Or mark with `[EditorBrowsable(Never)]` and document in .nuget-context.json.
 
 ---
 
-### Q: Can I use repomix-nuget in private repositories?
+### Q: Can I use sc-repomix-nuget in private repositories?
 
 **A:** Yes:
 - All processing is local
@@ -1198,7 +1198,7 @@ Or mark with `[EditorBrowsable(Never)]` and document in .nuget-context.json.
 
 ---
 
-### Q: How do I update repomix-nuget?
+### Q: How do I update sc-repomix-nuget?
 
 **A:**
 ```bash
@@ -1209,7 +1209,7 @@ git pull origin main
 # Reinstall in your NuGet repo
 cd /path/to/your/nuget/repo
 python3 /path/to/synaptic-canvas/tools/sc-install.py \
-  install repomix-nuget --dest ./.claude --force
+  install sc-repomix-nuget --dest ./.claude --force
 ```
 
 ---
@@ -1228,17 +1228,17 @@ Works fine without registry for basic context generation.
 
 ## Additional Resources
 
-- **Package README:** `packages/repomix-nuget/README.md`
-- **Registry Schema:** `packages/repomix-nuget/skills/generating-nuget-context/registry-schema.md`
-- **Changelog:** `packages/repomix-nuget/CHANGELOG.md` (if exists)
-- **Skill Documentation:** `packages/repomix-nuget/skills/generating-nuget-context/SKILL.md`
+- **Package README:** `packages/sc-repomix-nuget/README.md`
+- **Registry Schema:** `packages/sc-repomix-nuget/skills/sc-repomix-nuget/registry-schema.md`
+- **Changelog:** `packages/sc-repomix-nuget/CHANGELOG.md` (if exists)
+- **Skill Documentation:** `packages/sc-repomix-nuget/skills/sc-repomix-nuget/SKILL.md`
 - **Agent Specifications:**
-  - `packages/repomix-nuget/agents/repomix-generate.md`
-  - `packages/repomix-nuget/agents/registry-resolve.md`
-  - `packages/repomix-nuget/agents/context-assemble.md`
+  - `packages/sc-repomix-nuget/agents/sc-repomix-nuget-generate.md`
+  - `packages/sc-repomix-nuget/agents/sc-repomix-nuget-validate.md`
+  - `packages/sc-repomix-nuget/agents/sc-repomix-nuget-analyze.md`
 - **Scripts:**
-  - `packages/repomix-nuget/scripts/generate.sh`
-  - `packages/repomix-nuget/scripts/validate-registry.sh`
+  - `packages/sc-repomix-nuget/scripts/generate.sh`
+  - `packages/sc-repomix-nuget/scripts/validate-registry.sh`
 - **Repomix Documentation:** https://github.com/yamadashy/repomix
 - **Repository:** https://github.com/randlee/synaptic-canvas
 - **Issues:** https://github.com/randlee/synaptic-canvas/issues
