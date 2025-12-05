@@ -334,16 +334,16 @@ def _load_config() -> Dict:
 
     Returns empty dict if file doesn't exist or on parse error.
     """
-    config_path = _get_config_path()
-
-    # Auto-create directory (Phase 2 Task 1)
-    config_path.parent.mkdir(parents=True, exist_ok=True)
-
-    if not config_path.exists():
-        # Return validated empty config
-        return _validate_config_schema({})
-
     try:
+        config_path = _get_config_path()
+
+        # Auto-create directory (Phase 2 Task 1)
+        config_path.parent.mkdir(parents=True, exist_ok=True)
+
+        if not config_path.exists():
+            # Return validated empty config
+            return _validate_config_schema({})
+
         if yaml is not None:
             content = _read_file(config_path)
             data = yaml.safe_load(content) or {}
@@ -352,6 +352,10 @@ def _load_config() -> Dict:
         else:
             # Without YAML library, return empty validated config
             return _validate_config_schema({})
+    except PermissionError as ex:
+        warn(f"Permission denied accessing config: {ex}")
+        # Return validated empty config on permission error
+        return _validate_config_schema({})
     except Exception as ex:
         warn(f"Could not parse config file: {ex}")
         # Return validated empty config on error
