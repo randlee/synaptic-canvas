@@ -52,8 +52,8 @@ What packages help with documentation?
 **Natural language:**
 ```
 Install delay-tasks globally
-Add the sc-git-worktree package to my global Claude setup
-Install repomix-nuget for this project
+Add the git-worktree package to my global Claude setup
+Install sc-repomix-nuget for this project
 ```
 
 **Installation scopes:**
@@ -115,12 +115,12 @@ Install repomix-nuget for this project
 
 3. **Get package details:**
    ```
-   Tell me more about the sc-git-worktree package
+   Tell me more about the git-worktree package
    ```
 
 4. **Install if useful:**
    ```
-   /marketplace install sc-git-worktree --global
+   /marketplace install git-worktree --global
    ```
 
 ### Workflow 3: Custom Registry Setup
@@ -263,8 +263,8 @@ The marketplace skill understands natural language queries. Here are examples:
 
 ### Installation
 - "Install delay-tasks globally"
-- "Add sc-git-worktree to my Claude setup"
-- "Install the repomix-nuget package"
+- "Add git-worktree to my Claude setup"
+- "Install the sc-repomix-nuget package"
 - "Set up delay-tasks for this project"
 
 ### Registry Management
@@ -275,8 +275,8 @@ The marketplace skill understands natural language queries. Here are examples:
 
 ### Information
 - "Tell me about the delay-tasks package"
-- "What does sc-git-worktree do?"
-- "Show details for repomix-nuget"
+- "What does git-worktree do?"
+- "Show details for sc-repomix-nuget"
 - "What's included in sc-manage?"
 
 ## Integration with Other Skills
@@ -288,13 +288,13 @@ Install with: `/marketplace install delay-tasks --global`
 
 Use for: Scheduling delayed actions, CI/CD polling, interval-based tasks
 
-### sc-git-worktree
-Install with: `/marketplace install sc-git-worktree --global`
+### git-worktree
+Install with: `/marketplace install git-worktree --global`
 
 Use for: Managing parallel git worktrees, branch management, development workflows
 
-### repomix-nuget
-Install with: `/marketplace install repomix-nuget --global`
+### sc-repomix-nuget
+Install with: `/marketplace install sc-repomix-nuget --global`
 
 Use for: NuGet repository analysis, package documentation, .NET project context
 
@@ -367,10 +367,10 @@ If you encounter issues:
 /marketplace search git
 
 # Install worktree manager
-/marketplace install sc-git-worktree --global
+/marketplace install git-worktree --global
 
 # Create worktrees for parallel development
-/sc-git-worktree create feature/new-feature
+/git-worktree create feature/new-feature
 ```
 
 ### For Documentation Generation
@@ -379,10 +379,10 @@ If you encounter issues:
 /marketplace search documentation
 
 # Install NuGet context generator
-/marketplace install repomix-nuget --global
+/marketplace install sc-repomix-nuget --global
 
 # Generate repository context
-Use repomix-nuget agents to analyze .NET projects
+Use sc-repomix-nuget agents to analyze .NET projects
 ```
 
 ### For Package Management

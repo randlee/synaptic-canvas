@@ -1,5 +1,5 @@
 ---
-name: /repomix-nuget
+name: /sc-repomix-nuget
 description: Generate AI-optimized NuGet package context using Repomix.
 version: 0.4.0
 options:
@@ -26,12 +26,12 @@ options:
     description: Central registry URL (default raw GitHub URL in README).
 ---
 
-# /repomix-nuget
+# /sc-repomix-nuget
 
-Invoke the `generating-nuget-context` skill, which orchestrates:
+Invoke the `sc-repomix-nuget` skill, which orchestrates:
 1) Resolve registry info (dependencies/dependents)
 2) Run Repomix with compression
 3) Assemble final XML with a `<nuget_package_context>` header
 
 Typical:
-- `/repomix-nuget --generate --package-path . --output ./nuget-context.xml`
+- `/sc-repomix-nuget --generate --package-path . --output ./nuget-context.xml`

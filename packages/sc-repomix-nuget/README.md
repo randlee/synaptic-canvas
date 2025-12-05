@@ -1,4 +1,4 @@
-# repomix-nuget
+# sc-repomix-nuget
 
 [![Publisher Verified](https://img.shields.io/badge/publisher-verified-brightgreen)](https://github.com/randlee/synaptic-canvas/blob/main/docs/PUBLISHER-VERIFICATION.md)
 [![Security Scanned](https://img.shields.io/badge/security-scanned-blue)](https://github.com/randlee/synaptic-canvas/blob/main/SECURITY.md)
@@ -13,31 +13,31 @@ Generate AI-optimized context for NuGet packages using Repomix with NuGet metada
 Security: See [SECURITY.md](../../../SECURITY.md) for security policy and practices.
 
 ## Quick Start
-1) Install into your repo’s `.claude`:
+1) Install into your repo's `.claude`:
 ```bash
-python3 tools/sc-install.py install repomix-nuget --dest /path/to/your-repo/.claude
+python3 tools/sc-install.py install sc-repomix-nuget --dest /path/to/your-repo/.claude
 ```
 2) From your repo, run:
 ```
-/repomix-nuget --generate --package-path . --output ./nuget-context.xml
+/sc-repomix-nuget --generate --package-path . --output ./nuget-context.xml
 ```
 
 ## Command
-- `/repomix-nuget --help`
-- `/repomix-nuget --generate [--package-path <path>] [--output <file>] [--include-docs] [--registry-url <url>]`
+- `/sc-repomix-nuget --help`
+- `/sc-repomix-nuget --generate [--package-path <path>] [--output <file>] [--include-docs] [--registry-url <url>]`
 
 ## Skill & Agents
-- Skill: `generating-nuget-context` (Agent Runner → agents)
-- Agents: `repomix-generate`, `registry-resolve`, `context-assemble`
+- Skill: `sc-repomix-nuget` (Agent Runner → agents)
+- Agents: `sc-repomix-nuget-generate`, `sc-repomix-nuget-validate`, `sc-repomix-nuget-analyze`
 
 ## Getting Started
 - Minimal run in a C# repo:
   ```
-  /repomix-nuget --generate --package-path . --output ./nuget-context.xml
+  /sc-repomix-nuget --generate --package-path . --output ./nuget-context.xml
   ```
 - With registry URL (recommended once you host it):
   ```
-  /repomix-nuget --generate \
+  /sc-repomix-nuget --generate \
     --package-path . \
     --output ./nuget-context.xml \
 --registry-url https://raw.githubusercontent.com/<owner>/<repo>/main/docs/registries/nuget/registry.json
@@ -53,7 +53,7 @@ python3 tools/sc-install.py install repomix-nuget --dest /path/to/your-repo/.cla
 ## Examples
 - Different output path:
   ```
-  /repomix-nuget --generate --output ./artifacts/nuget-context.xml
+  /sc-repomix-nuget --generate --output ./artifacts/nuget-context.xml
   ```
 - Disable compression (debug):
   ```

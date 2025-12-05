@@ -34,7 +34,7 @@ This document provides detailed use cases for the Marketplace Package Manager sk
      Tags: package-manager, discovery, marketplace, tools
      Artifacts: 1 command, 1 skill, 4 agents
 
-   • repomix-nuget (v0.4.0) - beta
+   • sc-repomix-nuget (v0.4.0) - beta
      "Generate comprehensive NuGet repository context for AI analysis"
      Tags: nuget, csharp, .net, documentation, analysis
      Artifacts: 1 command, 1 skill, 3 agents, 1 script

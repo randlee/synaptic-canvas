@@ -43,7 +43,7 @@ Available packages:
   Tags: delay, polling, tasks, ci, automation
   Install: /marketplace install delay-tasks --global
 
-• sc-git-worktree (v0.4.0) - beta
+• git-worktree (v0.4.0) - beta
   ...
 ```
 
@@ -99,7 +99,7 @@ Install a package from marketplace.
 **Examples:**
 ```
 /marketplace install delay-tasks --global
-/marketplace install sc-git-worktree --local
+/marketplace install git-worktree --local
 /marketplace install sc-manage --global --force
 /marketplace install custom-package --global --registry my-org
 ```
@@ -285,8 +285,8 @@ Instead of using slash commands, you can use natural language with the marketpla
 
 **Installation:**
 - "Install delay-tasks globally"
-- "Add sc-git-worktree to my Claude setup"
-- "Set up the repomix-nuget package"
+- "Add git-worktree to my Claude setup"
+- "Set up the sc-repomix-nuget package"
 
 **Registry Management:**
 - "Show my registries"
@@ -321,11 +321,11 @@ Claude will understand these requests and execute the appropriate marketplace op
 # Search for git tools
 /marketplace search git
 
-# Install sc-git-worktree
-/marketplace install sc-git-worktree --global
+# Install git-worktree
+/marketplace install git-worktree --global
 
 # Create a worktree
-/sc-git-worktree create feature/new-feature
+/git-worktree create feature/new-feature
 ```
 
 ### Example 3: Add Custom Registry
@@ -453,9 +453,9 @@ Requirements:
 ## See Also
 
 - `/delay` - Task scheduling (from delay-tasks package)
-- `/sc-git-worktree` - Git worktree management
+- `/git-worktree` - Git worktree management
 - `/sc-manage` - Synaptic Canvas management
-- `/repomix-nuget` - NuGet repository analysis
+- `/sc-repomix-nuget` - NuGet repository analysis
 
 ---
 

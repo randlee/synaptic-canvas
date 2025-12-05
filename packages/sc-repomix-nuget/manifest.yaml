@@ -1,4 +1,4 @@
-name: repomix-nuget
+name: sc-repomix-nuget
 version: 0.4.0
 description: >
   Generate AI-optimized NuGet package context using Repomix with NuGet metadata
@@ -15,15 +15,15 @@ install:
   scope: local-only
 artifacts:
   commands:
-    - commands/repomix-nuget.md
+    - commands/sc-repomix-nuget.md
   skills:
-    - skills/generating-nuget-context/SKILL.md
-    - skills/generating-nuget-context/output-formats.md
-    - skills/generating-nuget-context/registry-schema.md
+    - skills/sc-repomix-nuget/SKILL.md
+    - skills/sc-repomix-nuget/output-formats.md
+    - skills/sc-repomix-nuget/registry-schema.md
   agents:
-    - agents/repomix-generate.md
-    - agents/registry-resolve.md
-    - agents/context-assemble.md
+    - agents/sc-repomix-nuget-generate.md
+    - agents/sc-repomix-nuget-validate.md
+    - agents/sc-repomix-nuget-analyze.md
   scripts:
     - scripts/generate.sh
     - scripts/validate-registry.sh

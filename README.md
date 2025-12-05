@@ -34,7 +34,7 @@ python3 tools/sc-install.py list
 python3 tools/sc-install.py install delay-tasks
 
 # Or specify destination for repo-specific setup
-python3 tools/sc-install.py install sc-git-worktree --dest /path/to/repo/.claude
+python3 tools/sc-install.py install git-worktree --dest /path/to/repo/.claude
 ```
 
 > **💡 Tip:** Need help? Run `scripts/security-scan.sh` to diagnose installation issues.
@@ -60,11 +60,11 @@ python3 tools/sc-install.py install sc-git-worktree --dest /path/to/repo/.claude
 
 ---
 
-### [sc-git-worktree](packages/sc-git-worktree/)
-[![Stable](https://img.shields.io/badge/status-stable-green)](packages/sc-git-worktree/CHANGELOG.md)
-[![v1.0.0](https://img.shields.io/badge/version-1.0.0-blue)](packages/sc-git-worktree/CHANGELOG.md)
+### [git-worktree](packages/git-worktree/)
+[![Stable](https://img.shields.io/badge/status-stable-green)](packages/git-worktree/CHANGELOG.md)
+[![v1.0.0](https://img.shields.io/badge/version-1.0.0-blue)](packages/git-worktree/CHANGELOG.md)
 [![Tier 1](https://img.shields.io/badge/tier-1-yellow)](README.md#-package-tiers-explained)
-[![MIT License](https://img.shields.io/badge/license-MIT-green)](packages/sc-git-worktree/LICENSE)
+[![MIT License](https://img.shields.io/badge/license-MIT-green)](packages/git-worktree/LICENSE)
 
 **Git worktree management** — Manage parallel development with automatic tracking and safety checks.
 
@@ -74,7 +74,7 @@ python3 tools/sc-install.py install sc-git-worktree --dest /path/to/repo/.claude
 - Track worktree state across your team
 - Clean up old worktrees with built-in safety checks
 
-📖 **[Full README](packages/sc-git-worktree/README.md)** | 💡 **[7 Use Cases](packages/sc-git-worktree/USE-CASES.md)** | 🔧 **[Troubleshooting](packages/sc-git-worktree/TROUBLESHOOTING.md)** | 📋 **[Changelog](packages/sc-git-worktree/CHANGELOG.md)**
+📖 **[Full README](packages/git-worktree/README.md)** | 💡 **[7 Use Cases](packages/git-worktree/USE-CASES.md)** | 🔧 **[Troubleshooting](packages/git-worktree/TROUBLESHOOTING.md)** | 📋 **[Changelog](packages/git-worktree/CHANGELOG.md)**
 
 ---
 
@@ -96,11 +96,11 @@ python3 tools/sc-install.py install sc-git-worktree --dest /path/to/repo/.claude
 
 ---
 
-### [repomix-nuget](packages/repomix-nuget/)
-[![Beta](https://img.shields.io/badge/status-beta-yellow)](packages/repomix-nuget/CHANGELOG.md)
-[![v0.4.0](https://img.shields.io/badge/version-0.4.0-blue)](packages/repomix-nuget/CHANGELOG.md)
+### [sc-repomix-nuget](packages/sc-repomix-nuget/)
+[![Beta](https://img.shields.io/badge/status-beta-yellow)](packages/sc-repomix-nuget/CHANGELOG.md)
+[![v0.4.0](https://img.shields.io/badge/version-0.4.0-blue)](packages/sc-repomix-nuget/CHANGELOG.md)
 [![Tier 2](https://img.shields.io/badge/tier-2-orange)](README.md#-package-tiers-explained)
-[![MIT License](https://img.shields.io/badge/license-MIT-green)](packages/repomix-nuget/LICENSE)
+[![MIT License](https://img.shields.io/badge/license-MIT-green)](packages/sc-repomix-nuget/LICENSE)
 
 **NuGet & C# analysis** — Generate AI-ready context from .NET projects for code review and documentation.
 
@@ -110,7 +110,7 @@ python3 tools/sc-install.py install sc-git-worktree --dest /path/to/repo/.claude
 - Check framework and dependency compatibility
 - Create AI-ready context from large codebases
 
-📖 **[Full README](packages/repomix-nuget/README.md)** | 💡 **[7 Use Cases](packages/repomix-nuget/USE-CASES.md)** | 🔧 **[Troubleshooting](packages/repomix-nuget/TROUBLESHOOTING.md)** | 📋 **[Changelog](packages/repomix-nuget/CHANGELOG.md)**
+📖 **[Full README](packages/sc-repomix-nuget/README.md)** | 💡 **[7 Use Cases](packages/sc-repomix-nuget/USE-CASES.md)** | 🔧 **[Troubleshooting](packages/sc-repomix-nuget/TROUBLESHOOTING.md)** | 📋 **[Changelog](packages/sc-repomix-nuget/CHANGELOG.md)**
 
 ---
 
@@ -121,8 +121,8 @@ python3 tools/sc-install.py install sc-git-worktree --dest /path/to/repo/.claude
 | Goal | Package | Link |
 |------|---------|------|
 | **Wait before checking if something is ready** | delay-tasks | [Examples](packages/delay-tasks/USE-CASES.md) |
-| **Work on multiple branches simultaneously** | sc-git-worktree | [Guide](packages/sc-git-worktree/USE-CASES.md) |
-| **Analyze a C# project with AI** | repomix-nuget | [Examples](packages/repomix-nuget/USE-CASES.md) |
+| **Work on multiple branches simultaneously** | git-worktree | [Guide](packages/git-worktree/USE-CASES.md) |
+| **Analyze a C# project with AI** | sc-repomix-nuget | [Examples](packages/sc-repomix-nuget/USE-CASES.md) |
 | **Discover & install packages** | sc-manage | [Guide](packages/sc-manage/USE-CASES.md) |
 | **See all available packages** | Any | [Registry](docs/registries/nuget/registry.json) |
 
@@ -133,9 +133,9 @@ python3 tools/sc-install.py install sc-git-worktree --dest /path/to/repo/.claude
 | Package | Type | Status | Version | Tier | Requirements |
 |---------|------|--------|---------|------|--------------|
 | delay-tasks | Utilities | ✅ Stable | 1.0.0 | 0 | Python 3.6+ |
-| sc-git-worktree | Git Tools | ✅ Stable | 1.0.0 | 1 | Git 2.7.0+ |
+| git-worktree | Git Tools | ✅ Stable | 1.0.0 | 1 | Git 2.7.0+ |
 | sc-manage | Package Mgr | 🟡 Beta | 0.4.0 | 0 | Python 3.6+ |
-| repomix-nuget | Analysis | 🟡 Beta | 0.4.0 | 2 | Node 18+, .NET SDK |
+| sc-repomix-nuget | Analysis | 🟡 Beta | 0.4.0 | 2 | Node 18+, .NET SDK |
 
 **Status:** ✅ Stable (production-ready) | 🟡 Beta (active development) | 🔴 Deprecated (not recommended)
 
@@ -211,13 +211,13 @@ Every package in Synaptic Canvas is:
 ### Tier 1: Token Substitution
 - Auto-replaces variables like `{{REPO_NAME}}`
 - Customizes to your project automatically
-- Example: `sc-git-worktree`
+- Example: `git-worktree`
 - Setup time: 1-2 minutes
 
 ### Tier 2: Runtime Dependencies
 - Requires external tools (Python, Node, .NET SDK, etc.)
 - Most powerful capabilities
-- Example: `repomix-nuget`
+- Example: `sc-repomix-nuget`
 - Setup time: 5-10 minutes (depends on your environment)
 
 ---

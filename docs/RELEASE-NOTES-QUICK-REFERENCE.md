@@ -160,7 +160,7 @@ v1.0.0 API is stable. Full semver enforced from now on.
 - Key sections: Package policy documentation, scope enforcement
 - Example new feature: Package search, advanced filtering
 
-### repomix-nuget (Tier 2 + Local-only)
+### sc-repomix-nuget (Tier 2 + Local-only)
 - Use: **Tier 2 Template** + **Universal Template**
 - Key sections: Node.js requirement, .NET context generation
 - Example new feature: Registry integration, metadata enrichment
@@ -290,7 +290,7 @@ packages/
 │   └── TROUBLESHOOTING.md           ← Common issues
 ├── sc-git-worktree/
 ├── sc-manage/
-└── repomix-nuget/
+└── sc-repomix-nuget/
 
 docs/
 ├── RELEASE-NOTES-TEMPLATE.md        ← This file
@@ -353,7 +353,7 @@ docs/
 - [delay-tasks](#package-specific-quick-picks)
 - [sc-git-worktree](#package-specific-quick-picks)
 - [sc-manage](#package-specific-quick-picks)
-- [repomix-nuget](#package-specific-quick-picks)
+- [sc-repomix-nuget](#package-specific-quick-picks)
 
 ---
 

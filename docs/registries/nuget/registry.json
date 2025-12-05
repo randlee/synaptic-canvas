@@ -107,16 +107,16 @@
       "lastUpdated": "2025-12-02",
       "dependents": []
     },
-    "repomix-nuget": {
-      "name": "repomix-nuget",
+    "sc-repomix-nuget": {
+      "name": "sc-repomix-nuget",
       "version": "0.4.0",
       "status": "beta",
       "tier": 1,
       "description": "Generate comprehensive NuGet repository context for AI analysis. Extracts package metadata, assembly information, and documentation for enhanced code understanding.",
       "github": "randlee/synaptic-canvas",
       "repo": "https://github.com/randlee/synaptic-canvas",
-      "path": "packages/repomix-nuget",
-      "readme": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/repomix-nuget/README.md",
+      "path": "packages/sc-repomix-nuget",
+      "readme": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-repomix-nuget/README.md",
       "license": "MIT",
       "author": "Anthropic",
       "tags": [
@@ -141,7 +141,7 @@
       "dependencies": [
         "python3 >= 3.12"
       ],
-      "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/repomix-nuget/CHANGELOG.md",
+      "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-repomix-nuget/CHANGELOG.md",
       "lastUpdated": "2025-12-02",
       "dependents": []
     }
@@ -165,7 +165,7 @@
         "sc-manage"
       ],
       "documentation": [
-        "repomix-nuget"
+        "sc-repomix-nuget"
       ]
     }
   },
@@ -189,7 +189,7 @@
         "sc-delay-tasks",
         "sc-git-worktree",
         "sc-manage",
-        "repomix-nuget"
+        "sc-repomix-nuget"
       ],
       "total_packages": 4
     }

@@ -1,10 +1,10 @@
-# repomix-nuget Use Cases
+# sc-repomix-nuget Use Cases
 
 ## Introduction
 
-The `repomix-nuget` package generates AI-optimized context from .NET/NuGet projects by combining Repomix compression technology with rich NuGet package metadata. This produces compact, structured XML containing complete API surfaces, namespace hierarchies, dependency graphs, and framework compatibility information—enabling AI tools to understand your codebase deeply.
+The `sc-repomix-nuget` package generates AI-optimized context from .NET/NuGet projects by combining Repomix compression technology with rich NuGet package metadata. This produces compact, structured XML containing complete API surfaces, namespace hierarchies, dependency graphs, and framework compatibility information—enabling AI tools to understand your codebase deeply.
 
-These use cases demonstrate how `repomix-nuget` powers code review, documentation generation, architecture analysis, and team onboarding for .NET projects.
+These use cases demonstrate how `sc-repomix-nuget` powers code review, documentation generation, architecture analysis, and team onboarding for .NET projects.
 
 ---
 
@@ -21,14 +21,14 @@ You're joining a new .NET project and need to understand its architecture: what 
    cd example-dotnet-service
    ```
 
-2. Install repomix-nuget locally:
+2. Install sc-repomix-nuget locally:
    ```
-   /sc-manage --install repomix-nuget --local
+   /sc-manage --install sc-repomix-nuget --local
    ```
 
 3. Generate comprehensive project context:
    ```
-   /repomix-nuget --generate --package-path . --output ./nuget-context.xml
+   /sc-repomix-nuget --generate --package-path . --output ./nuget-context.xml
    ```
    Output:
    ```
@@ -122,9 +122,9 @@ You're joining a new .NET project and need to understand its architecture: what 
 - Structured data for analysis
 
 **Related Documentation:**
-- [/repomix-nuget command reference](commands/repomix-nuget.md)
-- [repomix-nuget README](README.md)
-- [Generating NuGet Context Skill](skills/generating-nuget-context/SKILL.md)
+- [/sc-repomix-nuget command reference](commands/sc-repomix-nuget.md)
+- [sc-repomix-nuget README](README.md)
+- [Generating NuGet Context Skill](skills/sc-repomix-nuget/SKILL.md)
 
 **Tips and Best Practices:**
 - Generate context early in project discovery
@@ -144,18 +144,18 @@ You're joining a new .NET project and need to understand its architecture: what 
 **Multi-library analysis (generate separately):**
 ```bash
 # Service library
-/repomix-nuget --generate --package-path ./src/Services --output ./services-context.xml
+/sc-repomix-nuget --generate --package-path ./src/Services --output ./services-context.xml
 
 # Core library
-/repomix-nuget --generate --package-path ./src/Core --output ./core-context.xml
+/sc-repomix-nuget --generate --package-path ./src/Core --output ./core-context.xml
 
 # Data library
-/repomix-nuget --generate --package-path ./src/Data --output ./data-context.xml
+/sc-repomix-nuget --generate --package-path ./src/Data --output ./data-context.xml
 ```
 
 **Including documentation tier:**
 ```
-/repomix-nuget --generate --package-path . --output ./context.xml --include-docs
+/sc-repomix-nuget --generate --package-path . --output ./context.xml --include-docs
 ```
 
 ---
@@ -169,20 +169,20 @@ You're preparing a code review for a significant feature branch in a .NET servic
 3. Documentation generation
 4. Best practices validation
 
-Using repomix-nuget context makes the analysis much more accurate and comprehensive.
+Using sc-repomix-nuget context makes the analysis much more accurate and comprehensive.
 
 **Step-by-step Walkthrough:**
 
 1. Generate context for the main branch:
    ```bash
    git checkout main
-   /repomix-nuget --generate --package-path . --output ./main-context.xml
+   /sc-repomix-nuget --generate --package-path . --output ./main-context.xml
    ```
 
 2. Generate context for the feature branch:
    ```bash
    git checkout feature-major-refactor
-   /repomix-nuget --generate --package-path . --output ./feature-context.xml
+   /sc-repomix-nuget --generate --package-path . --output ./feature-context.xml
    ```
 
 3. Ask Claude for comprehensive code review:
@@ -302,8 +302,8 @@ Using repomix-nuget context makes the analysis much more accurate and comprehens
 - Team learns from review feedback
 
 **Related Documentation:**
-- [/repomix-nuget command reference](commands/repomix-nuget.md)
-- [Generating NuGet Context Skill](skills/generating-nuget-context/SKILL.md)
+- [/sc-repomix-nuget command reference](commands/sc-repomix-nuget.md)
+- [Generating NuGet Context Skill](skills/sc-repomix-nuget/SKILL.md)
 
 **Tips and Best Practices:**
 - Generate context before major review meetings
@@ -334,7 +334,7 @@ Your project has accumulated many NuGet dependencies over time. You want to unde
 
 1. Generate comprehensive dependency context:
    ```
-   /repomix-nuget --generate --package-path . --output ./dependencies-context.xml
+   /sc-repomix-nuget --generate --package-path . --output ./dependencies-context.xml
    ```
 
 2. Ask Claude for dependency analysis:
@@ -450,8 +450,8 @@ Your project has accumulated many NuGet dependencies over time. You want to unde
 - Reduce maintenance burden
 
 **Related Documentation:**
-- [/repomix-nuget command reference](commands/repomix-nuget.md)
-- [Registry Schema](skills/generating-nuget-context/registry-schema.md)
+- [/sc-repomix-nuget command reference](commands/sc-repomix-nuget.md)
+- [Registry Schema](skills/sc-repomix-nuget/registry-schema.md)
 
 **Tips and Best Practices:**
 - Analyze dependencies quarterly
@@ -481,7 +481,7 @@ You're planning to upgrade from .NET 7 to .NET 8, or considering support for .NE
 
 1. Generate context for current codebase:
    ```
-   /repomix-nuget --generate --package-path . --output ./current-net7-context.xml
+   /sc-repomix-nuget --generate --package-path . --output ./current-net7-context.xml
    ```
 
 2. Ask Claude about framework compatibility:
@@ -613,7 +613,7 @@ You're planning to upgrade from .NET 7 to .NET 8, or considering support for .NE
 - Technical debt addressed proactively
 
 **Related Documentation:**
-- [/repomix-nuget command reference](commands/repomix-nuget.md)
+- [/sc-repomix-nuget command reference](commands/sc-repomix-nuget.md)
 
 **Tips and Best Practices:**
 - Generate context before framework decisions
@@ -633,13 +633,13 @@ You're planning to upgrade from .NET 7 to .NET 8, or considering support for .NE
 ## Use Case 5: Documentation Generation from Code
 
 **Scenario/Context:**
-You need to generate comprehensive documentation for your .NET library's public API. Instead of manually documenting classes, methods, and patterns, you can use repomix-nuget context to generate initial documentation that Claude can review and enhance.
+You need to generate comprehensive documentation for your .NET library's public API. Instead of manually documenting classes, methods, and patterns, you can use sc-repomix-nuget context to generate initial documentation that Claude can review and enhance.
 
 **Step-by-step Walkthrough:**
 
 1. Generate context specifically for public API:
    ```
-   /repomix-nuget --generate --package-path . --output ./api-docs-context.xml --include-docs
+   /sc-repomix-nuget --generate --package-path . --output ./api-docs-context.xml --include-docs
    ```
 
 2. Ask Claude to generate documentation:
@@ -740,7 +740,7 @@ You need to generate comprehensive documentation for your .NET library's public 
 
    # Commit to repository
    git add docs/api-reference.md
-   git commit -m "docs: generate API documentation from repomix-nuget context"
+   git commit -m "docs: generate API documentation from sc-repomix-nuget context"
    git push origin main
    ```
 
@@ -759,8 +759,8 @@ You need to generate comprehensive documentation for your .NET library's public 
 - Better onboarding for new developers
 
 **Related Documentation:**
-- [/repomix-nuget command reference](commands/repomix-nuget.md)
-- [Output Formats Guide](skills/generating-nuget-context/output-formats.md)
+- [/sc-repomix-nuget command reference](commands/sc-repomix-nuget.md)
+- [Output Formats Guide](skills/sc-repomix-nuget/output-formats.md)
 
 **Tips and Best Practices:**
 - Regenerate documentation when major features added
@@ -780,13 +780,13 @@ You need to generate comprehensive documentation for your .NET library's public 
 ## Use Case 6: Architecture Visualization and Understanding
 
 **Scenario/Context:**
-You want to create architecture diagrams and visualizations of your .NET service. Rather than creating diagrams manually, you can use repomix-nuget context to generate architecture documentation that shows components, dependencies, and data flows.
+You want to create architecture diagrams and visualizations of your .NET service. Rather than creating diagrams manually, you can use sc-repomix-nuget context to generate architecture documentation that shows components, dependencies, and data flows.
 
 **Step-by-step Walkthrough:**
 
 1. Generate project context:
    ```
-   /repomix-nuget --generate --package-path . --output ./arch-analysis-context.xml
+   /sc-repomix-nuget --generate --package-path . --output ./arch-analysis-context.xml
    ```
 
 2. Ask Claude to create architecture diagrams:
@@ -961,7 +961,7 @@ You want to create architecture diagrams and visualizations of your .NET service
 - Onboarding time reduced
 
 **Related Documentation:**
-- [/repomix-nuget command reference](commands/repomix-nuget.md)
+- [/sc-repomix-nuget command reference](commands/sc-repomix-nuget.md)
 
 **Tips and Best Practices:**
 - Use Mermaid for GitHub-friendly diagrams
@@ -981,7 +981,7 @@ You want to create architecture diagrams and visualizations of your .NET service
 ## Use Case 7: Onboarding New Team Members
 
 **Scenario/Context:**
-You're onboarding three new developers to your .NET microservices platform. Instead of spending days explaining the architecture, codebase structure, and patterns, you can provide them with repomix-nuget contexts and structured guides.
+You're onboarding three new developers to your .NET microservices platform. Instead of spending days explaining the architecture, codebase structure, and patterns, you can provide them with sc-repomix-nuget contexts and structured guides.
 
 **Step-by-step Walkthrough:**
 
@@ -989,15 +989,15 @@ You're onboarding three new developers to your .NET microservices platform. Inst
    ```bash
    # Service 1: User Service
    cd ../user-service
-   /repomix-nuget --generate --package-path . --output ./user-service-context.xml
+   /sc-repomix-nuget --generate --package-path . --output ./user-service-context.xml
 
    # Service 2: Order Service
    cd ../order-service
-   /repomix-nuget --generate --package-path . --output ./order-service-context.xml
+   /sc-repomix-nuget --generate --package-path . --output ./order-service-context.xml
 
    # Service 3: Payment Service
    cd ../payment-service
-   /repomix-nuget --generate --package-path . --output ./payment-service-context.xml
+   /sc-repomix-nuget --generate --package-path . --output ./payment-service-context.xml
    ```
 
 2. Create onboarding guide:
@@ -1058,7 +1058,7 @@ You're onboarding three new developers to your .NET microservices platform. Inst
 
    ## Getting Help
 
-   Use repomix-nuget contexts when stuck:
+   Use sc-repomix-nuget contexts when stuck:
    ```
    I'm working on feature X in order-service.
 
@@ -1095,14 +1095,14 @@ You're onboarding three new developers to your .NET microservices platform. Inst
       python3 tools/sc-install.py install sc-manage --global
       ```
 
-   3. In each service, install repomix-nuget:
+   3. In each service, install sc-repomix-nuget:
       ```bash
-      /sc-manage --install repomix-nuget --local
+      /sc-manage --install sc-repomix-nuget --local
       ```
 
    4. Generate contexts:
       ```bash
-      /repomix-nuget --generate --output ./context.xml
+      /sc-repomix-nuget --generate --output ./context.xml
       ```
 
    5. Share contexts on Slack in #dev-onboarding
@@ -1158,7 +1158,7 @@ You're onboarding three new developers to your .NET microservices platform. Inst
 - Better retention of new developers
 
 **Related Documentation:**
-- [/repomix-nuget command reference](commands/repomix-nuget.md)
+- [/sc-repomix-nuget command reference](commands/sc-repomix-nuget.md)
 
 **Tips and Best Practices:**
 - Update contexts when major features added
@@ -1179,30 +1179,30 @@ You're onboarding three new developers to your .NET microservices platform. Inst
 
 ### Pattern 1: Generate Standard Context
 ```
-/repomix-nuget --generate --package-path . --output ./context.xml
+/sc-repomix-nuget --generate --package-path . --output ./context.xml
 ```
 
 ### Pattern 2: Generate with Documentation
 ```
-/repomix-nuget --generate --package-path . --output ./context.xml --include-docs
+/sc-repomix-nuget --generate --package-path . --output ./context.xml --include-docs
 ```
 
 ### Pattern 3: Targeted Analysis
 ```bash
 # Analyze specific library
 cd src/Core
-/repomix-nuget --generate --package-path . --output ./core-context.xml
+/sc-repomix-nuget --generate --package-path . --output ./core-context.xml
 ```
 
 ### Pattern 4: Compare Versions
 ```bash
 # Generate context for main
 git checkout main
-/repomix-nuget --generate --output ./main-context.xml
+/sc-repomix-nuget --generate --output ./main-context.xml
 
 # Generate context for feature branch
 git checkout feature-upgrade
-/repomix-nuget --generate --output ./feature-context.xml
+/sc-repomix-nuget --generate --output ./feature-context.xml
 ```
 
 ---
@@ -1217,7 +1217,7 @@ git checkout feature-upgrade
 
 if git diff --cached --name-only | grep -E '\.(cs|csproj|sln)$' > /dev/null; then
   echo "Detected C# changes, regenerating context..."
-  /repomix-nuget --generate --output ./nuget-context.xml
+  /sc-repomix-nuget --generate --output ./nuget-context.xml
   git add nuget-context.xml
 fi
 ```
@@ -1226,8 +1226,8 @@ fi
 ```yaml
 - name: Generate NuGet Context
   run: |
-    /sc-manage --install repomix-nuget --local
-    /repomix-nuget --generate --output ./artifacts/nuget-context.xml
+    /sc-manage --install sc-repomix-nuget --local
+    /sc-repomix-nuget --generate --output ./artifacts/nuget-context.xml
 
 - name: Analyze with Claude
   run: |
@@ -1244,7 +1244,7 @@ fi
 #!/bin/bash
 # scripts/generate-docs.sh
 
-/repomix-nuget --generate --package-path . --output ./context.xml --include-docs
+/sc-repomix-nuget --generate --package-path . --output ./context.xml --include-docs
 
 # Ask Claude to generate documentation
 npx claude-code --exec-mode sync <<'SCRIPT'
@@ -1292,7 +1292,7 @@ SCRIPT
 cat .nuget-context.json
 
 # If missing, regenerate from scratch
-/repomix-nuget --generate --package-path . --output ./context.xml
+/sc-repomix-nuget --generate --package-path . --output ./context.xml
 ```
 
 ### Scenario: Claude analysis seems generic
@@ -1309,7 +1309,7 @@ cat .nuget-context.json
 rm nuget-context.xml
 
 # Generate fresh
-/repomix-nuget --generate --output ./nuget-context.xml
+/sc-repomix-nuget --generate --output ./nuget-context.xml
 ```
 
 ---
@@ -1318,25 +1318,25 @@ rm nuget-context.xml
 
 ### Minimum Setup
 ```bash
-# Install repomix-nuget in .NET project
-/sc-manage --install repomix-nuget --local
+# Install sc-repomix-nuget in .NET project
+/sc-manage --install sc-repomix-nuget --local
 
 # Generate context
-/repomix-nuget --generate --output ./context.xml
+/sc-repomix-nuget --generate --output ./context.xml
 
 # Ask Claude about it
 # "Explain the architecture of this project"
 ```
 
 ### First Use
-1. Generate context: `/repomix-nuget --generate --output ./context.xml`
+1. Generate context: `/sc-repomix-nuget --generate --output ./context.xml`
 2. Ask Claude a question: "What does this project do?"
 3. Ask for specific analysis: "What are the main components?"
 4. Request documentation: "Generate API documentation"
 5. Share context with team
 
 ### Common Starting Patterns
-- **New to project**: `/repomix-nuget --generate` then "Explain architecture"
+- **New to project**: `/sc-repomix-nuget --generate` then "Explain architecture"
 - **Code review**: Generate context for branch, ask for review
 - **Dependency analysis**: Generate context, ask "Analyze dependencies"
 - **Documentation**: Generate context, ask for "API documentation"
@@ -1346,11 +1346,11 @@ rm nuget-context.xml
 
 ## See Also
 
-- [repomix-nuget README](README.md)
-- [/repomix-nuget Command Reference](commands/repomix-nuget.md)
-- [Generating NuGet Context Skill](skills/generating-nuget-context/SKILL.md)
-- [Output Formats Guide](skills/generating-nuget-context/output-formats.md)
-- [Registry Schema](skills/generating-nuget-context/registry-schema.md)
+- [sc-repomix-nuget README](README.md)
+- [/sc-repomix-nuget Command Reference](commands/sc-repomix-nuget.md)
+- [Generating NuGet Context Skill](skills/sc-repomix-nuget/SKILL.md)
+- [Output Formats Guide](skills/sc-repomix-nuget/output-formats.md)
+- [Registry Schema](skills/sc-repomix-nuget/registry-schema.md)
 - [Synaptic Canvas Contributing Guide](/CONTRIBUTING.md)
 - [Synaptic Canvas Repository](https://github.com/randlee/synaptic-canvas)
 

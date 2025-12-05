@@ -54,8 +54,8 @@ description: "..."
 | Package | Version | Status | Notes |
 |---------|---------|--------|-------|
 | `delay-tasks` | 1.0.0 | Beta | Core polling/delay functionality |
-| `sc-git-worktree` | 1.0.0 | Beta | Worktree management with tracking |
-| `repomix-nuget` | 0.4.0 | Beta | NuGet packaging integration |
+| `git-worktree` | 1.0.0 | Beta | Worktree management with tracking |
+| `sc-repomix-nuget` | 0.4.0 | Beta | NuGet packaging integration |
 | `sc-manage` | 0.4.0 | Beta | Package manager interface |
 
 ### When to Bump Package Version

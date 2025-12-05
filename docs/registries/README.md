@@ -141,7 +141,7 @@ Marketplace and package version constraints:
 - Requires variable substitution at install time
 - May have dependencies
 - Customized per repository
-- Example: `sc-git-worktree`, `repomix-nuget`
+- Example: `git-worktree`, `sc-repomix-nuget`
 
 ### Tier 2: Runtime Dependencies
 - External tools required
@@ -182,16 +182,16 @@ Current package organization:
 | Category | Packages | Purpose |
 |----------|----------|---------|
 | **Automation** | delay-tasks | Schedule and poll tasks |
-| **Development Tools** | sc-git-worktree | Git workflow management |
+| **Development Tools** | git-worktree | Git workflow management |
 | **Package Management** | sc-manage | Package discovery and management |
-| **Documentation** | repomix-nuget | Repository analysis and documentation |
+| **Documentation** | sc-repomix-nuget | Repository analysis and documentation |
 
 ## Searching the Registry
 
 ### By Category
 ```javascript
 registry.metadata.categories["development-tools"]
-// Returns: ["sc-git-worktree"]
+// Returns: ["git-worktree"]
 ```
 
 ### By Tag
@@ -199,7 +199,7 @@ registry.metadata.categories["development-tools"]
 Object.entries(registry.packages)
   .filter(([_, pkg]) => pkg.tags.includes("git"))
   .map(([name, _]) => name)
-// Returns: ["sc-git-worktree"]
+// Returns: ["git-worktree"]
 ```
 
 ### By Status

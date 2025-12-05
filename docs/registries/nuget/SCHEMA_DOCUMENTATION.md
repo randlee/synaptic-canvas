@@ -168,7 +168,7 @@ Aggregated statistics and organizational information:
     "automation": ["delay-tasks"],
     "development-tools": ["sc-git-worktree"],
     "package-management": ["sc-manage"],
-    "documentation": ["repomix-nuget"]
+    "documentation": ["sc-repomix-nuget"]
   }
 }
 ```
