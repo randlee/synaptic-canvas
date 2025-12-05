@@ -5,14 +5,14 @@
   "repo": "randlee/synaptic-canvas",
   "marketplace": {
     "name": "Synaptic Canvas",
-    "version": "0.4.0",
+    "version": "0.5.0",
     "status": "beta",
     "url": "https://github.com/randlee/synaptic-canvas"
   },
   "packages": {
     "sc-delay-tasks": {
       "name": "sc-delay-tasks",
-      "version": "0.4.0",
+      "version": "0.5.0",
       "status": "beta",
       "tier": 0,
       "description": "Schedule delayed or interval-based actions with minimal heartbeats. Ideal for waiting before running checks (e.g., GH Actions, PR status) or polling on a bounded interval.",
@@ -42,7 +42,7 @@
     },
     "sc-git-worktree": {
       "name": "sc-git-worktree",
-      "version": "0.4.0",
+      "version": "0.5.0",
       "status": "beta",
       "tier": 1,
       "description": "Create, manage, scan, and clean up git worktrees for parallel development. Maintains tracking of worktree status, branch details, and cleanup history with optional tracking document.",
@@ -80,7 +80,7 @@
     },
     "sc-manage": {
       "name": "sc-manage",
-      "version": "0.4.0",
+      "version": "0.5.0",
       "status": "beta",
       "tier": 0,
       "description": "Interface for managing Synaptic Canvas packages. Provides discovery, installation info, and management utilities for the marketplace.",
@@ -109,7 +109,7 @@
     },
     "sc-repomix-nuget": {
       "name": "sc-repomix-nuget",
-      "version": "0.4.0",
+      "version": "0.5.0",
       "status": "beta",
       "tier": 1,
       "description": "Generate comprehensive NuGet repository context for AI analysis. Extracts package metadata, assembly information, and documentation for enhanced code understanding.",
@@ -170,7 +170,7 @@
     }
   },
   "versionCompatibility": {
-    "marketplace": "0.4.0",
+    "marketplace": "0.5.0",
     "minimumPackageVersion": "0.4.0",
     "maximumPackageVersion": "0.x.x",
     "note": "Marketplace is in beta. All packages should remain at 0.x versions until first stable release (1.0.0)"
