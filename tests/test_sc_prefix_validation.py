@@ -32,7 +32,7 @@ PACKAGES = {
     },
     'sc-git-worktree': {
         'package_name': 'sc-git-worktree',
-        'agents': ['sc-worktree-create', 'sc-worktree-scan', 'sc-worktree-cleanup', 'sc-worktree-abort'],
+        'agents': ['sc-git-worktree-create', 'sc-git-worktree-scan', 'sc-git-worktree-cleanup', 'sc-git-worktree-abort'],
         'commands': ['sc-git-worktree'],
         'skills': ['sc-managing-worktrees'],
         'version': '0.4.0',
