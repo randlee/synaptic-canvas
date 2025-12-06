@@ -35,15 +35,15 @@ The following versions of our packages are actively maintained and receive secur
 
 | Package | Version | Status | Security Updates |
 |---------|---------|--------|-----------------|
-| delay-tasks | 0.4.0 | ✅ Current/Beta | Active |
-| sc-git-worktree | 0.4.0 | ✅ Current/Beta | Active |
-| sc-manage | 0.4.0 | ✅ Current/Beta | Active |
-| sc-repomix-nuget | 0.4.0 | ✅ Current/Beta | Active |
+| delay-tasks | 0.5.0 | ✅ Current/Beta | Active |
+| sc-git-worktree | 0.5.0 | ✅ Current/Beta | Active |
+| sc-manage | 0.5.0 | ✅ Current/Beta | Active |
+| sc-repomix-nuget | 0.5.0 | ✅ Current/Beta | Active |
 
 ### Version Support Policy
 
 **Beta Versions (0.x.x)**:
-- All packages currently in beta (0.4.0)
+- All packages currently in beta (0.5.0)
 - Receive active security updates
 - May have breaking changes between releases
 - Should be tested in non-critical environments first
@@ -510,7 +510,7 @@ The Synaptic Canvas repository is actively maintained:
 
 ### Beta Version Updates (0.x)
 
-**Current Phase**: All packages at version 0.4.0 (beta)
+**Current Phase**: All packages at version 0.5.0 (beta)
 
 **Update Frequency**:
 - More frequent than stable releases

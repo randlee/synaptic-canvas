@@ -14,7 +14,7 @@ Synaptic Canvas uses a **three-layer versioning system** based on semantic versi
 
 **Location:** `version.yaml`
 **Purpose:** Version of the Synaptic Canvas platform infrastructure (installer, registry format, CLI)
-**Current Version:** 0.4.0 (Beta)
+**Current Version:** 0.5.0 (Beta)
 
 ### When to Bump
 
@@ -55,8 +55,8 @@ description: "..."
 |---------|---------|--------|-------|
 | `delay-tasks` | 1.0.0 | Beta | Core polling/delay functionality |
 | `git-worktree` | 1.0.0 | Beta | Worktree management with tracking |
-| `sc-repomix-nuget` | 0.4.0 | Beta | NuGet packaging integration |
-| `sc-manage` | 0.4.0 | Beta | Package manager interface |
+| `sc-repomix-nuget` | 0.5.0 | Beta | NuGet packaging integration |
+| `sc-manage` | 0.5.0 | Beta | Package manager interface |
 
 ### When to Bump Package Version
 

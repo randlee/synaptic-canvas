@@ -3,7 +3,7 @@
 [![Publisher Verified](https://img.shields.io/badge/publisher-verified-brightgreen)](https://github.com/randlee/synaptic-canvas/blob/main/docs/PUBLISHER-VERIFICATION.md)
 [![Security Scanned](https://img.shields.io/badge/security-scanned-blue)](https://github.com/randlee/synaptic-canvas/blob/main/SECURITY.md)
 [![License MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-[![Version 0.4.0](https://img.shields.io/badge/version-0.4.0-blue)](CHANGELOG.md)
+[![Version 0.5.0](https://img.shields.io/badge/version-0.5.0-blue)](CHANGELOG.md)
 
 Scope: Global or Local
 Requires: python3
@@ -33,9 +33,9 @@ python3 tools/sc-install.py install delay-tasks --dest /path/to/your-repo/.claud
 - `/delay --poll --every 60 --for 5m --action "done"`
 
 ## Agents
-- `delay-once` (v0.4.0)
-- `delay-poll` (v0.4.0)
-- `git-pr-check-delay` (v0.4.0)
+- `delay-once` (v0.5.0)
+- `delay-poll` (v0.5.0)
+- `git-pr-check-delay` (v0.5.0)
 
 All agents call the helper script:
 ```bash
@@ -62,7 +62,7 @@ python3 .claude/scripts/delay-run.py ...
 - Script: `scripts/delay-run.py`
 
 ## Version & Changelog
-- 0.4.0 — Initial v0.x publication (three agents)
+- 0.5.0 — Initial v0.x publication (three agents)
 
 ## Support
 - Repository: https://github.com/…/synaptic-canvas

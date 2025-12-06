@@ -80,7 +80,7 @@ python3 tools/sc-install.py install sc-git-worktree --dest /path/to/repo/.claude
 
 ### [sc-manage](packages/sc-manage/)
 [![Beta](https://img.shields.io/badge/status-beta-yellow)](packages/sc-manage/CHANGELOG.md)
-[![v0.4.0](https://img.shields.io/badge/version-0.4.0-blue)](packages/sc-manage/CHANGELOG.md)
+[![v0.5.0](https://img.shields.io/badge/version-0.5.0-blue)](packages/sc-manage/CHANGELOG.md)
 [![Tier 0](https://img.shields.io/badge/tier-0-green)](README.md#-package-tiers-explained)
 [![MIT License](https://img.shields.io/badge/license-MIT-green)](packages/sc-manage/LICENSE)
 
@@ -98,7 +98,7 @@ python3 tools/sc-install.py install sc-git-worktree --dest /path/to/repo/.claude
 
 ### [sc-repomix-nuget](packages/sc-repomix-nuget/)
 [![Beta](https://img.shields.io/badge/status-beta-yellow)](packages/sc-repomix-nuget/CHANGELOG.md)
-[![v0.4.0](https://img.shields.io/badge/version-0.4.0-blue)](packages/sc-repomix-nuget/CHANGELOG.md)
+[![v0.5.0](https://img.shields.io/badge/version-0.5.0-blue)](packages/sc-repomix-nuget/CHANGELOG.md)
 [![Tier 2](https://img.shields.io/badge/tier-2-orange)](README.md#-package-tiers-explained)
 [![MIT License](https://img.shields.io/badge/license-MIT-green)](packages/sc-repomix-nuget/LICENSE)
 
@@ -134,8 +134,8 @@ python3 tools/sc-install.py install sc-git-worktree --dest /path/to/repo/.claude
 |---------|------|--------|---------|------|--------------|
 | delay-tasks | Utilities | ✅ Stable | 1.0.0 | 0 | Python 3.6+ |
 | git-worktree | Git Tools | ✅ Stable | 1.0.0 | 1 | Git 2.7.0+ |
-| sc-manage | Package Mgr | 🟡 Beta | 0.4.0 | 0 | Python 3.6+ |
-| sc-repomix-nuget | Analysis | 🟡 Beta | 0.4.0 | 2 | Node 18+, .NET SDK |
+| sc-manage | Package Mgr | 🟡 Beta | 0.5.0 | 0 | Python 3.6+ |
+| sc-repomix-nuget | Analysis | 🟡 Beta | 0.5.0 | 2 | Node 18+, .NET SDK |
 
 **Status:** ✅ Stable (production-ready) | 🟡 Beta (active development) | 🔴 Deprecated (not recommended)
 

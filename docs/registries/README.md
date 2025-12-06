@@ -53,7 +53,7 @@ Metadata about the marketplace platform itself:
 ```json
 "marketplace": {
   "name": "Synaptic Canvas",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "status": "beta",
   "url": "https://github.com/randlee/synaptic-canvas"
 }
@@ -122,8 +122,8 @@ Marketplace and package version constraints:
 
 ```json
 "versionCompatibility": {
-  "marketplace": "0.4.0",
-  "minimumPackageVersion": "0.4.0",
+  "marketplace": "0.5.0",
+  "minimumPackageVersion": "0.5.0",
   "maximumPackageVersion": "0.x.x",
   "note": "Additional information"
 }
@@ -223,7 +223,7 @@ Object.entries(registry.packages)
 
 Each package maintains independent versioning:
 
-- **Current**: All packages at 0.4.0 (beta)
+- **Current**: All packages at 0.5.0 (beta)
 - **Policy**: Synchronized within marketplace during beta
 - **Bumping**: Use `python3 scripts/sync-versions.py --package NAME --version X.Y.Z`
 
@@ -231,9 +231,9 @@ Each package maintains independent versioning:
 
 Platform-level version indicating infrastructure:
 
-- **Current**: 0.4.0 (beta)
+- **Current**: 0.5.0 (beta)
 - **When to bump**: Breaking changes to registry format or CLI
-- **Minimum package requirement**: All packages >= 0.4.0
+- **Minimum package requirement**: All packages >= 0.5.0
 
 See [Versioning Strategy](../versioning-strategy.md) for details.
 
