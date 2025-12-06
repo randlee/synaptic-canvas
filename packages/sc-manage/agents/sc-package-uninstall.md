@@ -30,7 +30,7 @@ color: blue
 ```json
 {
   "success": true,
-  "data": { "package": "delay-tasks", "scope": "global", "dest": "/Users/me/Documents/.claude" },
+  "data": { "package": "sc-delay-tasks", "scope": "global", "dest": "/Users/me/Documents/.claude" },
   "error": null
 }
 ```

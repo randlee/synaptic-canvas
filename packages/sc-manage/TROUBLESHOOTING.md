@@ -98,7 +98,7 @@ No packages found
 ```bash
 # Should list package directories
 ls packages/
-# Expected: delay-tasks/ git-worktree/ sc-manage/ sc-repomix-nuget/
+# Expected: sc-delay-tasks/ sc-git-worktree/ sc-manage/ sc-repomix-nuget/
 ```
 
 2. Check manifest files exist:
@@ -217,19 +217,19 @@ grep "version:" .claude/agents/*.md
 3. Uninstall and reinstall to sync versions:
 ```bash
 # Uninstall old version
-python3 tools/sc-install.py uninstall delay-tasks --dest ~/Documents/.claude
+python3 tools/sc-install.py uninstall sc-delay-tasks --dest ~/Documents/.claude
 
 # Pull latest changes
 cd /path/to/synaptic-canvas
 git pull origin main
 
 # Reinstall
-python3 tools/sc-install.py install delay-tasks --dest ~/Documents/.claude
+python3 tools/sc-install.py install sc-delay-tasks --dest ~/Documents/.claude
 ```
 
 4. Force reinstall (overwrites existing):
 ```bash
-python3 tools/sc-install.py install delay-tasks \
+python3 tools/sc-install.py install sc-delay-tasks \
   --dest ~/Documents/.claude --force
 ```
 
@@ -276,7 +276,7 @@ cp .claude/agents/registry.yaml .claude/agents/registry.yaml.backup
 rm .claude/agents/registry.yaml
 
 # Reinstall packages to regenerate
-python3 tools/sc-install.py install delay-tasks --dest ./.claude --force
+python3 tools/sc-install.py install sc-delay-tasks --dest ./.claude --force
 ```
 
 3. Check file permissions:
@@ -321,7 +321,7 @@ Package not found in current scope
 
 **Root Causes:**
 - Misunderstanding scope requirements
-- Package policy restrictions (git-worktree is local-only)
+- Package policy restrictions (sc-git-worktree is local-only)
 - Installation path confusion
 
 **Resolution:**
@@ -330,16 +330,16 @@ Package not found in current scope
 
 | Package | Global | Local | Recommended |
 |---------|--------|-------|-------------|
-| delay-tasks | Yes | Yes | Global |
-| git-worktree | No | Yes | Local-only |
+| sc-delay-tasks | Yes | Yes | Global |
+| sc-git-worktree | No | Yes | Local-only |
 | sc-manage | Yes | Yes | Global |
 | sc-repomix-nuget | No | Yes | Local-only |
 
-2. **For git-worktree (local-only):**
+2. **For sc-git-worktree (local-only):**
 ```bash
-# WRONG - git-worktree cannot be global
+# WRONG - sc-git-worktree cannot be global
 python3 tools/sc-install.py install sc-git-worktree --dest ~/Documents/.claude
-# Error: git-worktree is local-only
+# Error: sc-git-worktree is local-only
 
 # CORRECT
 cd /path/to/your/repo
@@ -364,14 +364,14 @@ ls .claude/commands/
 5. **Verify package policy:**
 ```bash
 # Check manifest for scope restrictions
-cat packages/git-worktree/manifest.yaml | grep -i scope
+cat packages/sc-git-worktree/manifest.yaml | grep -i scope
 # Output: Scope: Local-only
 ```
 
 **Prevention:**
 - Read package README for scope requirements
-- Use global for utility packages (delay-tasks, sc-manage)
-- Use local for repo-specific packages (git-worktree, sc-repomix-nuget)
+- Use global for utility packages (sc-delay-tasks, sc-manage)
+- Use local for repo-specific packages (sc-git-worktree, sc-repomix-nuget)
 
 ---
 
@@ -381,7 +381,7 @@ cat packages/git-worktree/manifest.yaml | grep -i scope
 
 **Symptoms:**
 ```
-Error: git-worktree is local-only, cannot install globally
+Error: sc-git-worktree is local-only, cannot install globally
 Error: Package policy violation
 ```
 
@@ -395,7 +395,7 @@ Error: Package policy violation
 1. Check package requirements:
 ```bash
 # View package README
-cat packages/git-worktree/README.md | head -10
+cat packages/sc-git-worktree/README.md | head -10
 # Shows: Scope: Local-only
 ```
 
@@ -411,7 +411,7 @@ python3 tools/sc-install.py install sc-manage --dest ~/Documents/.claude
 
 3. If you need functionality globally:
 ```bash
-# Some packages just can't be global (e.g., git-worktree)
+# Some packages just can't be global (e.g., sc-git-worktree)
 # They require repo context
 # Install locally in each repo where needed
 ```
@@ -565,25 +565,25 @@ ls .claude/agents/delay-once.md  # missing
 
 1. Check for warnings during installation:
 ```bash
-python3 tools/sc-install.py install delay-tasks --dest ./.claude
+python3 tools/sc-install.py install sc-delay-tasks --dest ./.claude
 # Look for "Skip (exists)" or "Source not found" messages
 ```
 
 2. Use `--force` to overwrite existing files:
 ```bash
-python3 tools/sc-install.py install delay-tasks --dest ./.claude --force
+python3 tools/sc-install.py install sc-delay-tasks --dest ./.claude --force
 ```
 
 3. Verify manifest lists all files:
 ```bash
-cat packages/delay-tasks/manifest.yaml
+cat packages/sc-delay-tasks/manifest.yaml
 ```
 
 4. Check source files exist:
 ```bash
-ls packages/delay-tasks/commands/
-ls packages/delay-tasks/agents/
-ls packages/delay-tasks/scripts/
+ls packages/sc-delay-tasks/commands/
+ls packages/sc-delay-tasks/agents/
+ls packages/sc-delay-tasks/scripts/
 ```
 
 ---
@@ -647,7 +647,7 @@ grep -r "{{REPO_NAME}}" .claude/
 # For sc-manage (global recommended)
 --dest ~/Documents/.claude
 
-# For git-worktree (local required)
+# For sc-git-worktree (local required)
 --dest ./.claude  # (from repo root)
 ```
 
@@ -690,7 +690,7 @@ cd /path/to/synaptic-canvas
 ```bash
 # Can run from anywhere
 cd /any/directory
-/sc-manage --install delay-tasks --global
+/sc-manage --install sc-delay-tasks --global
 ```
 
 ---
@@ -712,19 +712,19 @@ cd ~/synaptic-canvas-dev
 git checkout develop
 
 # Install from different versions
-python3 ~/synaptic-canvas-stable/tools/sc-install.py install delay-tasks --dest ~/Documents/.claude
+python3 ~/synaptic-canvas-stable/tools/sc-install.py install sc-delay-tasks --dest ~/Documents/.claude
 # vs
-python3 ~/synaptic-canvas-dev/tools/sc-install.py install delay-tasks --dest ~/Documents/.claude
+python3 ~/synaptic-canvas-dev/tools/sc-install.py install sc-delay-tasks --dest ~/Documents/.claude
 ```
 
 3. Or use local vs global:
 ```bash
 # Stable version globally
-python3 tools/sc-install.py install delay-tasks --dest ~/Documents/.claude
+python3 tools/sc-install.py install sc-delay-tasks --dest ~/Documents/.claude
 
 # Dev version locally in test repo
 cd ~/test-repo
-python3 tools/sc-install.py install delay-tasks --dest ./.claude
+python3 tools/sc-install.py install sc-delay-tasks --dest ./.claude
 ```
 
 ---
@@ -741,14 +741,14 @@ python3 tools/sc-install.py install delay-tasks --dest ./.claude
 - name: Setup Synaptic Canvas packages
   run: |
     git clone https://github.com/randlee/synaptic-canvas.git ~/sc
-    python3 ~/sc/tools/sc-install.py install delay-tasks --dest ./.claude
+    python3 ~/sc/tools/sc-install.py install sc-delay-tasks --dest ./.claude
 ```
 
 2. Or use as submodule:
 ```bash
 git submodule add https://github.com/randlee/synaptic-canvas.git .synaptic-canvas
 git submodule update --init --recursive
-python3 .synaptic-canvas/tools/sc-install.py install delay-tasks --dest ./.claude
+python3 .synaptic-canvas/tools/sc-install.py install sc-delay-tasks --dest ./.claude
 ```
 
 3. Cache installations:
@@ -788,7 +788,7 @@ time ls -la packages/
 
 3. For large repos, list specific package:
 ```bash
-python3 tools/sc-install.py info delay-tasks
+python3 tools/sc-install.py info sc-delay-tasks
 ```
 
 ---
@@ -802,7 +802,7 @@ python3 tools/sc-install.py info delay-tasks
 1. Check for prompts or errors:
 ```bash
 # Run with explicit output
-python3 tools/sc-install.py install delay-tasks --dest ./.claude
+python3 tools/sc-install.py install sc-delay-tasks --dest ./.claude
 # Watch for any prompts or error messages
 ```
 
@@ -853,15 +853,15 @@ python3 tools/sc-install.py list
 1. Use forward slashes:
 ```bash
 # WRONG
-python3 tools\sc-install.py install delay-tasks --dest C:\Users\username\Documents\.claude
+python3 tools\sc-install.py install sc-delay-tasks --dest C:\Users\username\Documents\.claude
 
 # CORRECT
-python3 tools/sc-install.py install delay-tasks --dest C:/Users/username/Documents/.claude
+python3 tools/sc-install.py install sc-delay-tasks --dest C:/Users/username/Documents/.claude
 ```
 
 2. Or use WSL:
 ```bash
-wsl python3 tools/sc-install.py install delay-tasks --dest /mnt/c/Users/username/Documents/.claude
+wsl python3 tools/sc-install.py install sc-delay-tasks --dest /mnt/c/Users/username/Documents/.claude
 ```
 
 ---
@@ -915,7 +915,7 @@ echo $HOME
 2. **Installation attempt:**
 ```bash
 # Full command and output
-python3 tools/sc-install.py install delay-tasks --dest ~/Documents/.claude
+python3 tools/sc-install.py install sc-delay-tasks --dest ~/Documents/.claude
 ```
 
 3. **Current state:**
@@ -936,7 +936,7 @@ ls packages/
 
 5. **Manifest contents:**
 ```bash
-cat packages/delay-tasks/manifest.yaml
+cat packages/sc-delay-tasks/manifest.yaml
 ```
 
 ### Debug Information to Collect
@@ -967,7 +967,7 @@ ls -la tools/
 **For installation issues:**
 ```bash
 # Try installation with verbose output
-python3 -v tools/sc-install.py install delay-tasks --dest ./.claude
+python3 -v tools/sc-install.py install sc-delay-tasks --dest ./.claude
 
 # Check manifest parsing
 python3 -c "
@@ -975,7 +975,7 @@ import sys
 from pathlib import Path
 sys.path.insert(0, 'src')
 from sc_cli.install import _parse_manifest
-m = _parse_manifest(Path('packages/delay-tasks'))
+m = _parse_manifest(Path('packages/sc-delay-tasks'))
 print(f'Name: {m.name}')
 print(f'Artifacts: {m.artifacts}')
 "
@@ -1005,12 +1005,12 @@ with open('.claude/agents/registry.yaml') as f:
 
 **Global installation** (`~/Documents/.claude`):
 - Available in all projects and contexts
-- Suitable for utility packages (delay-tasks, sc-manage)
+- Suitable for utility packages (sc-delay-tasks, sc-manage)
 - Shared across all repositories
 
 **Local installation** (`/path/to/repo/.claude`):
 - Specific to one repository
-- Required for repo-specific packages (git-worktree, sc-repomix-nuget)
+- Required for repo-specific packages (sc-git-worktree, sc-repomix-nuget)
 - Isolated per project
 
 ---
@@ -1050,7 +1050,7 @@ Skip (exists): agents/delay-once.md
 
 Use `--force` to overwrite:
 ```bash
-python3 tools/sc-install.py install delay-tasks --dest ./.claude --force
+python3 tools/sc-install.py install sc-delay-tasks --dest ./.claude --force
 ```
 
 ---
@@ -1098,7 +1098,7 @@ Claude Code uses this for:
 python3 tools/sc-install.py list
 
 # Uninstall each (no bulk uninstall)
-python3 tools/sc-install.py uninstall delay-tasks --dest ~/Documents/.claude
+python3 tools/sc-install.py uninstall sc-delay-tasks --dest ~/Documents/.claude
 python3 tools/sc-install.py uninstall sc-manage --dest ~/Documents/.claude
 python3 tools/sc-install.py uninstall sc-git-worktree --dest ./.claude
 

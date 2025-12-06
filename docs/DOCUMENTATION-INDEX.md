@@ -58,7 +58,7 @@ Each package in `packages/*/` maintains its own documentation:
 
 | Package | Version | Purpose | Key Files |
 |---------|---------|---------|-----------|
-| **delay-tasks** | 0.4.0 | Delayed/polled task execution | [README](../packages/delay-tasks/README.md) |
+| **sc-delay-tasks** | 0.4.0 | Delayed/polled task execution | [README](../packages/sc-delay-tasks/README.md) |
 | **sc-git-worktree** | 0.4.0 | Git worktree management | [README](../packages/sc-git-worktree/README.md) |
 | **sc-manage** | 0.4.0 | Synaptic Canvas package manager | [README](../packages/sc-manage/README.md) |
 | **sc-repomix-nuget** | 0.4.0 | NuGet context generation | [README](../packages/sc-repomix-nuget/README.md) |
@@ -121,7 +121,7 @@ synaptic-canvas/
 │   ├── nuget/                     # NuGet integration docs
 │   └── ...
 ├── packages/                      # Installable packages
-│   ├── delay-tasks/               # Package 1
+│   ├── sc-delay-tasks/               # Package 1
 │   ├── sc-git-worktree/              # Package 2
 │   ├── sc-manage/                 # Package 3
 │   └── sc-repomix-nuget/             # Package 4
@@ -159,7 +159,7 @@ The project uses three synchronized version layers:
 
 **Installing a package:**
 ```bash
-python3 tools/sc-install.py install delay-tasks --dest /path/to/.claude
+python3 tools/sc-install.py install sc-delay-tasks --dest /path/to/.claude
 ```
 
 **Checking version consistency:**

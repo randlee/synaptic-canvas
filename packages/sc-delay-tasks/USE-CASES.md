@@ -1,10 +1,10 @@
-# delay-tasks Use Cases
+# sc-delay-tasks Use Cases
 
 ## Introduction
 
-The `delay-tasks` package provides powerful tools for scheduling delayed one-shot waits and bounded polling operations with minimal heartbeat output. This is essential for CI/CD workflows, GitHub Actions integration, API polling, retry logic, and any scenario where you need to pause execution and wait for external conditions to be satisfied.
+The `sc-delay-tasks` package provides powerful tools for scheduling delayed one-shot waits and bounded polling operations with minimal heartbeat output. This is essential for CI/CD workflows, GitHub Actions integration, API polling, retry logic, and any scenario where you need to pause execution and wait for external conditions to be satisfied.
 
-These use cases demonstrate how `delay-tasks` can streamline your development workflows, automate waiting periods, and reduce context pollution in Claude Code conversations.
+These use cases demonstrate how `sc-delay-tasks` can streamline your development workflows, automate waiting periods, and reduce context pollution in Claude Code conversations.
 
 ---
 
@@ -21,7 +21,7 @@ You've just pushed a commit to a PR and want to verify that all required checks 
    # Output: https://github.com/owner/repo/pull/123
    ```
 
-2. Use the delay-tasks `/delay` command with a 2-minute wait:
+2. Use the sc-delay-tasks `/delay` command with a 2-minute wait:
    ```
    /delay --minutes 2 --action "Check GitHub PR actions and verify all required checks passed"
    ```
@@ -66,7 +66,7 @@ You've just pushed a commit to a PR and want to verify that all required checks 
 ## Use Case 2: Poll for CI/CD Pipeline Completion
 
 **Scenario/Context:**
-Your build pipeline takes 5-15 minutes to complete. Instead of checking manually every minute, you want Claude to poll at regular intervals and report back when complete. The delay-tasks polling feature is perfect for this.
+Your build pipeline takes 5-15 minutes to complete. Instead of checking manually every minute, you want Claude to poll at regular intervals and report back when complete. The sc-delay-tasks polling feature is perfect for this.
 
 **Step-by-step Walkthrough:**
 
@@ -341,7 +341,7 @@ You're waiting for an async API job to complete (e.g., file processing, model tr
 ## Use Case 6: GitHub Actions Integration
 
 **Scenario/Context:**
-You want to automate a workflow within GitHub Actions that involves waiting for external systems to be ready. You can invoke Claude Code within a GitHub Actions workflow to use delay-tasks.
+You want to automate a workflow within GitHub Actions that involves waiting for external systems to be ready. You can invoke Claude Code within a GitHub Actions workflow to use sc-delay-tasks.
 
 **Step-by-step Walkthrough:**
 
@@ -454,7 +454,7 @@ jobs:
 ## Use Case 7: Development and Testing Scenarios
 
 **Scenario/Context:**
-During development, you often need to wait for various conditions: local server startup, database migrations, cache warming, build compilation. Instead of repeatedly checking, use delay-tasks to automate the wait and trigger follow-up actions.
+During development, you often need to wait for various conditions: local server startup, database migrations, cache warming, build compilation. Instead of repeatedly checking, use sc-delay-tasks to automate the wait and trigger follow-up actions.
 
 **Step-by-step Walkthrough:**
 
@@ -601,7 +601,7 @@ npm run test:integration
 When team members work across time zones and need to coordinate deployments:
 
 1. Team lead deploys to staging
-2. Team lead uses delay-tasks to wait
+2. Team lead uses sc-delay-tasks to wait
 3. Other team members get automated notification when staging is ready
 4. All can verify simultaneously without repeated status checks
 
@@ -649,7 +649,7 @@ Polls for release completion across multiple services/platforms.
 
 ### Minimum Setup
 ```bash
-# Install delay-tasks globally
+# Install sc-delay-tasks globally
 python3 tools/sc-install.py install sc-delay-tasks --dest /Users/<you>/Documents/.claude
 
 # Use /delay command anywhere
@@ -672,7 +672,7 @@ python3 tools/sc-install.py install sc-delay-tasks --dest /Users/<you>/Documents
 
 ## See Also
 
-- [delay-tasks README](README.md)
+- [sc-delay-tasks README](README.md)
 - [/delay Command Reference](commands/delay.md)
 - [Synaptic Canvas Contributing Guide](/CONTRIBUTING.md)
 - [Synaptic Canvas Repository](https://github.com/randlee/synaptic-canvas)

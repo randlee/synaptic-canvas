@@ -35,7 +35,7 @@ The following versions of our packages are actively maintained and receive secur
 
 | Package | Version | Status | Security Updates |
 |---------|---------|--------|-----------------|
-| delay-tasks | 0.5.0 | ✅ Current/Beta | Active |
+| sc-delay-tasks | 0.5.0 | ✅ Current/Beta | Active |
 | sc-git-worktree | 0.5.0 | ✅ Current/Beta | Active |
 | sc-manage | 0.5.0 | ✅ Current/Beta | Active |
 | sc-repomix-nuget | 0.5.0 | ✅ Current/Beta | Active |
@@ -326,11 +326,11 @@ Users should be aware of these limitations:
 
 ### Package-Specific Security Considerations
 
-**delay-tasks**:
+**sc-delay-tasks**:
 - Executes Python scripts with user-provided delays
 - Ensure timeout values are reasonable (avoid extremely long waits)
 - Review delay-run.py script before use
-- See [packages/delay-tasks/TROUBLESHOOTING.md](packages/delay-tasks/TROUBLESHOOTING.md)
+- See [packages/sc-delay-tasks/TROUBLESHOOTING.md](packages/sc-delay-tasks/TROUBLESHOOTING.md)
 
 **sc-git-worktree**:
 - Creates and manipulates git worktrees
@@ -570,7 +570,7 @@ Additional security information:
 
 ### Package Documentation
 
-- [delay-tasks/TROUBLESHOOTING.md](packages/delay-tasks/TROUBLESHOOTING.md)
+- [sc-delay-tasks/TROUBLESHOOTING.md](packages/sc-delay-tasks/TROUBLESHOOTING.md)
 - [sc-git-worktree/TROUBLESHOOTING.md](packages/sc-git-worktree/TROUBLESHOOTING.md)
 - [sc-manage/TROUBLESHOOTING.md](packages/sc-manage/TROUBLESHOOTING.md)
 - [sc-repomix-nuget/TROUBLESHOOTING.md](packages/sc-repomix-nuget/TROUBLESHOOTING.md)

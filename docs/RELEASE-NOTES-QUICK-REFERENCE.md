@@ -145,7 +145,7 @@ v1.0.0 API is stable. Full semver enforced from now on.
 
 ## 4. Package-Specific Quick Picks
 
-### delay-tasks (Tier 2 + Global/Local)
+### sc-delay-tasks (Tier 2 + Global/Local)
 - Use: **Tier 2 Template** + **Universal Template**
 - Key sections: System Requirements, Installation, Dependency troubleshooting
 - Example new feature: `/delay --adaptive --poll --every 30`
@@ -283,7 +283,7 @@ print(result)
 
 ```
 packages/
-├── delay-tasks/
+├── sc-delay-tasks/
 │   ├── README.md                    ← Usage & installation
 │   ├── CHANGELOG.md                 ← Detailed change log
 │   ├── RELEASE-NOTES-v0.5.0.md      ← User-friendly release (optional)
@@ -350,7 +350,7 @@ docs/
 - [Tier 2 (Dependencies)](./RELEASE-NOTES-TEMPLATE.md#tier-2-external-dependencies)
 
 **By Package:**
-- [delay-tasks](#package-specific-quick-picks)
+- [sc-delay-tasks](#package-specific-quick-picks)
 - [sc-git-worktree](#package-specific-quick-picks)
 - [sc-manage](#package-specific-quick-picks)
 - [sc-repomix-nuget](#package-specific-quick-picks)
@@ -359,7 +359,7 @@ docs/
 
 ## 13. Example: Copy & Go
 
-**You:** "I'm releasing v0.5.0 of delay-tasks with 2 features and 1 bug fix. What template?"
+**You:** "I'm releasing v0.5.0 of sc-delay-tasks with 2 features and 1 bug fix. What template?"
 
 **Answer:**
 1. Minor release (0.4.0 → 0.5.0) → Use **Minor Release template**

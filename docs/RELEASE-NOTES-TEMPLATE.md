@@ -39,8 +39,8 @@ The Synaptic Canvas ecosystem categorizes packages by complexity:
 | Tier | Complexity | Dependencies | Characteristics | Examples |
 |------|-----------|--------------|-----------------|----------|
 | **Tier 0** | Minimal | None or built-in | Self-contained, simple usage | Simple utilities |
-| **Tier 1** | Low | Optional variables/tokens | Uses token substitution | `git-worktree` ({{REPO_NAME}}) |
-| **Tier 2** | Medium | External dependencies | Requires setup (git, Node, Python) | `delay-tasks`, `sc-repomix-nuget` |
+| **Tier 1** | Low | Optional variables/tokens | Uses token substitution | `sc-git-worktree` ({{REPO_NAME}}) |
+| **Tier 2** | Medium | External dependencies | Requires setup (git, Node, Python) | `sc-delay-tasks`, `sc-repomix-nuget` |
 
 ### Installation Scopes
 
@@ -965,7 +965,7 @@ some code here without context
 ### Good Release Notes Example
 
 ```markdown
-# Release Notes: delay-tasks v0.5.0
+# Release Notes: sc-delay-tasks v0.5.0
 
 **Release Date:** 2025-12-15
 **Status:** beta
@@ -973,7 +973,7 @@ some code here without context
 
 ## Executive Summary
 
-delay-tasks v0.5.0 introduces dynamic interval adjustment for polling tasks,
+sc-delay-tasks v0.5.0 introduces dynamic interval adjustment for polling tasks,
 allowing workflows to adapt polling frequency based on success patterns. This
 release maintains full backward compatibility with v0.4.0.
 
@@ -1013,7 +1013,7 @@ release maintains full backward compatibility with v0.4.0.
 Fully backward compatible. Upgrade when convenient:
 
 ```bash
-python3 tools/sc-install.py install delay-tasks --dest /Users/<you>/Documents/.claude --upgrade
+python3 tools/sc-install.py install sc-delay-tasks --dest /Users/<you>/Documents/.claude --upgrade
 ```
 
 All existing delay commands continue to work without modification.
@@ -1101,12 +1101,12 @@ Thanks to everyone
 
 ### Real-World Scenarios
 
-#### Scenario 1: User with git-worktree (Tier 1 - Token Substitution)
+#### Scenario 1: User with sc-git-worktree (Tier 1 - Token Substitution)
 
 **Release:** v0.4.1 (Patch - bug fix)
 
 ```markdown
-# Release Notes: git-worktree v0.4.1
+# Release Notes: sc-git-worktree v0.4.1
 
 **Release Date:** 2025-12-08
 **Status:** beta
@@ -1339,13 +1339,13 @@ Use this checklist before publishing release notes:
 
 Quick reference for finding the right template for each package:
 
-### delay-tasks (Tier 2)
+### sc-delay-tasks (Tier 2)
 - External dependencies: Python 3, Bash
 - Installation scopes: Global or Local
 - Use: [Tier 2 Template](#tier-2-external-dependencies) + [Universal Template](#universal-template)
 - Example scenario: Polling, scheduling, CI delays
 
-### git-worktree (Tier 1)
+### sc-git-worktree (Tier 1)
 - Token substitution: `{{REPO_NAME}}`
 - Installation scopes: Local-only (enforced)
 - Use: [Tier 1 Template](#tier-1-token-substitution) + [Universal Template](#universal-template)

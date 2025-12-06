@@ -1,6 +1,6 @@
-# delay-tasks Troubleshooting Guide
+# sc-delay-tasks Troubleshooting Guide
 
-This guide helps diagnose and resolve common issues with the delay-tasks package for Synaptic Canvas.
+This guide helps diagnose and resolve common issues with the sc-delay-tasks package for Synaptic Canvas.
 
 ## Quick Diagnostics
 
@@ -10,16 +10,16 @@ Run these commands to verify your setup:
 # Verify Python 3 is available
 python3 --version
 
-# Check if delay-tasks is installed (global)
-ls -la ~/Documents/.claude/commands/delay.md
-ls -la ~/Documents/.claude/scripts/delay-run.py
+# Check if sc-delay-tasks is installed (global)
+ls -la ~/Documents/.claude/commands/sc-delay.md
+ls -la ~/Documents/.claude/scripts/sc-delay-run.py
 
-# Check if delay-tasks is installed (local)
-ls -la .claude/commands/delay.md
-ls -la .claude/scripts/delay-run.py
+# Check if sc-delay-tasks is installed (local)
+ls -la .claude/commands/sc-delay.md
+ls -la .claude/scripts/sc-delay-run.py
 
 # Test the delay script directly
-python3 .claude/scripts/delay-run.py --seconds 10 --action "test"
+python3 .claude/scripts/sc-delay-run.py --seconds 10 --action "test"
 
 # Check agent registry (if applicable)
 cat .claude/agents/registry.yaml | grep delay
@@ -46,19 +46,19 @@ Unknown command: /delay
 1. Verify installation location:
 ```bash
 # For global use
-ls ~/Documents/.claude/commands/delay.md
+ls ~/Documents/.claude/commands/sc-delay.md
 
 # For local use (inside repo)
-ls .claude/commands/delay.md
+ls .claude/commands/sc-delay.md
 ```
 
 2. If missing, reinstall:
 ```bash
 # Global install
-python3 tools/sc-install.py install delay-tasks --dest ~/Documents/.claude
+python3 tools/sc-install.py install sc-delay-tasks --dest ~/Documents/.claude
 
 # Local install
-python3 tools/sc-install.py install delay-tasks --dest ./.claude
+python3 tools/sc-install.py install sc-delay-tasks --dest ./.claude
 ```
 
 3. Restart Claude or refresh the command index.
@@ -170,7 +170,7 @@ export PATH="/usr/local/bin:$PATH"
 3. Verify interval calculation:
 ```bash
 # Test with minimal valid parameters
-python3 .claude/scripts/delay-run.py --every 60 --attempts 1
+python3 .claude/scripts/sc-delay-run.py --every 60 --attempts 1
 ```
 
 **Prevention:**
@@ -221,7 +221,7 @@ python3 -c "print(12 * 60 * 60)"  # 43200 seconds max
 4. Check if delay script completes successfully:
 ```bash
 # Test manually
-python3 .claude/scripts/delay-run.py --every 60 --attempts 2
+python3 .claude/scripts/sc-delay-run.py --every 60 --attempts 2
 # Should emit heartbeats and complete
 ```
 
@@ -302,7 +302,7 @@ ImportError: cannot import name 'main' from 'sc_cli.delay_run'
 1. Verify script location and structure:
 ```bash
 # Script should exist at this path
-ls -la .claude/scripts/delay-run.py
+ls -la .claude/scripts/sc-delay-run.py
 
 # Check if src directory exists (for in-repo usage)
 ls -la src/sc_cli/delay_run.py
@@ -317,7 +317,7 @@ tree -L 2 -d .
 
 3. For standalone installations, the script must be executable:
 ```bash
-chmod +x .claude/scripts/delay-run.py
+chmod +x .claude/scripts/sc-delay-run.py
 ```
 
 4. Test import manually:
@@ -352,13 +352,13 @@ python3 -c "import sys; sys.path.insert(0, 'src'); from sc_cli.delay_run import 
 1. Test script output directly (not via agent):
 ```bash
 # Should emit heartbeats every 60 seconds
-python3 .claude/scripts/delay-run.py --every 60 --attempts 2
+python3 .claude/scripts/sc-delay-run.py --every 60 --attempts 2
 ```
 
 2. If output missing, check for output buffering:
 ```bash
 # Force unbuffered output
-python3 -u .claude/scripts/delay-run.py --every 60 --attempts 2
+python3 -u .claude/scripts/sc-delay-run.py --every 60 --attempts 2
 ```
 
 3. For background execution via Claude, verify Bash tool usage:
@@ -441,21 +441,21 @@ date
 
 **Problem:**
 ```bash
-python3 tools/sc-install.py install delay-tasks --dest ~/.claude
-# Package not found: delay-tasks
+python3 tools/sc-install.py install sc-delay-tasks --dest ~/.claude
+# Package not found: sc-delay-tasks
 ```
 
 **Resolution:**
 
 1. Verify you're in the repository root:
 ```bash
-# Should show packages/delay-tasks/
+# Should show packages/sc-delay-tasks/
 ls packages/
 ```
 
 2. Check package directory exists:
 ```bash
-ls -la packages/delay-tasks/manifest.yaml
+ls -la packages/sc-delay-tasks/manifest.yaml
 ```
 
 3. If missing, clone/update repository:
@@ -469,7 +469,7 @@ git pull origin main
 
 **Problem:**
 ```bash
-python3 tools/sc-install.py install delay-tasks --dest ~/Documents
+python3 tools/sc-install.py install sc-delay-tasks --dest ~/Documents
 # --dest must point to a .claude directory
 ```
 
@@ -490,14 +490,14 @@ Always include `.claude` in destination:
 
 **Problem:**
 ```bash
-Permission denied: '/Users/username/Documents/.claude/scripts/delay-run.py'
+Permission denied: '/Users/username/Documents/.claude/scripts/sc-delay-run.py'
 ```
 
 **Resolution:**
 
 1. Fix script permissions:
 ```bash
-chmod +x ~/.claude/scripts/delay-run.py
+chmod +x ~/.claude/scripts/sc-delay-run.py
 ```
 
 2. Fix directory permissions:
@@ -576,7 +576,7 @@ Understand unit specifications:
 - name: Wait for deployment
   timeout-minutes: 15
   run: |
-    python3 .claude/scripts/delay-run.py --every 60 --attempts 10
+    python3 .claude/scripts/sc-delay-run.py --every 60 --attempts 10
 ```
 
 2. Avoid interactive features in CI:
@@ -585,7 +585,7 @@ Understand unit specifications:
 /delay --poll --every 60 --for 10m
 
 # CORRECT - direct script usage
-python3 .claude/scripts/delay-run.py --every 60 --for 10m
+python3 .claude/scripts/sc-delay-run.py --every 60 --for 10m
 ```
 
 ---
@@ -598,15 +598,15 @@ python3 .claude/scripts/delay-run.py --every 60 --for 10m
 
 1. Ensure compatible scopes:
 ```bash
-# delay-tasks can be global or local
+# sc-delay-tasks can be global or local
 # Install globally for use in all repos
-python3 tools/sc-install.py install delay-tasks --dest ~/Documents/.claude
+python3 tools/sc-install.py install sc-delay-tasks --dest ~/Documents/.claude
 ```
 
 2. For PR check delays with sc-git-worktree:
 ```bash
 # Both packages should be installed locally in the repo
-python3 tools/sc-install.py install delay-tasks --dest ./.claude
+python3 tools/sc-install.py install sc-delay-tasks --dest ./.claude
 python3 tools/sc-install.py install sc-git-worktree --dest ./.claude
 ```
 
@@ -686,7 +686,7 @@ stat -c%s file.txt  # Linux
 python3 .claude\scripts\delay-run.py
 
 # CORRECT
-python3 .claude/scripts/delay-run.py
+python3 .claude/scripts/sc-delay-run.py
 ```
 
 2. Ensure Python is in PATH:
@@ -701,7 +701,7 @@ py -3 --version
 3. Use WSL for better compatibility:
 ```bash
 # Install WSL2 and use Linux-style paths
-wsl python3 .claude/scripts/delay-run.py --seconds 10
+wsl python3 .claude/scripts/sc-delay-run.py --seconds 10
 ```
 
 ---
@@ -756,8 +756,8 @@ echo $SHELL
 
 2. **Installation details:**
 ```bash
-ls -la .claude/commands/delay.md
-ls -la .claude/scripts/delay-run.py
+ls -la .claude/commands/sc-delay.md
+ls -la .claude/scripts/sc-delay-run.py
 cat .claude/agents/registry.yaml | grep delay
 ```
 
@@ -774,7 +774,7 @@ cat .claude/agents/registry.yaml | grep delay
 
 5. **Reproduction steps:**
 ```
-1. Install delay-tasks to local repo
+1. Install sc-delay-tasks to local repo
 2. Run /delay --poll --every 60 --attempts 5
 3. Observe error: ...
 ```
@@ -787,10 +787,10 @@ cat .claude/agents/registry.yaml | grep delay
 python3 --version
 
 # Script exists and is executable
-ls -la .claude/scripts/delay-run.py
+ls -la .claude/scripts/sc-delay-run.py
 
 # Test script directly
-python3 .claude/scripts/delay-run.py --seconds 10 --action "debug test"
+python3 .claude/scripts/sc-delay-run.py --seconds 10 --action "debug test"
 
 # Check agent registry
 cat .claude/agents/registry.yaml
@@ -799,10 +799,10 @@ cat .claude/agents/registry.yaml
 **For polling issues:**
 ```bash
 # Test minimal polling
-python3 .claude/scripts/delay-run.py --every 60 --attempts 1
+python3 .claude/scripts/sc-delay-run.py --every 60 --attempts 1
 
 # Verify heartbeat output
-python3 -u .claude/scripts/delay-run.py --every 60 --attempts 2 | cat -v
+python3 -u .claude/scripts/sc-delay-run.py --every 60 --attempts 2 | cat -v
 ```
 
 **For agent delegation issues:**
@@ -866,7 +866,7 @@ kill <PID>
 # Configure in your workflow to poll PR status
 ```
 
-See `packages/delay-tasks/agents/git-pr-check-delay.md` for details.
+See `packages/sc-delay-tasks/agents/git-pr-check-delay.md` for details.
 
 ---
 
@@ -893,38 +893,38 @@ See `packages/delay-tasks/agents/git-pr-check-delay.md` for details.
 **A:** Yes:
 ```bash
 # In separate terminals or background shells
-python3 .claude/scripts/delay-run.py --every 60 --attempts 5 &
-python3 .claude/scripts/delay-run.py --every 120 --attempts 3 &
+python3 .claude/scripts/sc-delay-run.py --every 60 --attempts 5 &
+python3 .claude/scripts/sc-delay-run.py --every 120 --attempts 3 &
 ```
 
 Each runs independently.
 
 ---
 
-### Q: How do I update delay-tasks?
+### Q: How do I update sc-delay-tasks?
 
 **A:**
 ```bash
 # Uninstall old version
-python3 tools/sc-install.py uninstall delay-tasks --dest ~/.claude
+python3 tools/sc-install.py uninstall sc-delay-tasks --dest ~/.claude
 
 # Pull latest changes
 git pull origin main
 
 # Reinstall
-python3 tools/sc-install.py install delay-tasks --dest ~/.claude
+python3 tools/sc-install.py install sc-delay-tasks --dest ~/.claude
 ```
 
 ---
 
 ## Additional Resources
 
-- **Package README:** `packages/delay-tasks/README.md`
-- **Use Cases:** `packages/delay-tasks/USE-CASES.md`
-- **Changelog:** `packages/delay-tasks/CHANGELOG.md`
+- **Package README:** `packages/sc-delay-tasks/README.md`
+- **Use Cases:** `packages/sc-delay-tasks/USE-CASES.md`
+- **Changelog:** `packages/sc-delay-tasks/CHANGELOG.md`
 - **Agent Specifications:**
-  - `packages/delay-tasks/agents/delay-once.md`
-  - `packages/delay-tasks/agents/delay-poll.md`
-  - `packages/delay-tasks/agents/git-pr-check-delay.md`
+  - `packages/sc-delay-tasks/agents/delay-once.md`
+  - `packages/sc-delay-tasks/agents/delay-poll.md`
+  - `packages/sc-delay-tasks/agents/git-pr-check-delay.md`
 - **Repository:** https://github.com/randlee/synaptic-canvas
 - **Issues:** https://github.com/randlee/synaptic-canvas/issues

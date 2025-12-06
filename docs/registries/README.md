@@ -135,13 +135,13 @@ Marketplace and package version constraints:
 - No token substitution
 - No dependencies
 - Works immediately after installation
-- Example: `delay-tasks`
+- Example: `sc-delay-tasks`
 
 ### Tier 1: Token Substitution
 - Requires variable substitution at install time
 - May have dependencies
 - Customized per repository
-- Example: `git-worktree`, `sc-repomix-nuget`
+- Example: `sc-git-worktree`, `sc-repomix-nuget`
 
 ### Tier 2: Runtime Dependencies
 - External tools required
@@ -181,8 +181,8 @@ Current package organization:
 
 | Category | Packages | Purpose |
 |----------|----------|---------|
-| **Automation** | delay-tasks | Schedule and poll tasks |
-| **Development Tools** | git-worktree | Git workflow management |
+| **Automation** | sc-delay-tasks | Schedule and poll tasks |
+| **Development Tools** | sc-git-worktree | Git workflow management |
 | **Package Management** | sc-manage | Package discovery and management |
 | **Documentation** | sc-repomix-nuget | Repository analysis and documentation |
 
@@ -191,7 +191,7 @@ Current package organization:
 ### By Category
 ```javascript
 registry.metadata.categories["development-tools"]
-// Returns: ["git-worktree"]
+// Returns: ["sc-git-worktree"]
 ```
 
 ### By Tag
@@ -199,7 +199,7 @@ registry.metadata.categories["development-tools"]
 Object.entries(registry.packages)
   .filter(([_, pkg]) => pkg.tags.includes("git"))
   .map(([name, _]) => name)
-// Returns: ["git-worktree"]
+// Returns: ["sc-git-worktree"]
 ```
 
 ### By Status
@@ -214,7 +214,7 @@ Object.entries(registry.packages)
 Object.entries(registry.packages)
   .filter(([_, pkg]) => pkg.tier === 0)
   .map(([name, _]) => name)
-// Returns: ["delay-tasks", "sc-manage"]
+// Returns: ["sc-delay-tasks", "sc-manage"]
 ```
 
 ## Version Management

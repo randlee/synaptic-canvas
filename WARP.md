@@ -19,13 +19,13 @@ Key components:
   - `sc-install.py` — Python wrapper that forwards to `scpy.sc_install`
 - `scpy/` contains Python utilities used by scripts and tests:
   - `sc_install.py` — reads `manifest.yaml`, lists/info, installs/uninstalls artifacts, performs token substitution, and sets executable bits for `scripts/*`
-  - `delay_run.py` — the Python implementation of the delay/poll helper used by the `delay-tasks` package
+  - `delay_run.py` — the Python implementation of the delay/poll helper used by the `sc-delay-tasks` package
 - `tests/` uses `pytest` to validate the installer, token expansion, and delay behavior
 - `.github/workflows/tests.yml` runs CI across major OSes on Python 3.12
 
 Representative packages:
 - `packages/sc-git-worktree/` (Tier 1): installs commands/skills/agents to manage Git worktrees; uses `{{REPO_NAME}}` tokens resolved from the Git toplevel
-- `packages/delay-tasks/` (Tier 0): installs delay commands/skills/agents and a helper script; no token substitution
+- `packages/sc-delay-tasks/` (Tier 0): installs delay commands/skills/agents and a helper script; no token substitution
 
 ## Dev environment and prerequisites
 
@@ -63,7 +63,7 @@ Installer usage (from repo root):
 
 Delay helper (local runs without installing):
 - Python module: `python3 -m sc_cli.delay_run --minutes 2 --action "go"`
-- Script (as installed by `delay-tasks`): `.claude/scripts/delay-run.py --every 60 --for 5m --action "done"`
+- Script (as installed by `sc-delay-tasks`): `.claude/scripts/delay-run.py --every 60 --for 5m --action "done"`
 
 Lint/build:
 - Linting is not configured in this repository.
@@ -84,7 +84,7 @@ Lint/build:
 - uninstall: removes previously installed artifact paths for that package from the destination `.claude/`
 
 3) Delay/poll utilities
-- `packages/delay-tasks` supplies `.claude/scripts/delay-run.*` used by its agents
+- `packages/sc-delay-tasks` supplies `.claude/scripts/sc-delay-run.*` used by its agents
 - `scpy/delay_run.py` mirrors the shell script logic for one-shot delays (`--seconds|--minutes|--until`) and bounded polling (`--every` with `--for` or `--attempts`), emitting periodic heartbeats and a single final `Action: ...` line (unless suppressed)
 
 4) Tests and CI

@@ -9,7 +9,7 @@ color: blue
 # sc-package-docs
 
 ## Inputs
-- `package`: required package name (e.g., delay-tasks, sc-git-worktree)
+- `package`: required package name (e.g., sc-delay-tasks, sc-git-worktree)
 - `sc_repo_path`: absolute path to the Synaptic Canvas repo. Default: `/Users/randlee/Documents/github/synaptic-canvas`.
 
 ## Execution

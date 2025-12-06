@@ -32,7 +32,7 @@ The Synaptic Canvas marketplace currently has one verified publisher:
 
 - **randlee** (Randall Lee) - Level 1 verification via GitHub organization ownership
 - Repository: `randlee/synaptic-canvas`
-- Packages: delay-tasks, git-worktree, sc-manage, sc-repomix-nuget
+- Packages: sc-delay-tasks, sc-git-worktree, sc-manage, sc-repomix-nuget
 
 ## Verification Levels
 
@@ -363,7 +363,7 @@ Each verified package displays:
         "method": "github_organization",
         "verified_date": "2025-12-04T00:00:00Z"
       },
-      "packages": ["delay-tasks", "git-worktree", "sc-manage", "sc-repomix-nuget"],
+      "packages": ["sc-delay-tasks", "sc-git-worktree", "sc-manage", "sc-repomix-nuget"],
       "total_packages": 4
     }
   }
@@ -441,8 +441,8 @@ Each verified publisher has a profile in the registry containing key information
         "verified_date": "2025-12-04T00:00:00Z"
       },
       "packages": [
-        "delay-tasks",
-        "git-worktree",
+        "sc-delay-tasks",
+        "sc-git-worktree",
         "sc-manage",
         "sc-repomix-nuget"
       ],
@@ -559,7 +559,7 @@ In package search/browse interfaces:
 
 ```
 ┌─────────────────────────────────────────────────┐
-│ delay-tasks                [Verified Badge]    │
+│ sc-delay-tasks                [Verified Badge]    │
 │ Schedule delayed tasks                          │
 │ By: randlee (Verified) | Version: 0.4.0        │
 └─────────────────────────────────────────────────┘

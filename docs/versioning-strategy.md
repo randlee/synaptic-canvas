@@ -53,15 +53,15 @@ description: "..."
 
 | Package | Version | Status | Notes |
 |---------|---------|--------|-------|
-| `delay-tasks` | 1.0.0 | Beta | Core polling/delay functionality |
-| `git-worktree` | 1.0.0 | Beta | Worktree management with tracking |
+| `sc-delay-tasks` | 1.0.0 | Beta | Core polling/delay functionality |
+| `sc-git-worktree` | 1.0.0 | Beta | Worktree management with tracking |
 | `sc-repomix-nuget` | 0.5.0 | Beta | NuGet packaging integration |
 | `sc-manage` | 0.5.0 | Beta | Package manager interface |
 
 ### When to Bump Package Version
 
 - **PATCH** (0.4.1): Bug fixes, documentation updates, non-breaking improvements
-- **MINOR** (0.5.0): New features, new agents/commands/skills, backward-compatible changes
+- **MINOR** (0.5.0): New features, new agents/commands/skills, functionality enhancements
 - **MAJOR** (1.0.0): Breaking changes, major refactoring, API changes, production-ready release
 
 ---
@@ -152,39 +152,39 @@ Version mismatches are detected by the version audit script:
 
 ### Creating a New Version
 
-When releasing version 0.5.0 of `delay-tasks`:
+When releasing version 0.5.0 of `sc-delay-tasks`:
 
 1. Update package manifest:
    ```yaml
-   # packages/delay-tasks/manifest.yaml
+   # packages/sc-delay-tasks/manifest.yaml
    version: 0.5.0
    ```
 
 2. Update all artifacts:
    ```yaml
-   # packages/delay-tasks/commands/delay.md
+   # packages/sc-delay-tasks/commands/delay.md
    version: 0.5.0
 
-   # packages/delay-tasks/skills/delaying-tasks/SKILL.md
+   # packages/sc-delay-tasks/skills/delaying-tasks/SKILL.md
    version: 0.5.0
 
-   # packages/delay-tasks/agents/delay-once.md
+   # packages/sc-delay-tasks/agents/delay-once.md
    version: 0.5.0
    ```
 
 3. Use sync script:
    ```bash
-   python3 scripts/sync-versions.py --package delay-tasks --version 0.5.0
+   python3 scripts/sync-versions.py --package sc-delay-tasks --version 0.5.0
    ```
 
 4. Update CHANGELOG:
    ```bash
-   # Add entry to packages/delay-tasks/CHANGELOG.md
+   # Add entry to packages/sc-delay-tasks/CHANGELOG.md
    ```
 
 5. Commit with clear message:
    ```bash
-   git commit -m "chore(delay-tasks): release v0.5.0"
+   git commit -m "chore(sc-delay-tasks): release v0.5.0"
    ```
 
 ### Checking Version Consistency
@@ -235,7 +235,7 @@ At this point:
 3. **Test after versioning** - Run `audit-versions.sh` before committing
 4. **Document changes** - Update CHANGELOG.md with every bump
 5. **Plan releases** - Coordinate version bumps across related packages
-6. **Maintain backwards compatibility** - Use MAJOR version for breaking changes
+6. **Use semantic versioning** - Reserve MAJOR version for breaking changes
 
 ---
 

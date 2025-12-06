@@ -59,14 +59,14 @@ Each package in the registry contains complete metadata about a distributable un
 
 ```json
 {
-  "name": "delay-tasks",
+  "name": "sc-delay-tasks",
   "version": "0.4.0",
   "status": "beta",
   "tier": 0,
   "description": "Schedule delayed or interval-based actions...",
   "github": "randlee/synaptic-canvas",
   "repo": "https://github.com/randlee/synaptic-canvas",
-  "path": "packages/delay-tasks",
+  "path": "packages/sc-delay-tasks",
   "readme": "https://raw.githubusercontent.com/...",
   "license": "MIT",
   "author": "Anthropic",
@@ -165,7 +165,7 @@ Aggregated statistics and organizational information:
   "totalAgents": 14,
   "totalScripts": 2,
   "categories": {
-    "automation": ["delay-tasks"],
+    "automation": ["sc-delay-tasks"],
     "development-tools": ["sc-git-worktree"],
     "package-management": ["sc-manage"],
     "documentation": ["sc-repomix-nuget"]
@@ -232,7 +232,7 @@ Pattern: `^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d?)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z
 Package names and tags must be lowercase with hyphens only:
 
 - Pattern: `^[a-z0-9]+(-[a-z0-9]+)*$`
-- Examples: `delay-tasks`, `sc-git-worktree`, `package-name`
+- Examples: `sc-delay-tasks`, `sc-git-worktree`, `package-name`
 - Invalid: `DelayTasks`, `delay_tasks`, `delay.tasks`
 
 ### URL Formats

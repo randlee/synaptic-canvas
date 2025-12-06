@@ -69,7 +69,7 @@ git version 2.39.0 (or higher)
 **Why This Version:**
 - Git 2.7.0+ required for `git worktree` command
 - Earlier versions don't support worktree functionality
-- Used by: git-worktree package, all version control operations
+- Used by: sc-git-worktree package, all version control operations
 
 **Validation Command:**
 ```bash
@@ -418,7 +418,7 @@ chmod +x check-global-deps.sh
 
 ## Package-Specific Dependencies
 
-### delay-tasks
+### sc-delay-tasks
 
 **Description:** Schedule delayed one-shot or bounded polling actions
 
@@ -436,7 +436,7 @@ chmod +x check-global-deps.sh
 
 **Validation:**
 ```bash
-echo "=== delay-tasks Dependencies ==="
+echo "=== sc-delay-tasks Dependencies ==="
 
 # Check Python 3
 python3 --version && echo "✓ Python 3 available" || echo "✗ Python 3 missing"
@@ -445,28 +445,28 @@ python3 --version && echo "✓ Python 3 available" || echo "✗ Python 3 missing
 bash --version | head -1 && echo "✓ Bash available" || echo "✗ Bash missing"
 
 # Test delay script
-python3 packages/delay-tasks/scripts/delay-run.py --help > /dev/null 2>&1 && echo "✓ delay-run.py works" || echo "✗ delay-run.py failed"
+python3 packages/sc-delay-tasks/scripts/delay-run.py --help > /dev/null 2>&1 && echo "✓ delay-run.py works" || echo "✗ delay-run.py failed"
 ```
 
 **Installation Test:**
 ```bash
 # Test if package can be installed
-if [[ -f "packages/delay-tasks/manifest.yaml" ]]; then
+if [[ -f "packages/sc-delay-tasks/manifest.yaml" ]]; then
     echo "✓ Package files present"
 
     # Check scripts are executable
-    if [[ -x "packages/delay-tasks/scripts/delay-run.py" ]]; then
+    if [[ -x "packages/sc-delay-tasks/scripts/delay-run.py" ]]; then
         echo "✓ Scripts are executable"
     else
         echo "⚠ Scripts need execute permission"
-        chmod +x packages/delay-tasks/scripts/delay-run.py
+        chmod +x packages/sc-delay-tasks/scripts/delay-run.py
     fi
 fi
 ```
 
 ---
 
-### git-worktree
+### sc-git-worktree
 
 **Description:** Manage git worktrees with optional tracking
 
@@ -493,7 +493,7 @@ fi
 
 **Validation:**
 ```bash
-echo "=== git-worktree Dependencies ==="
+echo "=== sc-git-worktree Dependencies ==="
 
 # Check Git version (critical)
 git_version=$(git --version | awk '{print $3}')
@@ -761,8 +761,8 @@ npm --version
 
 | Package | Git | Python 3 | Bash | Node.js | npm | .NET SDK |
 |---------|-----|----------|------|---------|-----|----------|
-| **delay-tasks** | ⚠️ | ✅ | ✅ | ❌ | ❌ | ❌ |
-| **git-worktree** | ✅ >= 2.7.0 | ✅ | ✅ | ❌ | ❌ | ❌ |
+| **sc-delay-tasks** | ⚠️ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| **sc-git-worktree** | ✅ >= 2.7.0 | ✅ | ✅ | ❌ | ❌ | ❌ |
 | **sc-manage** | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
 | **sc-repomix-nuget** | ⚠️ | ⚠️ | ✅ | ✅ >= 18 | ✅ >= 8 | ⚠️ optional |
 
@@ -1012,7 +1012,7 @@ package="$1"
 
 if [ -z "$package" ]; then
     echo "Usage: $0 PACKAGE_NAME"
-    echo "Example: $0 delay-tasks"
+    echo "Example: $0 sc-delay-tasks"
     exit 1
 fi
 
@@ -1039,14 +1039,14 @@ echo ""
 
 # Validate based on package
 case "$package" in
-    "delay-tasks")
-        echo "Checking delay-tasks dependencies..."
+    "sc-delay-tasks")
+        echo "Checking sc-delay-tasks dependencies..."
         python3 --version && echo "  ✓ Python 3" || echo "  ✗ Python 3"
         bash --version | head -1 && echo "  ✓ Bash" || echo "  ✗ Bash"
         ;;
 
-    "git-worktree")
-        echo "Checking git-worktree dependencies..."
+    "sc-git-worktree")
+        echo "Checking sc-git-worktree dependencies..."
         git_version=$(git --version | awk '{print $3}')
         if [[ "$(printf '%s\n' "2.7.0" "$git_version" | sort -V | head -n1)" = "2.7.0" ]]; then
             echo "  ✓ Git >= 2.7.0"
@@ -1086,8 +1086,8 @@ esac
 **Usage:**
 ```bash
 chmod +x check-package-deps.sh
-./check-package-deps.sh delay-tasks
-./check-package-deps.sh git-worktree
+./check-package-deps.sh sc-delay-tasks
+./check-package-deps.sh sc-git-worktree
 ./check-package-deps.sh sc-repomix-nuget
 ```
 
@@ -1679,10 +1679,10 @@ package="${1:-unknown}"
 echo "Verifying dependencies for $package..."
 
 case "$package" in
-    "delay-tasks")
+    "sc-delay-tasks")
         python3 --version > /dev/null 2>&1 || { echo "Error: Python 3 required"; exit 1; }
         ;;
-    "git-worktree")
+    "sc-git-worktree")
         git worktree --help > /dev/null 2>&1 || { echo "Error: Git >= 2.7.0 required for worktree support"; exit 1; }
         python3 --version > /dev/null 2>&1 || { echo "Error: Python 3 required"; exit 1; }
         ;;

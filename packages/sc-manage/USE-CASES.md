@@ -748,7 +748,7 @@ You lead a team of 5 developers working on multiple projects. You want to ensure
    ## Usage
 
    See individual package documentation:
-   - `/git-worktree --help`
+   - `/sc-git-worktree --help`
    - `/delay --help`
    - `/sc-repomix-nuget --help`
    EOF
@@ -763,7 +763,7 @@ You lead a team of 5 developers working on multiple projects. You want to ensure
 
    1. Create feature worktree:
       ```
-      /git-worktree --create feature-name develop
+      /sc-git-worktree --create feature-name develop
       ```
 
    2. Work in the isolated directory:
@@ -827,8 +827,8 @@ You lead a team of 5 developers working on multiple projects. You want to ensure
    - sc-manage (package manager)
 
    **Per Project:**
-   - git-worktree (parallel feature development)
-   - delay-tasks (CI/CD automation)
+   - sc-git-worktree (parallel feature development)
+   - sc-delay-tasks (CI/CD automation)
    - sc-repomix-nuget (if .NET project)
 
    Benefits:
@@ -846,7 +846,7 @@ You lead a team of 5 developers working on multiple projects. You want to ensure
    for project in ~/projects/*/; do
      cd "$project"
      echo "=== $(basename $project) ==="
-     /sc-manage --list | grep -E "git-worktree|delay-tasks"
+     /sc-manage --list | grep -E "sc-git-worktree|sc-delay-tasks"
    done
    ```
 
@@ -954,7 +954,7 @@ echo "Packages installed"
 
 3. Start developing:
    ```
-   /git-worktree --create my-feature develop
+   /sc-git-worktree --create my-feature develop
    ```
 ```
 
@@ -986,7 +986,7 @@ echo "Packages installed"
 
 ### Scenario: Can't install local-only package globally
 ```
-Error: git-worktree can only be installed locally
+Error: sc-git-worktree can only be installed locally
 ```
 **Solution:** Use `--local` flag instead:
 ```
@@ -1017,7 +1017,7 @@ Error: git-worktree can only be installed locally
 ### Scenario: Unsure which scope to use
 **Solution:**
 - `--local`: package is repo-specific (sc-git-worktree, sc-repomix-nuget)
-- `--global`: package is general-purpose (sc-manage, delay-tasks)
+- `--global`: package is general-purpose (sc-manage, sc-delay-tasks)
 - Check package documentation: `/sc-manage --docs package-name`
 
 ---

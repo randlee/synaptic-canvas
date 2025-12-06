@@ -259,7 +259,7 @@ Want to contribute a new package to the marketplace? We'd love to have it!
 
 ### Getting Started
 1. Read [CONTRIBUTING.md](CONTRIBUTING.md) — Complete package authoring guide
-2. Review a [sample manifest.yaml](packages/delay-tasks/manifest.yaml) — See the format
+2. Review a [sample manifest.yaml](packages/sc-delay-tasks/manifest.yaml) — See the format
 3. Check [Package Manifest Guide](docs/version-compatibility-matrix.md) — Field reference
 4. Look at [existing packages](packages/) — Use as templates
 

@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to the **delay-tasks** package will be documented in this file.
+All notable changes to the **sc-delay-tasks** package will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -69,15 +69,15 @@ Beta release - initial v0.x publication.
 ### Installation
 ```bash
 # Global install
-python3 tools/sc-install.py install delay-tasks --dest /Users/<you>/Documents/.claude
+python3 tools/sc-install.py install sc-delay-tasks --dest /Users/<you>/Documents/.claude
 
 # Local (repo-specific) install
-python3 tools/sc-install.py install delay-tasks --dest /path/to/your-repo/.claude
+python3 tools/sc-install.py install sc-delay-tasks --dest /path/to/your-repo/.claude
 ```
 
 ### Uninstallation
 ```bash
-python3 tools/sc-install.py uninstall delay-tasks --dest /path/to/your-repo/.claude
+python3 tools/sc-install.py uninstall sc-delay-tasks --dest /path/to/your-repo/.claude
 ```
 
 ### Troubleshooting

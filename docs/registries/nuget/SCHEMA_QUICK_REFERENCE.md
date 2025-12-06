@@ -82,7 +82,7 @@ registry.json
 ### Package Names
 - Lowercase alphanumeric with hyphens
 - Pattern: `^[a-z0-9]+(-[a-z0-9]+)*$`
-- Examples: `delay-tasks`, `sc-git-worktree`, `sc-manage`
+- Examples: `sc-delay-tasks`, `sc-git-worktree`, `sc-manage`
 - Invalid: `DelayTasks`, `delay_tasks`, `delay.tasks`
 
 ### Tags

@@ -122,8 +122,8 @@ python3 tools/sc-install.py uninstall sc-manage --dest /path/to/your-repo/.claud
 # List all available packages
 /sc-manage --list
 
-# Install delay-tasks globally
-/sc-manage --install delay-tasks --global
+# Install sc-delay-tasks globally
+/sc-manage --install sc-delay-tasks --global
 
 # Install sc-git-worktree locally in current repo
 /sc-manage --install sc-git-worktree --local
@@ -132,7 +132,7 @@ python3 tools/sc-install.py uninstall sc-manage --dest /path/to/your-repo/.claud
 /sc-manage --docs sc-repomix-nuget
 
 # Uninstall a package from global scope
-/sc-manage --uninstall delay-tasks --global
+/sc-manage --uninstall sc-delay-tasks --global
 ```
 
 ### Future Roadmap

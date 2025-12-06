@@ -58,7 +58,7 @@ One-page quick reference with:
 ### I'm in a Hurry!
 
 1. **Quick Reference:** Open RELEASE-NOTES-QUICK-REFERENCE.md
-2. **Find your package:** delay-tasks | git-worktree | sc-manage | sc-repomix-nuget
+2. **Find your package:** sc-delay-tasks | sc-git-worktree | sc-manage | sc-repomix-nuget
 3. **Find your release type:** patch | minor | major
 4. **Copy template:** From section 3 "Quick Template Swap-In"
 5. **Fill blanks:** {{DATE}}, {{PKG}}, features, etc.
@@ -98,8 +98,8 @@ One-page quick reference with:
 
 | Package | Tier | Scope | Release Path |
 |---------|------|-------|--------------|
-| **delay-tasks** | 2 | Global/Local | [Tier 2](./RELEASE-NOTES-TEMPLATE.md#tier-2-external-dependencies) + [Universal](./RELEASE-NOTES-TEMPLATE.md#universal-template) |
-| **git-worktree** | 1 | Local-only | [Tier 1](./RELEASE-NOTES-TEMPLATE.md#tier-1-token-substitution) + [Universal](./RELEASE-NOTES-TEMPLATE.md#universal-template) |
+| **sc-delay-tasks** | 2 | Global/Local | [Tier 2](./RELEASE-NOTES-TEMPLATE.md#tier-2-external-dependencies) + [Universal](./RELEASE-NOTES-TEMPLATE.md#universal-template) |
+| **sc-git-worktree** | 1 | Local-only | [Tier 1](./RELEASE-NOTES-TEMPLATE.md#tier-1-token-substitution) + [Universal](./RELEASE-NOTES-TEMPLATE.md#universal-template) |
 | **sc-manage** | 2 | Global | [Tier 2](./RELEASE-NOTES-TEMPLATE.md#tier-2-external-dependencies) + [Universal](./RELEASE-NOTES-TEMPLATE.md#universal-template) |
 | **sc-repomix-nuget** | 2 | Local-only | [Tier 2](./RELEASE-NOTES-TEMPLATE.md#tier-2-external-dependencies) + [Universal](./RELEASE-NOTES-TEMPLATE.md#universal-template) |
 
@@ -142,13 +142,13 @@ One-page quick reference with:
 - Includes variable expansion (e.g., {{REPO_NAME}})
 - Add Variable Substitution section
 - Template: [RELEASE-NOTES-TEMPLATE.md#tier-1](./RELEASE-NOTES-TEMPLATE.md#tier-1-token-substitution)
-- Example: git-worktree uses {{REPO_NAME}} for path expansion
+- Example: sc-git-worktree uses {{REPO_NAME}} for path expansion
 
 **Tier 2 (External Dependencies)**
 - Requires external tools (git, Node.js, Python)
 - Add System Requirements + Installation sections
 - Template: [RELEASE-NOTES-TEMPLATE.md#tier-2](./RELEASE-NOTES-TEMPLATE.md#tier-2-external-dependencies)
-- Examples: delay-tasks, sc-repomix-nuget, sc-manage
+- Examples: sc-delay-tasks, sc-repomix-nuget, sc-manage
 
 ---
 
@@ -204,7 +204,7 @@ One-page quick reference with:
 
 See [RELEASE-NOTES-TEMPLATE.md#good-release-notes-example](./RELEASE-NOTES-TEMPLATE.md#good-release-notes-example)
 
-Real-world example for delay-tasks v0.5.0:
+Real-world example for sc-delay-tasks v0.5.0:
 - Clear feature descriptions with use cases
 - Before/after comparison for improvements
 - Specific bug references
@@ -297,11 +297,11 @@ docs/
 └── RELEASE-NOTES-QUICK-REFERENCE.md ← Quick card (380 lines)
 
 packages/
-├── delay-tasks/
+├── sc-delay-tasks/
 │   ├── README.md                    ← Usage & installation
 │   ├── CHANGELOG.md                 ← Detailed changelog
 │   └── RELEASE-NOTES-v0.5.0.md      ← User-friendly summary (optional)
-├── git-worktree/
+├── sc-git-worktree/
 │   ├── README.md
 │   ├── CHANGELOG.md
 │   └── RELEASE-NOTES-v0.4.1.md
@@ -472,14 +472,14 @@ The registry points to CHANGELOG.md. RELEASE-NOTES.md is supplementary.
 
 ## Real-World Scenarios
 
-### Scenario 1: You're releasing delay-tasks v0.5.0 (minor release, Tier 2)
+### Scenario 1: You're releasing sc-delay-tasks v0.5.0 (minor release, Tier 2)
 
 1. Use: [Minor Release template](./RELEASE-NOTES-TEMPLATE.md#minor-release-v0xy--v0x10) + [Tier 2 template](./RELEASE-NOTES-TEMPLATE.md#tier-2-external-dependencies)
 2. Sections: Features, Improvements, Dependencies, Installation, Upgrade
-3. Example: [See in template](./RELEASE-NOTES-TEMPLATE.md#scenario-1-user-with-delay-tasks-tier-2)
+3. Example: [See in template](./RELEASE-NOTES-TEMPLATE.md#scenario-1-user-with-sc-delay-tasks-tier-2)
 4. Time: ~1 hour
 
-### Scenario 2: You're releasing git-worktree v0.4.1 (patch release, Tier 1)
+### Scenario 2: You're releasing sc-git-worktree v0.4.1 (patch release, Tier 1)
 
 1. Use: [Patch Release template](./RELEASE-NOTES-TEMPLATE.md#patch-release-v0xy--v0xy1) + [Tier 1 template](./RELEASE-NOTES-TEMPLATE.md#tier-1-token-substitution)
 2. Sections: Bug fixes, Token substitution section, Upgrade

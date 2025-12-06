@@ -8,7 +8,7 @@ options:
   - name: --install
     args:
       - name: package
-        description: Package name to install (e.g., delay-tasks, sc-git-worktree).
+        description: Package name to install (e.g., sc-delay-tasks, sc-git-worktree).
     description: Install a package. Use --local or --global to choose scope.
   - name: --uninstall
     args:

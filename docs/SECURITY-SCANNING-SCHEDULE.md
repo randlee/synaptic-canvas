@@ -137,7 +137,7 @@ This document outlines when and how security scans are performed on the Synaptic
 ./scripts/security-scan.sh --quick
 
 # Single package
-./scripts/security-scan.sh --package delay-tasks
+./scripts/security-scan.sh --package sc-delay-tasks
 
 # JSON output
 ./scripts/security-scan.sh --json > results.json

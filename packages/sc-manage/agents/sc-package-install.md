@@ -9,7 +9,7 @@ color: blue
 # sc-package-install
 
 ## Inputs
-- `package`: required package name (e.g., delay-tasks, sc-git-worktree)
+- `package`: required package name (e.g., sc-delay-tasks, sc-git-worktree)
 - `scope`: required `local` | `global` (ask if missing)
 - `sc_repo_path`: absolute path to the Synaptic Canvas repo. Default: `/Users/randlee/Documents/github/synaptic-canvas`.
 - `global_claude_dir`: absolute path to the global `.claude`. Default: `/Users/randlee/Documents/.claude`.

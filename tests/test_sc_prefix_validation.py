@@ -238,6 +238,10 @@ class TestCrossReferenceValidation:
             'docs/registries/nuget/registry.schema.json',
             'scripts/security-scan.sh',
             'src/sc_cli/skill_integration.py',
+            'packages/sc-delay-tasks/TROUBLESHOOTING.md',
+            'packages/sc-manage/agents/sc-package-install.md',
+            'packages/sc-manage/agents/sc-package-docs.md',
+            'packages/sc-manage/agents/sc-packages-list.md',
         ]
 
         violations = []

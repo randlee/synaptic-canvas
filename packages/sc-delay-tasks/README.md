@@ -1,4 +1,4 @@
-# delay-tasks
+# sc-delay-tasks
 
 [![Publisher Verified](https://img.shields.io/badge/publisher-verified-brightgreen)](https://github.com/randlee/synaptic-canvas/blob/main/docs/PUBLISHER-VERIFICATION.md)
 [![Security Scanned](https://img.shields.io/badge/security-scanned-blue)](https://github.com/randlee/synaptic-canvas/blob/main/SECURITY.md)
@@ -19,13 +19,13 @@ Security: See [SECURITY.md](../../../SECURITY.md) for security policy and practi
 
 ## Quick Start (Global install)
 ```bash
-python3 tools/sc-install.py install delay-tasks --dest /Users/<you>/Documents/.claude
+python3 tools/sc-install.py install sc-delay-tasks --dest /Users/<you>/Documents/.claude
 ```
 Then use `/delay` anywhere.
 
 Repo-local install (optional)
 ```bash
-python3 tools/sc-install.py install delay-tasks --dest /path/to/your-repo/.claude
+python3 tools/sc-install.py install sc-delay-tasks --dest /path/to/your-repo/.claude
 ```
 
 ## Usage
@@ -45,11 +45,11 @@ python3 .claude/scripts/delay-run.py ...
 ## Install / Uninstall
 - Install (global):
   ```bash
-  python3 tools/sc-install.py install delay-tasks --dest /Users/<you>/Documents/.claude
+  python3 tools/sc-install.py install sc-delay-tasks --dest /Users/<you>/Documents/.claude
   ```
 - Uninstall:
   ```bash
-  python3 tools/sc-install.py uninstall delay-tasks --dest /Users/<you>/Documents/.claude
+  python3 tools/sc-install.py uninstall sc-delay-tasks --dest /Users/<you>/Documents/.claude
   ```
 
 ## Troubleshooting
