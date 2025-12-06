@@ -140,7 +140,7 @@ def query_marketplace_packages(
                 # Build package info
                 pkg_info = {
                     "name": manifest.name,
-                    "version": "0.4.0",  # TODO: Extract from manifest or version.yaml
+                    "version": "0.5.0",  # TODO: Extract from manifest or version.yaml
                     "status": "beta",  # TODO: Get from registry metadata
                     "description": manifest.description or "",
                     "tags": [],  # TODO: Extract from manifest or registry
@@ -219,12 +219,12 @@ def install_marketplace_package(
         }
 
     Example:
-        >>> result = install_marketplace_package("delay-tasks", scope="global")
+        >>> result = install_marketplace_package("sc-delay-tasks", scope="global")
         >>> if result["status"] == "success":
         ...     print(f"Installed {len(result['installed_files'])} files")
 
         >>> result = install_marketplace_package(
-        ...     "git-worktree",
+        ...     "sc-git-worktree",
         ...     registry="synaptic-canvas",
         ...     scope="local",
         ...     force=True
@@ -296,7 +296,7 @@ def install_marketplace_package(
             return {
                 "status": "success",
                 "package": package,
-                "version": "0.4.0",  # TODO: Extract actual version
+                "version": "0.5.0",  # TODO: Extract actual version
                 "scope": scope,
                 "installed_files": installed_files,
                 "registry_updated": True,

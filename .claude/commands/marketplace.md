@@ -286,7 +286,7 @@ Instead of using slash commands, you can use natural language with the marketpla
 **Installation:**
 - "Install delay-tasks globally"
 - "Add git-worktree to my Claude setup"
-- "Set up the repomix-nuget package"
+- "Set up the sc-repomix-nuget package"
 
 **Registry Management:**
 - "Show my registries"
@@ -455,7 +455,7 @@ Requirements:
 - `/delay` - Task scheduling (from delay-tasks package)
 - `/git-worktree` - Git worktree management
 - `/sc-manage` - Synaptic Canvas management
-- `/repomix-nuget` - NuGet repository analysis
+- `/sc-repomix-nuget` - NuGet repository analysis
 
 ---
 

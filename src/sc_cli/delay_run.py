@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Python rewrite of packages/delay-tasks/scripts/delay-run.sh
+Python rewrite of packages/sc-delay-tasks/scripts/sc-delay-run.py
 
 Features:
 - one-shot delay: --seconds N | --minutes N | --until <HH:MM[:SS]|ISO>

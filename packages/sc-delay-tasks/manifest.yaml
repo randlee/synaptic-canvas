@@ -1,0 +1,34 @@
+name: sc-delay-tasks
+version: 0.5.0
+description: >
+  Schedule delayed one-shot or bounded polling actions with minimal heartbeats.
+  Useful for waiting before running checks (e.g., CI status) or polling with stop-on-success.
+author: randlee
+license: MIT
+tags:
+  - delay
+  - polling
+  - scheduler
+  - ci
+  - workflow
+  - agents
+
+# Files to install (relative to package root)
+artifacts:
+  commands:
+    - commands/sc-delay.md
+  skills:
+    - skills/sc-delaying-tasks/SKILL.md
+  agents:
+    - agents/sc-delay-once.md
+    - agents/sc-delay-poll.md
+    - agents/sc-git-pr-check-delay.md
+  scripts:
+    - scripts/sc-delay-run.py
+
+# No variables — Tier 0 package (direct copy)
+
+# Runtime requirements
+requires:
+  - bash
+  - python3

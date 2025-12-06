@@ -98,10 +98,10 @@ E   AssertionError: assert ('no packages' in '\nregistry: test-registry (https:/
 /Users/randlee/Documents/github/synaptic-canvas/tests/test_sc_install_phase1_2.py:2190: AssertionError: assert ('no packages' in '\nregistry: test-registry (https://test.example.com)\n============================================================\n' or 111 == 0 or 'found' in '\nregistry: test-registry (https://test.example.com)\n============================================================\n')
 E   assert 0 == 1
 ----------------------------- Captured stdout call -----------------------------
-Package: delay-tasks
-Path: /Users/randlee/Documents/github/synaptic-canvas/packages/delay-tasks
+Package: sc-delay-tasks
+Path: /Users/randlee/Documents/github/synaptic-canvas/packages/sc-delay-tasks
 
-name: delay-tasks
+name: sc-delay-tasks
 version: 0.4.0
 description: >
   Schedule delayed one-shot or bounded polling actions with minimal heartbeats.

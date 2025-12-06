@@ -35,15 +35,15 @@ The following versions of our packages are actively maintained and receive secur
 
 | Package | Version | Status | Security Updates |
 |---------|---------|--------|-----------------|
-| delay-tasks | 0.4.0 | ✅ Current/Beta | Active |
-| git-worktree | 0.4.0 | ✅ Current/Beta | Active |
-| sc-manage | 0.4.0 | ✅ Current/Beta | Active |
-| repomix-nuget | 0.4.0 | ✅ Current/Beta | Active |
+| sc-delay-tasks | 0.5.0 | ✅ Current/Beta | Active |
+| sc-git-worktree | 0.5.0 | ✅ Current/Beta | Active |
+| sc-manage | 0.5.0 | ✅ Current/Beta | Active |
+| sc-repomix-nuget | 0.5.0 | ✅ Current/Beta | Active |
 
 ### Version Support Policy
 
 **Beta Versions (0.x.x)**:
-- All packages currently in beta (0.4.0)
+- All packages currently in beta (0.5.0)
 - Receive active security updates
 - May have breaking changes between releases
 - Should be tested in non-critical environments first
@@ -326,17 +326,17 @@ Users should be aware of these limitations:
 
 ### Package-Specific Security Considerations
 
-**delay-tasks**:
+**sc-delay-tasks**:
 - Executes Python scripts with user-provided delays
 - Ensure timeout values are reasonable (avoid extremely long waits)
 - Review delay-run.py script before use
-- See [packages/delay-tasks/TROUBLESHOOTING.md](packages/delay-tasks/TROUBLESHOOTING.md)
+- See [packages/sc-delay-tasks/TROUBLESHOOTING.md](packages/sc-delay-tasks/TROUBLESHOOTING.md)
 
-**git-worktree**:
+**sc-git-worktree**:
 - Creates and manipulates git worktrees
 - Requires appropriate filesystem permissions
 - Can modify repository structure
-- See [packages/git-worktree/TROUBLESHOOTING.md](packages/git-worktree/TROUBLESHOOTING.md)
+- See [packages/sc-git-worktree/TROUBLESHOOTING.md](packages/sc-git-worktree/TROUBLESHOOTING.md)
 
 **sc-manage**:
 - Interfaces with package registry
@@ -344,11 +344,11 @@ Users should be aware of these limitations:
 - Network access required for registry queries
 - See [packages/sc-manage/TROUBLESHOOTING.md](packages/sc-manage/TROUBLESHOOTING.md)
 
-**repomix-nuget**:
+**sc-repomix-nuget**:
 - Analyzes NuGet packages and assemblies
 - Executes Python scripts for extraction
 - Requires Python 3.12+ and appropriate permissions
-- See [packages/repomix-nuget/TROUBLESHOOTING.md](packages/repomix-nuget/TROUBLESHOOTING.md)
+- See [packages/sc-repomix-nuget/TROUBLESHOOTING.md](packages/sc-repomix-nuget/TROUBLESHOOTING.md)
 
 ### General Limitations
 
@@ -413,10 +413,10 @@ python3 tools/sc-install.py install package-name --dest /path/to/.claude
 
 **Example**:
 ```bash
-# Verify git version for git-worktree
+# Verify git version for sc-git-worktree
 git --version  # Should be >= 2.27
 
-# Verify Python version for repomix-nuget
+# Verify Python version for sc-repomix-nuget
 python3 --version  # Should be >= 3.12
 ```
 
@@ -510,7 +510,7 @@ The Synaptic Canvas repository is actively maintained:
 
 ### Beta Version Updates (0.x)
 
-**Current Phase**: All packages at version 0.4.0 (beta)
+**Current Phase**: All packages at version 0.5.0 (beta)
 
 **Update Frequency**:
 - More frequent than stable releases
@@ -570,10 +570,10 @@ Additional security information:
 
 ### Package Documentation
 
-- [delay-tasks/TROUBLESHOOTING.md](packages/delay-tasks/TROUBLESHOOTING.md)
-- [git-worktree/TROUBLESHOOTING.md](packages/git-worktree/TROUBLESHOOTING.md)
+- [sc-delay-tasks/TROUBLESHOOTING.md](packages/sc-delay-tasks/TROUBLESHOOTING.md)
+- [sc-git-worktree/TROUBLESHOOTING.md](packages/sc-git-worktree/TROUBLESHOOTING.md)
 - [sc-manage/TROUBLESHOOTING.md](packages/sc-manage/TROUBLESHOOTING.md)
-- [repomix-nuget/TROUBLESHOOTING.md](packages/repomix-nuget/TROUBLESHOOTING.md)
+- [sc-repomix-nuget/TROUBLESHOOTING.md](packages/sc-repomix-nuget/TROUBLESHOOTING.md)
 
 ### External Resources
 

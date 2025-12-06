@@ -182,7 +182,7 @@ ci-automation:
     ci-fix-agent: 0.x
     ci-root-cause-agent: 0.x
     ci-pr-agent: 0.x
-    managing-worktrees: 0.x
+    sc-managing-worktrees: 0.x
 ```
 
 **Missing**: No `entry_point` field in skill dependencies

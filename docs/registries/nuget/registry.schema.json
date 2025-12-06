@@ -52,9 +52,9 @@
       "minProperties": 0,
       "examples": [
         {
-          "delay-tasks": {
-            "name": "delay-tasks",
-            "version": "0.4.0"
+          "sc-delay-tasks": {
+            "name": "sc-delay-tasks",
+            "version": "0.5.0"
           }
         }
       ]
@@ -371,8 +371,8 @@
           },
           "examples": [
             {
-              "automation": ["delay-tasks"],
-              "development-tools": ["git-worktree"]
+              "automation": ["sc-delay-tasks"],
+              "development-tools": ["sc-git-worktree"]
             }
           ]
         }

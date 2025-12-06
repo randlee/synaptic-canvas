@@ -1,6 +1,6 @@
 ---
 name: sc-package-install
-version: 0.4.0
+version: 0.5.0
 description: Install a Synaptic Canvas package locally (repo .claude) or globally according to package policy.
 model: sonnet
 color: blue
@@ -9,7 +9,7 @@ color: blue
 # sc-package-install
 
 ## Inputs
-- `package`: required package name (e.g., delay-tasks, git-worktree)
+- `package`: required package name (e.g., sc-delay-tasks, sc-git-worktree)
 - `scope`: required `local` | `global` (ask if missing)
 - `sc_repo_path`: absolute path to the Synaptic Canvas repo. Default: `/Users/randlee/Documents/github/synaptic-canvas`.
 - `global_claude_dir`: absolute path to the global `.claude`. Default: `/Users/randlee/Documents/.claude`.
@@ -32,7 +32,7 @@ color: blue
 ```json
 {
   "success": true,
-  "data": { "package": "git-worktree", "scope": "local", "dest": "/path/to/repo/.claude" },
+  "data": { "package": "sc-git-worktree", "scope": "local", "dest": "/path/to/repo/.claude" },
   "error": null
 }
 ```
@@ -47,7 +47,7 @@ color: blue
   "data": null,
   "error": {
     "code": "SCOPE_NOT_ALLOWED",
-    "message": "Package 'git-worktree' may only be installed locally",
+    "message": "Package 'sc-git-worktree' may only be installed locally",
     "recoverable": false,
     "suggested_action": "use --local scope"
   }

@@ -1,6 +1,6 @@
 ---
 name: sc-packages-list
-version: 0.4.0
+version: 0.5.0
 description: Enumerate available Synaptic Canvas packages, detect install scope (no/local/global), and return a machine-readable table.
 model: sonnet
 color: blue
@@ -34,8 +34,8 @@ List available packages and detect whether each is installed locally (current re
   "success": true,
   "data": {
     "packages": [
-      { "name": "delay-tasks", "installed": "global", "description": "Schedule delayed one-shot or bounded polling actions" },
-      { "name": "git-worktree", "installed": "local", "description": "Manage git worktrees with optional tracking" }
+      { "name": "sc-delay-tasks", "installed": "global", "description": "Schedule delayed one-shot or bounded polling actions" },
+      { "name": "sc-git-worktree", "installed": "local", "description": "Manage git worktrees with optional tracking" }
     ]
   },
   "error": null

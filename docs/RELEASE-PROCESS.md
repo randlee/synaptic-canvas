@@ -34,7 +34,7 @@ The Synaptic Canvas release process manages three versioning layers:
 All versions follow MAJOR.MINOR.PATCH format:
 
 - **MAJOR (X):** Breaking changes, major refactoring, incompatible API changes
-- **MINOR (Y):** New features, new artifacts, backward-compatible improvements
+- **MINOR (Y):** New features, new artifacts, functionality enhancements
 - **PATCH (Z):** Bug fixes, documentation updates, minor refinements
 
 ## Versioning System
@@ -127,7 +127,7 @@ All versions follow MAJOR.MINOR.PATCH format:
 - [ ] **Version bump is appropriate**
   - Check semantic versioning rules
   - Confirm no breaking changes for PATCH
-  - Confirm backward compatibility for MINOR
+  - Verify feature completeness for MINOR
 
 - [ ] **All packages to release identified**
   - List all packages getting new versions
@@ -153,10 +153,10 @@ Marketplace Version: 0.4.0 → 0.5.0 (MINOR - new features)
   - Reason: New registry format, enhanced installer
 
 Packages:
-  - delay-tasks: 0.4.0 → 0.5.0 (new agent, feature)
-  - git-worktree: 0.4.0 → 0.4.1 (bugfix only)
+  - sc-delay-tasks: 0.4.0 → 0.5.0 (new agent, feature)
+  - sc-git-worktree: 0.4.0 → 0.4.1 (bugfix only)
   - sc-manage: 0.4.0 (no change)
-  - repomix-nuget: 0.4.0 (no change)
+  - sc-repomix-nuget: 0.4.0 (no change)
 
 Approval: @maintainer-name ✓
 ```
@@ -287,8 +287,8 @@ done
 
 **Example Registry Entry:**
 ```json
-"delay-tasks": {
-  "name": "delay-tasks",
+"sc-delay-tasks": {
+  "name": "sc-delay-tasks",
   "version": "0.5.0",
   "status": "beta",
   "lastUpdated": "2025-12-15",
@@ -324,7 +324,7 @@ done
   # Manual verification:
   python3 -c "
   import yaml
-  for pkg in ['delay-tasks', 'git-worktree', 'sc-manage', 'repomix-nuget']:
+  for pkg in ['sc-delay-tasks', 'sc-git-worktree', 'sc-manage', 'sc-repomix-nuget']:
     with open(f'packages/{pkg}/manifest.yaml') as f:
       data = yaml.safe_load(f)
       print(f'{pkg}: v{data[\"version\"]}')
@@ -425,13 +425,13 @@ release/patch-<name>-v<version>     # Hotfix/patch release
 git checkout -b release/marketplace-v0.5.0
 
 # Single package
-git checkout -b release/package-delay-tasks-v0.5.0
+git checkout -b release/package-sc-delay-tasks-v0.5.0
 
 # All packages
 git checkout -b release/packages-v0.5.0
 
 # Hotfix
-git checkout -b release/patch-delay-tasks-v0.4.1
+git checkout -b release/patch-sc-delay-tasks-v0.4.1
 ```
 
 **Push branch (create PR early for feedback):**
@@ -472,14 +472,14 @@ EOF
 
 ```bash
 # Option 1: Manual update (small changes)
-vi packages/delay-tasks/manifest.yaml
+vi packages/sc-delay-tasks/manifest.yaml
 # Change: version: 0.4.0 → version: 0.5.0
 
 # Option 2: Automated sync (recommended for multiple packages)
-python3 scripts/sync-versions.py --package delay-tasks --version 0.5.0 --dry-run
+python3 scripts/sync-versions.py --package sc-delay-tasks --version 0.5.0 --dry-run
 
 # Review changes first
-python3 scripts/sync-versions.py --package delay-tasks --version 0.5.0
+python3 scripts/sync-versions.py --package sc-delay-tasks --version 0.5.0
 ```
 
 **2c. Verify versions are synchronized:**
@@ -497,7 +497,7 @@ python3 scripts/sync-versions.py --package delay-tasks --version 0.5.0
 
 ```bash
 # Single package release
-python3 scripts/sync-versions.py --package delay-tasks --version 0.5.0
+python3 scripts/sync-versions.py --package sc-delay-tasks --version 0.5.0
 
 # All packages to same version
 python3 scripts/sync-versions.py --all --version 0.5.0
@@ -506,10 +506,10 @@ python3 scripts/sync-versions.py --all --version 0.5.0
 python3 scripts/sync-versions.py --marketplace --version 0.5.0
 
 # Dry run to preview changes
-python3 scripts/sync-versions.py --package delay-tasks --version 0.5.0 --dry-run
+python3 scripts/sync-versions.py --package sc-delay-tasks --version 0.5.0 --dry-run
 
 # Sync and create git commit
-python3 scripts/sync-versions.py --package delay-tasks --version 0.5.0 --commit
+python3 scripts/sync-versions.py --package sc-delay-tasks --version 0.5.0 --commit
 ```
 
 **Files Modified by Sync:**
@@ -524,7 +524,7 @@ python3 scripts/sync-versions.py --package delay-tasks --version 0.5.0 --commit
 
 ```bash
 # Edit CHANGELOG.md - move [Unreleased] → [X.Y.Z] - YYYY-MM-DD
-vi packages/delay-tasks/CHANGELOG.md
+vi packages/sc-delay-tasks/CHANGELOG.md
 ```
 
 **CHANGELOG update template:**
@@ -603,7 +603,7 @@ Closes #<issue-number> (if applicable)
 **Alternative for single package:**
 
 ```bash
-git commit -m "chore(delay-tasks): release v0.5.0
+git commit -m "chore(sc-delay-tasks): release v0.5.0
 
 - Add new delay scheduler with persistent storage
 - Support cron-like scheduling patterns
@@ -612,7 +612,7 @@ git commit -m "chore(delay-tasks): release v0.5.0
 
 Breaking: Direct delay-run.py usage deprecated
 
-See packages/delay-tasks/CHANGELOG.md for full details"
+See packages/sc-delay-tasks/CHANGELOG.md for full details"
 ```
 
 **Create annotated git tag:**
@@ -629,21 +629,21 @@ git tag -a v0.5.0 -m "Marketplace Platform v0.5.0
 - See CHANGELOG.md for full details"
 
 # Single package release
-git tag -a v0.5.0-delay-tasks -m "delay-tasks v0.5.0
+git tag -a v0.5.0-sc-delay-tasks -m "sc-delay-tasks v0.5.0
 
 - New delay scheduler with persistent storage
 - Support cron-like scheduling patterns
 - Fix memory leak in polling loop
 
-See packages/delay-tasks/CHANGELOG.md"
+See packages/sc-delay-tasks/CHANGELOG.md"
 
 # Multiple packages (tag each)
 git tag -a v0.5.0-all -m "All packages v0.5.0 release
 
-- delay-tasks v0.5.0
-- git-worktree v0.5.0
+- sc-delay-tasks v0.5.0
+- sc-git-worktree v0.5.0
 - sc-manage v0.5.0
-- repomix-nuget v0.5.0
+- sc-repomix-nuget v0.5.0
 
 See individual CHANGELOG.md files"
 ```
@@ -767,9 +767,9 @@ gh release create v0.5.0 \
   --notes "$(cat release-notes-0.5.0.md)"
 
 # For packages
-gh release create v0.5.0-delay-tasks \
-  --title "delay-tasks v0.5.0" \
-  --notes "$(head -30 packages/delay-tasks/CHANGELOG.md)"
+gh release create v0.5.0-sc-delay-tasks \
+  --title "sc-delay-tasks v0.5.0" \
+  --notes "$(head -30 packages/sc-delay-tasks/CHANGELOG.md)"
 ```
 
 **Release Notes Format:**
@@ -794,18 +794,18 @@ New registry format (v2.0.0), enhanced installer, and improved error handling.
 
 ### All Packages Updated
 
-#### delay-tasks v0.5.0
+#### sc-delay-tasks v0.5.0
 - New delay scheduler with persistent storage
 - Support cron-like scheduling patterns
 - Fix memory leak in polling loop (#38, #40)
 
-**[View full CHANGELOG](https://github.com/randlee/synaptic-canvas/blob/main/packages/delay-tasks/CHANGELOG.md)**
+**[View full CHANGELOG](https://github.com/randlee/synaptic-canvas/blob/main/packages/sc-delay-tasks/CHANGELOG.md)**
 
-#### git-worktree v0.4.0 (no changes)
+#### sc-git-worktree v0.4.0 (no changes)
 
 #### sc-manage v0.4.0 (no changes)
 
-#### repomix-nuget v0.4.0 (no changes)
+#### sc-repomix-nuget v0.4.0 (no changes)
 
 ## Installation
 
@@ -872,7 +872,7 @@ sed -n "/^## \[$VERSION\]/,/^## \[/p" packages/$PACKAGE/CHANGELOG.md | head -n -
     "lastUpdated": "2025-12-15"
   },
   "packages": {
-    "delay-tasks": {
+    "sc-delay-tasks": {
       "version": "0.5.0",
       "lastUpdated": "2025-12-15"
     }
@@ -949,46 +949,46 @@ with open('docs/registries/nuget/registry.json') as f:
 
 ### Scenario 1: Single Package Release
 
-**Example:** Release only delay-tasks v0.5.0 (marketplace stays 0.4.0)
+**Example:** Release only sc-delay-tasks v0.5.0 (marketplace stays 0.4.0)
 
 **Steps:**
 
 1. **Create release branch:**
    ```bash
-   git checkout -b release/package-delay-tasks-v0.5.0
+   git checkout -b release/package-sc-delay-tasks-v0.5.0
    ```
 
 2. **Update version:**
    ```bash
-   python3 scripts/sync-versions.py --package delay-tasks --version 0.5.0
+   python3 scripts/sync-versions.py --package sc-delay-tasks --version 0.5.0
    ```
 
 3. **Update CHANGELOG:**
    ```bash
-   vi packages/delay-tasks/CHANGELOG.md
+   vi packages/sc-delay-tasks/CHANGELOG.md
    # Move [Unreleased] to [0.5.0] - 2025-12-15
    ```
 
 4. **Commit:**
    ```bash
-   git add packages/delay-tasks/
-   git commit -m "chore(delay-tasks): release v0.5.0"
+   git add packages/sc-delay-tasks/
+   git commit -m "chore(sc-delay-tasks): release v0.5.0"
    ```
 
 5. **Tag:**
    ```bash
-   git tag -a v0.5.0-delay-tasks -m "delay-tasks v0.5.0"
-   git push origin v0.5.0-delay-tasks
+   git tag -a v0.5.0-sc-delay-tasks -m "sc-delay-tasks v0.5.0"
+   git push origin v0.5.0-sc-delay-tasks
    ```
 
 6. **Create release:**
    ```bash
-   gh release create v0.5.0-delay-tasks --notes "$(head -30 packages/delay-tasks/CHANGELOG.md)"
+   gh release create v0.5.0-sc-delay-tasks --notes "$(head -30 packages/sc-delay-tasks/CHANGELOG.md)"
    ```
 
 7. **Update registry:**
    ```bash
-   # Update delay-tasks entry to 0.5.0
+   # Update sc-delay-tasks entry to 0.5.0
    # Keep marketplace at 0.4.0
    ```
 
@@ -1046,7 +1046,7 @@ with open('docs/registries/nuget/registry.json') as f:
 
 ### Scenario 3: All Packages Simultaneous Release
 
-**Example:** Release delay-tasks v0.5.0, git-worktree v0.4.1, repomix-nuget v0.5.0
+**Example:** Release sc-delay-tasks v0.5.0, sc-git-worktree v0.4.1, sc-repomix-nuget v0.5.0
 
 **Note:** Marketplace version stays at 0.4.0
 
@@ -1059,18 +1059,18 @@ with open('docs/registries/nuget/registry.json') as f:
 
 2. **Update packages individually:**
    ```bash
-   python3 scripts/sync-versions.py --package delay-tasks --version 0.5.0
-   python3 scripts/sync-versions.py --package git-worktree --version 0.4.1
-   python3 scripts/sync-versions.py --package repomix-nuget --version 0.5.0
+   python3 scripts/sync-versions.py --package sc-delay-tasks --version 0.5.0
+   python3 scripts/sync-versions.py --package sc-git-worktree --version 0.4.1
+   python3 scripts/sync-versions.py --package sc-repomix-nuget --version 0.5.0
    ```
 
 3. **Update CHANGELOGs for each:**
    ```bash
    DATE=$(date +%Y-%m-%d)
 
-   sed -i "s/## \[Unreleased\]/## [0.5.0] - $DATE/" packages/delay-tasks/CHANGELOG.md
-   sed -i "s/## \[Unreleased\]/## [0.4.1] - $DATE/" packages/git-worktree/CHANGELOG.md
-   sed -i "s/## \[Unreleased\]/## [0.5.0] - $DATE/" packages/repomix-nuget/CHANGELOG.md
+   sed -i "s/## \[Unreleased\]/## [0.5.0] - $DATE/" packages/sc-delay-tasks/CHANGELOG.md
+   sed -i "s/## \[Unreleased\]/## [0.4.1] - $DATE/" packages/sc-git-worktree/CHANGELOG.md
+   sed -i "s/## \[Unreleased\]/## [0.5.0] - $DATE/" packages/sc-repomix-nuget/CHANGELOG.md
    ```
 
 4. **Validate:**
@@ -1083,28 +1083,28 @@ with open('docs/registries/nuget/registry.json') as f:
    git add packages/*/
    git commit -m "chore: release multiple packages
 
-- delay-tasks v0.5.0 with new scheduler
-- git-worktree v0.4.1 with bugfixes
-- repomix-nuget v0.5.0 with enhancements"
+- sc-delay-tasks v0.5.0 with new scheduler
+- sc-git-worktree v0.4.1 with bugfixes
+- sc-repomix-nuget v0.5.0 with enhancements"
    ```
 
 6. **Create individual tags:**
    ```bash
-   git tag -a v0.5.0-delay-tasks -m "delay-tasks v0.5.0"
-   git tag -a v0.4.1-git-worktree -m "git-worktree v0.4.1"
-   git tag -a v0.5.0-repomix-nuget -m "repomix-nuget v0.5.0"
+   git tag -a v0.5.0-sc-delay-tasks -m "sc-delay-tasks v0.5.0"
+   git tag -a v0.4.1-sc-git-worktree -m "sc-git-worktree v0.4.1"
+   git tag -a v0.5.0-sc-repomix-nuget -m "sc-repomix-nuget v0.5.0"
    git push origin --tags
    ```
 
 ### Scenario 4: Patch/Hotfix Release
 
-**Example:** Release patch v0.4.1 for delay-tasks (critical bugfix)
+**Example:** Release patch v0.4.1 for sc-delay-tasks (critical bugfix)
 
 **Steps:**
 
 1. **Create patch branch from tag:**
    ```bash
-   git checkout -b release/patch-delay-tasks-v0.4.1 v0.4.0-delay-tasks
+   git checkout -b release/patch-sc-delay-tasks-v0.4.1 v0.4.0-sc-delay-tasks
    ```
 
 2. **Apply bugfix commits:**
@@ -1113,47 +1113,47 @@ with open('docs/registries/nuget/registry.json') as f:
    git cherry-pick <commit-hash>
 
    # Or apply manually
-   vi packages/delay-tasks/scripts/delay-run.py
-   git add packages/delay-tasks/scripts/delay-run.py
-   git commit -m "fix(delay-tasks): correct memory leak in polling loop"
+   vi packages/sc-delay-tasks/scripts/delay-run.py
+   git add packages/sc-delay-tasks/scripts/delay-run.py
+   git commit -m "fix(sc-delay-tasks): correct memory leak in polling loop"
    ```
 
 3. **Update to patch version:**
    ```bash
-   python3 scripts/sync-versions.py --package delay-tasks --version 0.4.1
+   python3 scripts/sync-versions.py --package sc-delay-tasks --version 0.4.1
    ```
 
 4. **Update CHANGELOG:**
    ```bash
    # Add [0.4.1] section with bugfix details
-   vi packages/delay-tasks/CHANGELOG.md
+   vi packages/sc-delay-tasks/CHANGELOG.md
    ```
 
 5. **Commit version bump:**
    ```bash
-   git add packages/delay-tasks/
-   git commit -m "chore(delay-tasks): bump to v0.4.1"
+   git add packages/sc-delay-tasks/
+   git commit -m "chore(sc-delay-tasks): bump to v0.4.1"
    ```
 
 6. **Tag:**
    ```bash
-   git tag -a v0.4.1-delay-tasks -m "delay-tasks v0.4.1 - Critical bugfix"
-   git push origin release/patch-delay-tasks-v0.4.1
-   git push origin v0.4.1-delay-tasks
+   git tag -a v0.4.1-sc-delay-tasks -m "sc-delay-tasks v0.4.1 - Critical bugfix"
+   git push origin release/patch-sc-delay-tasks-v0.4.1
+   git push origin v0.4.1-sc-delay-tasks
    ```
 
 7. **Create hotfix release notes:**
    ```bash
-   gh release create v0.4.1-delay-tasks \
+   gh release create v0.4.1-sc-delay-tasks \
      --prerelease \
-     --title "delay-tasks v0.4.1 - Critical Hotfix" \
+     --title "sc-delay-tasks v0.4.1 - Critical Hotfix" \
      --notes "## Critical Bugfix
 
 Fix for memory leak in polling loop affecting long-running delays.
 
 **Affected:** v0.4.0 users
 **Workaround:** None available; upgrade required
-**Fix:** $(grep -A2 'v0.4.1' packages/delay-tasks/CHANGELOG.md | tail -1)"
+**Fix:** $(grep -A2 'v0.4.1' packages/sc-delay-tasks/CHANGELOG.md | tail -1)"
    ```
 
 8. **Merge back to main:**
@@ -1161,7 +1161,7 @@ Fix for memory leak in polling loop affecting long-running delays.
    # Create PR from patch branch to main
    git checkout main
    git pull origin main
-   git merge release/patch-delay-tasks-v0.4.1
+   git merge release/patch-sc-delay-tasks-v0.4.1
    ```
 
 ## Post-Release Procedures
@@ -1265,7 +1265,7 @@ echo "✓ Post-release verification complete"
 
 ```bash
 # Test installation using published registry
-python3 tools/sc-install.py install delay-tasks \
+python3 tools/sc-install.py install sc-delay-tasks \
   --registry https://raw.githubusercontent.com/randlee/synaptic-canvas/main/docs/registries/nuget/registry.json \
   --dest /tmp/test-public
 
@@ -1330,22 +1330,22 @@ fi
 - Better error messages and diagnostics
 
 ### Package Updates
-- **delay-tasks v0.5.0** - New persistent scheduler
-- **git-worktree v0.4.0** - No changes
+- **sc-delay-tasks v0.5.0** - New persistent scheduler
+- **sc-git-worktree v0.4.0** - No changes
 - **sc-manage v0.4.0** - No changes
-- **repomix-nuget v0.4.0** - No changes
+- **sc-repomix-nuget v0.4.0** - No changes
 
 ## Installation
 
 ```bash
-python3 tools/sc-install.py install delay-tasks --dest ~/.claude
+python3 tools/sc-install.py install sc-delay-tasks --dest ~/.claude
 ```
 
 ## Documentation
 
 - [Release Notes](https://github.com/randlee/synaptic-canvas/releases/tag/v0.5.0)
 - [Installation Guide](docs/registries/nuget/README.md)
-- [Changelog](packages/delay-tasks/CHANGELOG.md)
+- [Changelog](packages/sc-delay-tasks/CHANGELOG.md)
 
 ## Known Issues
 
@@ -1433,7 +1433,7 @@ If critical issue found within 24 hours:
 
 ### Scenario: Critical Issue Detected Post-Release
 
-**Example:** delay-tasks v0.5.0 has memory leak affecting all users
+**Example:** sc-delay-tasks v0.5.0 has memory leak affecting all users
 
 **Immediate Actions:**
 
@@ -1449,7 +1449,7 @@ If critical issue found within 24 hours:
    ```bash
    # Create critical issue
    gh issue create \
-     --title "CRITICAL: Memory leak in delay-tasks v0.5.0" \
+     --title "CRITICAL: Memory leak in sc-delay-tasks v0.5.0" \
      --body "All polling operations leak memory. Revert to v0.4.0 or apply hotfix.
 
    Impact: High - all polling users affected
@@ -1460,14 +1460,14 @@ If critical issue found within 24 hours:
 
 3. **Notify users immediately:**
    ```markdown
-   # CRITICAL ALERT: delay-tasks v0.5.0
+   # CRITICAL ALERT: sc-delay-tasks v0.5.0
 
-   A memory leak has been discovered in delay-tasks v0.5.0.
+   A memory leak has been discovered in sc-delay-tasks v0.5.0.
 
    **Workaround:** Revert to v0.4.0 using:
    ```bash
-   python3 tools/sc-install.py uninstall delay-tasks
-   python3 tools/sc-install.py install delay-tasks --version 0.4.0
+   python3 tools/sc-install.py uninstall sc-delay-tasks
+   python3 tools/sc-install.py install sc-delay-tasks --version 0.4.0
    ```
 
    **Status:** Hotfix v0.5.1 in progress
@@ -1485,7 +1485,7 @@ If critical issue found within 24 hours:
 git revert <release-commit-hash> --no-edit
 
 # Create rollback tag
-git tag -a v0.5.0-rollback -m "Rollback: delay-tasks v0.5.0 - Memory leak in polling"
+git tag -a v0.5.0-rollback -m "Rollback: sc-delay-tasks v0.5.0 - Memory leak in polling"
 
 # Push rollback
 git push origin main
@@ -1500,36 +1500,36 @@ gh issue comment <issue-number> \
 
 ```bash
 # Create hotfix branch from tag
-git checkout -b hotfix/delay-tasks-memory-leak v0.5.0-delay-tasks
+git checkout -b hotfix/sc-delay-tasks-memory-leak v0.5.0-sc-delay-tasks
 
 # Apply fix
-vi packages/delay-tasks/scripts/delay-run.py
+vi packages/sc-delay-tasks/scripts/delay-run.py
 # Fix the memory leak
 
 # Test fix
 ./scripts/audit-versions.sh
-python3 -m pytest tests/delay-tasks/ -v
+python3 -m pytest tests/sc-delay-tasks/ -v
 
 # Update version to 0.5.1
-python3 scripts/sync-versions.py --package delay-tasks --version 0.5.1
+python3 scripts/sync-versions.py --package sc-delay-tasks --version 0.5.1
 
 # Update CHANGELOG
-vi packages/delay-tasks/CHANGELOG.md
+vi packages/sc-delay-tasks/CHANGELOG.md
 # Add [0.5.1] - 2025-12-15 with fix details
 
 # Commit and tag
-git add packages/delay-tasks/
-git commit -m "fix(delay-tasks): memory leak in polling loop (v0.5.1)"
-git tag -a v0.5.1-delay-tasks -m "delay-tasks v0.5.1 - Critical bugfix"
+git add packages/sc-delay-tasks/
+git commit -m "fix(sc-delay-tasks): memory leak in polling loop (v0.5.1)"
+git tag -a v0.5.1-sc-delay-tasks -m "sc-delay-tasks v0.5.1 - Critical bugfix"
 
 # Push
-git push origin hotfix/delay-tasks-memory-leak
-git push origin v0.5.1-delay-tasks
+git push origin hotfix/sc-delay-tasks-memory-leak
+git push origin v0.5.1-sc-delay-tasks
 
 # Create hotfix release
-gh release create v0.5.1-delay-tasks \
+gh release create v0.5.1-sc-delay-tasks \
   --prerelease \
-  --title "delay-tasks v0.5.1 - Critical Hotfix" \
+  --title "sc-delay-tasks v0.5.1 - Critical Hotfix" \
   --notes "## Memory Leak Fix
 
 Fixed critical memory leak in polling operations affecting v0.5.0 users.
@@ -1539,7 +1539,7 @@ Fixed critical memory leak in polling operations affecting v0.5.0 users.
 See CHANGELOG.md for details."
 
 # Update registry
-# Update delay-tasks entry to 0.5.1
+# Update sc-delay-tasks entry to 0.5.1
 ```
 
 ### Retract a Release (Nuclear Option)
@@ -1554,11 +1554,11 @@ See CHANGELOG.md for details."
 
 ```bash
 # Step 1: Delete tag
-git tag -d v0.5.0-delay-tasks
-git push origin :refs/tags/v0.5.0-delay-tasks
+git tag -d v0.5.0-sc-delay-tasks
+git push origin :refs/tags/v0.5.0-sc-delay-tasks
 
 # Step 2: Delete GitHub release
-gh release delete v0.5.0-delay-tasks --yes
+gh release delete v0.5.0-sc-delay-tasks --yes
 
 # Step 3: Revert commit
 git revert <release-commit-hash>
@@ -1566,18 +1566,18 @@ git push origin main
 
 # Step 4: Publish announcement
 gh issue create \
-  --title "Release Retracted: delay-tasks v0.5.0" \
+  --title "Release Retracted: sc-delay-tasks v0.5.0" \
   --body "## Retraction Notice
 
-delay-tasks v0.5.0 has been retracted due to [critical issue].
+sc-delay-tasks v0.5.0 has been retracted due to [critical issue].
 
 **Action Required:**
 - Do not install v0.5.0
 - If already installed, revert to v0.4.0:
 
 \`\`\`bash
-python3 tools/sc-install.py uninstall delay-tasks
-python3 tools/sc-install.py install delay-tasks --version 0.4.0
+python3 tools/sc-install.py uninstall sc-delay-tasks
+python3 tools/sc-install.py install sc-delay-tasks --version 0.4.0
 \`\`\`
 
 **Updated Version:** v0.5.1 will be released on [date]
@@ -1595,7 +1595,7 @@ We apologize for the inconvenience." \
 # Post-incident review template
 
 cat > /tmp/incident-review.md <<'EOF'
-# Incident Review: delay-tasks v0.5.0 Memory Leak
+# Incident Review: sc-delay-tasks v0.5.0 Memory Leak
 
 ## Incident Summary
 - **Severity:** Critical

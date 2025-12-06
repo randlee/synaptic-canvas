@@ -53,7 +53,7 @@ What packages help with documentation?
 ```
 Install delay-tasks globally
 Add the git-worktree package to my global Claude setup
-Install repomix-nuget for this project
+Install sc-repomix-nuget for this project
 ```
 
 **Installation scopes:**
@@ -264,7 +264,7 @@ The marketplace skill understands natural language queries. Here are examples:
 ### Installation
 - "Install delay-tasks globally"
 - "Add git-worktree to my Claude setup"
-- "Install the repomix-nuget package"
+- "Install the sc-repomix-nuget package"
 - "Set up delay-tasks for this project"
 
 ### Registry Management
@@ -276,7 +276,7 @@ The marketplace skill understands natural language queries. Here are examples:
 ### Information
 - "Tell me about the delay-tasks package"
 - "What does git-worktree do?"
-- "Show details for repomix-nuget"
+- "Show details for sc-repomix-nuget"
 - "What's included in sc-manage?"
 
 ## Integration with Other Skills
@@ -293,8 +293,8 @@ Install with: `/marketplace install git-worktree --global`
 
 Use for: Managing parallel git worktrees, branch management, development workflows
 
-### repomix-nuget
-Install with: `/marketplace install repomix-nuget --global`
+### sc-repomix-nuget
+Install with: `/marketplace install sc-repomix-nuget --global`
 
 Use for: NuGet repository analysis, package documentation, .NET project context
 
@@ -379,10 +379,10 @@ If you encounter issues:
 /marketplace search documentation
 
 # Install NuGet context generator
-/marketplace install repomix-nuget --global
+/marketplace install sc-repomix-nuget --global
 
 # Generate repository context
-Use repomix-nuget agents to analyze .NET projects
+Use sc-repomix-nuget agents to analyze .NET projects
 ```
 
 ### For Package Management

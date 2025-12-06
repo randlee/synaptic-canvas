@@ -28,33 +28,33 @@ You just created a new project repository and want to install Synaptic Canvas pa
    ```
    Output:
    ```
-   Available Synaptic Canvas Packages (v0.4.0)
+   Available Synaptic Canvas Packages (v0.5.0)
 
    Package                 | Tier | Scope      | Status  | Description
    ----------------------- | ---- | ---------- | ------- | -----------
-   delay-tasks             | T0   | Global     | -       | Schedule delayed waits and polling
-   git-worktree            | T1   | Local-only | -       | Manage git worktrees for parallel development
+   sc-delay-tasks          | T0   | Global     | -       | Schedule delayed waits and polling
+   sc-git-worktree         | T1   | Local-only | -       | Manage git worktrees for parallel development
    sc-manage               | T0   | Global     | Global  | Package discovery and management
-   repomix-nuget           | T1   | Local-only | -       | Generate AI-optimized NuGet context
+   sc-repomix-nuget        | T1   | Local-only | -       | Generate AI-optimized NuGet context
 
    Tier 0: Direct copy, no dependencies
    Tier 1: Token substitution, repo context
    Tier 2: External dependencies required
    ```
 
-3. Install git-worktree locally:
+3. Install sc-git-worktree locally:
    ```
-   /sc-manage --install git-worktree --local
+   /sc-manage --install sc-git-worktree --local
    ```
    Output:
    ```
-   Installing git-worktree (v0.4.0) to local scope...
+   Installing sc-git-worktree (v0.5.0) to local scope...
 
    Detected repository: my-new-project
    Installation path: /path/to/my-new-project/.claude
 
    Processing artifacts:
-   ✓ command: commands/git-worktree.md
+   ✓ command: commands/sc-git-worktree.md
    ✓ skill: skills/managing-worktrees/SKILL.md
    ✓ agents: agents/worktree-create.md
    ✓ agents: agents/worktree-scan.md
@@ -70,12 +70,12 @@ You just created a new project repository and want to install Synaptic Canvas pa
 4. Verify installation:
    ```bash
    ls -la .claude/commands/
-   # Should show git-worktree.md and other commands
+   # Should show sc-git-worktree.md and other commands
    ```
 
 5. Test the installed package:
    ```
-   /git-worktree --status
+   /sc-git-worktree --status
    ```
    Output:
    ```
@@ -85,8 +85,8 @@ You just created a new project repository and want to install Synaptic Canvas pa
 
 6. Install additional packages as needed:
    ```
-   /sc-manage --install delay-tasks --local
-   /sc-manage --install repomix-nuget --local
+   /sc-manage --install sc-delay-tasks --local
+   /sc-manage --install sc-repomix-nuget --local
    ```
 
 **Expected Outcomes:**
@@ -111,8 +111,8 @@ You just created a new project repository and want to install Synaptic Canvas pa
 **Tips and Best Practices:**
 - Use `--list` first to see available packages
 - Check package descriptions to understand purpose
-- Use `--local` for repo-specific packages (git-worktree, repomix-nuget)
-- Use `--global` for general-purpose packages (delay-tasks, sc-manage)
+- Use `--local` for repo-specific packages (sc-git-worktree, sc-repomix-nuget)
+- Use `--global` for general-purpose packages (sc-delay-tasks, sc-manage)
 - Document installed packages in your project README
 - Add `.claude/` to git (or `.claude-packages/` in `.gitignore` if using only scripts)
 
@@ -139,11 +139,11 @@ You're starting a new development workflow and want to understand what Synaptic 
 
 2. Get detailed documentation for a package:
    ```
-   /sc-manage --docs delay-tasks
+   /sc-manage --docs sc-delay-tasks
    ```
    Output:
    ```
-   Package: delay-tasks (v0.4.0)
+   Package: sc-delay-tasks (v0.5.0)
    Tier: 0 (Direct Copy)
    Scope: Global or Local
 
@@ -152,7 +152,7 @@ You're starting a new development workflow and want to understand what Synaptic 
    Provides a /delay command and agents reusable by other skills.
 
    Quick Start:
-   python3 tools/sc-install.py install delay-tasks --dest /Users/<you>/Documents/.claude
+   python3 tools/sc-install.py install sc-delay-tasks --dest /Users/<you>/Documents/.claude
 
    Usage:
    - /delay --once --minutes 2 --action "go"
@@ -168,22 +168,22 @@ You're starting a new development workflow and want to understand what Synaptic 
 
 3. Ask follow-up questions about the package:
    ```
-   Can I use delay-tasks for checking GitHub Actions status?
+   Can I use sc-delay-tasks for checking GitHub Actions status?
    ```
 
 4. Get docs for another package:
    ```
-   /sc-manage --docs git-worktree
+   /sc-manage --docs sc-git-worktree
    ```
 
 5. Ask comparison question:
    ```
-   When would I use git-worktree vs. just using git branches normally?
+   When would I use sc-git-worktree vs. just using git branches normally?
    ```
 
 6. Review package compatibility:
    ```
-   /sc-manage --docs repomix-nuget
+   /sc-manage --docs sc-repomix-nuget
    ```
 
 7. Make informed decision about which packages to install based on:
@@ -229,8 +229,8 @@ You're starting a new development workflow and want to understand what Synaptic 
 
 **Scenario/Context:**
 You maintain multiple projects with different package requirements:
-- Project A: needs git-worktree and delay-tasks
-- Project B: needs repomix-nuget only
+- Project A: needs sc-git-worktree and sc-delay-tasks
+- Project B: needs sc-repomix-nuget only
 - Your global Claude Code setup: needs sc-manage globally
 
 You want to track what's installed where and manage installations consistently.
@@ -245,14 +245,14 @@ You want to track what's installed where and manage installations consistently.
 2. Project A setup: Install multiple packages
    ```bash
    cd ~/project-a
-   /sc-manage --install git-worktree --local
-   /sc-manage --install delay-tasks --local
+   /sc-manage --install sc-git-worktree --local
+   /sc-manage --install sc-delay-tasks --local
    ```
 
 3. Project B setup: Install specific package
    ```bash
    cd ~/project-b
-   /sc-manage --install repomix-nuget --local
+   /sc-manage --install sc-repomix-nuget --local
    ```
 
 4. Check installations across projects:
@@ -267,10 +267,10 @@ You want to track what's installed where and manage installations consistently.
 
    Package                 | Local | Global | Status
    ----------------------- | ----- | ------ | ---------
-   delay-tasks             | Yes   | -      | Installed (Local)
-   git-worktree            | Yes   | -      | Installed (Local)
+   sc-delay-tasks          | Yes   | -      | Installed (Local)
+   sc-git-worktree         | Yes   | -      | Installed (Local)
    sc-manage               | -     | Yes    | Installed (Global)
-   repomix-nuget           | -     | -      | Not installed
+   sc-repomix-nuget           | -     | -      | Not installed
    ```
 
    In Project B:
@@ -283,18 +283,18 @@ You want to track what's installed where and manage installations consistently.
 
    Package                 | Local | Global | Status
    ----------------------- | ----- | ------ | ---------
-   delay-tasks             | -     | -      | Not installed
-   git-worktree            | -     | -      | Not installed
+   sc-delay-tasks          | -     | -      | Not installed
+   sc-git-worktree         | -     | -      | Not installed
    sc-manage               | -     | Yes    | Installed (Global)
-   repomix-nuget           | Yes   | -      | Installed (Local)
+   sc-repomix-nuget           | Yes   | -      | Installed (Local)
    ```
 
 5. Update installations as projects evolve:
 
-   Project A needs repomix-nuget:
+   Project A needs sc-repomix-nuget:
    ```bash
    cd ~/project-a
-   /sc-manage --install repomix-nuget --local
+   /sc-manage --install sc-repomix-nuget --local
    ```
 
 6. View complete installation status across all projects:
@@ -324,8 +324,8 @@ You want to track what's installed where and manage installations consistently.
 - [sc-package-uninstall agent](agents/sc-package-uninstall.md)
 
 **Tips and Best Practices:**
-- Global packages: sc-manage, delay-tasks (general purpose)
-- Local packages: git-worktree, repomix-nuget (repo-specific)
+- Global packages: sc-manage, sc-delay-tasks (general purpose)
+- Local packages: sc-git-worktree, sc-repomix-nuget (repo-specific)
 - Check list regularly to understand current state
 - Document package choices in project README
 - Keep installations consistent across team members
@@ -352,16 +352,16 @@ You want to ensure all team members have the same package versions, and you need
    ```
    Package                 | Version | Status
    ----------------------- | ------- | ---------
-   delay-tasks             | 0.4.0   | -
-   git-worktree            | 0.4.0   | -
-   sc-manage               | 0.4.0   | Global
-   repomix-nuget           | 0.4.0   | -
+   sc-delay-tasks          | 0.5.0   | -
+   sc-git-worktree         | 0.5.0   | -
+   sc-manage               | 0.5.0   | Global
+   sc-repomix-nuget        | 0.5.0   | -
    ```
 
 2. Verify installed packages match expected versions:
    ```bash
-   cat .claude/commands/git-worktree.md | grep "version: "
-   # Should show: version: 0.4.0
+   cat .claude/commands/sc-git-worktree.md | grep "version: "
+   # Should show: version: 0.5.0
    ```
 
 3. Document package versions in project:
@@ -370,9 +370,9 @@ You want to ensure all team members have the same package versions, and you need
    cat > .claude/PACKAGES.md << 'EOF'
    # Installed Synaptic Canvas Packages
 
-   - delay-tasks v0.4.0
-   - git-worktree v0.4.0
-   - repomix-nuget v0.4.0
+   - sc-delay-tasks v0.5.0
+   - sc-git-worktree v0.5.0
+   - sc-repomix-nuget v0.5.0
 
    Last Updated: 2025-12-02
    EOF
@@ -382,14 +382,14 @@ You want to ensure all team members have the same package versions, and you need
    ```markdown
    # Project Setup
 
-   Required Synaptic Canvas packages (v0.4.0):
-   - git-worktree v0.4.0 (local)
-   - delay-tasks v0.4.0 (local)
+   Required Synaptic Canvas packages (v0.5.0):
+   - sc-git-worktree v0.5.0 (local)
+   - sc-delay-tasks v0.5.0 (local)
 
    Install via:
    ```bash
-   /sc-manage --install git-worktree --local
-   /sc-manage --install delay-tasks --local
+   /sc-manage --install sc-git-worktree --local
+   /sc-manage --install sc-delay-tasks --local
    ```
    ```
 
@@ -397,16 +397,16 @@ You want to ensure all team members have the same package versions, and you need
    ```yaml
    - name: Verify Synaptic Canvas packages
      run: |
-       /sc-manage --list | grep "git-worktree" | grep "0.4.0"
-       /sc-manage --list | grep "delay-tasks" | grep "0.4.0"
+       /sc-manage --list | grep "sc-git-worktree" | grep "0.5.0"
+       /sc-manage --list | grep "sc-delay-tasks" | grep "0.5.0"
    ```
 
 6. New team member follows setup:
    ```bash
    git clone repo
    cd repo
-   /sc-manage --install git-worktree --local
-   /sc-manage --install delay-tasks --local
+   /sc-manage --install sc-git-worktree --local
+   /sc-manage --install sc-delay-tasks --local
    # Automatically installs correct versions
    ```
 
@@ -456,16 +456,16 @@ Project requirements change: you no longer need a package, or a new version is a
    /sc-manage --list
    ```
 
-2. Project no longer does parallel feature development; uninstall git-worktree:
+2. Project no longer does parallel feature development; uninstall sc-git-worktree:
    ```
-   /sc-manage --uninstall git-worktree --local
+   /sc-manage --uninstall sc-git-worktree --local
    ```
    Output:
    ```
-   Uninstalling git-worktree (v0.4.0) from local scope...
+   Uninstalling sc-git-worktree (v0.5.0) from local scope...
 
    Removal plan:
-   ✓ commands/git-worktree.md
+   ✓ commands/sc-git-worktree.md
    ✓ skills/managing-worktrees/SKILL.md
    ✓ agents/worktree-create.md
    ✓ agents/worktree-scan.md
@@ -479,28 +479,28 @@ Project requirements change: you no longer need a package, or a new version is a
    ```
    /sc-manage --list
    ```
-   Output: git-worktree no longer listed as installed
+   Output: sc-git-worktree no longer listed as installed
 
 4. Commit changes:
    ```bash
    git add .
-   git commit -m "chore: remove git-worktree package (no longer needed)"
+   git commit -m "chore: remove sc-git-worktree package (no longer needed)"
    ```
 
 **Scenario B: Updating to New Package Version**
 
 1. New version available (v0.5.0):
    ```
-   /sc-manage --uninstall delay-tasks --local
+   /sc-manage --uninstall sc-delay-tasks --local
    ```
 
 2. Install new version:
    ```
-   /sc-manage --install delay-tasks --local
+   /sc-manage --install sc-delay-tasks --local
    ```
    Output:
    ```
-   Installing delay-tasks (v0.5.0) to local scope...
+   Installing sc-delay-tasks (v0.5.0) to local scope...
    [Installation complete with new features]
    ```
 
@@ -513,7 +513,7 @@ Project requirements change: you no longer need a package, or a new version is a
 4. Commit update:
    ```bash
    git add .
-   git commit -m "chore: upgrade delay-tasks to v0.5.0"
+   git commit -m "chore: upgrade sc-delay-tasks to v0.5.0"
    ```
 
 5. Update team documentation:
@@ -587,15 +587,15 @@ You want CI/CD to use Synaptic Canvas packages for automation. The CI/CD pipelin
          - name: Install required packages
            run: |
              npx claude-code --exec-mode sync <<'SCRIPT'
-             /sc-manage --install git-worktree --local
-             /sc-manage --install delay-tasks --local
+             /sc-manage --install sc-git-worktree --local
+             /sc-manage --install sc-delay-tasks --local
              SCRIPT
 
          - name: Verify installations
            run: |
              npx claude-code --exec-mode sync '/sc-manage --list'
 
-         - name: Use delay-tasks for pre-test wait
+         - name: Use sc-delay-tasks for pre-test wait
            run: |
              npx claude-code --exec-mode sync '/delay --seconds 30 --action "Run tests"'
 
@@ -605,8 +605,8 @@ You want CI/CD to use Synaptic Canvas packages for automation. The CI/CD pipelin
          - name: Generate NuGet context (if applicable)
            run: |
              npx claude-code --exec-mode sync <<'SCRIPT'
-             /sc-manage --install repomix-nuget --local
-             /repomix-nuget --generate --output ./artifacts/nuget-context.xml
+             /sc-manage --install sc-repomix-nuget --local
+             /sc-repomix-nuget --generate --output ./artifacts/nuget-context.xml
              SCRIPT
    ```
 
@@ -637,9 +637,9 @@ jobs:
       - name: Install Synaptic Canvas packages
         run: |
           npx claude-code --exec-mode sync <<'SCRIPT'
-          /sc-manage --install git-worktree --local
-          /sc-manage --install delay-tasks --local
-          /sc-manage --install repomix-nuget --local
+          /sc-manage --install sc-git-worktree --local
+          /sc-manage --install sc-delay-tasks --local
+          /sc-manage --install sc-repomix-nuget --local
           SCRIPT
 
   build:
@@ -687,12 +687,12 @@ jobs:
 
 **Related Documentation:**
 - [/sc-manage command reference](commands/sc-manage.md)
-- [delay-tasks USE-CASES.md](../delay-tasks/USE-CASES.md#use-case-6-github-actions-integration)
+- [sc-delay-tasks USE-CASES.md](../sc-delay-tasks/USE-CASES.md#use-case-6-github-actions-integration)
 
 **Tips and Best Practices:**
 - Verify packages in first CI/CD step
 - Install packages needed for pipeline
-- Use delay-tasks for timing-dependent operations
+- Use sc-delay-tasks for timing-dependent operations
 - Generate NuGet context for .NET projects
 - Document package setup in CI/CD file
 
@@ -711,9 +711,9 @@ You lead a team of 5 developers working on multiple projects. You want to ensure
 **Step-by-step Walkthrough:**
 
 1. Define team standards:
-   - All projects use git-worktree for feature development
-   - All projects use delay-tasks for CI/CD delays
-   - .NET projects use repomix-nuget for AI context generation
+   - All projects use sc-git-worktree for feature development
+   - All projects use sc-delay-tasks for CI/CD delays
+   - .NET projects use sc-repomix-nuget for AI context generation
    - All developers have sc-manage installed globally
 
 2. Create team template repository:
@@ -731,26 +731,26 @@ You lead a team of 5 developers working on multiple projects. You want to ensure
    # Synaptic Canvas Packages
 
    This repository uses the following Synaptic Canvas packages:
-   - git-worktree (v0.4.0) - Manage parallel feature development
-   - delay-tasks (v0.4.0) - Schedule CI/CD delays and polling
+   - sc-git-worktree (v0.5.0) - Manage parallel feature development
+   - sc-delay-tasks (v0.5.0) - Schedule CI/CD delays and polling
 
    For .NET projects, also install:
-   - repomix-nuget (v0.4.0) - Generate AI context for NuGet packages
+   - sc-repomix-nuget (v0.4.0) - Generate AI context for NuGet packages
 
    ## Installation
 
    ```bash
-   /sc-manage --install git-worktree --local
-   /sc-manage --install delay-tasks --local
-   /sc-manage --install repomix-nuget --local  # .NET projects only
+   /sc-manage --install sc-git-worktree --local
+   /sc-manage --install sc-delay-tasks --local
+   /sc-manage --install sc-repomix-nuget --local  # .NET projects only
    ```
 
    ## Usage
 
    See individual package documentation:
-   - `/git-worktree --help`
+   - `/sc-git-worktree --help`
    - `/delay --help`
-   - `/repomix-nuget --help`
+   - `/sc-repomix-nuget --help`
    EOF
    ```
 
@@ -763,7 +763,7 @@ You lead a team of 5 developers working on multiple projects. You want to ensure
 
    1. Create feature worktree:
       ```
-      /git-worktree --create feature-name develop
+      /sc-git-worktree --create feature-name develop
       ```
 
    2. Work in the isolated directory:
@@ -773,13 +773,13 @@ You lead a team of 5 developers working on multiple projects. You want to ensure
 
    3. When done, clean up:
       ```
-      /git-worktree --cleanup feature-name
+      /sc-git-worktree --cleanup feature-name
       ```
 
    ## Common Patterns
 
-   - Use `/delay` for CI/CD waits
-   - Use `/git-worktree --status` to check parallel work
+   - Use `/sc-delay` for CI/CD waits
+   - Use `/sc-git-worktree --status` to check parallel work
    - Use `/sc-manage --list` to verify installations
 
    EOF
@@ -794,13 +794,13 @@ You lead a team of 5 developers working on multiple projects. You want to ensure
    # Install standard Synaptic Canvas packages
    echo "Installing Synaptic Canvas packages..."
 
-   /sc-manage --install git-worktree --local
-   /sc-manage --install delay-tasks --local
+   /sc-manage --install sc-git-worktree --local
+   /sc-manage --install sc-delay-tasks --local
 
-   # For .NET projects, optionally install repomix-nuget
+   # For .NET projects, optionally install sc-repomix-nuget
    if find . -name "*.csproj" -o -name "*.sln" | grep -q .; then
-     echo "Detected .NET project, installing repomix-nuget..."
-     /sc-manage --install repomix-nuget --local
+     echo "Detected .NET project, installing sc-repomix-nuget..."
+     /sc-manage --install sc-repomix-nuget --local
    fi
 
    echo "Synaptic Canvas packages installed successfully"
@@ -827,9 +827,9 @@ You lead a team of 5 developers working on multiple projects. You want to ensure
    - sc-manage (package manager)
 
    **Per Project:**
-   - git-worktree (parallel feature development)
-   - delay-tasks (CI/CD automation)
-   - repomix-nuget (if .NET project)
+   - sc-git-worktree (parallel feature development)
+   - sc-delay-tasks (CI/CD automation)
+   - sc-repomix-nuget (if .NET project)
 
    Benefits:
    - Consistent development workflows
@@ -846,7 +846,7 @@ You lead a team of 5 developers working on multiple projects. You want to ensure
    for project in ~/projects/*/; do
      cd "$project"
      echo "=== $(basename $project) ==="
-     /sc-manage --list | grep -E "git-worktree|delay-tasks"
+     /sc-manage --list | grep -E "sc-git-worktree|sc-delay-tasks"
    done
    ```
 
@@ -921,8 +921,8 @@ You lead a team of 5 developers working on multiple projects. You want to ensure
 #!/bin/bash
 # new-project-setup.sh
 
-/sc-manage --install git-worktree --local
-/sc-manage --install delay-tasks --local
+/sc-manage --install sc-git-worktree --local
+/sc-manage --install sc-delay-tasks --local
 echo "Packages installed"
 /sc-manage --list
 ```
@@ -932,8 +932,8 @@ echo "Packages installed"
 - name: Install Synaptic Canvas packages
   run: |
     npx claude-code --exec-mode sync <<'SCRIPT'
-    /sc-manage --install git-worktree --local
-    /sc-manage --install delay-tasks --local
+    /sc-manage --install sc-git-worktree --local
+    /sc-manage --install sc-delay-tasks --local
     SCRIPT
 ```
 
@@ -943,8 +943,8 @@ echo "Packages installed"
 
 1. Install Synaptic Canvas packages:
    ```
-   /sc-manage --install git-worktree --local
-   /sc-manage --install delay-tasks --local
+   /sc-manage --install sc-git-worktree --local
+   /sc-manage --install sc-delay-tasks --local
    ```
 
 2. Verify installation:
@@ -954,7 +954,7 @@ echo "Packages installed"
 
 3. Start developing:
    ```
-   /git-worktree --create my-feature develop
+   /sc-git-worktree --create my-feature develop
    ```
 ```
 
@@ -986,11 +986,11 @@ echo "Packages installed"
 
 ### Scenario: Can't install local-only package globally
 ```
-Error: git-worktree can only be installed locally
+Error: sc-git-worktree can only be installed locally
 ```
 **Solution:** Use `--local` flag instead:
 ```
-/sc-manage --install git-worktree --local
+/sc-manage --install sc-git-worktree --local
 ```
 
 ### Scenario: Package installation fails
@@ -1016,8 +1016,8 @@ Error: git-worktree can only be installed locally
 
 ### Scenario: Unsure which scope to use
 **Solution:**
-- `--local`: package is repo-specific (git-worktree, repomix-nuget)
-- `--global`: package is general-purpose (sc-manage, delay-tasks)
+- `--local`: package is repo-specific (sc-git-worktree, sc-repomix-nuget)
+- `--global`: package is general-purpose (sc-manage, sc-delay-tasks)
 - Check package documentation: `/sc-manage --docs package-name`
 
 ---
@@ -1033,7 +1033,7 @@ python3 tools/sc-install.py install sc-manage --dest /Users/<you>/Documents/.cla
 /sc-manage --list
 
 # Install packages as needed
-/sc-manage --install git-worktree --local
+/sc-manage --install sc-git-worktree --local
 ```
 
 ### First Use
@@ -1043,8 +1043,8 @@ python3 tools/sc-install.py install sc-manage --dest /Users/<you>/Documents/.cla
 4. Use package: `/package-command --help`
 
 ### Common Starting Patterns
-- **First project**: `/sc-manage --install git-worktree --local`
-- **CI/CD automation**: `/sc-manage --install delay-tasks --local`
+- **First project**: `/sc-manage --install sc-git-worktree --local`
+- **CI/CD automation**: `/sc-manage --install sc-delay-tasks --local`
 - **Discovery**: `/sc-manage --list` then `/sc-manage --docs package-name`
 - **Team setup**: Create template with standard packages
 
@@ -1060,6 +1060,6 @@ python3 tools/sc-install.py install sc-manage --dest /Users/<you>/Documents/.cla
 
 ---
 
-**Version:** 0.4.0
+**Version:** 0.5.0
 **Last Updated:** 2025-12-02
 **Maintainer:** Synaptic Canvas Contributors

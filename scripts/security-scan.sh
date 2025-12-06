@@ -5,11 +5,11 @@
 # Purpose: Run comprehensive security checks on all packages in the repository
 #
 # Usage:
-#   ./scripts/security-scan.sh                       # Full scan
-#   ./scripts/security-scan.sh --quick               # Quick checks only
-#   ./scripts/security-scan.sh --json                # JSON output
-#   ./scripts/security-scan.sh --package delay-tasks # Single package
-#   ./scripts/security-scan.sh --help                # Show help
+#   ./scripts/security-scan.sh                          # Full scan
+#   ./scripts/security-scan.sh --quick                  # Quick checks only
+#   ./scripts/security-scan.sh --json                   # JSON output
+#   ./scripts/security-scan.sh --package sc-delay-tasks # Single package
+#   ./scripts/security-scan.sh --help                   # Show help
 #
 
 set -euo pipefail
@@ -115,7 +115,7 @@ Examples:
   ./scripts/security-scan.sh
   ./scripts/security-scan.sh --quick
   ./scripts/security-scan.sh --json > scan-results.json
-  ./scripts/security-scan.sh --package delay-tasks
+  ./scripts/security-scan.sh --package sc-delay-tasks
 
 Checks Performed:
   1. Secrets Detection      - Scan for hardcoded credentials

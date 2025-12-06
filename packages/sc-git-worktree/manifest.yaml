@@ -1,0 +1,46 @@
+name: sc-git-worktree
+version: 0.5.0
+description: >
+  Manage git worktrees with optional tracking: create, scan, cleanup, and abort
+  worktrees using a standard sibling folder layout with tracking documents.
+author: randlee
+license: MIT
+tags:
+  - git
+  - worktree
+  - workflow
+  - agents
+  - branching
+
+# Files to install (relative to package root)
+artifacts:
+  commands:
+    - commands/sc-git-worktree.md
+  skills:
+    - skills/sc-git-worktree/SKILL.md
+  agents:
+    - agents/sc-git-worktree-create.md
+    - agents/sc-git-worktree-scan.md
+    - agents/sc-git-worktree-cleanup.md
+    - agents/sc-git-worktree-abort.md
+
+# Token substitution (Tier 1 package)
+variables:
+  REPO_NAME:
+    auto: git-repo-basename
+    description: Repository name used for default worktree and tracking paths
+
+# Installation policy/metadata
+install:
+  scope: local-only  # this package may only be installed in a repo's .claude (not global)
+
+# Install-time options
+options:
+  no-tracking:
+    type: boolean
+    default: false
+    description: Disable worktree tracking document references
+
+# Runtime requirements
+requires:
+  - git >= 2.20

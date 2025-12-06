@@ -44,10 +44,10 @@ This document provides comprehensive version compatibility information for the S
 
 | Package | Tier | Current Version | Runtime Requirements |
 |---------|------|-----------------|----------------------|
-| `delay-tasks` | 0 | 0.4.0 | None |
+| `sc-delay-tasks` | 0 | 0.4.0 | None |
 | `sc-manage` | 0 | 0.4.0 | None |
-| `git-worktree` | 1 | 0.4.0 | git >= 2.27 |
-| `repomix-nuget` | 2 | 0.4.0 | python3 >= 3.12 |
+| `sc-git-worktree` | 1 | 0.4.0 | git >= 2.27 |
+| `sc-repomix-nuget` | 2 | 0.4.0 | python3 >= 3.12 |
 
 ---
 
@@ -65,7 +65,7 @@ This matrix shows which package versions are compatible with each marketplace ve
 
 ### Per-Package Compatibility
 
-#### delay-tasks
+#### sc-delay-tasks
 
 | Version | Marketplace | Status | Notes |
 |---------|-------------|--------|-------|
@@ -77,7 +77,7 @@ This matrix shows which package versions are compatible with each marketplace ve
 **Breaking Changes:** None yet
 **Last Updated:** 2025-12-02
 
-#### git-worktree
+#### sc-git-worktree
 
 | Version | Marketplace | Status | Notes |
 |---------|-------------|--------|-------|
@@ -101,7 +101,7 @@ This matrix shows which package versions are compatible with each marketplace ve
 **Breaking Changes:** None yet
 **Last Updated:** 2025-12-02
 
-#### repomix-nuget
+#### sc-repomix-nuget
 
 | Version | Marketplace | Status | Notes |
 |---------|-------------|--------|-------|
@@ -138,7 +138,7 @@ This matrix shows which package versions are compatible with each marketplace ve
 
 - No known critical issues
 - API stability may change before 1.0.0
-- Registry format backward compatibility not guaranteed until 1.0.0
+- v0.5.0 (SC-prefix) is a breaking change from v0.4.0 - updates required for all packages
 
 #### Breaking Change Policy
 
@@ -169,7 +169,7 @@ During beta (0.4.x):
 - Enhanced package discovery
 - New agent templates
 - Improved token substitution
-- Additional scheduling features in delay-tasks
+- Additional scheduling features in sc-delay-tasks
 - Worktree tracking improvements
 
 **Breaking Changes:** Minor CLI adjustments
@@ -313,13 +313,13 @@ The 1.0.0 release includes several breaking changes:
 3. **Review manifests**
    ```bash
    # Check each package's CHANGELOG.md for v1.0.0 section
-   cat packages/git-worktree/CHANGELOG.md | grep -A 20 "1.0.0"
+   cat packages/sc-git-worktree/CHANGELOG.md | grep -A 20 "1.0.0"
    ```
 
 4. **Reinstall packages with new version**
    ```bash
    rm -rf .claude
-   python3 tools/sc-install.py install --version 1.0.0 git-worktree delay-tasks sc-manage
+   python3 tools/sc-install.py install --version 1.0.0 sc-git-worktree sc-delay-tasks sc-manage
    ```
 
 5. **Validate new installation**
@@ -366,7 +366,7 @@ python3 tools/sc-install.py verify
 
 ### Scenario 3: Single Package Update
 
-**Example:** Update `git-worktree` from 0.4.0 to 0.5.0 only
+**Example:** Update `sc-git-worktree` from 0.4.0 to 0.5.0 only
 
 **Complexity:** Low
 **Risk:** Low
@@ -376,19 +376,19 @@ python3 tools/sc-install.py verify
 
 1. **Backup package**
    ```bash
-   tar -czf .claude/git-worktree-backup.tar.gz .claude/commands/git-worktree* .claude/agents/*worktree* .claude/skills/*worktree*
+   tar -czf .claude/sc-git-worktree-backup.tar.gz .claude/commands/sc-git-worktree* .claude/agents/*worktree* .claude/skills/*worktree*
    ```
 
 2. **Remove old version**
    ```bash
-   rm .claude/commands/git-worktree.md
+   rm .claude/commands/sc-git-worktree.md
    rm -rf .claude/agents/*worktree*
    rm -rf .claude/skills/*worktree*
    ```
 
 3. **Install new version**
    ```bash
-   python3 tools/sc-install.py install git-worktree --version 0.5.0
+   python3 tools/sc-install.py install sc-git-worktree --version 0.5.0
    ```
 
 4. **Verify**
@@ -399,7 +399,7 @@ python3 tools/sc-install.py verify
 
 5. **If fails, restore**
    ```bash
-   tar -xzf .claude/git-worktree-backup.tar.gz
+   tar -xzf .claude/sc-git-worktree-backup.tar.gz
    ```
 
 #### Cross-Package Dependencies
@@ -516,10 +516,10 @@ These combinations are tested and recommended for production use:
 ```yaml
 marketplace: 0.4.0
 packages:
-  - delay-tasks: 0.4.0
-  - git-worktree: 0.4.0
+  - sc-delay-tasks: 0.4.0
+  - sc-git-worktree: 0.4.0
   - sc-manage: 0.4.0
-  - repomix-nuget: 0.4.0
+  - sc-repomix-nuget: 0.4.0
 registry_format: 2.0.0
 cli_version: 0.4.0
 status: "Beta - Actively Tested"
@@ -534,8 +534,8 @@ status: "Beta - Actively Tested"
 ```yaml
 marketplace: 0.4.0
 packages:
-  - delay-tasks: 0.3.0        # UNSUPPORTED
-  - git-worktree: 0.4.0
+  - sc-delay-tasks: 0.3.0        # UNSUPPORTED
+  - sc-git-worktree: 0.4.0
   - sc-manage: 0.5.0          # NOT YET RELEASED
 registry_format: 2.0.0
 status: "UNSUPPORTED"
@@ -552,7 +552,7 @@ status: "UNSUPPORTED"
 ```yaml
 marketplace: 0.3.5
 packages:
-  - git-worktree: 0.4.0       # v0.4.0 requires marketplace 0.4.0+
+  - sc-git-worktree: 0.4.0       # v0.4.0 requires marketplace 0.4.0+
 registry_format: 1.0.0        # Old format incompatible
 status: "UNSUPPORTED"
 ```
@@ -565,21 +565,21 @@ status: "UNSUPPORTED"
 ```yaml
 marketplace: 1.0.0
 packages:
-  - git-worktree: 0.4.0       # v0.4.0 incompatible with marketplace 1.0.0
+  - sc-git-worktree: 0.4.0       # v0.4.0 incompatible with marketplace 1.0.0
   - sc-manage: 1.0.0          # Compatible
 registry_format: 3.0.0
 status: "UNSUPPORTED"
 ```
 
 **Error:** `Package v0.4.0 incompatible with marketplace v1.0.0`
-**Solution:** Upgrade git-worktree to 1.0.0+
+**Solution:** Upgrade sc-git-worktree to 1.0.0+
 
 #### Example 3: Runtime Dependency Missing
 
 ```yaml
 marketplace: 0.4.0
 packages:
-  - repomix-nuget: 0.4.0      # Requires python3 >= 3.12
+  - sc-repomix-nuget: 0.4.0      # Requires python3 >= 3.12
 installed_python: "3.8"       # Too old
 status: "UNSUPPORTED"
 ```
@@ -688,13 +688,13 @@ python3 tools/sc-install.py check-breaking-changes
 # Check if version combination is supported
 python3 tools/sc-install.py check-compatibility \
   --marketplace 0.4.0 \
-  --package git-worktree:0.4.0
+  --package sc-git-worktree:0.4.0
 
 # Check multiple packages
 python3 tools/sc-install.py check-compatibility \
   --marketplace 0.4.0 \
-  --package git-worktree:0.4.0 \
-  --package delay-tasks:0.4.0 \
+  --package sc-git-worktree:0.4.0 \
+  --package sc-delay-tasks:0.4.0 \
   --package sc-manage:0.4.0
 ```
 
@@ -723,8 +723,8 @@ jobs:
           python3 tools/sc-install.py verify --strict
           python3 tools/sc-install.py check-compatibility \
             --marketplace 0.4.0 \
-            --package git-worktree:0.4.0 \
-            --package delay-tasks:0.4.0 \
+            --package sc-git-worktree:0.4.0 \
+            --package sc-delay-tasks:0.4.0 \
             --package sc-manage:0.4.0
 ```
 
@@ -740,8 +740,8 @@ echo "Checking version compatibility..."
 
 MARKETPLACE_VERSION="0.4.0"
 EXPECTED_PACKAGES=(
-    "git-worktree:0.4.0"
-    "delay-tasks:0.4.0"
+    "sc-git-worktree:0.4.0"
+    "sc-delay-tasks:0.4.0"
     "sc-manage:0.4.0"
 )
 
@@ -775,10 +775,10 @@ mkdir -p .claude/{commands,skills,agents,scripts}
 # Install all packages
 python3 tools/sc-install.py install \
   --marketplace 0.4.0 \
-  delay-tasks \
-  git-worktree \
+  sc-delay-tasks \
+  sc-git-worktree \
   sc-manage \
-  repomix-nuget
+  sc-repomix-nuget
 
 # Verify
 python3 tools/sc-install.py verify
@@ -788,10 +788,10 @@ python3 tools/sc-install.py verify
 **Verification:**
 ```
 marketplace: 0.4.0 ✓
-delay-tasks: 0.4.0 ✓
-git-worktree: 0.4.0 ✓
+sc-delay-tasks: 0.4.0 ✓
+sc-git-worktree: 0.4.0 ✓
 sc-manage: 0.4.0 ✓
-repomix-nuget: 0.4.0 ✓
+sc-repomix-nuget: 0.4.0 ✓
 All versions compatible.
 ```
 
@@ -799,22 +799,22 @@ All versions compatible.
 
 ### Example 2: Supported - Single Package Installation
 
-**Goal:** Install only git-worktree
+**Goal:** Install only sc-git-worktree
 **Marketplace:** 0.4.0
-**Package:** git-worktree 0.4.0
+**Package:** sc-git-worktree 0.4.0
 
 ```bash
 # Install just one package
-python3 tools/sc-install.py install git-worktree
+python3 tools/sc-install.py install sc-git-worktree
 
 # Verify dependencies
-python3 tools/sc-install.py verify git-worktree
+python3 tools/sc-install.py verify sc-git-worktree
 ```
 
 **Result:** SUPPORTED ✓
 **Output:**
 ```
-Package: git-worktree 0.4.0
+Package: sc-git-worktree 0.4.0
 Status: Compatible with marketplace 0.4.0
 Dependencies satisfied:
   - git >= 2.27: Found git 2.43.0 ✓
@@ -826,12 +826,12 @@ Dependencies satisfied:
 
 **Goal:** Attempt installation with mismatched versions
 **Marketplace:** 0.4.0
-**Package:** git-worktree 0.3.0 (hypothetical)
+**Package:** sc-git-worktree 0.3.0 (hypothetical)
 
 ```bash
 python3 tools/sc-install.py install \
   --package-version 0.3.0 \
-  git-worktree
+  sc-git-worktree
 ```
 
 **Result:** UNSUPPORTED ✗
@@ -852,19 +852,19 @@ Use --force to override (not recommended)
 
 ### Example 4: Unsupported - Missing Runtime Dependency
 
-**Goal:** Install repomix-nuget without Python 3.12
+**Goal:** Install sc-repomix-nuget without Python 3.12
 **Marketplace:** 0.4.0
-**Package:** repomix-nuget 0.4.0
+**Package:** sc-repomix-nuget 0.4.0
 **System Python:** 3.8
 
 ```bash
-python3 tools/sc-install.py install repomix-nuget
+python3 tools/sc-install.py install sc-repomix-nuget
 ```
 
 **Result:** UNSUPPORTED ✗
 **Error Output:**
 ```
-ERROR: Runtime dependency not satisfied for repomix-nuget 0.4.0
+ERROR: Runtime dependency not satisfied for sc-repomix-nuget 0.4.0
 Missing: python3 >= 3.12
 Found: python3 3.8
 
@@ -877,7 +877,7 @@ To fix:
 
 Example:
   export PYTHON3_VERSION=/usr/local/bin/python3.12
-  python3 tools/sc-install.py install repomix-nuget
+  python3 tools/sc-install.py install sc-repomix-nuget
 ```
 
 ---
@@ -887,15 +887,15 @@ Example:
 **Goal:** Install packages from different tiers
 **Marketplace:** 0.4.0
 **Packages:**
-- delay-tasks (Tier 0 - no dependencies)
-- git-worktree (Tier 1 - token substitution)
-- repomix-nuget (Tier 2 - runtime dependencies)
+- sc-delay-tasks (Tier 0 - no dependencies)
+- sc-git-worktree (Tier 1 - token substitution)
+- sc-repomix-nuget (Tier 2 - runtime dependencies)
 
 ```bash
 python3 tools/sc-install.py install \
-  delay-tasks \
-  git-worktree \
-  repomix-nuget
+  sc-delay-tasks \
+  sc-git-worktree \
+  sc-repomix-nuget
 
 # Verify all
 python3 tools/sc-install.py verify
@@ -906,14 +906,14 @@ python3 tools/sc-install.py verify
 ```
 Installation Report:
   Tier 0 packages (no dependencies):
-    - delay-tasks 0.4.0 ✓
+    - sc-delay-tasks 0.4.0 ✓
 
   Tier 1 packages (token substitution):
-    - git-worktree 0.4.0 ✓
+    - sc-git-worktree 0.4.0 ✓
       Token substitution: REPO_NAME={{git-repo-basename}}
 
   Tier 2 packages (runtime dependencies):
-    - repomix-nuget 0.4.0 ✓
+    - sc-repomix-nuget 0.4.0 ✓
       Dependencies satisfied:
         - python3 >= 3.12: Found 3.12.1 ✓
 
@@ -924,14 +924,14 @@ Overall: SUPPORTED
 
 ### Example 6: Conditional Support - Partial Installation
 
-**Goal:** Install repomix-nuget only if Python 3.12+ available
+**Goal:** Install sc-repomix-nuget only if Python 3.12+ available
 **Marketplace:** 0.4.0
 
 ```bash
 #!/bin/bash
 
 # Install tier 0 and 1 packages (always available)
-python3 tools/sc-install.py install delay-tasks git-worktree
+python3 tools/sc-install.py install sc-delay-tasks sc-git-worktree
 
 # Check Python version for tier 2 package
 PYTHON_VERSION=$(python3 --version | awk '{print $2}')
@@ -939,11 +939,11 @@ MIN_PYTHON="3.12"
 
 if [[ "$PYTHON_VERSION" > "$MIN_PYTHON" ]]; then
     echo "Installing tier 2 packages..."
-    python3 tools/sc-install.py install repomix-nuget
+    python3 tools/sc-install.py install sc-repomix-nuget
 else
-    echo "Python $MIN_PYTHON+ required for repomix-nuget"
+    echo "Python $MIN_PYTHON+ required for sc-repomix-nuget"
     echo "Current: Python $PYTHON_VERSION"
-    echo "Skipping repomix-nuget installation"
+    echo "Skipping sc-repomix-nuget installation"
 fi
 ```
 
@@ -958,7 +958,7 @@ fi
 **Symptoms:**
 ```
 ERROR: Version conflict detected
-Package: git-worktree
+Package: sc-git-worktree
 Expected version: 0.4.0
 Found version: 0.3.0
 ```
@@ -974,15 +974,15 @@ cat .claude/agents/*worktree*.md | grep "version:"
 
 Option A - Reinstall correct version:
 ```bash
-rm .claude/commands/git-worktree.md
+rm .claude/commands/sc-git-worktree.md
 rm -rf .claude/agents/*worktree*
-python3 tools/sc-install.py install --force git-worktree
+python3 tools/sc-install.py install --force sc-git-worktree
 ```
 
 Option B - Update registry:
 ```bash
 python3 tools/sc-install.py update-registry --force
-python3 tools/sc-install.py install --force git-worktree
+python3 tools/sc-install.py install --force sc-git-worktree
 ```
 
 Option C - Manual fix:
@@ -990,7 +990,7 @@ Option C - Manual fix:
 # Edit frontmatter in artifact files
 # Change: version: 0.3.0
 # To: version: 0.4.0
-nano .claude/agents/git-worktree-*.md
+nano .claude/agents/sc-git-worktree-*.md
 ```
 
 ---
@@ -1030,7 +1030,7 @@ Option C - Manual update:
 # Or reinstall from scratch
 rm -rf .claude
 python3 tools/sc-install.py init
-python3 tools/sc-install.py install delay-tasks
+python3 tools/sc-install.py install sc-delay-tasks
 ```
 
 ---
@@ -1039,7 +1039,7 @@ python3 tools/sc-install.py install delay-tasks
 
 **Symptoms:**
 ```
-ERROR: Package repomix-nuget requires:
+ERROR: Package sc-repomix-nuget requires:
   python3 >= 3.12
   Found: python3 3.8
 ```
@@ -1071,15 +1071,15 @@ Option B - Use system Python:
 ```bash
 # If Python 3.12 installed elsewhere
 export PYTHON3_VERSION=/usr/local/bin/python3.12
-python3 tools/sc-install.py install repomix-nuget
+python3 tools/sc-install.py install sc-repomix-nuget
 ```
 
 Option C - Skip tier 2 packages:
 ```bash
 # Install only tier 0 and 1
 python3 tools/sc-install.py install \
-  delay-tasks \
-  git-worktree \
+  sc-delay-tasks \
+  sc-git-worktree \
   sc-manage
 ```
 
@@ -1107,7 +1107,7 @@ Option A - Reinstall package:
 ```bash
 rm .claude/commands/delay.md
 rm -rf .claude/agents/delay-*
-python3 tools/sc-install.py install --force delay-tasks
+python3 tools/sc-install.py install --force sc-delay-tasks
 ```
 
 Option B - Manual sync:
@@ -1119,7 +1119,7 @@ sed -i 's/version: 0.3.0/version: 0.4.0/g' .claude/agents/*.md
 
 Option C - Use sync script:
 ```bash
-python3 scripts/sync-versions.py --package delay-tasks --version 0.4.0
+python3 scripts/sync-versions.py --package sc-delay-tasks --version 0.4.0
 ```
 
 ---
@@ -1128,7 +1128,7 @@ python3 scripts/sync-versions.py --package delay-tasks --version 0.4.0
 
 **Symptoms:**
 ```
-ERROR: Token substitution failed for git-worktree
+ERROR: Token substitution failed for sc-git-worktree
 Variable: REPO_NAME
 Value expected: {git-repo-basename}
 Found: {{REPO_NAME}}
@@ -1149,7 +1149,7 @@ grep -r "{{REPO_NAME}}" .claude/
 Option A - Reinstall with token substitution:
 ```bash
 cd /path/to/git/repo
-python3 tools/sc-install.py install --force git-worktree
+python3 tools/sc-install.py install --force sc-git-worktree
 ```
 
 Option B - Manual substitution:
@@ -1158,7 +1158,7 @@ Option B - Manual substitution:
 REPO_NAME=$(basename $(git rev-parse --show-toplevel))
 
 # Replace tokens
-sed -i "s/{{REPO_NAME}}/$REPO_NAME/g" .claude/agents/git-worktree-*.md
+sed -i "s/{{REPO_NAME}}/$REPO_NAME/g" .claude/agents/sc-git-worktree-*.md
 ```
 
 Option C - Check environment:
@@ -1180,7 +1180,7 @@ git config user.email
 ```
 ERROR in CI/CD pipeline: Version compatibility check failed
 Required: marketplace 0.4.0, all packages 0.4.0
-Found: marketplace 0.4.0, git-worktree 0.3.0
+Found: marketplace 0.4.0, sc-git-worktree 0.3.0
 ```
 
 **Diagnosis:**
@@ -1194,7 +1194,7 @@ cat .github/workflows/version-check.yml
 Option A - Fix artifact in repo:
 ```bash
 # Update mismatched artifact
-git add .claude/agents/git-worktree-*.md
+git add .claude/agents/sc-git-worktree-*.md
 git commit -m "fix: update artifact version to 0.4.0"
 git push
 ```
@@ -1206,8 +1206,8 @@ Option B - Update CI check:
   run: |
     python3 tools/sc-install.py verify --strict \
       --marketplace 0.4.0 \
-      --package git-worktree:0.4.0 \
-      --package delay-tasks:0.4.0
+      --package sc-git-worktree:0.4.0 \
+      --package sc-delay-tasks:0.4.0
 ```
 
 Option C - Skip until fixed:
@@ -1287,7 +1287,7 @@ Option A - Downgrade single package:
 ```bash
 python3 tools/sc-install.py install \
   --package-version 0.4.0 \
-  git-worktree
+  sc-git-worktree
 
 # Verify
 python3 tools/sc-install.py verify
@@ -1304,7 +1304,7 @@ rm -rf .claude
 # Install old version
 python3 tools/sc-install.py init --version 0.4.0
 python3 tools/sc-install.py install --version 0.4.0 \
-  delay-tasks git-worktree sc-manage
+  sc-delay-tasks sc-git-worktree sc-manage
 ```
 
 Option C - Restore from backup:
@@ -1343,7 +1343,7 @@ sed -i 's/version: 0.4.0-rc1/version: 0.4.0/g' .claude/agents/*.md
 
 Option B - Update to latest:
 ```bash
-python3 tools/sc-install.py install --force git-worktree
+python3 tools/sc-install.py install --force sc-git-worktree
 ```
 
 Option C - Verify all versions:
@@ -1376,7 +1376,7 @@ python3 tools/sc-install.py status --verbose
 Option A - Complete the upgrade:
 ```bash
 python3 tools/sc-install.py install --force --version 0.5.0 \
-  delay-tasks git-worktree sc-manage
+  sc-delay-tasks sc-git-worktree sc-manage
 ```
 
 Option B - Rollback to previous state:
@@ -1397,7 +1397,7 @@ Option C - Clean slate:
 # Remove everything and restart
 rm -rf .claude
 python3 tools/sc-install.py init
-python3 tools/sc-install.py install delay-tasks
+python3 tools/sc-install.py install sc-delay-tasks
 ```
 
 ---

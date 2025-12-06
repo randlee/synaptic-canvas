@@ -91,32 +91,32 @@ class TestGlobalLocalFlags:
 
     def test_install_global_flag_creates_dir(self, temp_home, capsys):
         """Test that --global creates ~/.claude directory."""
-        rc = sc_install.main(["install", "delay-tasks", "--global"])
+        rc = sc_install.main(["install", "sc-delay-tasks", "--global"])
         assert rc == 0
         assert (temp_home / ".claude").exists()
         assert (temp_home / ".claude" / "agents").exists()
 
     def test_install_global_flag_uses_home_directory(self, temp_home, capsys):
         """Test that --global installs to home directory."""
-        rc = sc_install.main(["install", "delay-tasks", "--global"])
+        rc = sc_install.main(["install", "sc-delay-tasks", "--global"])
         assert rc == 0
-        assert (temp_home / ".claude" / "agents" / "delay-once.md").exists()
+        assert (temp_home / ".claude" / "agents" / "sc-delay-once.md").exists()
 
         out = capsys.readouterr().out
         assert str(temp_home / ".claude") in out
 
     def test_install_local_flag_creates_dir(self, temp_cwd, capsys):
         """Test that --local creates ./.claude-local directory."""
-        rc = sc_install.main(["install", "delay-tasks", "--local"])
+        rc = sc_install.main(["install", "sc-delay-tasks", "--local"])
         assert rc == 0
         assert (temp_cwd / ".claude-local").exists()
         assert (temp_cwd / ".claude-local" / "agents").exists()
 
     def test_install_local_flag_uses_project_local(self, temp_cwd, capsys):
         """Test that --local installs to project .claude-local."""
-        rc = sc_install.main(["install", "delay-tasks", "--local"])
+        rc = sc_install.main(["install", "sc-delay-tasks", "--local"])
         assert rc == 0
-        assert (temp_cwd / ".claude-local" / "agents" / "delay-once.md").exists()
+        assert (temp_cwd / ".claude-local" / "agents" / "sc-delay-once.md").exists()
 
         out = capsys.readouterr().out
         assert ".claude-local" in out
@@ -124,15 +124,15 @@ class TestGlobalLocalFlags:
     def test_install_dest_backward_compatible(self, temp_home, tmp_path, capsys):
         """Test that --dest flag still works (backward compatibility)."""
         dest = tmp_path / "custom" / ".claude"
-        rc = sc_install.main(["install", "delay-tasks", "--dest", str(dest)])
+        rc = sc_install.main(["install", "sc-delay-tasks", "--dest", str(dest)])
         assert rc == 0
-        assert (dest / "agents" / "delay-once.md").exists()
+        assert (dest / "agents" / "sc-delay-once.md").exists()
 
     def test_install_global_and_local_conflict_error(self, capsys):
         """Test that --global and --local together produce error."""
         # argparse will catch this as mutually exclusive
         with pytest.raises(SystemExit) as exc_info:
-            sc_install.main(["install", "delay-tasks", "--global", "--local"])
+            sc_install.main(["install", "sc-delay-tasks", "--global", "--local"])
 
         assert exc_info.value.code != 0
         err = capsys.readouterr().err
@@ -143,7 +143,7 @@ class TestGlobalLocalFlags:
         dest = temp_home / "custom" / ".claude"
         # argparse will catch this as mutually exclusive
         with pytest.raises(SystemExit) as exc_info:
-            sc_install.main(["install", "delay-tasks", "--global", "--dest", str(dest)])
+            sc_install.main(["install", "sc-delay-tasks", "--global", "--dest", str(dest)])
 
         assert exc_info.value.code != 0
         err = capsys.readouterr().err
@@ -153,7 +153,7 @@ class TestGlobalLocalFlags:
         """Test that install without any dest flag produces error."""
         # argparse requires one of the mutually exclusive group
         with pytest.raises(SystemExit) as exc_info:
-            sc_install.main(["install", "delay-tasks"])
+            sc_install.main(["install", "sc-delay-tasks"])
 
         assert exc_info.value.code != 0
         err = capsys.readouterr().err
@@ -161,7 +161,7 @@ class TestGlobalLocalFlags:
 
     def test_install_dest_validates_claude_in_path(self, capsys):
         """Test that --dest validates .claude in path."""
-        rc = sc_install.main(["install", "delay-tasks", "--dest", "/some/random/path"])
+        rc = sc_install.main(["install", "sc-delay-tasks", "--dest", "/some/random/path"])
         assert rc == 1
 
         err = capsys.readouterr().err
@@ -169,28 +169,28 @@ class TestGlobalLocalFlags:
 
     def test_install_global_expanduser_works(self, temp_home, capsys):
         """Test that --global properly expands ~ in paths."""
-        rc = sc_install.main(["install", "delay-tasks", "--global"])
+        rc = sc_install.main(["install", "sc-delay-tasks", "--global"])
         assert rc == 0
 
         # Should use actual home, not literal ~
-        assert (temp_home / ".claude" / "agents" / "delay-once.md").exists()
+        assert (temp_home / ".claude" / "agents" / "sc-delay-once.md").exists()
 
     def test_install_local_uses_cwd(self, temp_cwd, capsys):
         """Test that --local uses current working directory."""
-        rc = sc_install.main(["install", "delay-tasks", "--local"])
+        rc = sc_install.main(["install", "sc-delay-tasks", "--local"])
         assert rc == 0
 
         # Should be in cwd
         local_path = Path.cwd() / ".claude-local"
         assert local_path.exists()
-        assert (local_path / "agents" / "delay-once.md").exists()
+        assert (local_path / "agents" / "sc-delay-once.md").exists()
 
     def test_install_multiple_flags_error(self, temp_home, capsys):
         """Test that multiple destination flags produce error."""
         dest = temp_home / ".claude"
         # argparse should catch this as mutually exclusive
         with pytest.raises(SystemExit) as exc_info:
-            sc_install.main(["install", "delay-tasks", "--global", "--local", "--dest", str(dest)])
+            sc_install.main(["install", "sc-delay-tasks", "--global", "--local", "--dest", str(dest)])
 
         assert exc_info.value.code != 0
         err = capsys.readouterr().err
@@ -573,7 +573,7 @@ class TestInstallWithRegistries:
 
     def test_install_global_creates_structure(self, temp_home, capsys):
         """Test that --global install creates proper directory structure."""
-        rc = sc_install.main(["install", "delay-tasks", "--global"])
+        rc = sc_install.main(["install", "sc-delay-tasks", "--global"])
         assert rc == 0
 
         base = temp_home / ".claude"
@@ -583,7 +583,7 @@ class TestInstallWithRegistries:
 
     def test_install_local_creates_structure(self, temp_cwd, capsys):
         """Test that --local install creates proper directory structure."""
-        rc = sc_install.main(["install", "delay-tasks", "--local"])
+        rc = sc_install.main(["install", "sc-delay-tasks", "--local"])
         assert rc == 0
 
         base = temp_cwd / ".claude-local"
@@ -593,86 +593,86 @@ class TestInstallWithRegistries:
 
     def test_install_global_files_installed(self, temp_home):
         """Test that --global installs all package files."""
-        rc = sc_install.main(["install", "delay-tasks", "--global"])
+        rc = sc_install.main(["install", "sc-delay-tasks", "--global"])
         assert rc == 0
 
         base = temp_home / ".claude"
-        assert (base / "agents" / "delay-once.md").exists()
-        assert (base / "scripts" / "delay-run.py").exists()
+        assert (base / "agents" / "sc-delay-once.md").exists()
+        assert (base / "scripts" / "sc-delay-run.py").exists()
 
     def test_install_local_files_installed(self, temp_cwd):
         """Test that --local installs all package files."""
-        rc = sc_install.main(["install", "delay-tasks", "--local"])
+        rc = sc_install.main(["install", "sc-delay-tasks", "--local"])
         assert rc == 0
 
         base = temp_cwd / ".claude-local"
-        assert (base / "agents" / "delay-once.md").exists()
-        assert (base / "scripts" / "delay-run.py").exists()
+        assert (base / "agents" / "sc-delay-once.md").exists()
+        assert (base / "scripts" / "sc-delay-run.py").exists()
 
     def test_install_global_respects_force_flag(self, temp_home, capsys):
         """Test that --global respects --force flag."""
         # Install once
-        rc = sc_install.main(["install", "delay-tasks", "--global"])
+        rc = sc_install.main(["install", "sc-delay-tasks", "--global"])
         assert rc == 0
 
         # Modify file
-        agent_file = temp_home / ".claude" / "agents" / "delay-once.md"
+        agent_file = temp_home / ".claude" / "agents" / "sc-delay-once.md"
         agent_file.write_text("modified", encoding="utf-8")
 
         # Install without --force (should skip)
-        rc = sc_install.main(["install", "delay-tasks", "--global"])
+        rc = sc_install.main(["install", "sc-delay-tasks", "--global"])
         assert rc == 0
         assert agent_file.read_text(encoding="utf-8") == "modified"
 
         # Install with --force (should overwrite)
-        rc = sc_install.main(["install", "delay-tasks", "--global", "--force"])
+        rc = sc_install.main(["install", "sc-delay-tasks", "--global", "--force"])
         assert rc == 0
         assert agent_file.read_text(encoding="utf-8") != "modified"
 
     def test_install_local_respects_force_flag(self, temp_cwd, capsys):
         """Test that --local respects --force flag."""
         # Install once
-        rc = sc_install.main(["install", "delay-tasks", "--local"])
+        rc = sc_install.main(["install", "sc-delay-tasks", "--local"])
         assert rc == 0
 
         # Modify file
-        agent_file = temp_cwd / ".claude-local" / "agents" / "delay-once.md"
+        agent_file = temp_cwd / ".claude-local" / "agents" / "sc-delay-once.md"
         agent_file.write_text("modified", encoding="utf-8")
 
         # Install without --force (should skip)
-        rc = sc_install.main(["install", "delay-tasks", "--local"])
+        rc = sc_install.main(["install", "sc-delay-tasks", "--local"])
         assert rc == 0
         assert agent_file.read_text(encoding="utf-8") == "modified"
 
         # Install with --force (should overwrite)
-        rc = sc_install.main(["install", "delay-tasks", "--local", "--force"])
+        rc = sc_install.main(["install", "sc-delay-tasks", "--local", "--force"])
         assert rc == 0
         assert agent_file.read_text(encoding="utf-8") != "modified"
 
     def test_install_global_maintains_executable_bit(self, temp_home):
         """Test that --global maintains executable bit on scripts."""
-        rc = sc_install.main(["install", "delay-tasks", "--global"])
+        rc = sc_install.main(["install", "sc-delay-tasks", "--global"])
         assert rc == 0
 
-        script = temp_home / ".claude" / "scripts" / "delay-run.py"
+        script = temp_home / ".claude" / "scripts" / "sc-delay-run.py"
         assert os.access(script, os.X_OK)
 
     def test_install_local_maintains_executable_bit(self, temp_cwd):
         """Test that --local maintains executable bit on scripts."""
-        rc = sc_install.main(["install", "delay-tasks", "--local"])
+        rc = sc_install.main(["install", "sc-delay-tasks", "--local"])
         assert rc == 0
 
-        script = temp_cwd / ".claude-local" / "scripts" / "delay-run.py"
+        script = temp_cwd / ".claude-local" / "scripts" / "sc-delay-run.py"
         assert os.access(script, os.X_OK)
 
     def test_install_global_expands_repo_name_token(self, temp_home, git_repo):
         """Test that --global expands {{REPO_NAME}} token."""
         # Install to git repo
         dest = git_repo / ".claude"
-        rc = sc_install.main(["install", "git-worktree", "--dest", str(dest)])
+        rc = sc_install.main(["install", "sc-git-worktree", "--dest", str(dest)])
         assert rc == 0
 
-        cmd_file = dest / "commands" / "git-worktree.md"
+        cmd_file = dest / "commands" / "sc-git-worktree.md"
         content = cmd_file.read_text(encoding="utf-8")
         assert "{{REPO_NAME}}" not in content
         assert "repo-worktrees" in content
@@ -682,35 +682,35 @@ class TestInstallWithRegistries:
         # Change to git repo directory
         monkeypatch.chdir(git_repo)
 
-        rc = sc_install.main(["install", "git-worktree", "--local"])
+        rc = sc_install.main(["install", "sc-git-worktree", "--local"])
         assert rc == 0
 
-        cmd_file = git_repo / ".claude-local" / "commands" / "git-worktree.md"
+        cmd_file = git_repo / ".claude-local" / "commands" / "sc-git-worktree.md"
         content = cmd_file.read_text(encoding="utf-8")
         assert "{{REPO_NAME}}" not in content
         assert "repo-worktrees" in content
 
     def test_install_global_updates_agent_registry(self, temp_home):
         """Test that --global updates agent registry."""
-        rc = sc_install.main(["install", "delay-tasks", "--global"])
+        rc = sc_install.main(["install", "sc-delay-tasks", "--global"])
         assert rc == 0
 
         registry = temp_home / ".claude" / "agents" / "registry.yaml"
         assert registry.exists()
 
         content = registry.read_text(encoding="utf-8")
-        assert "delay-once" in content
+        assert "sc-delay-once" in content
 
     def test_install_local_updates_agent_registry(self, temp_cwd):
         """Test that --local updates agent registry."""
-        rc = sc_install.main(["install", "delay-tasks", "--local"])
+        rc = sc_install.main(["install", "sc-delay-tasks", "--local"])
         assert rc == 0
 
         registry = temp_cwd / ".claude-local" / "agents" / "registry.yaml"
         assert registry.exists()
 
         content = registry.read_text(encoding="utf-8")
-        assert "delay-once" in content
+        assert "sc-delay-once" in content
 
 
 # ==============================================================================
@@ -744,7 +744,7 @@ class TestErrorHandling:
 
     def test_dest_without_claude_rejected(self, capsys):
         """Test that --dest without .claude in path is rejected."""
-        rc = sc_install.main(["install", "delay-tasks", "--dest", "/random/path"])
+        rc = sc_install.main(["install", "sc-delay-tasks", "--dest", "/random/path"])
         assert rc == 1
 
         err = capsys.readouterr().err
@@ -897,19 +897,19 @@ class TestBackwardCompatibility:
     def test_existing_dest_flag_still_works(self, temp_home, tmp_path, capsys):
         """Test that existing --dest flag still works as before."""
         dest = tmp_path / "custom" / ".claude"
-        rc = sc_install.main(["install", "delay-tasks", "--dest", str(dest)])
+        rc = sc_install.main(["install", "sc-delay-tasks", "--dest", str(dest)])
         assert rc == 0
-        assert (dest / "agents" / "delay-once.md").exists()
+        assert (dest / "agents" / "sc-delay-once.md").exists()
 
     def test_dest_flag_takes_precedence(self, temp_home, capsys):
         """Test that --dest works independently."""
         dest = temp_home / "custom" / ".claude"
-        rc = sc_install.main(["install", "delay-tasks", "--dest", str(dest)])
+        rc = sc_install.main(["install", "sc-delay-tasks", "--dest", str(dest)])
         assert rc == 0
 
         # Should be in custom location, not ~/.claude
-        assert (dest / "agents" / "delay-once.md").exists()
-        assert not (temp_home / ".claude" / "agents" / "delay-once.md").exists()
+        assert (dest / "agents" / "sc-delay-once.md").exists()
+        assert not (temp_home / ".claude" / "agents" / "sc-delay-once.md").exists()
 
     def test_old_tests_still_pass(self):
         """Verify that original test suite patterns still work."""
@@ -917,14 +917,14 @@ class TestBackwardCompatibility:
         rc = sc_install.main(["list"])
         assert rc == 0
 
-        rc = sc_install.main(["info", "delay-tasks"])
+        rc = sc_install.main(["info", "sc-delay-tasks"])
         assert rc == 0
 
     def test_install_without_flags_requires_dest(self, capsys):
         """Test that install without any flag requires one."""
         # argparse requires one of the mutually exclusive group
         with pytest.raises(SystemExit) as exc_info:
-            sc_install.main(["install", "delay-tasks"])
+            sc_install.main(["install", "sc-delay-tasks"])
 
         assert exc_info.value.code != 0
         err = capsys.readouterr().err
@@ -934,12 +934,12 @@ class TestBackwardCompatibility:
         """Test that uninstall still requires --dest flag."""
         # Install first
         dest = temp_home / ".claude"
-        rc = sc_install.main(["install", "delay-tasks", "--dest", str(dest)])
+        rc = sc_install.main(["install", "sc-delay-tasks", "--dest", str(dest)])
         assert rc == 0
 
         # Uninstall without --dest should fail (argparse catches this)
         with pytest.raises(SystemExit) as exc_info:
-            sc_install.main(["uninstall", "delay-tasks"])
+            sc_install.main(["uninstall", "sc-delay-tasks"])
 
         assert exc_info.value.code != 0
 
@@ -949,7 +949,7 @@ class TestBackwardCompatibility:
         rc = sc_install.main(["list"])
         assert rc == 0
 
-        rc = sc_install.main(["info", "delay-tasks"])
+        rc = sc_install.main(["info", "sc-delay-tasks"])
         assert rc == 0
 
     def test_registry_commands_independent_of_install(self, temp_home, capsys):
@@ -962,23 +962,23 @@ class TestBackwardCompatibility:
         assert rc == 0
 
         # Install should still work
-        rc = sc_install.main(["install", "delay-tasks", "--global"])
+        rc = sc_install.main(["install", "sc-delay-tasks", "--global"])
         assert rc == 0
 
     def test_mixed_old_new_style_install(self, temp_home, temp_cwd, capsys):
         """Test that old --dest and new --global can coexist."""
         # Install with --dest
         dest1 = temp_home / "custom1" / ".claude"
-        rc = sc_install.main(["install", "delay-tasks", "--dest", str(dest1)])
+        rc = sc_install.main(["install", "sc-delay-tasks", "--dest", str(dest1)])
         assert rc == 0
 
         # Install with --global
-        rc = sc_install.main(["install", "git-worktree", "--global"])
+        rc = sc_install.main(["install", "sc-git-worktree", "--global"])
         assert rc == 0
 
         # Both should exist
-        assert (dest1 / "agents" / "delay-once.md").exists()
-        assert (temp_home / ".claude" / "commands" / "git-worktree.md").exists()
+        assert (dest1 / "agents" / "sc-delay-once.md").exists()
+        assert (temp_home / ".claude" / "commands" / "sc-git-worktree.md").exists()
 
 
 # ============================================================================
@@ -1912,23 +1912,23 @@ def sample_registry_data():
     return {
         "packages": [
             {
-                "name": "delay-tasks",
+                "name": "sc-delay-tasks",
                 "version": "1.0.0",
                 "description": "Delay tasks in your workflow",
                 "tier": "premium",
                 "author": "Synaptic Canvas",
-                "source": "https://github.com/example/delay-tasks",
-                "download_url": "https://github.com/example/delay-tasks/archive/v1.0.0.zip",
+                "source": "https://github.com/example/sc-delay-tasks",
+                "download_url": "https://github.com/example/sc-delay-tasks/archive/v1.0.0.zip",
                 "dependencies": []
             },
             {
-                "name": "git-worktree",
+                "name": "sc-git-worktree",
                 "version": "2.1.0",
                 "description": "Git worktree management tools",
                 "tier": "community",
                 "author": "Community",
-                "source": "https://github.com/example/git-worktree",
-                "download_url": "https://github.com/example/git-worktree/archive/v2.1.0.zip",
+                "source": "https://github.com/example/sc-git-worktree",
+                "download_url": "https://github.com/example/sc-git-worktree/archive/v2.1.0.zip",
                 "dependencies": ["git"]
             },
             {
@@ -2052,9 +2052,9 @@ class TestRemoteRegistryFetching:
         """Test parsing valid registry metadata."""
         packages = sc_install._parse_registry_metadata(sample_registry_data)
         assert len(packages) == 3
-        assert "delay-tasks" in packages
-        assert packages["delay-tasks"]["version"] == "1.0.0"
-        assert packages["delay-tasks"]["tier"] == "premium"
+        assert "sc-delay-tasks" in packages
+        assert packages["sc-delay-tasks"]["version"] == "1.0.0"
+        assert packages["sc-delay-tasks"]["tier"] == "premium"
 
     def test_parse_registry_metadata_missing_fields(self):
         """Test parsing with missing fields."""
@@ -2080,7 +2080,7 @@ class TestRemoteRegistryFetching:
         packages = sc_install._parse_registry_metadata(sample_registry_data)
         matches = sc_install._search_packages("DELAY", packages)
         assert len(matches) == 1
-        assert matches[0]["name"] == "delay-tasks"
+        assert matches[0]["name"] == "sc-delay-tasks"
 
     def test_search_packages_substring_match(self, sample_registry_data):
         """Test substring matching."""
@@ -2290,7 +2290,7 @@ class TestSearchCommand:
         rc = sc_install.main(["search", "work"])
         assert rc == 0
         captured = capsys.readouterr()
-        # Should find git-worktree
+        # Should find sc-git-worktree
         assert "worktree" in captured.out or "git" in captured.out
 
 
@@ -2303,7 +2303,7 @@ class TestInfoRemote:
 
     def test_info_remote_single_package(self, temp_home, mock_registry, capsys):
         """Test getting info for remote package."""
-        rc = sc_install.main(["info", "delay-tasks", "--registry", "test-registry"])
+        rc = sc_install.main(["info", "sc-delay-tasks", "--registry", "test-registry"])
         assert rc == 0
         captured = capsys.readouterr()
         assert "delay-tasks" in captured.out
@@ -2318,7 +2318,7 @@ class TestInfoRemote:
 
     def test_info_remote_invalid_registry_error(self, temp_home, config_file, capsys):
         """Test error for invalid registry."""
-        rc = sc_install.main(["info", "delay-tasks", "--registry", "nonexistent"])
+        rc = sc_install.main(["info", "sc-delay-tasks", "--registry", "nonexistent"])
         assert rc == 1
         captured = capsys.readouterr()
         assert "not found" in captured.err.lower()
@@ -2326,14 +2326,14 @@ class TestInfoRemote:
     def test_info_remote_network_error_handled(self, temp_home, config_file, capsys):
         """Test handling of network errors."""
         sc_install.cmd_registry_add("bad-info", "https://invalid.example.com")
-        rc = sc_install.main(["info", "delay-tasks", "--registry", "bad-info"])
+        rc = sc_install.main(["info", "sc-delay-tasks", "--registry", "bad-info"])
         assert rc == 1
         captured = capsys.readouterr()
         assert "failed" in captured.err.lower()
 
     def test_info_remote_shows_full_metadata(self, temp_home, mock_registry, capsys):
         """Test that full metadata is shown."""
-        rc = sc_install.main(["info", "delay-tasks", "--registry", "test-registry"])
+        rc = sc_install.main(["info", "sc-delay-tasks", "--registry", "test-registry"])
         assert rc == 0
         captured = capsys.readouterr()
         assert "version" in captured.out.lower()
@@ -2341,16 +2341,16 @@ class TestInfoRemote:
 
     def test_info_remote_shows_dependencies(self, temp_home, mock_registry, capsys):
         """Test showing dependencies."""
-        rc = sc_install.main(["info", "git-worktree", "--registry", "test-registry"])
+        rc = sc_install.main(["info", "sc-git-worktree", "--registry", "test-registry"])
         assert rc == 0
         captured = capsys.readouterr()
-        # git-worktree has dependencies
+        # sc-git-worktree has dependencies
         if "dependencies" in captured.out.lower() or "depend" in captured.out.lower():
             assert "git" in captured.out.lower()
 
     def test_info_remote_shows_version_info(self, temp_home, mock_registry, capsys):
         """Test version information display."""
-        rc = sc_install.main(["info", "delay-tasks", "--registry", "test-registry"])
+        rc = sc_install.main(["info", "sc-delay-tasks", "--registry", "test-registry"])
         assert rc == 0
         captured = capsys.readouterr()
         assert "1.0.0" in captured.out
@@ -2374,13 +2374,13 @@ class TestRemoteInstallation:
 
     def test_install_from_remote_registry(self, temp_home, mock_registry, capsys):
         """Test installing from remote registry."""
-        rc = sc_install.main(["install", "delay-tasks", "--global", "--registry", "test-registry"])
+        rc = sc_install.main(["install", "sc-delay-tasks", "--global", "--registry", "test-registry"])
         # Currently not fully implemented, should return error or warning
         assert rc == 1 or "not yet" in capsys.readouterr().err.lower()
 
     def test_install_remote_downloads_package(self, temp_home, mock_registry, capsys):
         """Test that remote install attempts download."""
-        rc = sc_install.main(["install", "delay-tasks", "--global", "--registry", "test-registry"])
+        rc = sc_install.main(["install", "sc-delay-tasks", "--global", "--registry", "test-registry"])
         # Implementation pending
         captured = capsys.readouterr()
         assert rc != 0 or "not yet" in captured.err.lower()
@@ -2394,7 +2394,7 @@ class TestRemoteInstallation:
 
     def test_install_remote_invalid_registry_error(self, temp_home, config_file, capsys):
         """Test error for invalid registry."""
-        rc = sc_install.main(["install", "delay-tasks", "--global", "--registry", "nonexistent"])
+        rc = sc_install.main(["install", "sc-delay-tasks", "--global", "--registry", "nonexistent"])
         assert rc == 1
         captured = capsys.readouterr()
         assert "not found" in captured.err.lower()
@@ -2402,7 +2402,7 @@ class TestRemoteInstallation:
     def test_install_prefers_local_over_remote(self, temp_home, mock_registry, capsys):
         """Test that local packages are preferred."""
         # If delay-tasks exists locally, it should be used
-        rc = sc_install.main(["install", "delay-tasks", "--global"])
+        rc = sc_install.main(["install", "sc-delay-tasks", "--global"])
         # Will use local if available
         assert rc in [0, 1]  # Either installs or package not found
 
@@ -2414,19 +2414,19 @@ class TestRemoteInstallation:
 
     def test_install_remote_respects_global_flag(self, temp_home, mock_registry):
         """Test --global flag with remote."""
-        rc = sc_install.main(["install", "delay-tasks", "--global", "--registry", "test-registry"])
+        rc = sc_install.main(["install", "sc-delay-tasks", "--global", "--registry", "test-registry"])
         # Implementation pending
         assert rc == 1
 
     def test_install_remote_respects_local_flag(self, temp_home, temp_cwd, mock_registry):
         """Test --local flag with remote."""
-        rc = sc_install.main(["install", "delay-tasks", "--local", "--registry", "test-registry"])
+        rc = sc_install.main(["install", "sc-delay-tasks", "--local", "--registry", "test-registry"])
         # Implementation pending
         assert rc == 1
 
     def test_install_remote_with_force_flag(self, temp_home, mock_registry):
         """Test --force flag with remote."""
-        rc = sc_install.main(["install", "delay-tasks", "--global", "--force", "--registry", "test-registry"])
+        rc = sc_install.main(["install", "sc-delay-tasks", "--global", "--force", "--registry", "test-registry"])
         # Implementation pending
         assert rc == 1
 
@@ -2441,14 +2441,14 @@ class TestRemoteInstallation:
     def test_install_remote_verifies_integrity(self, temp_home, mock_registry):
         """Test integrity verification (future feature)."""
         # Placeholder for future implementation
-        rc = sc_install.main(["install", "delay-tasks", "--global", "--registry", "test-registry"])
+        rc = sc_install.main(["install", "sc-delay-tasks", "--global", "--registry", "test-registry"])
         assert rc == 1  # Not implemented yet
 
     def test_install_remote_performance(self, temp_home, mock_registry):
         """Test installation performance."""
         import time
         start = time.time()
-        rc = sc_install.main(["install", "delay-tasks", "--global", "--registry", "test-registry"])
+        rc = sc_install.main(["install", "sc-delay-tasks", "--global", "--registry", "test-registry"])
         elapsed = time.time() - start
         # Should complete quickly even if not implemented
         assert elapsed < 5.0

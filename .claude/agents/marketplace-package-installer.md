@@ -319,7 +319,7 @@ Successfully installed delay-tasks (v0.4.0)
 
 **User request:**
 ```
-/marketplace install git-worktree
+/marketplace install sc-git-worktree
 ```
 
 **Agent action:**
@@ -330,7 +330,7 @@ Successfully installed delay-tasks (v0.4.0)
 
 **Response:**
 ```
-Installing git-worktree...
+Installing sc-git-worktree...
 
 Where would you like to install this package?
 1. Global (--global) - Available in all projects
@@ -368,7 +368,7 @@ Successfully updated delay-tasks to v0.4.0
 
 **User request:**
 ```
-Install repomix-nuget globally
+Install sc-repomix-nuget globally
 ```
 
 **Agent action:**
@@ -380,7 +380,7 @@ Install repomix-nuget globally
 
 **Response:**
 ```
-Warning: repomix-nuget requires Python 3.12+
+Warning: sc-repomix-nuget requires Python 3.12+
 Found: Python 3.11.5
 
 This package may not work correctly with your Python version.

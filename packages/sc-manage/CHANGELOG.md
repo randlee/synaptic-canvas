@@ -26,7 +26,7 @@ Beta release - initial v0.x publication. Recommended for global installation.
   - Filter by tag or search criteria
   - Respect package installation policies
 - **sc-package-install** agent: Install packages into local or global scopes
-  - Enforce package scope policies (e.g., git-worktree is local-only)
+  - Enforce package scope policies (e.g., sc-git-worktree is local-only)
   - Automatic token substitution for Tier 1 packages ({{REPO_NAME}}, etc.)
   - Validate prerequisites before installation
   - Provide installation summary and next steps
@@ -122,17 +122,17 @@ python3 tools/sc-install.py uninstall sc-manage --dest /path/to/your-repo/.claud
 # List all available packages
 /sc-manage --list
 
-# Install delay-tasks globally
-/sc-manage --install delay-tasks --global
+# Install sc-delay-tasks globally
+/sc-manage --install sc-delay-tasks --global
 
-# Install git-worktree locally in current repo
-/sc-manage --install git-worktree --local
+# Install sc-git-worktree locally in current repo
+/sc-manage --install sc-git-worktree --local
 
-# View documentation and ask questions about repomix-nuget
-/sc-manage --docs repomix-nuget
+# View documentation and ask questions about sc-repomix-nuget
+/sc-manage --docs sc-repomix-nuget
 
 # Uninstall a package from global scope
-/sc-manage --uninstall delay-tasks --global
+/sc-manage --uninstall sc-delay-tasks --global
 ```
 
 ### Future Roadmap

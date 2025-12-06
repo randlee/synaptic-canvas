@@ -24,17 +24,17 @@ It does not run the Task tool itself; it prepares the prompt and records an audi
 ```yaml
 # .claude/agents/registry.yaml
 agents:
-  worktree-create:
+  sc-worktree-create:
     version: 1.0.0
-    path: .claude/agents/worktree-create.md
+    path: .claude/agents/sc-worktree-create.md
 skills:
-  managing-worktrees:
+  sc-managing-worktrees:
     depends_on:
-      worktree-create: "1.x"
+      sc-worktree-create: "1.x"
 ```
 
 Note: Path format
-- Registry paths are relative to the project root (e.g., `.claude/agents/worktree-create.md`).
+- Registry paths are relative to the project root (e.g., `.claude/agents/sc-worktree-create.md`).
 
 2) Validate versions (frontmatter vs registry)
 
@@ -45,7 +45,7 @@ bash scripts/validate-agents.sh
 3) Prepare a Task tool prompt (no execution yet)
 
 ```bash
-python3 tools/agent-runner.py invoke --agent worktree-create \
+python3 tools/agent-runner.py invoke --agent sc-worktree-create \
   --param branch=feature-x --param base=main --timeout 120
 ```
 
@@ -55,14 +55,14 @@ Example output (trimmed):
 {
   "ok": true,
   "agent": {
-    "name": "worktree-create",
-    "path": "/abs/path/.claude/agents/worktree-create.md",
+    "name": "sc-worktree-create",
+    "path": "/abs/path/.claude/agents/sc-worktree-create.md",
     "version": "1.0.0",
     "sha256": "1f3a...c9"
   },
   "task_prompt": "Load ... and execute with parameters...",
   "timeout_s": 120,
-  "audit_path": ".claude/state/logs/agent-runner-worktree-create-...json"
+  "audit_path": ".claude/state/logs/agent-runner-sc-worktree-create-...json"
 }
 ```
 
@@ -71,7 +71,7 @@ Example output (trimmed):
 Prefer this phrasing:
 
 ```markdown
-Use the Agent Runner to invoke `worktree-create` per `.claude/agents/registry.yaml` with parameters ...
+Use the Agent Runner to invoke `sc-worktree-create` per `.claude/agents/registry.yaml` with parameters ...
 Then run the Task tool with the provided task_prompt and return the agent's fenced JSON.
 ```
 

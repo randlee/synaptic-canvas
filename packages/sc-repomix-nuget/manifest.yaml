@@ -1,0 +1,32 @@
+name: sc-repomix-nuget
+version: 0.5.0
+description: >
+  Generate AI-optimized NuGet package context using Repomix with NuGet metadata
+  (dependencies, dependents, namespaces, frameworks). Produces a compressed API surface.
+author: synaptic-canvas
+license: MIT
+tags:
+  - nuget
+  - repomix
+  - documentation
+  - api
+  - context
+install:
+  scope: local-only
+artifacts:
+  commands:
+    - commands/sc-repomix-nuget.md
+  skills:
+    - skills/sc-repomix-nuget/SKILL.md
+    - skills/sc-repomix-nuget/output-formats.md
+    - skills/sc-repomix-nuget/registry-schema.md
+  agents:
+    - agents/sc-repomix-nuget-generate.md
+    - agents/sc-repomix-nuget-validate.md
+    - agents/sc-repomix-nuget-analyze.md
+  scripts:
+    - scripts/generate.sh
+    - scripts/validate-registry.sh
+requires:
+  - node >= 18
+  - bash

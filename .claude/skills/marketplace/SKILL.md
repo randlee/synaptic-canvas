@@ -208,12 +208,12 @@ Claude: Searching marketplace for git-related packages...
 
 Found 1 package:
 
-• git-worktree (v0.4.0)
+• sc-git-worktree (v0.4.0)
   "Create, manage, scan, and clean up git worktrees for parallel development"
   Tags: git, worktree, branches, development, parallel
   Artifacts: 1 command, 1 skill, 4 agents
 
-Install with: /marketplace install git-worktree --global
+Install with: /marketplace install sc-git-worktree --global
 ```
 
 ## Integration with CLI

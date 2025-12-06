@@ -230,7 +230,7 @@ ls packages/
 
 **Expected Output:**
 ```
-delay-tasks/  git-worktree/  repomix-nuget/  sc-manage/
+sc-delay-tasks/  sc-git-worktree/  sc-repomix-nuget/  sc-manage/
 ```
 
 **✅ Success Criteria:** All 4 packages are present
@@ -346,7 +346,7 @@ If validation fails, see [Registry Integrity Check](#registry-integrity-check) w
 
 ### Step 10: Check for Node.js (Optional)
 
-**Purpose:** Required only for `repomix-nuget` package
+**Purpose:** Required only for `sc-repomix-nuget` package
 
 **Command:**
 ```bash
@@ -362,7 +362,7 @@ v18.17.0 (or higher)
 
 **✅ Success Criteria:** Node.js >= 18.0.0 and npm are installed
 
-**⚠️ Note:** This is optional unless you plan to use repomix-nuget
+**⚠️ Note:** This is optional unless you plan to use sc-repomix-nuget
 
 **❌ Common Issues:**
 
@@ -394,7 +394,7 @@ npm --version
 - ✅ Scripts are executable
 - ✅ Version audit passes
 - ✅ Registry validation passes
-- ✅ Node.js installed (optional, for repomix-nuget)
+- ✅ Node.js installed (optional, for sc-repomix-nuget)
 
 **Next Steps:**
 - Read [DIAGNOSTIC-TOOLS.md](DIAGNOSTIC-TOOLS.md) for available tools
@@ -485,15 +485,15 @@ Already up to date.
 
 Marketplace Version: 0.4.0
 
-Package: delay-tasks (manifest: 0.4.0)
+Package: sc-delay-tasks (manifest: 0.4.0)
   ✓ command/delay: 0.4.0
   ✓ skill/delaying-tasks: 0.4.0
   ✓ agent/delay-once: 0.4.0
   ✓ agent/delay-poll: 0.4.0
   ✓ agent/git-pr-check-delay: 0.4.0
 
-Package: git-worktree (manifest: 0.4.0)
-  ✓ command/git-worktree: 0.4.0
+Package: sc-git-worktree (manifest: 0.4.0)
+  ✓ command/sc-git-worktree: 0.4.0
   ✓ skill/managing-worktrees: 0.4.0
   ✓ agent/worktree-create: 0.4.0
   ✓ agent/worktree-scan: 0.4.0
@@ -526,8 +526,8 @@ If versions are inconsistent, see [Version Mismatch Investigation](#version-mism
 
 Checking commands...
 ✓ Command: delay (v0.4.0)
-✓ Command: git-worktree (v0.4.0)
-✓ Command: repomix-nuget (v0.4.0)
+✓ Command: sc-git-worktree (v0.4.0)
+✓ Command: sc-repomix-nuget (v0.4.0)
 ✓ Command: sc-manage (v0.4.0)
 
 Checking skills...
@@ -543,9 +543,9 @@ Checking agents...
 
 Checking version consistency...
 Checking CHANGELOGs...
-✓ CHANGELOG for delay-tasks
-✓ CHANGELOG for git-worktree
-✓ CHANGELOG for repomix-nuget
+✓ CHANGELOG for sc-delay-tasks
+✓ CHANGELOG for sc-git-worktree
+✓ CHANGELOG for sc-repomix-nuget
 ✓ CHANGELOG for sc-manage
 
 Checking marketplace version...
@@ -669,9 +669,9 @@ done
 
 **Expected Output:**
 ```
-✓ delay-tasks: README.md exists
-✓ git-worktree: README.md exists
-✓ repomix-nuget: README.md exists
+✓ sc-delay-tasks: README.md exists
+✓ sc-git-worktree: README.md exists
+✓ sc-repomix-nuget: README.md exists
 ✓ sc-manage: README.md exists
 ```
 
@@ -873,7 +873,7 @@ ls -la .claude/commands/
 
 **Expected Output:**
 ```
-delay.md  git-worktree.md  repomix-nuget.md  sc-manage.md
+delay.md  sc-git-worktree.md  sc-repomix-nuget.md  sc-manage.md
 ```
 
 **✅ Success Criteria:** Expected command files are present
@@ -1028,7 +1028,7 @@ cat .claude/commands/delay.md | head -30
 
 Marketplace Version: 0.4.0
 
-Package: delay-tasks (manifest: 0.4.0)
+Package: sc-delay-tasks (manifest: 0.4.0)
   ✓ command/delay: 0.4.0
   ✗ skill/delaying-tasks: 0.3.0
   ✓ agent/delay-once: 0.4.0
@@ -1046,7 +1046,7 @@ Version mismatches found
 **Command:**
 ```bash
 # Check the package manifest
-grep "^version:" packages/delay-tasks/manifest.yaml
+grep "^version:" packages/sc-delay-tasks/manifest.yaml
 ```
 
 **Output:**
@@ -1063,10 +1063,10 @@ version: 0.4.0
 **Command:**
 ```bash
 # Check the skill version
-grep "^version:" packages/delay-tasks/skills/delaying-tasks/SKILL.md
+grep "^version:" packages/sc-delay-tasks/skills/delaying-tasks/SKILL.md
 
 # Check the agent version
-grep "^version:" packages/delay-tasks/agents/delay-poll.md
+grep "^version:" packages/sc-delay-tasks/agents/delay-poll.md
 ```
 
 **Output:**
@@ -1085,7 +1085,7 @@ version: 0.3.0
 
 For package-wide updates:
 ```bash
-python3 scripts/sync-versions.py --package delay-tasks --version 0.4.0 --dry-run
+python3 scripts/sync-versions.py --package sc-delay-tasks --version 0.4.0 --dry-run
 ```
 
 **Option B: Manual Update**
@@ -1093,7 +1093,7 @@ python3 scripts/sync-versions.py --package delay-tasks --version 0.4.0 --dry-run
 For single artifact updates:
 ```bash
 # Edit the file manually
-vim packages/delay-tasks/skills/delaying-tasks/SKILL.md
+vim packages/sc-delay-tasks/skills/delaying-tasks/SKILL.md
 # Update version: 0.3.0 -> version: 0.4.0
 ```
 
@@ -1103,8 +1103,8 @@ vim packages/delay-tasks/skills/delaying-tasks/SKILL.md
 
 **Command:**
 ```bash
-# Sync all artifacts in delay-tasks package
-python3 scripts/sync-versions.py --package delay-tasks --version 0.4.0
+# Sync all artifacts in sc-delay-tasks package
+python3 scripts/sync-versions.py --package sc-delay-tasks --version 0.4.0
 
 # Verify changes
 git diff
@@ -1112,11 +1112,11 @@ git diff
 
 **Expected Output:**
 ```
-Syncing delay-tasks to version 0.4.0...
-  ✓ Updated: packages/delay-tasks/manifest.yaml
-  ✓ Updated: packages/delay-tasks/skills/delaying-tasks/SKILL.md
-  ✓ Updated: packages/delay-tasks/agents/delay-poll.md
-Updated 3 file(s) in delay-tasks
+Syncing sc-delay-tasks to version 0.4.0...
+  ✓ Updated: packages/sc-delay-tasks/manifest.yaml
+  ✓ Updated: packages/sc-delay-tasks/skills/delaying-tasks/SKILL.md
+  ✓ Updated: packages/sc-delay-tasks/agents/delay-poll.md
+Updated 3 file(s) in sc-delay-tasks
 ```
 
 ---
@@ -1134,7 +1134,7 @@ Updated 3 file(s) in delay-tasks
 
 Marketplace Version: 0.4.0
 
-Package: delay-tasks (manifest: 0.4.0)
+Package: sc-delay-tasks (manifest: 0.4.0)
   ✓ command/delay: 0.4.0
   ✓ skill/delaying-tasks: 0.4.0
   ✓ agent/delay-once: 0.4.0
@@ -1179,10 +1179,10 @@ All checks passed!
 git diff
 
 # Stage changes
-git add packages/delay-tasks/
+git add packages/sc-delay-tasks/
 
 # Commit
-git commit -m "fix(delay-tasks): sync artifact versions to 0.4.0"
+git commit -m "fix(sc-delay-tasks): sync artifact versions to 0.4.0"
 
 # Push
 git push origin main
@@ -1650,7 +1650,7 @@ sudo apt-get install python3
 
 ---
 
-### Step 3: Check Node.js (for repomix-nuget)
+### Step 3: Check Node.js (for sc-repomix-nuget)
 
 **Command:**
 ```bash
@@ -1708,7 +1708,7 @@ node_version=$(node --version 2>/dev/null)
 if [[ -n "$node_version" ]]; then
     echo "✓ Node.js: $node_version"
 else
-    echo "⚠ Node.js: NOT FOUND (optional, needed for repomix-nuget)"
+    echo "⚠ Node.js: NOT FOUND (optional, needed for sc-repomix-nuget)"
 fi
 
 # npm (optional)
@@ -1716,7 +1716,7 @@ npm_version=$(npm --version 2>/dev/null)
 if [[ -n "$npm_version" ]]; then
     echo "✓ npm: $npm_version"
 else
-    echo "⚠ npm: NOT FOUND (optional, needed for repomix-nuget)"
+    echo "⚠ npm: NOT FOUND (optional, needed for sc-repomix-nuget)"
 fi
 
 echo ""
@@ -1735,8 +1735,8 @@ chmod +x /tmp/check-deps.sh
 **Summary Checklist:**
 - ✅ Git installed and correct version
 - ✅ Python 3 installed and correct version
-- ✅ Node.js installed (if using repomix-nuget)
-- ✅ npm installed (if using repomix-nuget)
+- ✅ Node.js installed (if using sc-repomix-nuget)
+- ✅ npm installed (if using sc-repomix-nuget)
 
 See [DEPENDENCY-VALIDATION.md](DEPENDENCY-VALIDATION.md) for more details.
 

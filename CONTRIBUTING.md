@@ -66,7 +66,7 @@ packages/<package-name>/
 ### Artifact Types
 
 **Commands** (`commands/*.md`):
-- User-facing slash commands (e.g., `/git-worktree`, `/delay`)
+- User-facing slash commands (e.g., `/sc-git-worktree`, `/delay`)
 - Define options, arguments, and help text
 - Delegate to skills or agents for execution
 - Keep simple; avoid complex logic in command definitions
@@ -113,7 +113,7 @@ Requires variable substitution at install time.
 - Customizes behavior per repository
 - No runtime dependencies beyond git/bash
 
-**Example**: `git-worktree` package uses `{{REPO_NAME}}`
+**Example**: `sc-git-worktree` package uses `{{REPO_NAME}}`
 
 **Best for**: Repository-specific tools, workflows that need context
 

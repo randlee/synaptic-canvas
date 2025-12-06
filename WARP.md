@@ -19,13 +19,13 @@ Key components:
   - `sc-install.py` — Python wrapper that forwards to `scpy.sc_install`
 - `scpy/` contains Python utilities used by scripts and tests:
   - `sc_install.py` — reads `manifest.yaml`, lists/info, installs/uninstalls artifacts, performs token substitution, and sets executable bits for `scripts/*`
-  - `delay_run.py` — the Python implementation of the delay/poll helper used by the `delay-tasks` package
+  - `delay_run.py` — the Python implementation of the delay/poll helper used by the `sc-delay-tasks` package
 - `tests/` uses `pytest` to validate the installer, token expansion, and delay behavior
 - `.github/workflows/tests.yml` runs CI across major OSes on Python 3.12
 
 Representative packages:
-- `packages/git-worktree/` (Tier 1): installs commands/skills/agents to manage Git worktrees; uses `{{REPO_NAME}}` tokens resolved from the Git toplevel
-- `packages/delay-tasks/` (Tier 0): installs delay commands/skills/agents and a helper script; no token substitution
+- `packages/sc-git-worktree/` (Tier 1): installs commands/skills/agents to manage Git worktrees; uses `{{REPO_NAME}}` tokens resolved from the Git toplevel
+- `packages/sc-delay-tasks/` (Tier 0): installs delay commands/skills/agents and a helper script; no token substitution
 
 ## Dev environment and prerequisites
 
@@ -55,15 +55,15 @@ Installer usage (from repo root):
   - Bash: `./tools/sc-install.sh list`
   - Python: `python3 tools/sc-install.py list`
 - Show package manifest:
-  - `python3 tools/sc-install.py info git-worktree`
+  - `python3 tools/sc-install.py info sc-git-worktree`
 - Install to another repo's `.claude/` directory (token substitution if defined in manifest):
-  - `python3 tools/sc-install.py install git-worktree --dest /path/to/your-repo/.claude`
+  - `python3 tools/sc-install.py install sc-git-worktree --dest /path/to/your-repo/.claude`
 - Uninstall from `.claude/`:
-  - `python3 tools/sc-install.py uninstall git-worktree --dest /path/to/your-repo/.claude`
+  - `python3 tools/sc-install.py uninstall sc-git-worktree --dest /path/to/your-repo/.claude`
 
 Delay helper (local runs without installing):
 - Python module: `python3 -m sc_cli.delay_run --minutes 2 --action "go"`
-- Script (as installed by `delay-tasks`): `.claude/scripts/delay-run.py --every 60 --for 5m --action "done"`
+- Script (as installed by `sc-delay-tasks`): `.claude/scripts/delay-run.py --every 60 --for 5m --action "done"`
 
 Lint/build:
 - Linting is not configured in this repository.
@@ -72,7 +72,7 @@ Lint/build:
 ## Big-picture architecture
 
 1) Packages and manifests
-- Each package has a `manifest.yaml` that declares `artifacts` to copy into a target `.claude/` directory. Optional `variables` allow token substitution during install. In Tier 1 packages (e.g., `git-worktree`), `REPO_NAME` is auto-resolved from the Git toplevel of the destination repo.
+- Each package has a `manifest.yaml` that declares `artifacts` to copy into a target `.claude/` directory. Optional `variables` allow token substitution during install. In Tier 1 packages (e.g., `sc-git-worktree`), `REPO_NAME` is auto-resolved from the Git toplevel of the destination repo.
 
 2) Installer flow (Bash or Python)
 - list/info: enumerates packages and prints `manifest.yaml`
@@ -84,7 +84,7 @@ Lint/build:
 - uninstall: removes previously installed artifact paths for that package from the destination `.claude/`
 
 3) Delay/poll utilities
-- `packages/delay-tasks` supplies `.claude/scripts/delay-run.*` used by its agents
+- `packages/sc-delay-tasks` supplies `.claude/scripts/sc-delay-run.*` used by its agents
 - `scpy/delay_run.py` mirrors the shell script logic for one-shot delays (`--seconds|--minutes|--until`) and bounded polling (`--every` with `--for` or `--attempts`), emitting periodic heartbeats and a single final `Action: ...` line (unless suppressed)
 
 4) Tests and CI

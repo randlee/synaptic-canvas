@@ -69,7 +69,7 @@ Full fix workflow with worktree isolation:
 
 **Phase 2: Worktree Setup**
 5. Generate branch name from pattern (e.g., `fix-issue-42`)
-6. Invoke `worktree-create` via managing-worktrees skill (registry lookup)
+6. Invoke `sc-worktree-create` via sc-managing-worktrees skill (registry lookup)
 7. Verify worktree created successfully
 
 **Phase 3: Implementation**
@@ -82,7 +82,7 @@ Full fix workflow with worktree isolation:
 
 **Phase 5: Summary**
 12. Show summary: issue number, branch, commits, test results, PR URL
-13. Remind user about worktree cleanup (manual via `/git-worktree --cleanup`)
+13. Remind user about worktree cleanup (manual via `/sc-git-worktree --cleanup`)
 
 ## Configuration
 
@@ -129,7 +129,7 @@ Defaults if config missing:
 ## Integration
 
 - **Agents**: issue-intake-agent, issue-mutate-agent, issue-fix-agent, issue-pr-agent
-- **Skills**: managing-worktrees (for worktree operations)
+- **Skills**: sc-managing-worktrees (for worktree operations)
 - **CLI**: GitHub CLI (`gh`) for all operations
 - **References**:
   - `.claude/references/github-issue-apis.md` (API patterns)
@@ -139,5 +139,5 @@ Defaults if config missing:
 
 - All agents return fenced JSON with minimal envelope structure
 - Use `--yolo` for automated workflows (CI/CD)
-- Worktree cleanup is manual - use `/git-worktree --cleanup` when PR is merged
+- Worktree cleanup is manual - use `/sc-git-worktree --cleanup` when PR is merged
 - Repository detection uses `gh repo view --json nameWithOwner`

@@ -43,7 +43,7 @@ git --version
 # Check Python version
 python3 --version
 
-# Check Node.js version (for repomix-nuget)
+# Check Node.js version (for sc-repomix-nuget)
 node --version
 npm --version
 ```
@@ -133,10 +133,10 @@ Checking commands...
 Checking skills...
 Checking agents...
 Checking version consistency...
-✗ FAIL Command in delay-tasks: Version mismatch: command=0.3.0, package=0.4.0
+✗ FAIL Command in sc-delay-tasks: Version mismatch: command=0.3.0, package=0.4.0
 
 Checking CHANGELOGs...
-⚠ WARN CHANGELOG for repomix-nuget: No CHANGELOG.md found
+⚠ WARN CHANGELOG for sc-repomix-nuget: No CHANGELOG.md found
 
 Checking marketplace version...
 
@@ -171,16 +171,16 @@ version: 0.4.0
 
 ❌ **Version mismatch:**
 ```
-✗ FAIL Command in delay-tasks: Version mismatch: command=0.3.0, package=0.4.0
+✗ FAIL Command in sc-delay-tasks: Version mismatch: command=0.3.0, package=0.4.0
 ```
 **Fix:** Use sync-versions.py to update:
 ```bash
-python3 scripts/sync-versions.py --package delay-tasks --version 0.4.0
+python3 scripts/sync-versions.py --package sc-delay-tasks --version 0.4.0
 ```
 
 ⚠️ **Missing CHANGELOG:**
 ```
-⚠ WARN CHANGELOG for repomix-nuget: No CHANGELOG.md found
+⚠ WARN CHANGELOG for sc-repomix-nuget: No CHANGELOG.md found
 ```
 **Fix:** Create CHANGELOG.md in package directory following template.
 
@@ -213,18 +213,18 @@ Options:
 
 **Update single package:**
 ```bash
-# Update delay-tasks to version 0.5.0
-python3 scripts/sync-versions.py --package delay-tasks --version 0.5.0
+# Update sc-delay-tasks to version 0.5.0
+python3 scripts/sync-versions.py --package sc-delay-tasks --version 0.5.0
 
 # Output:
-Syncing delay-tasks to version 0.5.0...
-  ✓ Updated: /path/to/packages/delay-tasks/manifest.yaml
-  ✓ Updated: /path/to/packages/delay-tasks/commands/delay.md
-  ✓ Updated: /path/to/packages/delay-tasks/skills/delaying-tasks/SKILL.md
-  ✓ Updated: /path/to/packages/delay-tasks/agents/delay-once.md
-  ✓ Updated: /path/to/packages/delay-tasks/agents/delay-poll.md
-  ✓ Updated: /path/to/packages/delay-tasks/agents/git-pr-check-delay.md
-Updated 6 file(s) in delay-tasks
+Syncing sc-delay-tasks to version 0.5.0...
+  ✓ Updated: /path/to/packages/sc-delay-tasks/manifest.yaml
+  ✓ Updated: /path/to/packages/sc-delay-tasks/commands/delay.md
+  ✓ Updated: /path/to/packages/sc-delay-tasks/skills/delaying-tasks/SKILL.md
+  ✓ Updated: /path/to/packages/sc-delay-tasks/agents/delay-once.md
+  ✓ Updated: /path/to/packages/sc-delay-tasks/agents/delay-poll.md
+  ✓ Updated: /path/to/packages/sc-delay-tasks/agents/git-pr-check-delay.md
+Updated 6 file(s) in sc-delay-tasks
 ```
 
 **Update marketplace version:**
@@ -244,29 +244,29 @@ python3 scripts/sync-versions.py --all --version 1.0.0
 
 # Output:
 Syncing all packages to version 1.0.0...
-Syncing delay-tasks to version 1.0.0...
-  ✓ Updated: /path/to/packages/delay-tasks/manifest.yaml
+Syncing sc-delay-tasks to version 1.0.0...
+  ✓ Updated: /path/to/packages/sc-delay-tasks/manifest.yaml
   ...
-Syncing git-worktree to version 1.0.0...
-  ✓ Updated: /path/to/packages/git-worktree/manifest.yaml
+Syncing sc-git-worktree to version 1.0.0...
+  ✓ Updated: /path/to/packages/sc-git-worktree/manifest.yaml
   ...
 ```
 
 **Dry run (preview changes):**
 ```bash
-python3 scripts/sync-versions.py --package delay-tasks --version 0.5.0 --dry-run
+python3 scripts/sync-versions.py --package sc-delay-tasks --version 0.5.0 --dry-run
 
 # Shows what would be updated without making changes
 ```
 
 **With automatic commit:**
 ```bash
-python3 scripts/sync-versions.py --package delay-tasks --version 0.5.0 --commit
+python3 scripts/sync-versions.py --package sc-delay-tasks --version 0.5.0 --commit
 
 # Output:
-Syncing delay-tasks to version 0.5.0...
+Syncing sc-delay-tasks to version 0.5.0...
   ✓ Updated: ...
-Updated 6 file(s) in delay-tasks
+Updated 6 file(s) in sc-delay-tasks
 ✓ Created git commit: chore(versioning): sync versions across artifacts
 ```
 
@@ -280,7 +280,7 @@ The script validates version format before updating:
 
 ```bash
 # Invalid version format
-python3 scripts/sync-versions.py --package delay-tasks --version 1.0
+python3 scripts/sync-versions.py --package sc-delay-tasks --version 1.0
 
 # Error:
 Error: Invalid version format: 1.0
@@ -334,13 +334,13 @@ Options:
 
 Marketplace Version: 0.4.0
 
-Package: delay-tasks (manifest: 0.4.0)
+Package: sc-delay-tasks (manifest: 0.4.0)
 
-Package: git-worktree (manifest: 0.4.0)
+Package: sc-git-worktree (manifest: 0.4.0)
 
 Package: sc-manage (manifest: 0.4.0)
 
-Package: repomix-nuget (manifest: 0.4.0)
+Package: sc-repomix-nuget (manifest: 0.4.0)
 
 All versions consistent!
 ```
@@ -354,7 +354,7 @@ All versions consistent!
 
 Marketplace Version: 0.4.0
 
-Package: delay-tasks (manifest: 0.4.0)
+Package: sc-delay-tasks (manifest: 0.4.0)
 
 (No other output if all versions consistent)
 ```
@@ -368,15 +368,15 @@ Package: delay-tasks (manifest: 0.4.0)
 
 Marketplace Version: 0.4.0
 
-Package: delay-tasks (manifest: 0.4.0)
+Package: sc-delay-tasks (manifest: 0.4.0)
   ✓ command/delay: 0.4.0
   ✓ skill/delaying-tasks: 0.4.0
   ✓ agent/delay-once: 0.4.0
   ✓ agent/delay-poll: 0.4.0
   ✓ agent/git-pr-check-delay: 0.4.0
 
-Package: git-worktree (manifest: 0.4.0)
-  ✓ command/git-worktree: 0.4.0
+Package: sc-git-worktree (manifest: 0.4.0)
+  ✓ command/sc-git-worktree: 0.4.0
   ✓ skill/managing-worktrees: 0.4.0
   ✓ agent/worktree-create: 0.4.0
   ✓ agent/worktree-scan: 0.4.0
@@ -397,13 +397,13 @@ All versions consistent!
 
 Marketplace Version: 0.4.0
 
-Package: delay-tasks (manifest: 0.4.0)
+Package: sc-delay-tasks (manifest: 0.4.0)
   ✓ command/delay: 0.4.0
   ✗ skill/delaying-tasks: 0.3.0
   ✓ agent/delay-once: 0.4.0
 
-Package: git-worktree (manifest: 0.4.0)
-  ✓ command/git-worktree: 0.4.0
+Package: sc-git-worktree (manifest: 0.4.0)
+  ✓ command/sc-git-worktree: 0.4.0
 
 Version mismatches found
 ```
@@ -416,10 +416,10 @@ Version mismatches found
 {
   "marketplace": "0.4.0",
   "packages": [
-    {"name": "delay-tasks", "version": "0.4.0", "consistent": true},
-    {"name": "git-worktree", "version": "0.4.0", "consistent": true},
+    {"name": "sc-delay-tasks", "version": "0.4.0", "consistent": true},
+    {"name": "sc-git-worktree", "version": "0.4.0", "consistent": true},
     {"name": "sc-manage", "version": "0.4.0", "consistent": true},
-    {"name": "repomix-nuget", "version": "0.4.0", "consistent": true}
+    {"name": "sc-repomix-nuget", "version": "0.4.0", "consistent": true}
   ]
 }
 ```
@@ -513,9 +513,9 @@ STATUS: INVALID
 
 Found 3 validation error(s):
 
-  1. Package 'delay-tasks': Invalid version format '0.4'
-  2. Package 'git-worktree': Missing required field: 'description'
-  3. Package 'repomix-nuget': Invalid repo URL (must be https://github.com/...)
+  1. Package 'sc-delay-tasks': Invalid version format '0.4'
+  2. Package 'sc-git-worktree': Missing required field: 'description'
+  3. Package 'sc-repomix-nuget': Invalid repo URL (must be https://github.com/...)
 
 ======================================================================
 ```
@@ -553,8 +553,8 @@ python3 docs/registries/nuget/validate-registry.py --json
   "valid": false,
   "error_count": 2,
   "errors": [
-    "Package 'delay-tasks': Invalid version format '0.4'",
-    "Package 'git-worktree': Missing required field: 'description'"
+    "Package 'sc-delay-tasks': Invalid version format '0.4'",
+    "Package 'sc-git-worktree': Missing required field: 'description'"
   ],
   "registry": {
     "version": "0.4.0",
@@ -594,7 +594,7 @@ python3 docs/registries/nuget/validate-registry.py --json
 
 ❌ **Invalid version format:**
 ```
-Package 'delay-tasks': Invalid version format '0.4'
+Package 'sc-delay-tasks': Invalid version format '0.4'
 ```
 **Fix:** Use three-part SemVer: `0.4.0`
 
@@ -602,29 +602,29 @@ Package 'delay-tasks': Invalid version format '0.4'
 ```
 Invalid package name: 'DelayTasks' (must be lowercase with hyphens)
 ```
-**Fix:** Use lowercase with hyphens: `delay-tasks`
+**Fix:** Use lowercase with hyphens: `sc-delay-tasks`
 
 ❌ **Invalid status:**
 ```
-Package 'delay-tasks': Invalid status 'production'
+Package 'sc-delay-tasks': Invalid status 'production'
 ```
 **Fix:** Use valid status: `alpha`, `beta`, `stable`, `deprecated`, or `archived`
 
 ❌ **Invalid tier:**
 ```
-Package 'delay-tasks': Tier must be integer 0-5, got 10
+Package 'sc-delay-tasks': Tier must be integer 0-5, got 10
 ```
 **Fix:** Use tier between 0-5
 
 ❌ **Invalid URL:**
 ```
-Package 'delay-tasks': Invalid repo URL (must be https://github.com/...)
+Package 'sc-delay-tasks': Invalid repo URL (must be https://github.com/...)
 ```
 **Fix:** Use proper GitHub URL format
 
 ❌ **Missing tags:**
 ```
-Package 'delay-tasks': 'tags' must have at least 1 item
+Package 'sc-delay-tasks': 'tags' must have at least 1 item
 ```
 **Fix:** Add at least one tag to the package
 
@@ -736,7 +736,7 @@ python3 -c "import jsonschema; print('jsonschema: OK')" 2>/dev/null || echo "jso
 
 #### Node.js and npm Version Check
 
-**Required for:** `repomix-nuget` package
+**Required for:** `sc-repomix-nuget` package
 
 **Check Node.js installation:**
 ```bash
@@ -843,7 +843,7 @@ packages/  scripts/  docs/  .claude/
 ls packages/
 
 # Expected output:
-delay-tasks/  git-worktree/  repomix-nuget/  sc-manage/
+sc-delay-tasks/  sc-git-worktree/  sc-repomix-nuget/  sc-manage/
 ```
 
 ---
@@ -864,7 +864,7 @@ commands/  skills/  agents/  scripts/
 ls .claude/commands/
 
 # Example output:
-delay.md  git-worktree.md  repomix-nuget.md  sc-manage.md
+delay.md  sc-git-worktree.md  sc-repomix-nuget.md  sc-manage.md
 ```
 
 **Check installed skills:**
@@ -992,16 +992,16 @@ for pkg in packages/*/; do
 done
 
 # Output:
-delay-tasks: 0.4.0
-git-worktree: 0.4.0
-repomix-nuget: 0.4.0
+sc-delay-tasks: 0.4.0
+sc-git-worktree: 0.4.0
+sc-repomix-nuget: 0.4.0
 sc-manage: 0.4.0
 ```
 
 **Check specific package version:**
 ```bash
-# Check delay-tasks version
-grep "^version:" packages/delay-tasks/manifest.yaml | awk -F': *' '{print $2}' | tr -d '"'
+# Check sc-delay-tasks version
+grep "^version:" packages/sc-delay-tasks/manifest.yaml | awk -F': *' '{print $2}' | tr -d '"'
 
 # Output:
 0.4.0
@@ -1043,9 +1043,9 @@ for cmd in packages/*/commands/*.md; do
 done
 
 # Output:
-delay-tasks/delay: 0.4.0
-git-worktree/git-worktree: 0.4.0
-repomix-nuget/repomix-nuget: 0.4.0
+sc-delay-tasks/delay: 0.4.0
+sc-git-worktree/sc-git-worktree: 0.4.0
+sc-repomix-nuget/sc-repomix-nuget: 0.4.0
 sc-manage/sc-manage: 0.4.0
 ```
 
@@ -1062,9 +1062,9 @@ for skill in packages/*/skills/*/SKILL.md; do
 done
 
 # Output:
-delay-tasks/delaying-tasks: 0.4.0
-git-worktree/managing-worktrees: 0.4.0
-repomix-nuget/generating-nuget-context: 0.4.0
+sc-delay-tasks/delaying-tasks: 0.4.0
+sc-git-worktree/managing-worktrees: 0.4.0
+sc-repomix-nuget/generating-nuget-context: 0.4.0
 sc-manage/managing-sc-packages: 0.4.0
 ```
 
@@ -1097,7 +1097,7 @@ worktree-create: 0.4.0
 ./scripts/audit-versions.sh
 
 # Or check manually for a specific package
-package_name="delay-tasks"
+package_name="sc-delay-tasks"
 pkg_version=$(grep "^version:" "packages/$package_name/manifest.yaml" | awk -F': *' '{print $2}' | tr -d '"')
 
 echo "Package $package_name version: $pkg_version"
@@ -1194,9 +1194,9 @@ python3 -c "import json; print(len(json.load(open('docs/registries/nuget/registr
 python3 -c "import json; print('\n'.join(json.load(open('docs/registries/nuget/registry.json'))['packages'].keys()))"
 
 # Output:
-delay-tasks
-git-worktree
-repomix-nuget
+sc-delay-tasks
+sc-git-worktree
+sc-repomix-nuget
 sc-manage
 ```
 
@@ -1209,11 +1209,11 @@ sc-manage
 python3 -c "import json; import pprint; pprint.pprint(json.load(open('docs/registries/nuget/registry.json'))['metadata'])"
 
 # Output:
-{'categories': {'automation': ['delay-tasks'],
-                'git': ['git-worktree'],
+{'categories': {'automation': ['sc-delay-tasks'],
+                'git': ['sc-git-worktree'],
                 'management': ['sc-manage'],
-                'nuget': ['repomix-nuget'],
-                'workflow': ['delay-tasks', 'git-worktree']},
+                'nuget': ['sc-repomix-nuget'],
+                'workflow': ['sc-delay-tasks', 'sc-git-worktree']},
  'registryVersion': '0.4.0',
  'schemaVersion': '1.0.0',
  'totalAgents': 16,
@@ -1244,8 +1244,8 @@ fi
 
 **Verify package directory structure:**
 ```bash
-# Check delay-tasks package
-package="delay-tasks"
+# Check sc-delay-tasks package
+package="sc-delay-tasks"
 
 echo "Checking $package structure..."
 
@@ -1270,7 +1270,7 @@ done
 
 **Expected output:**
 ```
-Checking delay-tasks structure...
+Checking sc-delay-tasks structure...
   ✓ manifest.yaml
   ✓ README.md
   ✓ CHANGELOG.md
@@ -1286,7 +1286,7 @@ Checking delay-tasks structure...
 
 **Validate manifest YAML syntax:**
 ```bash
-python3 -c "import yaml; yaml.safe_load(open('packages/delay-tasks/manifest.yaml'))"
+python3 -c "import yaml; yaml.safe_load(open('packages/sc-delay-tasks/manifest.yaml'))"
 
 if [ $? -eq 0 ]; then
     echo "✓ Manifest is valid YAML"
@@ -1297,7 +1297,7 @@ fi
 
 **Check required manifest fields:**
 ```bash
-package="delay-tasks"
+package="sc-delay-tasks"
 manifest="packages/$package/manifest.yaml"
 
 required_fields=("name" "version" "description" "author" "license")
@@ -1320,7 +1320,7 @@ done
 
 **Count artifacts per package:**
 ```bash
-package="delay-tasks"
+package="sc-delay-tasks"
 
 echo "Artifact counts for $package:"
 
@@ -1343,7 +1343,7 @@ echo "  Scripts: $script_count"
 
 **Verify artifact counts match manifest:**
 ```bash
-package="delay-tasks"
+package="sc-delay-tasks"
 manifest="packages/$package/manifest.yaml"
 
 # Extract artifact counts from manifest
@@ -1478,9 +1478,9 @@ du -sh .
 du -sh packages/*
 
 # Output:
-1.2M    packages/delay-tasks
-800K    packages/git-worktree
-2.5M    packages/repomix-nuget
+1.2M    packages/sc-delay-tasks
+800K    packages/sc-git-worktree
+2.5M    packages/sc-repomix-nuget
 1.0M    packages/sc-manage
 ```
 
@@ -1506,10 +1506,10 @@ sys     0m0.198s
 **Measure sync script performance:**
 ```bash
 # Time the sync script (dry run)
-time python3 scripts/sync-versions.py --package delay-tasks --version 0.4.0 --dry-run
+time python3 scripts/sync-versions.py --package sc-delay-tasks --version 0.4.0 --dry-run
 
 # Output:
-Syncing delay-tasks to version 0.4.0...
+Syncing sc-delay-tasks to version 0.4.0...
 ...
 
 real    0m0.145s
@@ -1682,12 +1682,12 @@ Currently, `audit-versions.sh` does not output JSON. Consider using `compare-ver
   "marketplace": "0.4.0",
   "packages": [
     {
-      "name": "delay-tasks",
+      "name": "sc-delay-tasks",
       "version": "0.4.0",
       "consistent": true
     },
     {
-      "name": "git-worktree",
+      "name": "sc-git-worktree",
       "version": "0.4.0",
       "consistent": true
     },
@@ -1697,7 +1697,7 @@ Currently, `audit-versions.sh` does not output JSON. Consider using `compare-ver
       "consistent": true
     },
     {
-      "name": "repomix-nuget",
+      "name": "sc-repomix-nuget",
       "version": "0.4.0",
       "consistent": true
     }
@@ -1711,12 +1711,12 @@ Currently, `audit-versions.sh` does not output JSON. Consider using `compare-ver
   "marketplace": "0.4.0",
   "packages": [
     {
-      "name": "delay-tasks",
+      "name": "sc-delay-tasks",
       "version": "0.4.0",
       "consistent": false
     },
     {
-      "name": "git-worktree",
+      "name": "sc-git-worktree",
       "version": "0.4.0",
       "consistent": true
     }
@@ -1752,9 +1752,9 @@ python3 docs/registries/nuget/validate-registry.py --json
   "valid": false,
   "error_count": 3,
   "errors": [
-    "Package 'delay-tasks': Invalid version format '0.4'",
-    "Package 'git-worktree': Missing required field: 'description'",
-    "Package 'repomix-nuget': Invalid repo URL (must be https://github.com/...)"
+    "Package 'sc-delay-tasks': Invalid version format '0.4'",
+    "Package 'sc-git-worktree': Missing required field: 'description'",
+    "Package 'sc-repomix-nuget': Invalid repo URL (must be https://github.com/...)"
   ],
   "registry": {
     "version": "0.4.0",
@@ -1844,13 +1844,13 @@ cd /path/to/synaptic-canvas
 **Problem:**
 ```bash
 $ ./scripts/audit-versions.sh
-✗ FAIL Command in delay-tasks: Version mismatch: command=0.3.0, package=0.4.0
+✗ FAIL Command in sc-delay-tasks: Version mismatch: command=0.3.0, package=0.4.0
 ```
 
 **Solution:**
 ```bash
 # Use sync script to fix
-python3 scripts/sync-versions.py --package delay-tasks --version 0.4.0
+python3 scripts/sync-versions.py --package sc-delay-tasks --version 0.4.0
 
 # Verify fix
 ./scripts/audit-versions.sh
@@ -2093,7 +2093,7 @@ jobs:
 |------|----------------|-------------|---------|
 | Git | 2.7.0 | 2.30+ | Worktree support |
 | Python 3 | 3.6 | 3.11+ | Scripts |
-| Node.js | 18.0 | 18.17+ | repomix-nuget |
+| Node.js | 18.0 | 18.17+ | sc-repomix-nuget |
 | npm | 8.0 | 9.6+ | Package management |
 | Bash | 4.0 | 5.0+ | Shell scripts |
 

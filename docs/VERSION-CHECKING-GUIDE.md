@@ -1,7 +1,7 @@
 # Version Checking Guide
 
-**Version:** 0.4.0
-**Last Updated:** 2025-12-02
+**Version:** 0.5.0
+**Last Updated:** 2025-12-05
 **Repository:** [synaptic-canvas](https://github.com/randlee/synaptic-canvas)
 
 ---
@@ -32,7 +32,7 @@ Synaptic Canvas uses a **three-layer versioning system** based on semantic versi
 │  Layer 1: Marketplace Platform Version                     │
 │  Location: version.yaml                                     │
 │  Scope: Infrastructure, CLI, registry format               │
-│  Current: 0.4.0                                            │
+│  Current: 0.5.0                                            │
 └─────────────────────────────────────────────────────────────┘
                               │
                               │ manages
@@ -41,7 +41,7 @@ Synaptic Canvas uses a **three-layer versioning system** based on semantic versi
 │  Layer 2: Package Versions                                  │
 │  Location: packages/*/manifest.yaml                         │
 │  Scope: Individual packages (independent versioning)        │
-│  Current: delay-tasks=0.4.0, git-worktree=0.4.0, etc.     │
+│  Current: sc-delay-tasks=0.5.0, sc-git-worktree=0.5.0, etc. │
 └─────────────────────────────────────────────────────────────┘
                               │
                               │ contains
@@ -67,8 +67,8 @@ Synaptic Canvas uses a **three-layer versioning system** based on semantic versi
 All versions follow SemVer format: `MAJOR.MINOR.PATCH`
 
 - **MAJOR** (X.0.0): Breaking changes, incompatible API changes
-- **MINOR** (0.X.0): New features, backward-compatible additions
-- **PATCH** (0.0.X): Bug fixes, backward-compatible fixes
+- **MINOR** (0.X.0): New features, functionality enhancements
+- **PATCH** (0.0.X): Bug fixes, stability improvements
 
 **Examples:**
 - ✅ `0.4.0` - Valid
@@ -281,9 +281,9 @@ Each package maintains its own version independently in its `manifest.yaml` file
 **Package list and locations:**
 
 ```
-packages/delay-tasks/manifest.yaml
-packages/git-worktree/manifest.yaml
-packages/repomix-nuget/manifest.yaml
+packages/sc-delay-tasks/manifest.yaml
+packages/sc-git-worktree/manifest.yaml
+packages/sc-repomix-nuget/manifest.yaml
 packages/sc-manage/manifest.yaml
 ```
 
@@ -302,16 +302,16 @@ packages/sc-manage/manifest.yaml
 **Example scenario:**
 ```
 Marketplace: 0.4.0
-delay-tasks: 0.4.0
-git-worktree: 0.4.0
-repomix-nuget: 0.4.0  ← Gets bug fix
+sc-delay-tasks: 0.4.0
+sc-git-worktree: 0.4.0
+sc-repomix-nuget: 0.4.0  ← Gets bug fix
 sc-manage: 0.4.0
 
 After bug fix:
 Marketplace: 0.4.0  (no change)
-delay-tasks: 0.4.0  (no change)
-git-worktree: 0.4.0  (no change)
-repomix-nuget: 0.4.1  ← Version bumped
+sc-delay-tasks: 0.4.0  (no change)
+sc-git-worktree: 0.4.0  (no change)
+sc-repomix-nuget: 0.4.1  ← Version bumped
 sc-manage: 0.4.0  (no change)
 ```
 
@@ -331,9 +331,9 @@ done
 
 **Output:**
 ```
-delay-tasks: 0.4.0
-git-worktree: 0.4.0
-repomix-nuget: 0.4.0
+sc-delay-tasks: 0.4.0
+sc-git-worktree: 0.4.0
+sc-repomix-nuget: 0.4.0
 sc-manage: 0.4.0
 ```
 
@@ -349,10 +349,10 @@ sc-manage: 0.4.0
 
 Marketplace Version: 0.4.0
 
-Package: delay-tasks (manifest: 0.4.0)
-Package: git-worktree (manifest: 0.4.0)
+Package: sc-delay-tasks (manifest: 0.4.0)
+Package: sc-git-worktree (manifest: 0.4.0)
 Package: sc-manage (manifest: 0.4.0)
-Package: repomix-nuget (manifest: 0.4.0)
+Package: sc-repomix-nuget (manifest: 0.4.0)
 
 All versions consistent!
 ```
@@ -368,10 +368,10 @@ All versions consistent!
 {
   "marketplace": "0.4.0",
   "packages": [
-    {"name": "delay-tasks", "version": "0.4.0", "consistent": true},
-    {"name": "git-worktree", "version": "0.4.0", "consistent": true},
+    {"name": "sc-delay-tasks", "version": "0.4.0", "consistent": true},
+    {"name": "sc-git-worktree", "version": "0.4.0", "consistent": true},
     {"name": "sc-manage", "version": "0.4.0", "consistent": true},
-    {"name": "repomix-nuget", "version": "0.4.0", "consistent": true}
+    {"name": "sc-repomix-nuget", "version": "0.4.0", "consistent": true}
   ]
 }
 ```
@@ -433,21 +433,21 @@ done
 
 ### Checking Specific Package Version
 
-**Check delay-tasks version:**
+**Check sc-delay-tasks version:**
 
 ```bash
-grep "^version:" packages/delay-tasks/manifest.yaml | awk -F': *' '{print $2}' | tr -d '"'
+grep "^version:" packages/sc-delay-tasks/manifest.yaml | awk -F': *' '{print $2}' | tr -d '"'
 ```
 
 **Check all fields in manifest:**
 
 ```bash
-cat packages/delay-tasks/manifest.yaml
+cat packages/sc-delay-tasks/manifest.yaml
 ```
 
 **Output:**
 ```yaml
-name: delay-tasks
+name: sc-delay-tasks
 version: 0.4.0
 description: >
   Schedule delayed one-shot or bounded polling actions with minimal heartbeats.
@@ -467,7 +467,7 @@ tags:
 **Extract version with Python:**
 
 ```bash
-python3 -c "import yaml; print(yaml.safe_load(open('packages/delay-tasks/manifest.yaml'))['version'])"
+python3 -c "import yaml; print(yaml.safe_load(open('packages/sc-delay-tasks/manifest.yaml'))['version'])"
 ```
 
 ---
@@ -478,20 +478,20 @@ python3 -c "import yaml; print(yaml.safe_load(open('packages/delay-tasks/manifes
 
 ```bash
 # Update specific package
-python3 scripts/sync-versions.py --package delay-tasks --version 0.5.0
+python3 scripts/sync-versions.py --package sc-delay-tasks --version 0.5.0
 
 # With dry-run first
-python3 scripts/sync-versions.py --package delay-tasks --version 0.5.0 --dry-run
+python3 scripts/sync-versions.py --package sc-delay-tasks --version 0.5.0 --dry-run
 
 # With commit
-python3 scripts/sync-versions.py --package delay-tasks --version 0.5.0 --commit
+python3 scripts/sync-versions.py --package sc-delay-tasks --version 0.5.0 --commit
 ```
 
 **Method 2: Manual edit**
 
 ```bash
 # Edit manifest
-vim packages/delay-tasks/manifest.yaml
+vim packages/sc-delay-tasks/manifest.yaml
 
 # Update version line
 # version: 0.4.0  →  version: 0.5.0
@@ -503,7 +503,7 @@ vim packages/delay-tasks/manifest.yaml
 **Method 3: Using sed**
 
 ```bash
-package="delay-tasks"
+package="sc-delay-tasks"
 new_version="0.5.0"
 
 # Update manifest
@@ -556,7 +556,7 @@ version: 0.4.0
 
 ```bash
 # Check if artifact version matches package version
-package="delay-tasks"
+package="sc-delay-tasks"
 pkg_version=$(grep "^version:" "packages/$package/manifest.yaml" | awk -F': *' '{print $2}' | tr -d '"')
 
 for cmd in packages/$package/commands/*.md; do
@@ -649,8 +649,8 @@ done
 
 Checking commands...
 ✓ Command: delay (v0.4.0)
-✓ Command: git-worktree (v0.4.0)
-✓ Command: repomix-nuget (v0.4.0)
+✓ Command: sc-git-worktree (v0.4.0)
+✓ Command: sc-repomix-nuget (v0.4.0)
 ✓ Command: sc-manage (v0.4.0)
 
 Checking skills...
@@ -671,9 +671,9 @@ Checking agents...
 
 Checking version consistency...
 Checking CHANGELOGs...
-✓ CHANGELOG for delay-tasks
-✓ CHANGELOG for git-worktree
-✓ CHANGELOG for repomix-nuget
+✓ CHANGELOG for sc-delay-tasks
+✓ CHANGELOG for sc-git-worktree
+✓ CHANGELOG for sc-repomix-nuget
 ✓ CHANGELOG for sc-manage
 
 Checking marketplace version...
@@ -717,14 +717,14 @@ All checks passed!
 
 ```
 ✓ CORRECT:
-packages/delay-tasks/manifest.yaml:          version: 0.4.0
-packages/delay-tasks/commands/delay.md:      version: 0.4.0
-packages/delay-tasks/agents/delay-once.md:   version: 0.4.0
+packages/sc-delay-tasks/manifest.yaml:          version: 0.4.0
+packages/sc-delay-tasks/commands/delay.md:      version: 0.4.0
+packages/sc-delay-tasks/agents/delay-once.md:   version: 0.4.0
 
 ✗ INCORRECT:
-packages/delay-tasks/manifest.yaml:          version: 0.4.0
-packages/delay-tasks/commands/delay.md:      version: 0.3.0  ← MISMATCH!
-packages/delay-tasks/agents/delay-once.md:   version: 0.4.0
+packages/sc-delay-tasks/manifest.yaml:          version: 0.4.0
+packages/sc-delay-tasks/commands/delay.md:      version: 0.3.0  ← MISMATCH!
+packages/sc-delay-tasks/agents/delay-once.md:   version: 0.4.0
 ```
 
 ---
@@ -736,9 +736,9 @@ packages/delay-tasks/agents/delay-once.md:   version: 0.4.0
 ```
 ✓ CORRECT:
 version.yaml:                               version: 0.4.0
-packages/delay-tasks/manifest.yaml:         version: 0.4.0
-packages/git-worktree/manifest.yaml:        version: 0.4.1  ← Different OK
-packages/repomix-nuget/manifest.yaml:       version: 0.3.0  ← Different OK
+packages/sc-delay-tasks/manifest.yaml:         version: 0.4.0
+packages/sc-git-worktree/manifest.yaml:        version: 0.4.1  ← Different OK
+packages/sc-repomix-nuget/manifest.yaml:       version: 0.3.0  ← Different OK
 packages/sc-manage/manifest.yaml:           version: 0.5.0  ← Different OK
 ```
 
@@ -747,8 +747,8 @@ packages/sc-manage/manifest.yaml:           version: 0.5.0  ← Different OK
 ```
 ✓ CORRECT:
 version.yaml:                               version: 0.5.0  ← Different OK
-packages/delay-tasks/manifest.yaml:         version: 0.4.0
-packages/git-worktree/manifest.yaml:        version: 0.4.0
+packages/sc-delay-tasks/manifest.yaml:         version: 0.4.0
+packages/sc-git-worktree/manifest.yaml:        version: 0.4.0
 ```
 
 ---
@@ -821,14 +821,14 @@ grep "^version:" version.yaml | awk -F': *' '{print $2}' | tr -d '"'
 **Extract package version:**
 
 ```bash
-package="delay-tasks"
+package="sc-delay-tasks"
 grep "^version:" "packages/$package/manifest.yaml" | awk -F': *' '{print $2}' | tr -d '"'
 ```
 
 **Extract artifact version:**
 
 ```bash
-artifact="packages/delay-tasks/commands/delay.md"
+artifact="packages/sc-delay-tasks/commands/delay.md"
 grep "^version:" "$artifact" | head -1 | awk -F': *' '{print $2}' | tr -d '"'
 ```
 
@@ -859,7 +859,7 @@ done
 **Compare package vs artifacts:**
 
 ```bash
-package="delay-tasks"
+package="sc-delay-tasks"
 pkg_version=$(grep "^version:" "packages/$package/manifest.yaml" | awk -F': *' '{print $2}' | tr -d '"')
 
 echo "Package $package: $pkg_version"
@@ -1000,7 +1000,7 @@ git log -p version.yaml | grep -A 2 -B 2 "^[+-]version:"
 **Package version history:**
 
 ```bash
-package="delay-tasks"
+package="sc-delay-tasks"
 
 # Show all version changes for package
 git log --all --oneline "packages/$package/manifest.yaml"
@@ -1016,7 +1016,7 @@ git log -p "packages/$package/manifest.yaml" | grep -A 2 -B 2 "^[+-]version:"
 git log -1 --format="%ai %s" version.yaml
 
 # Package
-package="delay-tasks"
+package="sc-delay-tasks"
 git log -1 --format="%ai %s" "packages/$package/manifest.yaml"
 ```
 
@@ -1162,22 +1162,22 @@ echo "  python3 scripts/sync-versions.py --package PACKAGE_NAME --version $next_
 
 **Symptom:**
 ```
-✗ FAIL Command in delay-tasks: Version mismatch: command=0.3.0, package=0.4.0
+✗ FAIL Command in sc-delay-tasks: Version mismatch: command=0.3.0, package=0.4.0
 ```
 
 **Diagnosis:**
 ```bash
 # Check package version
-grep "^version:" packages/delay-tasks/manifest.yaml
+grep "^version:" packages/sc-delay-tasks/manifest.yaml
 
 # Check command version
-grep "^version:" packages/delay-tasks/commands/delay.md
+grep "^version:" packages/sc-delay-tasks/commands/delay.md
 ```
 
 **Fix:**
 ```bash
 # Use sync script
-python3 scripts/sync-versions.py --package delay-tasks --version 0.4.0
+python3 scripts/sync-versions.py --package sc-delay-tasks --version 0.4.0
 
 # Verify fix
 ./scripts/audit-versions.sh
@@ -1195,7 +1195,7 @@ python3 scripts/sync-versions.py --package delay-tasks --version 0.4.0
 **Diagnosis:**
 ```bash
 # Check if version exists
-head -10 packages/delay-tasks/commands/delay.md
+head -10 packages/sc-delay-tasks/commands/delay.md
 ```
 
 **Fix:**
@@ -1207,7 +1207,7 @@ head -10 packages/delay-tasks/commands/delay.md
 # ---
 
 # Or use sync script to add all at once
-python3 scripts/sync-versions.py --package delay-tasks --version 0.4.0
+python3 scripts/sync-versions.py --package sc-delay-tasks --version 0.4.0
 ```
 
 ---
@@ -1216,9 +1216,9 @@ python3 scripts/sync-versions.py --package delay-tasks --version 0.4.0
 
 **Symptom:**
 ```
-Package: delay-tasks (manifest: 0.4.0)
-Package: git-worktree (manifest: 0.3.0)
-Package: repomix-nuget (manifest: 0.4.0)
+Package: sc-delay-tasks (manifest: 0.4.0)
+Package: sc-git-worktree (manifest: 0.3.0)
+Package: sc-repomix-nuget (manifest: 0.4.0)
 Package: sc-manage (manifest: 0.4.0)
 ```
 
@@ -1231,8 +1231,8 @@ This may not be a problem! Packages can have different versions.
 
 **Fix (if updating is desired):**
 ```bash
-# Update git-worktree to 0.4.0
-python3 scripts/sync-versions.py --package git-worktree --version 0.4.0
+# Update sc-git-worktree to 0.4.0
+python3 scripts/sync-versions.py --package sc-git-worktree --version 0.4.0
 ```
 
 ---
@@ -1242,7 +1242,7 @@ python3 scripts/sync-versions.py --package git-worktree --version 0.4.0
 **Symptom:**
 ```
 Marketplace Version: 0.5.0
-Package: delay-tasks (manifest: 0.4.0)
+Package: sc-delay-tasks (manifest: 0.4.0)
 ```
 
 **Diagnosis:**
@@ -1266,24 +1266,24 @@ python3 scripts/sync-versions.py --all --version $marketplace_version
 
 ### Rollback Single Package
 
-**Rollback delay-tasks to previous version:**
+**Rollback sc-delay-tasks to previous version:**
 
 ```bash
 # Check current version
-current=$(grep "^version:" packages/delay-tasks/manifest.yaml | awk -F': *' '{print $2}' | tr -d '"')
+current=$(grep "^version:" packages/sc-delay-tasks/manifest.yaml | awk -F': *' '{print $2}' | tr -d '"')
 echo "Current version: $current"
 
 # Find previous version in git history
-previous=$(git log -2 --oneline packages/delay-tasks/manifest.yaml | tail -1 | awk '{print $1}')
-previous_version=$(git show $previous:packages/delay-tasks/manifest.yaml | grep "^version:" | awk -F': *' '{print $2}' | tr -d '"')
+previous=$(git log -2 --oneline packages/sc-delay-tasks/manifest.yaml | tail -1 | awk '{print $1}')
+previous_version=$(git show $previous:packages/sc-delay-tasks/manifest.yaml | grep "^version:" | awk -F': *' '{print $2}' | tr -d '"')
 echo "Previous version: $previous_version"
 
 # Rollback
-python3 scripts/sync-versions.py --package delay-tasks --version $previous_version
+python3 scripts/sync-versions.py --package sc-delay-tasks --version $previous_version
 
 # Commit rollback
-git add packages/delay-tasks/
-git commit -m "revert(delay-tasks): rollback to version $previous_version"
+git add packages/sc-delay-tasks/
+git commit -m "revert(sc-delay-tasks): rollback to version $previous_version"
 ```
 
 ---

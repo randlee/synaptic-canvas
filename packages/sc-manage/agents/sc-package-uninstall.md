@@ -1,6 +1,6 @@
 ---
 name: sc-package-uninstall
-version: 0.4.0
+version: 0.5.0
 description: Uninstall a Synaptic Canvas package locally (repo .claude) or globally according to package policy.
 model: sonnet
 color: blue
@@ -30,7 +30,7 @@ color: blue
 ```json
 {
   "success": true,
-  "data": { "package": "delay-tasks", "scope": "global", "dest": "/Users/me/Documents/.claude" },
+  "data": { "package": "sc-delay-tasks", "scope": "global", "dest": "/Users/me/Documents/.claude" },
   "error": null
 }
 ```

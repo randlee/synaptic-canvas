@@ -53,7 +53,7 @@ Metadata about the marketplace platform itself:
 ```json
 "marketplace": {
   "name": "Synaptic Canvas",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "status": "beta",
   "url": "https://github.com/randlee/synaptic-canvas"
 }
@@ -122,8 +122,8 @@ Marketplace and package version constraints:
 
 ```json
 "versionCompatibility": {
-  "marketplace": "0.4.0",
-  "minimumPackageVersion": "0.4.0",
+  "marketplace": "0.5.0",
+  "minimumPackageVersion": "0.5.0",
   "maximumPackageVersion": "0.x.x",
   "note": "Additional information"
 }
@@ -135,13 +135,13 @@ Marketplace and package version constraints:
 - No token substitution
 - No dependencies
 - Works immediately after installation
-- Example: `delay-tasks`
+- Example: `sc-delay-tasks`
 
 ### Tier 1: Token Substitution
 - Requires variable substitution at install time
 - May have dependencies
 - Customized per repository
-- Example: `git-worktree`, `repomix-nuget`
+- Example: `sc-git-worktree`, `sc-repomix-nuget`
 
 ### Tier 2: Runtime Dependencies
 - External tools required
@@ -181,17 +181,17 @@ Current package organization:
 
 | Category | Packages | Purpose |
 |----------|----------|---------|
-| **Automation** | delay-tasks | Schedule and poll tasks |
-| **Development Tools** | git-worktree | Git workflow management |
+| **Automation** | sc-delay-tasks | Schedule and poll tasks |
+| **Development Tools** | sc-git-worktree | Git workflow management |
 | **Package Management** | sc-manage | Package discovery and management |
-| **Documentation** | repomix-nuget | Repository analysis and documentation |
+| **Documentation** | sc-repomix-nuget | Repository analysis and documentation |
 
 ## Searching the Registry
 
 ### By Category
 ```javascript
 registry.metadata.categories["development-tools"]
-// Returns: ["git-worktree"]
+// Returns: ["sc-git-worktree"]
 ```
 
 ### By Tag
@@ -199,7 +199,7 @@ registry.metadata.categories["development-tools"]
 Object.entries(registry.packages)
   .filter(([_, pkg]) => pkg.tags.includes("git"))
   .map(([name, _]) => name)
-// Returns: ["git-worktree"]
+// Returns: ["sc-git-worktree"]
 ```
 
 ### By Status
@@ -214,7 +214,7 @@ Object.entries(registry.packages)
 Object.entries(registry.packages)
   .filter(([_, pkg]) => pkg.tier === 0)
   .map(([name, _]) => name)
-// Returns: ["delay-tasks", "sc-manage"]
+// Returns: ["sc-delay-tasks", "sc-manage"]
 ```
 
 ## Version Management
@@ -223,7 +223,7 @@ Object.entries(registry.packages)
 
 Each package maintains independent versioning:
 
-- **Current**: All packages at 0.4.0 (beta)
+- **Current**: All packages at 0.5.0 (beta)
 - **Policy**: Synchronized within marketplace during beta
 - **Bumping**: Use `python3 scripts/sync-versions.py --package NAME --version X.Y.Z`
 
@@ -231,9 +231,9 @@ Each package maintains independent versioning:
 
 Platform-level version indicating infrastructure:
 
-- **Current**: 0.4.0 (beta)
+- **Current**: 0.5.0 (beta)
 - **When to bump**: Breaking changes to registry format or CLI
-- **Minimum package requirement**: All packages >= 0.4.0
+- **Minimum package requirement**: All packages >= 0.5.0
 
 See [Versioning Strategy](../versioning-strategy.md) for details.
 

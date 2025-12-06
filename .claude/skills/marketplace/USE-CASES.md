@@ -24,7 +24,7 @@ This document provides detailed use cases for the Marketplace Package Manager sk
      Tags: delay, polling, tasks, ci, automation
      Artifacts: 1 command, 1 skill, 3 agents, 1 script
 
-   • git-worktree (v0.4.0) - beta
+   • sc-git-worktree (v0.4.0) - beta
      "Create, manage, scan, and clean up git worktrees for parallel development"
      Tags: git, worktree, branches, development, parallel
      Artifacts: 1 command, 1 skill, 4 agents
@@ -34,7 +34,7 @@ This document provides detailed use cases for the Marketplace Package Manager sk
      Tags: package-manager, discovery, marketplace, tools
      Artifacts: 1 command, 1 skill, 4 agents
 
-   • repomix-nuget (v0.4.0) - beta
+   • sc-repomix-nuget (v0.4.0) - beta
      "Generate comprehensive NuGet repository context for AI analysis"
      Tags: nuget, csharp, .net, documentation, analysis
      Artifacts: 1 command, 1 skill, 3 agents, 1 script
@@ -61,7 +61,7 @@ This document provides detailed use cases for the Marketplace Package Manager sk
 ### Variations
 
 - **Filter by category**: "Show me automation packages"
-- **Compare packages**: "What's the difference between delay-tasks and git-worktree?"
+- **Compare packages**: "What's the difference between delay-tasks and sc-git-worktree?"
 - **Check package count**: "How many packages are available?"
 
 ---
@@ -265,7 +265,7 @@ This document provides detailed use cases for the Marketplace Package Manager sk
    Found 3 packages matching "git workflows":
 
    From synaptic-canvas registry:
-   • git-worktree (v0.4.0) - beta
+   • sc-git-worktree (v0.4.0) - beta
      "Create, manage, scan, and clean up git worktrees"
      Artifacts: 1 command, 1 skill, 4 agents
      Last updated: 2025-12-02
@@ -285,7 +285,7 @@ This document provides detailed use cases for the Marketplace Package Manager sk
 
 3. **Compare package details:**
    ```
-   Compare git-worktree from synaptic-canvas with git-tools from my-org
+   Compare sc-git-worktree from synaptic-canvas with git-tools from my-org
    ```
 
 4. **Review comparison:**
@@ -298,7 +298,7 @@ This document provides detailed use cases for the Marketplace Package Manager sk
 
 5. **Make informed decision:**
    ```
-   /marketplace install git-worktree --global --registry synaptic-canvas
+   /marketplace install sc-git-worktree --global --registry synaptic-canvas
    ```
 
 ### Expected Outcome
@@ -387,7 +387,7 @@ This document provides detailed use cases for the Marketplace Package Manager sk
 
 ## Use Case 7: Troubleshoot Package Issues
 
-**Scenario**: After installing git-worktree, you're getting errors when trying to use the `/git-worktree` command.
+**Scenario**: After installing sc-git-worktree, you're getting errors when trying to use the `/sc-git-worktree` command.
 
 **Goal**: Diagnose and resolve the issue using marketplace troubleshooting capabilities.
 
@@ -395,7 +395,7 @@ This document provides detailed use cases for the Marketplace Package Manager sk
 
 1. **Report the issue:**
    ```
-   I'm getting an error when I try to use /git-worktree
+   I'm getting an error when I try to use /sc-git-worktree
    ```
 
 2. **Claude initiates diagnostics:**
@@ -403,8 +403,8 @@ This document provides detailed use cases for the Marketplace Package Manager sk
    Let me help troubleshoot this issue.
 
    Checking:
-   ✓ Package installed: Yes (git-worktree v0.4.0)
-   ✓ Command file exists: Yes (~/.claude/commands/git-worktree.md)
+   ✓ Package installed: Yes (sc-git-worktree v0.4.0)
+   ✓ Command file exists: Yes (~/.claude/commands/sc-git-worktree.md)
    ✓ Agents registered: Yes (4 agents found)
    ✗ Script permissions: Issue found
 
@@ -413,32 +413,32 @@ This document provides detailed use cases for the Marketplace Package Manager sk
 
 3. **Review suggested fix:**
    ```
-   The git-worktree scripts are not marked as executable.
+   The sc-git-worktree scripts are not marked as executable.
 
    To fix this, run:
-   chmod +x ~/.claude/scripts/git-worktree-*.sh
+   chmod +x ~/.claude/scripts/sc-git-worktree-*.sh
 
    Or reinstall the package:
-   /marketplace install git-worktree --global --force
+   /marketplace install sc-git-worktree --global --force
    ```
 
 4. **Apply the fix:**
    ```
-   Reinstall git-worktree with correct permissions
+   Reinstall sc-git-worktree with correct permissions
    ```
 
 5. **Verify resolution:**
    ```
-   Re-installing git-worktree...
+   Re-installing sc-git-worktree...
    ✓ Setting executable permissions on scripts
    ✓ Installation complete
 
-   Please try /git-worktree again.
+   Please try /sc-git-worktree again.
    ```
 
 6. **Test the command:**
    ```
-   /git-worktree help
+   /sc-git-worktree help
    ```
 
 ### Expected Outcome

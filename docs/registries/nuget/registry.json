@@ -5,21 +5,21 @@
   "repo": "randlee/synaptic-canvas",
   "marketplace": {
     "name": "Synaptic Canvas",
-    "version": "0.4.0",
+    "version": "0.5.0",
     "status": "beta",
     "url": "https://github.com/randlee/synaptic-canvas"
   },
   "packages": {
-    "delay-tasks": {
-      "name": "delay-tasks",
-      "version": "0.4.0",
+    "sc-delay-tasks": {
+      "name": "sc-delay-tasks",
+      "version": "0.5.0",
       "status": "beta",
       "tier": 0,
       "description": "Schedule delayed or interval-based actions with minimal heartbeats. Ideal for waiting before running checks (e.g., GH Actions, PR status) or polling on a bounded interval.",
       "github": "randlee/synaptic-canvas",
       "repo": "https://github.com/randlee/synaptic-canvas",
-      "path": "packages/delay-tasks",
-      "readme": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/delay-tasks/README.md",
+      "path": "packages/sc-delay-tasks",
+      "readme": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-delay-tasks/README.md",
       "license": "MIT",
       "author": "Anthropic",
       "tags": [
@@ -36,20 +36,20 @@
         "scripts": 1
       },
       "dependencies": [],
-      "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/delay-tasks/CHANGELOG.md",
+      "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-delay-tasks/CHANGELOG.md",
       "lastUpdated": "2025-12-02",
       "dependents": []
     },
-    "git-worktree": {
-      "name": "git-worktree",
-      "version": "0.4.0",
+    "sc-git-worktree": {
+      "name": "sc-git-worktree",
+      "version": "0.5.0",
       "status": "beta",
       "tier": 1,
       "description": "Create, manage, scan, and clean up git worktrees for parallel development. Maintains tracking of worktree status, branch details, and cleanup history with optional tracking document.",
       "github": "randlee/synaptic-canvas",
       "repo": "https://github.com/randlee/synaptic-canvas",
-      "path": "packages/git-worktree",
-      "readme": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/git-worktree/README.md",
+      "path": "packages/sc-git-worktree",
+      "readme": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-git-worktree/README.md",
       "license": "MIT",
       "author": "Anthropic",
       "tags": [
@@ -74,13 +74,13 @@
       "dependencies": [
         "git >= 2.27"
       ],
-      "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/git-worktree/CHANGELOG.md",
+      "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-git-worktree/CHANGELOG.md",
       "lastUpdated": "2025-12-02",
       "dependents": []
     },
     "sc-manage": {
       "name": "sc-manage",
-      "version": "0.4.0",
+      "version": "0.5.0",
       "status": "beta",
       "tier": 0,
       "description": "Interface for managing Synaptic Canvas packages. Provides discovery, installation info, and management utilities for the marketplace.",
@@ -107,16 +107,16 @@
       "lastUpdated": "2025-12-02",
       "dependents": []
     },
-    "repomix-nuget": {
-      "name": "repomix-nuget",
-      "version": "0.4.0",
+    "sc-repomix-nuget": {
+      "name": "sc-repomix-nuget",
+      "version": "0.5.0",
       "status": "beta",
       "tier": 1,
       "description": "Generate comprehensive NuGet repository context for AI analysis. Extracts package metadata, assembly information, and documentation for enhanced code understanding.",
       "github": "randlee/synaptic-canvas",
       "repo": "https://github.com/randlee/synaptic-canvas",
-      "path": "packages/repomix-nuget",
-      "readme": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/repomix-nuget/README.md",
+      "path": "packages/sc-repomix-nuget",
+      "readme": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-repomix-nuget/README.md",
       "license": "MIT",
       "author": "Anthropic",
       "tags": [
@@ -141,7 +141,7 @@
       "dependencies": [
         "python3 >= 3.12"
       ],
-      "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/repomix-nuget/CHANGELOG.md",
+      "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-repomix-nuget/CHANGELOG.md",
       "lastUpdated": "2025-12-02",
       "dependents": []
     }
@@ -156,21 +156,21 @@
     "totalScripts": 2,
     "categories": {
       "automation": [
-        "delay-tasks"
+        "sc-delay-tasks"
       ],
       "development-tools": [
-        "git-worktree"
+        "sc-git-worktree"
       ],
       "package-management": [
         "sc-manage"
       ],
       "documentation": [
-        "repomix-nuget"
+        "sc-repomix-nuget"
       ]
     }
   },
   "versionCompatibility": {
-    "marketplace": "0.4.0",
+    "marketplace": "0.5.0",
     "minimumPackageVersion": "0.4.0",
     "maximumPackageVersion": "0.x.x",
     "note": "Marketplace is in beta. All packages should remain at 0.x versions until first stable release (1.0.0)"
@@ -186,10 +186,10 @@
         "verified_date": "2025-12-04T00:00:00Z"
       },
       "packages": [
-        "delay-tasks",
-        "git-worktree",
+        "sc-delay-tasks",
+        "sc-git-worktree",
         "sc-manage",
-        "repomix-nuget"
+        "sc-repomix-nuget"
       ],
       "total_packages": 4
     }

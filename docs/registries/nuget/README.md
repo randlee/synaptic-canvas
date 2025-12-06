@@ -124,7 +124,7 @@ All versions follow SemVer 2.0.0: `X.Y.Z[-prerelease][+build]`
 ### Package Names and Tags
 - Lowercase alphanumeric with hyphens and dots
 - Tag pattern allows dots and hash symbols (for `.net`, `c#`, etc.)
-- Examples: `delay-tasks`, `.net`, `c#`, `asp.net`, `ci-cd`
+- Examples: `sc-delay-tasks`, `.net`, `c#`, `asp.net`, `ci-cd`
 
 ### URLs
 - GitHub repos: `https://github.com/owner/repo`
