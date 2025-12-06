@@ -299,22 +299,47 @@ Recent Commits (2025-12-05 session):
 
 ## Priority 4: Future Releases
 
-### 4.1 Version 0.5.0 Release (CURRENT - FINAL STAGE)
-**Status:** ✅ Code Complete - Awaiting User PR Decision & CI Clearance
-**Timeline:** Expected to merge within 24-48 hours of user approval
+### 4.1 Version 0.5.0 Release (CURRENT - IN FINAL DEPLOYMENT)
+**Status:** ✅ Code Complete - PR MERGED TO MAIN - Ready for Release Tagging
+**Timeline:** Ready for immediate release
 **Completion Criteria:**
 - [x] All 4 packages renamed with sc- prefix
 - [x] All manifests updated to 0.5.0
 - [x] Registry.json updated with new names and versions
 - [x] 19/19 validation tests passing
 - [x] All branches merged to develop
-- [x] 355/362 comprehensive tests passing (98% pass rate - 7 mock registry test issues identified)
+- [x] 362/362 comprehensive tests passing (100% - all remote mock tests resolved)
 - [x] README.md updated with sc-prefixed names and examples
 - [x] Integration tests updated to use sc-prefixed names
-- [ ] Remaining design review items completed (optional - 5 items, ~2 hours)
-- [ ] PR created and submitted for review (AWAITING USER DECISION)
-- [ ] CI checks passing (AWAITING PR SUBMISSION)
-- [ ] Merged to main and tagged v0.5.0 (AWAITING CI + USER APPROVAL)
+- [x] PR #14 created, reviewed, and merged to main (2025-12-06)
+- [x] All CI checks passing across macOS, Ubuntu, Windows
+- [ ] **STEP 1: Create v0.5.0 Release Tag on main**
+  - [ ] `git checkout main && git pull origin main`
+  - [ ] `git tag -a v0.5.0 -m "SC- Prefix Refactoring Release v0.5.0..."`
+  - [ ] `git push origin v0.5.0`
+
+- [ ] **STEP 2: Create GitHub Release**
+  - [ ] `gh release create v0.5.0 --title "SC- Prefix Refactoring (v0.5.0)" --notes "..."`
+  - [ ] Add release notes documenting breaking changes from v0.4.0
+
+- [ ] **STEP 3: Verify Registry Deployment**
+  - [ ] Confirm registry.json is accessible at: https://raw.githubusercontent.com/randlee/synaptic-canvas/main/docs/registries/nuget/registry.json
+  - [ ] Test: `curl https://raw.githubusercontent.com/randlee/synaptic-canvas/main/docs/registries/nuget/registry.json | jq .version`
+  - [ ] Verify all 4 packages listed with v0.5.0 versions
+
+- [ ] **STEP 4: Update CHANGELOG.md** (Main repo changelog, if exists)
+  - [ ] Document v0.5.0 release with link to breaking changes
+  - [ ] Note: All package-specific CHANGELOGs already updated
+
+- [ ] **STEP 5: Create Release Announcement** (Optional but recommended)
+  - [ ] Create/update `docs/RELEASE-NOTES.md` with v0.5.0 highlights
+  - [ ] Include migration guide link for v0.4.0 users
+  - [ ] Post to GitHub Discussions (if community exists)
+
+- [ ] **STEP 6: Marketplace Availability Verification**
+  - [ ] Test installation: `python3 tools/sc-install.py install sc-delay-tasks --dest ~/.claude`
+  - [ ] Verify all 4 packages installable with sc- prefix
+  - [ ] Confirm packages discoverable via `sc-manage list`
 
 ---
 
