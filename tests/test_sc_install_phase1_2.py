@@ -598,7 +598,7 @@ class TestInstallWithRegistries:
 
         base = temp_home / ".claude"
         assert (base / "agents" / "sc-delay-once.md").exists()
-        assert (base / "scripts" / "delay-run.py").exists()
+        assert (base / "scripts" / "sc-delay-run.py").exists()
 
     def test_install_local_files_installed(self, temp_cwd):
         """Test that --local installs all package files."""
@@ -607,7 +607,7 @@ class TestInstallWithRegistries:
 
         base = temp_cwd / ".claude-local"
         assert (base / "agents" / "sc-delay-once.md").exists()
-        assert (base / "scripts" / "delay-run.py").exists()
+        assert (base / "scripts" / "sc-delay-run.py").exists()
 
     def test_install_global_respects_force_flag(self, temp_home, capsys):
         """Test that --global respects --force flag."""
@@ -654,7 +654,7 @@ class TestInstallWithRegistries:
         rc = sc_install.main(["install", "sc-delay-tasks", "--global"])
         assert rc == 0
 
-        script = temp_home / ".claude" / "scripts" / "delay-run.py"
+        script = temp_home / ".claude" / "scripts" / "sc-delay-run.py"
         assert os.access(script, os.X_OK)
 
     def test_install_local_maintains_executable_bit(self, temp_cwd):
@@ -662,7 +662,7 @@ class TestInstallWithRegistries:
         rc = sc_install.main(["install", "sc-delay-tasks", "--local"])
         assert rc == 0
 
-        script = temp_cwd / ".claude-local" / "scripts" / "delay-run.py"
+        script = temp_cwd / ".claude-local" / "scripts" / "sc-delay-run.py"
         assert os.access(script, os.X_OK)
 
     def test_install_global_expands_repo_name_token(self, temp_home, git_repo):
