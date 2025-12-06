@@ -217,14 +217,19 @@ def _fetch_registry_json(url: str, path: str = "") -> Optional[Dict]:
             full_url = f"{url.rstrip('/')}/registry.json"
         
         # Handle GitHub URLs - convert to raw content URL
-        if "github.com" in full_url and "/blob/" not in full_url:
+        if "github.com" in full_url and "/blob/" not in full_url and "raw.githubusercontent.com" not in full_url:
             # Convert github.com URL to raw.githubusercontent.com
             full_url = full_url.replace("github.com", "raw.githubusercontent.com")
             full_url = full_url.replace("/tree/", "/")
-            # If no branch specified, assume main
-            if "raw.githubusercontent.com" in full_url and full_url.count("/") == 4:
-                parts = full_url.split("/")
-                full_url = "/".join(parts[:4]) + "/main/" + "/".join(parts[4:])
+
+        # Insert branch name if missing (for raw.githubusercontent.com URLs)
+        if "raw.githubusercontent.com" in full_url:
+            parts = full_url.split("/")
+            # Expected: https://raw.githubusercontent.com/owner/repo/branch/path...
+            # If parts[5] looks like a path (not a branch), insert 'main'
+            if len(parts) >= 6 and not parts[5] in ["main", "master", "develop"]:
+                # Insert 'main' as default branch between repo and path
+                full_url = "/".join(parts[:5]) + "/main/" + "/".join(parts[5:])
         
         # Fetch with timeout
         req = urllib.request.Request(full_url, headers={"User-Agent": "sc-install/1.0"})
@@ -245,50 +250,65 @@ def _fetch_registry_json(url: str, path: str = "") -> Optional[Dict]:
 
 def _parse_registry_metadata(registry_data: Dict) -> Dict:
     """Extract packages from registry.json.
-    
+
     Phase 3 Task 1: Parse Registry Metadata
     - Extract packages from registry.json
     - Return simplified metadata: {package_name: {version, description, tier}}
     - Handle missing fields gracefully
     - Return empty dict if structure unrecognized
-    
+    - Support both dict and list formats for backward compatibility
+
     Args:
         registry_data: Dictionary from registry.json
-    
+
     Returns:
         Dictionary mapping package names to metadata
     """
     packages = {}
-    
+
     try:
-        # Expected structure: {"packages": [...]}
-        package_list = registry_data.get("packages", [])
-        
-        if not isinstance(package_list, list):
-            return {}
-        
-        for pkg in package_list:
-            if not isinstance(pkg, dict):
-                continue
-            
-            name = pkg.get("name", pkg.get("id", ""))
-            if not name:
-                continue
-            
-            packages[name] = {
-                "version": pkg.get("version", "unknown"),
-                "description": pkg.get("description", "No description available"),
-                "tier": pkg.get("tier", "community"),
-                "author": pkg.get("author", ""),
-                "source": pkg.get("source", ""),
-                "download_url": pkg.get("download_url", ""),
-                "dependencies": pkg.get("dependencies", []),
-            }
-    
+        packages_data = registry_data.get("packages", {})
+
+        # Handle dict format: {"package-name": {...metadata...}}
+        if isinstance(packages_data, dict):
+            for name, pkg in packages_data.items():
+                if not isinstance(pkg, dict):
+                    continue
+
+                packages[name] = {
+                    "version": pkg.get("version", "unknown"),
+                    "description": pkg.get("description", "No description available"),
+                    "tier": pkg.get("tier", "community"),
+                    "author": pkg.get("author", ""),
+                    "source": pkg.get("source", ""),
+                    "download_url": pkg.get("download_url", ""),
+                    "dependencies": pkg.get("dependencies", []),
+                }
+
+        # Handle list format: [{"name": "...", ...metadata...}]
+        elif isinstance(packages_data, list):
+            for pkg in packages_data:
+                if not isinstance(pkg, dict):
+                    continue
+
+                name = pkg.get("name", pkg.get("id", ""))
+                if not name:
+                    continue
+
+                packages[name] = {
+                    "version": pkg.get("version", "unknown"),
+                    "description": pkg.get("description", "No description available"),
+                    "tier": pkg.get("tier", "community"),
+                    "author": pkg.get("author", ""),
+                    "source": pkg.get("source", ""),
+                    "download_url": pkg.get("download_url", ""),
+                    "dependencies": pkg.get("dependencies", []),
+                }
+
     except Exception as e:
         warn(f"Error parsing registry metadata: {e}")
         return {}
-    
+
     return packages
 
 
