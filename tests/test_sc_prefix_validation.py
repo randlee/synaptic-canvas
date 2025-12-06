@@ -229,7 +229,7 @@ class TestCrossReferenceValidation:
 
             # Check all .md files for sc-sc- patterns
             for md_file in pkg_path.rglob('*.md'):
-                with open(md_file) as f:
+                with open(md_file, encoding='utf-8') as f:
                     content = f.read()
                 assert 'sc-sc-' not in content, \
                     f"Found double prefix 'sc-sc-' in {md_file}"
@@ -258,14 +258,14 @@ class TestTokenExpansion:
 
             # Check manifest for unexpanded tokens
             manifest_path = pkg_path / 'manifest.yaml'
-            with open(manifest_path) as f:
+            with open(manifest_path, encoding='utf-8') as f:
                 content = f.read()
             assert '{{REPO_NAME}}' not in content, \
                 f"Found unexpanded {{{{REPO_NAME}}}} token in {manifest_path}"
 
             # Check all .md files for unexpanded tokens
             for md_file in pkg_path.rglob('*.md'):
-                with open(md_file) as f:
+                with open(md_file, encoding='utf-8') as f:
                     content = f.read()
                 # Note: Some unexpanded tokens may be expected in documentation/examples
                 # Only fail if they appear in actual directives
