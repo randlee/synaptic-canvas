@@ -31,9 +31,9 @@ Options:
   --help      Show this help
 
 Examples:
-  sc-install.sh install git-worktree --dest ~/myrepo/.claude
+  sc-install.sh install sc-git-worktree --dest ~/myrepo/.claude
   sc-install.sh list
-  sc-install.sh info git-worktree
+  sc-install.sh info sc-git-worktree
 EOF
 }
 

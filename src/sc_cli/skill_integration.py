@@ -219,7 +219,7 @@ def install_marketplace_package(
         }
 
     Example:
-        >>> result = install_marketplace_package("delay-tasks", scope="global")
+        >>> result = install_marketplace_package("sc-delay-tasks", scope="global")
         >>> if result["status"] == "success":
         ...     print(f"Installed {len(result['installed_files'])} files")
 

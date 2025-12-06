@@ -38,7 +38,7 @@ The security scanner is implemented in `scripts/security-scan.sh` and performs s
 ./scripts/security-scan.sh --json
 
 # Scan single package
-./scripts/security-scan.sh --package delay-tasks
+./scripts/security-scan.sh --package sc-delay-tasks
 ```
 
 ## Check Categories
@@ -662,7 +662,7 @@ chmod +x scripts/security-scan.sh
 ls packages/my-package
 
 # Check package name spelling
-./scripts/security-scan.sh --package delay-tasks  # Correct name
+./scripts/security-scan.sh --package sc-delay-tasks  # Correct name
 ```
 
 ### False Positives

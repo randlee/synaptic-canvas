@@ -1127,7 +1127,7 @@ in certain git configurations. Fully backward compatible with v0.4.0.
 ## Upgrade
 
 ```bash
-python3 tools/sc-install.py install git-worktree --dest /path/to/your-repo/.claude --upgrade
+python3 tools/sc-install.py install sc-git-worktree --dest /path/to/your-repo/.claude --upgrade
 ```
 
 No action required. Token expansion now handles Unicode characters correctly.

@@ -650,7 +650,7 @@ Polls for release completion across multiple services/platforms.
 ### Minimum Setup
 ```bash
 # Install delay-tasks globally
-python3 tools/sc-install.py install delay-tasks --dest /Users/<you>/Documents/.claude
+python3 tools/sc-install.py install sc-delay-tasks --dest /Users/<you>/Documents/.claude
 
 # Use /delay command anywhere
 /delay --minutes 1 --action "Do something"

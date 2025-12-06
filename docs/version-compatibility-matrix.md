@@ -388,7 +388,7 @@ python3 tools/sc-install.py verify
 
 3. **Install new version**
    ```bash
-   python3 tools/sc-install.py install git-worktree --version 0.5.0
+   python3 tools/sc-install.py install sc-git-worktree --version 0.5.0
    ```
 
 4. **Verify**
@@ -805,7 +805,7 @@ All versions compatible.
 
 ```bash
 # Install just one package
-python3 tools/sc-install.py install git-worktree
+python3 tools/sc-install.py install sc-git-worktree
 
 # Verify dependencies
 python3 tools/sc-install.py verify git-worktree

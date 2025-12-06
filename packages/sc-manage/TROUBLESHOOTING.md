@@ -338,12 +338,12 @@ Package not found in current scope
 2. **For git-worktree (local-only):**
 ```bash
 # WRONG - git-worktree cannot be global
-python3 tools/sc-install.py install git-worktree --dest ~/Documents/.claude
+python3 tools/sc-install.py install sc-git-worktree --dest ~/Documents/.claude
 # Error: git-worktree is local-only
 
 # CORRECT
 cd /path/to/your/repo
-python3 tools/sc-install.py install git-worktree --dest ./.claude
+python3 tools/sc-install.py install sc-git-worktree --dest ./.claude
 ```
 
 3. **For global packages:**
@@ -403,7 +403,7 @@ cat packages/git-worktree/README.md | head -10
 ```bash
 # For local-only packages
 cd /path/to/your/repo
-python3 tools/sc-install.py install git-worktree --dest ./.claude
+python3 tools/sc-install.py install sc-git-worktree --dest ./.claude
 
 # For global packages
 python3 tools/sc-install.py install sc-manage --dest ~/Documents/.claude
@@ -478,7 +478,7 @@ git init
 
 5. Retry installation:
 ```bash
-python3 tools/sc-install.py install git-worktree --dest ./.claude
+python3 tools/sc-install.py install sc-git-worktree --dest ./.claude
 ```
 
 **Prevention:**
@@ -605,7 +605,7 @@ cat .claude/agents/worktree-create.md | grep REPO_NAME
 1. Ensure installation uses expansion (default):
 ```bash
 # Don't use --no-expand
-python3 tools/sc-install.py install git-worktree --dest ./.claude
+python3 tools/sc-install.py install sc-git-worktree --dest ./.claude
 ```
 
 2. Verify git repository detection:
@@ -616,7 +616,7 @@ basename $(git rev-parse --show-toplevel)
 
 3. Reinstall with forced expansion:
 ```bash
-python3 tools/sc-install.py install git-worktree --dest ./.claude --force
+python3 tools/sc-install.py install sc-git-worktree --dest ./.claude --force
 ```
 
 4. Check installed files:
@@ -1100,7 +1100,7 @@ python3 tools/sc-install.py list
 # Uninstall each (no bulk uninstall)
 python3 tools/sc-install.py uninstall delay-tasks --dest ~/Documents/.claude
 python3 tools/sc-install.py uninstall sc-manage --dest ~/Documents/.claude
-python3 tools/sc-install.py uninstall git-worktree --dest ./.claude
+python3 tools/sc-install.py uninstall sc-git-worktree --dest ./.claude
 
 # Or remove directory (nuclear option)
 rm -rf ~/Documents/.claude
