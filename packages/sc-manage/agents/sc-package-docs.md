@@ -1,6 +1,6 @@
 ---
 name: sc-package-docs
-version: 0.4.0
+version: 0.5.0
 description: Locate and return package documentation (README.md) for a given Synaptic Canvas package.
 model: sonnet
 color: blue
