@@ -132,8 +132,8 @@ python3 tools/sc-install.py install sc-git-worktree --dest /path/to/repo/.claude
 
 | Package | Type | Status | Version | Tier | Requirements |
 |---------|------|--------|---------|------|--------------|
-| delay-tasks | Utilities | ✅ Stable | 1.0.0 | 0 | Python 3.6+ |
-| git-worktree | Git Tools | ✅ Stable | 1.0.0 | 1 | Git 2.7.0+ |
+| sc-delay-tasks | Utilities | ✅ Stable | 1.0.0 | 0 | Python 3.6+ |
+| sc-git-worktree | Git Tools | ✅ Stable | 1.0.0 | 1 | Git 2.7.0+ |
 | sc-manage | Package Mgr | 🟡 Beta | 0.5.0 | 0 | Python 3.6+ |
 | sc-repomix-nuget | Analysis | 🟡 Beta | 0.5.0 | 2 | Node 18+, .NET SDK |
 
@@ -205,13 +205,13 @@ Every package in Synaptic Canvas is:
 ### Tier 0: Direct Copy
 - No setup or substitution needed
 - Ready to use immediately
-- Example: `delay-tasks`
+- Example: `sc-delay-tasks`
 - Setup time: < 1 minute
 
 ### Tier 1: Token Substitution
 - Auto-replaces variables like `{{REPO_NAME}}`
 - Customizes to your project automatically
-- Example: `git-worktree`
+- Example: `sc-git-worktree`
 - Setup time: 1-2 minutes
 
 ### Tier 2: Runtime Dependencies

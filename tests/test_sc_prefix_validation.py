@@ -218,9 +218,69 @@ class TestCrossReferenceValidation:
 
     def test_no_old_package_name_references(self):
         """Should not find old package names without sc- prefix in wrong contexts."""
-        # Skip names that should exist (delay-tasks, git-worktree, repomix-nuget are expected as package names)
-        # This test is more about catching accidental non-prefixed agent/command/skill names
-        pass
+        # Define old package names that should not appear (except in changelog/historical sections)
+        old_names = ['delay-tasks', 'git-worktree', 'repomix-nuget']
+
+        # Allowlist: patterns that indicate historical/acceptable usage
+        allowlist_patterns = [
+            'CHANGELOG',  # Historical changelogs can reference old names
+            'migration',  # Migration documentation
+            'renamed from',  # Explicit rename documentation
+            'previously called',  # Historical reference
+            'formerly known as',  # Historical reference
+            '## [0.4.0]',  # Old version sections in changelogs
+            'v0.4.0',  # Old version references
+        ]
+
+        # Files to check
+        files_to_check = [
+            'README.md',
+            'docs/registries/nuget/registry.schema.json',
+            'scripts/security-scan.sh',
+            'src/sc_cli/skill_integration.py',
+        ]
+
+        violations = []
+
+        for file_path in files_to_check:
+            full_path = Path(file_path)
+            if not full_path.exists():
+                continue
+
+            with open(full_path, 'r', encoding='utf-8') as f:
+                lines = f.readlines()
+
+            for line_num, line in enumerate(lines, 1):
+                # Skip lines matching allowlist patterns
+                if any(pattern in line for pattern in allowlist_patterns):
+                    continue
+
+                # Check for old package names
+                for old_name in old_names:
+                    if old_name in line:
+                        # Check if it's a reference that should use sc- prefix
+                        # Allow: packages/delay-tasks/ directory references (but they're actually packages/sc-delay-tasks/)
+                        if f'packages/{old_name}' in line:
+                            continue  # Directory structure references are OK
+                        if f'/{old_name}/' in line:
+                            continue  # Path references are OK
+                        # Allow: already prefixed with sc- (e.g., sc-delay-tasks contains delay-tasks)
+                        if f'sc-{old_name}' in line:
+                            continue  # sc-prefixed references are OK
+                        # Allow: in examples/docstrings showing the package name
+                        if '"' + old_name + '"' in line or "'" + old_name + "'" in line:
+                            # Check if it's in a code example or docstring
+                            if '>>>' in line or 'install_marketplace_package' in line:
+                                continue  # Code examples are OK if they're showing old usage
+
+                        violations.append(
+                            f"{file_path}:{line_num}: Found '{old_name}' (should be 'sc-{old_name}'): {line.strip()[:80]}"
+                        )
+
+        # Assert no violations found
+        if violations:
+            error_msg = "Found old package name references that should use sc- prefix:\n" + "\n".join(violations)
+            pytest.fail(error_msg)
 
     def test_no_double_sc_prefixes(self):
         """Should not find any 'sc-sc-' double prefixes."""
