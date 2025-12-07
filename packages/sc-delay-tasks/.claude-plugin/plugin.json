@@ -7,7 +7,15 @@
   },
   "license": "MIT",
   "keywords": ["delay", "polling", "scheduler", "ci", "workflow", "agents"],
-  "commands": ["./commands"],
-  "agents": ["./agents"],
-  "skills": ["./skills"]
+  "commands": [
+    "./commands/sc-delay.md"
+  ],
+  "agents": [
+    "./agents/sc-delay-once.md",
+    "./agents/sc-delay-poll.md",
+    "./agents/sc-git-pr-check-delay.md"
+  ],
+  "skills": [
+    "./skills/sc-delaying-tasks/SKILL.md"
+  ]
 }
