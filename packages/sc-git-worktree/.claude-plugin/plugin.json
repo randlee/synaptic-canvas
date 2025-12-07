@@ -1,0 +1,13 @@
+{
+  "name": "sc-git-worktree",
+  "description": "Create, manage, scan, and clean up git worktrees for parallel development. Maintains tracking of worktree status, branch details, and cleanup history with optional tracking document.",
+  "version": "0.5.1",
+  "author": {
+    "name": "randlee"
+  },
+  "license": "MIT",
+  "keywords": ["git", "worktree", "parallel", "development", "branch-management"],
+  "commands": ["./commands"],
+  "agents": ["./agents"],
+  "skills": ["./skills"]
+}
