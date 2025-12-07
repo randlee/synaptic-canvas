@@ -1,7 +1,7 @@
 ---
 name: /sc-manage
 description: List, install, or uninstall Synaptic Canvas Claude packages for the current machine or this repo.
-version: 0.5.0
+version: 0.5.1
 options:
   - name: --list
     description: List available packages and show install status (no/global/local) with a summary table.
