@@ -1,0 +1,61 @@
+{
+  "name": "synaptic-canvas",
+  "owner": {
+    "name": "randlee",
+    "email": "[email protected]"
+  },
+  "metadata": {
+    "description": "A marketplace for Claude Code skills, agents, and commands",
+    "version": "0.5.1"
+  },
+  "plugins": [
+    {
+      "name": "sc-delay-tasks",
+      "source": "./packages/sc-delay-tasks",
+      "description": "Schedule delayed or interval-based actions with minimal heartbeats",
+      "version": "0.5.1",
+      "author": {
+        "name": "randlee"
+      },
+      "license": "MIT",
+      "keywords": ["delay", "polling", "scheduler", "ci", "workflow"],
+      "category": "productivity"
+    },
+    {
+      "name": "sc-git-worktree",
+      "source": "./packages/sc-git-worktree",
+      "description": "Manage git worktrees with optional tracking",
+      "version": "0.5.1",
+      "author": {
+        "name": "randlee"
+      },
+      "license": "MIT",
+      "keywords": ["git", "worktree", "parallel", "development"],
+      "category": "development"
+    },
+    {
+      "name": "sc-manage",
+      "source": "./packages/sc-manage",
+      "description": "Synaptic Canvas package management interface",
+      "version": "0.5.1",
+      "author": {
+        "name": "randlee"
+      },
+      "license": "MIT",
+      "keywords": ["packages", "management", "marketplace"],
+      "category": "tools"
+    },
+    {
+      "name": "sc-repomix-nuget",
+      "source": "./packages/sc-repomix-nuget",
+      "description": "Generate AI-optimized NuGet package context",
+      "version": "0.5.1",
+      "author": {
+        "name": "randlee"
+      },
+      "license": "MIT",
+      "keywords": ["nuget", "dotnet", "analysis", "context"],
+      "category": "development"
+    }
+  ]
+}
