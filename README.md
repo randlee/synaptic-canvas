@@ -10,34 +10,44 @@ Discover and install productivity packages for Claude development workflows. Reg
 
 ---
 
-## 🚀 Quick Start (30 Seconds)
+## 🚀 Quick Start (10 Seconds)
 
-### Step 1: Register the Marketplace
-
-Run once on any computer to add Synaptic Canvas:
+### Add the Marketplace
 
 ```bash
+/plugin marketplace add randlee/synaptic-canvas
+```
+
+### Browse & Install Packages
+
+```bash
+# Browse all packages interactively
+/plugin
+
+# Or install directly
+/plugin install sc-delay-tasks@synaptic-canvas
+```
+
+That's it! Commands, agents, and skills are immediately available in Claude Code.
+
+---
+
+## Alternative: Python CLI (Legacy)
+
+For advanced use cases or automation, the Python CLI is still available:
+
+```bash
+# Register marketplace
 python3 tools/sc-install.py registry add synaptic-canvas \
   https://raw.githubusercontent.com/randlee/synaptic-canvas/main/docs/registries/nuget/registry.json
-```
 
-### Step 2: Discover Available Packages
-
-```bash
-python3 tools/sc-install.py list
-```
-
-### Step 3: Install a Package
-
-```bash
-# Quick install (recommended)
+# Install package
 python3 tools/sc-install.py install sc-delay-tasks
-
-# Or specify destination for repo-specific setup
-python3 tools/sc-install.py install sc-git-worktree --dest /path/to/repo/.claude
 ```
 
-> **💡 Tip:** Need help? Run `scripts/security-scan.sh` to diagnose installation issues.
+> **⚠️ Deprecation Notice:** The Python CLI is deprecated and will be removed in v1.0.0. Please use `/plugin` commands.
+>
+> See [Legacy Installation Guide](docs/LEGACY-INSTALL.md) for details.
 
 ---
 

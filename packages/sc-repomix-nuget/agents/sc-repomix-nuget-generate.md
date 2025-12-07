@@ -1,6 +1,6 @@
 ---
 name: repomix-generate
-version: 0.5.0
+version: 0.5.1
 description: Execute Repomix to generate compressed XML API surface for a NuGet package.
 ---
 
