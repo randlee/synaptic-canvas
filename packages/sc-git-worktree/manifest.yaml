@@ -1,5 +1,5 @@
 name: sc-git-worktree
-version: 0.5.0
+version: 0.5.1
 description: >
   Manage git worktrees with optional tracking: create, scan, cleanup, and abort
   worktrees using a standard sibling folder layout with tracking documents.
