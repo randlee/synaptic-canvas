@@ -7,7 +7,16 @@
   },
   "license": "MIT",
   "keywords": ["git", "worktree", "parallel", "development", "branch-management"],
-  "commands": ["./commands"],
-  "agents": ["./agents"],
-  "skills": ["./skills"]
+  "commands": [
+    "./commands/sc-git-worktree.md"
+  ],
+  "agents": [
+    "./agents/sc-git-worktree-create.md",
+    "./agents/sc-git-worktree-scan.md",
+    "./agents/sc-git-worktree-cleanup.md",
+    "./agents/sc-git-worktree-abort.md"
+  ],
+  "skills": [
+    "./skills/sc-git-worktree/SKILL.md"
+  ]
 }
