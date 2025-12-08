@@ -1,6 +1,6 @@
 ---
 name: context-assemble
-version: 0.5.1
+version: 0.5.2
 description: Assemble final NuGet context XML by combining Repomix output with NuGet metadata header.
 ---
 

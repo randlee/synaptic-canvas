@@ -32,7 +32,7 @@ def test_all_packages_have_plugin_json():
         data = json.loads(plugin_json.read_text())
         assert data["name"] == pkg, f"Expected name '{pkg}', got '{data['name']}'"
         assert "version" in data, f"{pkg}/plugin.json missing 'version' field"
-        assert data["version"] == "0.5.1", f"{pkg} expected version 0.5.1, got {data['version']}"
+        assert data["version"] == "0.5.2", f"{pkg} expected version 0.5.2, got {data['version']}"
 
 
 def test_plugin_json_schema_valid():

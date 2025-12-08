@@ -1,6 +1,6 @@
 ---
 name: sc-package-install
-version: 0.5.1
+version: 0.5.2
 description: Install a Synaptic Canvas package locally (repo .claude) or globally according to package policy.
 model: sonnet
 color: blue

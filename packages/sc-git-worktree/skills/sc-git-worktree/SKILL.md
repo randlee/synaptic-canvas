@@ -5,7 +5,7 @@ description: >
   Use when working on multiple branches simultaneously, isolating experiments,
   or when user mentions "worktree", "parallel branches", "feature isolation",
   "branch cleanup", or "worktree status".
-version: 0.5.1
+version: 0.5.2
 ---
 
 # Managing Git Worktrees

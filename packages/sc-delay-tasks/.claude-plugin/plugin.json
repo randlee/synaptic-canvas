@@ -1,7 +1,7 @@
 {
   "name": "sc-delay-tasks",
   "description": "Schedule delayed one-shot or bounded polling actions with minimal heartbeats. Useful for waiting before running checks (e.g., CI status) or polling with stop-on-success.",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "author": {
     "name": "randlee"
   },

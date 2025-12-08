@@ -1,6 +1,6 @@
 ---
 name: sc-worktree-abort
-version: 0.5.1
+version: 0.5.2
 description: Abandon a worktree and discard work. Remove worktree; delete branch (local/remote) only with explicit approval, especially if unmerged/dirty. Update tracking when enabled.
 model: sonnet
 color: red
