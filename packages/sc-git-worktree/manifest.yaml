@@ -1,8 +1,8 @@
 name: sc-git-worktree
-version: 0.5.2
+version: 0.6.0
 description: >
-  Manage git worktrees with optional tracking: create, scan, cleanup, and abort
-  worktrees using a standard sibling folder layout with tracking documents.
+  Manage git worktrees with optional tracking and protected branch safeguards: create, scan, cleanup, abort, and update
+  worktrees using a standard sibling folder layout with tracking documents. Prevents accidental deletion of protected branches.
 author: randlee
 license: MIT
 tags:
@@ -23,6 +23,7 @@ artifacts:
     - agents/sc-git-worktree-scan.md
     - agents/sc-git-worktree-cleanup.md
     - agents/sc-git-worktree-abort.md
+    - agents/sc-git-worktree-update.md
 
 # Token substitution (Tier 1 package)
 variables:

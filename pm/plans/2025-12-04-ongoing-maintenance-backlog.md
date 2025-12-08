@@ -299,51 +299,123 @@ Recent Commits (2025-12-05 session):
 
 ## Priority 4: Future Releases
 
-### 4.1 Version 0.5.0 Release (CURRENT - IN FINAL DEPLOYMENT)
-**Status:** ✅ Code Complete - PR MERGED TO MAIN - Ready for Release Tagging
-**Timeline:** Ready for immediate release
+### 4.1 Version 0.5.0 Release ✅ COMPLETED
+**Status:** ✅ Released
+**Release Date:** 2025-12-06
 **Completion Criteria:**
 - [x] All 4 packages renamed with sc- prefix
 - [x] All manifests updated to 0.5.0
 - [x] Registry.json updated with new names and versions
 - [x] 19/19 validation tests passing
 - [x] All branches merged to develop
-- [x] 362/362 comprehensive tests passing (100% - all remote mock tests resolved)
+- [x] 362/362 comprehensive tests passing (100%)
 - [x] README.md updated with sc-prefixed names and examples
 - [x] Integration tests updated to use sc-prefixed names
-- [x] PR #14 created, reviewed, and merged to main (2025-12-06)
+- [x] PR #14 created, reviewed, and merged to main
 - [x] All CI checks passing across macOS, Ubuntu, Windows
-- [ ] **STEP 1: Create v0.5.0 Release Tag on main**
-  - [ ] `git checkout main && git pull origin main`
-  - [ ] `git tag -a v0.5.0 -m "SC- Prefix Refactoring Release v0.5.0..."`
-  - [ ] `git push origin v0.5.0`
-
-- [ ] **STEP 2: Create GitHub Release**
-  - [ ] `gh release create v0.5.0 --title "SC- Prefix Refactoring (v0.5.0)" --notes "..."`
-  - [ ] Add release notes documenting breaking changes from v0.4.0
-
-- [ ] **STEP 3: Verify Registry Deployment**
-  - [ ] Confirm registry.json is accessible at: https://raw.githubusercontent.com/randlee/synaptic-canvas/main/docs/registries/nuget/registry.json
-  - [ ] Test: `curl https://raw.githubusercontent.com/randlee/synaptic-canvas/main/docs/registries/nuget/registry.json | jq .version`
-  - [ ] Verify all 4 packages listed with v0.5.0 versions
-
-- [ ] **STEP 4: Update CHANGELOG.md** (Main repo changelog, if exists)
-  - [ ] Document v0.5.0 release with link to breaking changes
-  - [ ] Note: All package-specific CHANGELOGs already updated
-
-- [ ] **STEP 5: Create Release Announcement** (Optional but recommended)
-  - [ ] Create/update `docs/RELEASE-NOTES.md` with v0.5.0 highlights
-  - [ ] Include migration guide link for v0.4.0 users
-  - [ ] Post to GitHub Discussions (if community exists)
-
-- [ ] **STEP 6: Marketplace Availability Verification**
-  - [ ] Test installation: `python3 tools/sc-install.py install sc-delay-tasks --dest ~/.claude`
-  - [ ] Verify all 4 packages installable with sc- prefix
-  - [ ] Confirm packages discoverable via `sc-manage list`
+- [x] Release tag v0.5.0 created
+- [x] GitHub Release published
+- [x] Registry deployment verified
+- [x] Marketplace installation verified
 
 ---
 
-### 4.2 Version 1.0.0 Breaking Changes (Future)
+### 4.2 Version 0.6.0 - Release GitHub Issue Skill (NEXT)
+**Status:** ⏳ Planned
+**Timeline:** Q1 2025
+**Effort:** 1 week
+**Current Location:** `.claude/skills/github-issue/` (project-level)
+
+**Scope:**
+Package and release the existing github-issue skill as a standalone Synaptic Canvas package.
+
+**Current Implementation:**
+- ✅ Skill already exists: `.claude/skills/github-issue/SKILL.md`
+- ✅ 4 agents implemented:
+  - issue-intake-agent.md (list and fetch issue details)
+  - issue-mutate-agent.md (create and update issues)
+  - issue-fix-agent.md (implement fixes in isolated worktrees)
+  - issue-pr-agent.md (create PRs for issue fixes)
+- ✅ Command: `/github-issue` (project-level)
+- ✅ Integration with sc-git-worktree for worktree isolation
+- ✅ Full lifecycle management (list → create → fix → PR)
+
+**Deliverables:**
+- [ ] Create package structure in `packages/sc-github-issue/`
+- [ ] Create manifest.yaml with package metadata
+- [ ] Move agents to `packages/sc-github-issue/agents/`
+- [ ] Move skill to `packages/sc-github-issue/skills/`
+- [ ] Move command to `packages/sc-github-issue/commands/`
+- [ ] Create README.md with usage examples
+- [ ] Create CHANGELOG.md (starting at v0.1.0)
+- [ ] Create USE-CASES.md with practical examples
+- [ ] Create TROUBLESHOOTING.md for common issues
+- [ ] Create DEPENDENCIES.md (requires: sc-git-worktree, gh CLI)
+- [ ] Add comprehensive tests
+- [ ] Update registry.json with new package
+- [ ] Version bump to 0.6.0 across all packages
+
+**Dependencies:**
+- Requires: sc-git-worktree (v0.5.0+)
+- Requires: GitHub CLI (`gh`)
+
+**Next Steps:**
+1. Create package directory structure
+2. Migrate existing skill/agents/command files
+3. Write package documentation
+4. Add to registry and test installation
+
+---
+
+### 4.3 Version 0.7.0 - SC-Project-Manager Package
+**Status:** ⏳ Planned
+**Timeline:** Q1 2025
+**Effort:** 2-3 weeks
+**Design Document:** `plans/sc-project-manager-design.md`
+
+**Scope:**
+Create comprehensive project management package for sprint-based development with AI agents.
+
+**Key Features:**
+- Master checklist management (phases/sprints with flexible numbering)
+- Worktree-based sprint isolation (integration with sc-git-worktree)
+- Agent orchestration (PM → Scrum Master → Dev/QA cycles)
+- Multiple scrum master types (standard, parallel, competitive)
+- Project-specific agent selection and configuration
+- Automated PR creation and merge workflows
+
+**Deliverables:**
+- [ ] Answer 5 design questions (docs location, startup prompt, etc.)
+- [ ] Create package structure in `packages/sc-project-manager/`
+- [ ] Implement manifest.yaml and README.md
+- [ ] Create 3 commands: project-init, project-resume, project-status
+- [ ] Build 7 core agents:
+  - [ ] sc-pm-planner (project structure creator)
+  - [ ] sc-pm-manager (foreground PM, user-facing)
+  - [ ] sc-pm-status (status analysis)
+  - [ ] sc-pm-scrum-master (standard sprint coordinator)
+  - [ ] sc-pm-parallel-scrum (multi-worktree coordinator)
+  - [ ] sc-pm-competitive-scrum (A/B solution coordinator)
+  - [ ] sc-pm-merge (branch merge specialist)
+- [ ] Create default dev/qa agents
+- [ ] Build 4 templates (master-checklist, project-settings, sprint-plan, startup-prompt)
+- [ ] Write supporting docs (USE-CASES, TROUBLESHOOTING, CHANGELOG)
+- [ ] Create JSON schemas for project-settings and worktree-list
+- [ ] Add comprehensive tests
+- [ ] Update registry.json with new package
+- [ ] Version bump to 0.6.0 across all packages
+
+**Dependencies:**
+- Requires: sc-git-worktree (v0.5.0+)
+
+**Next Steps:**
+1. Resolve 5 design questions from design doc
+2. Create package directory structure
+3. Begin implementation with manifest and core commands
+
+---
+
+### 4.4 Version 1.0.0 Breaking Changes (Future)
 **Status:** Not Started
 **Timeline:** Q2-Q3 2026 (estimated)
 **Planned Changes:**
