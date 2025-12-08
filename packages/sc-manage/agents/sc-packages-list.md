@@ -1,6 +1,6 @@
 ---
 name: sc-packages-list
-version: 0.5.1
+version: 0.5.2
 description: Enumerate available Synaptic Canvas packages, detect install scope (no/local/global), and return a machine-readable table.
 model: sonnet
 color: blue

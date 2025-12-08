@@ -1,6 +1,6 @@
 ---
 name: sc-repomix-nuget
-version: 0.5.1
+version: 0.5.2
 description: >
   Generate AI-optimized context for NuGet packages using Repomix. Use when preparing
   AI docs, API references, or dependency analysis ("nuget context", "repomix nuget").
