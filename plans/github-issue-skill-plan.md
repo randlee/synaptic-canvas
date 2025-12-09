@@ -97,17 +97,17 @@ All agents now include:
   - [x] TROUBLESHOOTING.md - Common issues and solutions
   - [x] DEPENDENCIES.md - sc-git-worktree, gh CLI requirements
 
-### ✅ Phase 5: Registry & Release (COMPLETED - Ready for Commit)
+### ✅ Phase 5: Registry & Release (COMPLETED)
 - [x] Update `docs/registries/nuget/registry.json` with all v0.6.0 packages:
   - [x] sc-delay-tasks: v0.6.0
   - [x] sc-manage: v0.6.0
   - [x] sc-repomix-nuget: v0.6.0
   - [x] sc-git-worktree: v0.6.0
   - [x] sc-github-issue: v0.6.0 (NEW)
-- [ ] Commit all changes (ready)
-- [ ] Push to remote
-- [ ] Create release tag v0.6.0
-- [ ] Test installation: `sc-manage install sc-github-issue`
+- [x] Commit all changes (49 files changed, commit 9824836)
+- [x] Push to remote (main branch)
+- [x] Create release tag v0.6.0 (pushed)
+- [ ] Test installation: `sc-manage install sc-github-issue` (ready to test)
 
 ## Technical Details
 
