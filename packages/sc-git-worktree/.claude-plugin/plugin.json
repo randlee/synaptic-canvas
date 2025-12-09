@@ -1,7 +1,7 @@
 {
   "name": "sc-git-worktree",
   "description": "Create, manage, scan, and clean up git worktrees for parallel development. Maintains tracking of worktree status, branch details, and cleanup history with optional tracking document.",
-  "version": "0.5.2",
+  "version": "0.6.0",
   "author": {
     "name": "randlee"
   },
@@ -14,7 +14,8 @@
     "./agents/sc-git-worktree-create.md",
     "./agents/sc-git-worktree-scan.md",
     "./agents/sc-git-worktree-cleanup.md",
-    "./agents/sc-git-worktree-abort.md"
+    "./agents/sc-git-worktree-abort.md",
+    "./agents/sc-git-worktree-update.md"
   ],
   "skills": [
     "./skills/sc-git-worktree/SKILL.md"

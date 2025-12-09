@@ -1,6 +1,6 @@
 ---
 name: registry-resolve
-version: 0.5.2
+version: 0.6.0
 description: Resolve package dependencies and dependents from central registry with optional local manifest augmentation.
 ---
 

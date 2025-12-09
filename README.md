@@ -90,7 +90,7 @@ python3 tools/sc-install.py install sc-delay-tasks
 
 ### [sc-manage](packages/sc-manage/)
 [![Beta](https://img.shields.io/badge/status-beta-yellow)](packages/sc-manage/CHANGELOG.md)
-[![v0.5.0](https://img.shields.io/badge/version-0.5.0-blue)](packages/sc-manage/CHANGELOG.md)
+[![v0.6.0](https://img.shields.io/badge/version-0.6.0-blue)](packages/sc-manage/CHANGELOG.md)
 [![Tier 0](https://img.shields.io/badge/tier-0-green)](README.md#-package-tiers-explained)
 [![MIT License](https://img.shields.io/badge/license-MIT-green)](packages/sc-manage/LICENSE)
 
@@ -108,7 +108,7 @@ python3 tools/sc-install.py install sc-delay-tasks
 
 ### [sc-repomix-nuget](packages/sc-repomix-nuget/)
 [![Beta](https://img.shields.io/badge/status-beta-yellow)](packages/sc-repomix-nuget/CHANGELOG.md)
-[![v0.5.0](https://img.shields.io/badge/version-0.5.0-blue)](packages/sc-repomix-nuget/CHANGELOG.md)
+[![v0.6.0](https://img.shields.io/badge/version-0.6.0-blue)](packages/sc-repomix-nuget/CHANGELOG.md)
 [![Tier 2](https://img.shields.io/badge/tier-2-orange)](README.md#-package-tiers-explained)
 [![MIT License](https://img.shields.io/badge/license-MIT-green)](packages/sc-repomix-nuget/LICENSE)
 
@@ -124,6 +124,25 @@ python3 tools/sc-install.py install sc-delay-tasks
 
 ---
 
+### [sc-github-issue](packages/sc-github-issue/)
+[![Beta](https://img.shields.io/badge/status-beta-yellow)](packages/sc-github-issue/CHANGELOG.md)
+[![v0.6.0](https://img.shields.io/badge/version-0.6.0-blue)](packages/sc-github-issue/CHANGELOG.md)
+[![Tier 2](https://img.shields.io/badge/tier-2-orange)](README.md#-package-tiers-explained)
+[![MIT License](https://img.shields.io/badge/license-MIT-green)](packages/sc-github-issue/LICENSE)
+
+**GitHub issue lifecycle management** — List, create, update issues, and implement fixes in isolated worktrees with automated testing and PR creation.
+
+**Use when you need to:**
+- List and browse GitHub issues with filtering
+- Create and update issues interactively
+- Implement bug fixes in isolated worktrees
+- Automate testing, commits, and PR creation
+- Maintain clean main working directory during fixes
+
+📖 **[Full README](packages/sc-github-issue/README.md)** | 💡 **[10 Use Cases](packages/sc-github-issue/USE-CASES.md)** | 🔧 **[Troubleshooting](packages/sc-github-issue/TROUBLESHOOTING.md)** | 📋 **[Changelog](packages/sc-github-issue/CHANGELOG.md)**
+
+---
+
 ## 🎯 Find the Right Package
 
 ### I want to...
@@ -132,6 +151,7 @@ python3 tools/sc-install.py install sc-delay-tasks
 |------|---------|------|
 | **Wait before checking if something is ready** | sc-delay-tasks | [Examples](packages/sc-delay-tasks/USE-CASES.md) |
 | **Work on multiple branches simultaneously** | sc-git-worktree | [Guide](packages/sc-git-worktree/USE-CASES.md) |
+| **Fix GitHub issues in isolated worktrees** | sc-github-issue | [Examples](packages/sc-github-issue/USE-CASES.md) |
 | **Analyze a C# project with AI** | sc-repomix-nuget | [Examples](packages/sc-repomix-nuget/USE-CASES.md) |
 | **Discover & install packages** | sc-manage | [Guide](packages/sc-manage/USE-CASES.md) |
 | **See all available packages** | Any | [Registry](docs/registries/nuget/registry.json) |
@@ -142,10 +162,11 @@ python3 tools/sc-install.py install sc-delay-tasks
 
 | Package | Type | Status | Version | Tier | Requirements |
 |---------|------|--------|---------|------|--------------|
-| sc-delay-tasks | Utilities | ✅ Stable | 1.0.0 | 0 | Python 3.6+ |
-| sc-git-worktree | Git Tools | ✅ Stable | 1.0.0 | 1 | Git 2.7.0+ |
-| sc-manage | Package Mgr | 🟡 Beta | 0.5.0 | 0 | Python 3.6+ |
-| sc-repomix-nuget | Analysis | 🟡 Beta | 0.5.0 | 2 | Node 18+, .NET SDK |
+| sc-delay-tasks | Utilities | 🟡 Beta | 0.6.0 | 0 | Python 3.6+ |
+| sc-git-worktree | Git Tools | 🟡 Beta | 0.6.0 | 1 | Git 2.27+ |
+| sc-manage | Package Mgr | 🟡 Beta | 0.6.0 | 0 | Python 3.6+ |
+| sc-repomix-nuget | Analysis | 🟡 Beta | 0.6.0 | 2 | Node 18+, .NET SDK |
+| sc-github-issue | GitHub | 🟡 Beta | 0.6.0 | 2 | Git 2.27+, gh CLI 2.0+ |
 
 **Status:** ✅ Stable (production-ready) | 🟡 Beta (active development) | 🔴 Deprecated (not recommended)
 

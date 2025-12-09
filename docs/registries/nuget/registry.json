@@ -1,18 +1,18 @@
 {
   "$schema": "https://yourcompany.github.io/schemas/package-registry.schema.json",
   "version": "2.0.0",
-  "generated": "2025-12-02T02:24:00Z",
+  "generated": "2025-12-08T00:00:00Z",
   "repo": "randlee/synaptic-canvas",
   "marketplace": {
     "name": "Synaptic Canvas",
-    "version": "0.5.2",
+    "version": "0.6.0",
     "status": "beta",
     "url": "https://github.com/randlee/synaptic-canvas"
   },
   "packages": {
     "sc-delay-tasks": {
       "name": "sc-delay-tasks",
-      "version": "0.5.2",
+      "version": "0.6.0",
       "status": "beta",
       "tier": 0,
       "description": "Schedule delayed or interval-based actions with minimal heartbeats. Ideal for waiting before running checks (e.g., GH Actions, PR status) or polling on a bounded interval.",
@@ -37,15 +37,15 @@
       },
       "dependencies": [],
       "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-delay-tasks/CHANGELOG.md",
-      "lastUpdated": "2025-12-02",
+      "lastUpdated": "2025-12-08",
       "dependents": []
     },
     "sc-git-worktree": {
       "name": "sc-git-worktree",
-      "version": "0.5.2",
+      "version": "0.6.0",
       "status": "beta",
       "tier": 1,
-      "description": "Create, manage, scan, and clean up git worktrees for parallel development. Maintains tracking of worktree status, branch details, and cleanup history with optional tracking document.",
+      "description": "Create, manage, scan, and clean up git worktrees for parallel development with protected branch safeguards. Maintains tracking of worktree status, branch details, and cleanup history.",
       "github": "randlee/synaptic-canvas",
       "repo": "https://github.com/randlee/synaptic-canvas",
       "path": "packages/sc-git-worktree",
@@ -57,12 +57,13 @@
         "worktree",
         "branches",
         "development",
-        "parallel"
+        "parallel",
+        "protected-branches"
       ],
       "artifacts": {
         "commands": 1,
         "skills": 1,
-        "agents": 4,
+        "agents": 5,
         "scripts": 0
       },
       "variables": {
@@ -75,12 +76,14 @@
         "git >= 2.27"
       ],
       "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-git-worktree/CHANGELOG.md",
-      "lastUpdated": "2025-12-02",
-      "dependents": []
+      "lastUpdated": "2025-12-08",
+      "dependents": [
+        "sc-github-issue"
+      ]
     },
     "sc-manage": {
       "name": "sc-manage",
-      "version": "0.5.2",
+      "version": "0.6.0",
       "status": "beta",
       "tier": 0,
       "description": "Interface for managing Synaptic Canvas packages. Provides discovery, installation info, and management utilities for the marketplace.",
@@ -104,12 +107,12 @@
       },
       "dependencies": [],
       "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-manage/CHANGELOG.md",
-      "lastUpdated": "2025-12-02",
+      "lastUpdated": "2025-12-08",
       "dependents": []
     },
     "sc-repomix-nuget": {
       "name": "sc-repomix-nuget",
-      "version": "0.5.2",
+      "version": "0.6.0",
       "status": "beta",
       "tier": 1,
       "description": "Generate comprehensive NuGet repository context for AI analysis. Extracts package metadata, assembly information, and documentation for enhanced code understanding.",
@@ -142,24 +145,60 @@
         "python3 >= 3.12"
       ],
       "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-repomix-nuget/CHANGELOG.md",
-      "lastUpdated": "2025-12-02",
+      "lastUpdated": "2025-12-08",
+      "dependents": []
+    },
+    "sc-github-issue": {
+      "name": "sc-github-issue",
+      "version": "0.6.0",
+      "status": "beta",
+      "tier": 2,
+      "description": "GitHub issue lifecycle management with worktree isolation. List, create, update issues, and implement fixes in isolated worktrees with automated testing, commits, and PR creation.",
+      "github": "randlee/synaptic-canvas",
+      "repo": "https://github.com/randlee/synaptic-canvas",
+      "path": "packages/sc-github-issue",
+      "readme": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-github-issue/README.md",
+      "license": "MIT",
+      "author": "Anthropic",
+      "tags": [
+        "github",
+        "issues",
+        "pull-requests",
+        "worktree",
+        "automation",
+        "ci",
+        "bug-fixing"
+      ],
+      "artifacts": {
+        "commands": 1,
+        "skills": 1,
+        "agents": 4,
+        "scripts": 0
+      },
+      "dependencies": [
+        "sc-git-worktree >= 0.6.0",
+        "gh >= 2.0"
+      ],
+      "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-github-issue/CHANGELOG.md",
+      "lastUpdated": "2025-12-08",
       "dependents": []
     }
   },
   "metadata": {
     "registryVersion": "2.0.0",
     "schemaVersion": "1.0.0",
-    "totalPackages": 4,
-    "totalCommands": 4,
-    "totalSkills": 4,
-    "totalAgents": 14,
+    "totalPackages": 5,
+    "totalCommands": 5,
+    "totalSkills": 5,
+    "totalAgents": 19,
     "totalScripts": 2,
     "categories": {
       "automation": [
         "sc-delay-tasks"
       ],
       "development-tools": [
-        "sc-git-worktree"
+        "sc-git-worktree",
+        "sc-github-issue"
       ],
       "package-management": [
         "sc-manage"
@@ -170,7 +209,7 @@
     }
   },
   "versionCompatibility": {
-    "marketplace": "0.5.2",
+    "marketplace": "0.6.0",
     "minimumPackageVersion": "0.4.0",
     "maximumPackageVersion": "0.x.x",
     "note": "Marketplace is in beta. All packages should remain at 0.x versions until first stable release (1.0.0)"
@@ -189,9 +228,10 @@
         "sc-delay-tasks",
         "sc-git-worktree",
         "sc-manage",
-        "sc-repomix-nuget"
+        "sc-repomix-nuget",
+        "sc-github-issue"
       ],
-      "total_packages": 4
+      "total_packages": 5
     }
   }
 }
