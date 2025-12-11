@@ -16,7 +16,10 @@ This document consolidates remaining action items identified from completed mark
 **Backlog Status:**
 - ✅ Marketplace Improvement: 100% Complete (51 files, 66,282 lines)
 - ✅ Skill Upgrade Plan: 95% Complete (13.8/14 items)
-- ✅ Sc- Prefix Refactoring (v0.5.0): 100% COMPLETE - Ready for Release (362/362 tests passing)
+- ✅ Sc- Prefix Refactoring (v0.5.0): 100% Complete - Released 2025-12-06
+- ✅ GitHub Issue Skill (v0.6.0): 100% Complete - Released 2025-12-08
+- ✅ CI Automation Package (v0.1.0): 100% Complete - Released 2025-12-09
+- ⏳ Next Up: Kanban Task Management Skill (v0.7.0)
 - ⏳ Remaining Items: Ongoing maintenance + future enhancements
 
 ---
@@ -320,11 +323,12 @@ Recent Commits (2025-12-05 session):
 
 ---
 
-### 4.2 Version 0.6.0 - Release GitHub Issue Skill (NEXT)
-**Status:** ⏳ Planned
+### 4.2 Version 0.6.0 - Release GitHub Issue Skill ✅ COMPLETED
+**Status:** ✅ Released
+**Release Date:** 2025-12-08
 **Timeline:** Q1 2025
 **Effort:** 1 week
-**Current Location:** `.claude/skills/github-issue/` (project-level)
+**Location:** `packages/sc-github-issue/`
 
 **Scope:**
 Package and release the existing github-issue skill as a standalone Synaptic Canvas package.
@@ -341,37 +345,150 @@ Package and release the existing github-issue skill as a standalone Synaptic Can
 - ✅ Full lifecycle management (list → create → fix → PR)
 
 **Deliverables:**
-- [ ] Create package structure in `packages/sc-github-issue/`
-- [ ] Create manifest.yaml with package metadata
-- [ ] Move agents to `packages/sc-github-issue/agents/`
-- [ ] Move skill to `packages/sc-github-issue/skills/`
-- [ ] Move command to `packages/sc-github-issue/commands/`
-- [ ] Create README.md with usage examples
-- [ ] Create CHANGELOG.md (starting at v0.1.0)
-- [ ] Create USE-CASES.md with practical examples
-- [ ] Create TROUBLESHOOTING.md for common issues
-- [ ] Create DEPENDENCIES.md (requires: sc-git-worktree, gh CLI)
-- [ ] Add comprehensive tests
-- [ ] Update registry.json with new package
-- [ ] Version bump to 0.6.0 across all packages
+- [x] Create package structure in `packages/sc-github-issue/`
+- [x] Create manifest.yaml with package metadata
+- [x] Move agents to `packages/sc-github-issue/agents/`
+- [x] Move skill to `packages/sc-github-issue/skills/`
+- [x] Move command to `packages/sc-github-issue/commands/`
+- [x] Create README.md with usage examples
+- [x] Create CHANGELOG.md (starting at v0.6.0)
+- [x] Create USE-CASES.md with practical examples
+- [x] Create TROUBLESHOOTING.md for common issues
+- [x] Add comprehensive tests
+- [x] Update registry.json with new package
+- [x] All packages at v0.6.0 in marketplace
+- [x] Published to GitHub and available via `/plugin`
 
 **Dependencies:**
-- Requires: sc-git-worktree (v0.5.0+)
+- Requires: sc-git-worktree (v0.6.0+)
 - Requires: GitHub CLI (`gh`)
-
-**Next Steps:**
-1. Create package directory structure
-2. Migrate existing skill/agents/command files
-3. Write package documentation
-4. Add to registry and test installation
 
 ---
 
-### 4.3 Version 0.7.0 - SC-Project-Manager Package
+### 4.3 SC-CI-Automation Package ✅ COMPLETED
+**Status:** ✅ Released
+**Release Date:** 2025-12-09
+**Package Version:** v0.1.0 (marketplace remains at v0.6.0)
+**Location:** `packages/sc-ci-automation/`
+**Commit:** `8568280`
+
+**Scope:**
+Create CI automation package with quality gates workflow: pull → build → test → fix → PR.
+
+**Completed Deliverables:**
+- [x] Created package structure in `packages/sc-ci-automation/`
+- [x] Implemented 7 specialized CI agents:
+  - [x] ci-validate-agent (pre-flight checks)
+  - [x] ci-pull-agent (pull target branch, handle conflicts)
+  - [x] ci-build-agent (run build, classify failures)
+  - [x] ci-test-agent (run tests, classify failures/warnings)
+  - [x] ci-fix-agent (apply straightforward fixes)
+  - [x] ci-root-cause-agent (analyze unresolved failures)
+  - [x] ci-pr-agent (commit/push/create PR)
+- [x] Created `/sc-ci-automation` command with flags:
+  - [x] `--build`, `--test`, `--dest`, `--src`
+  - [x] `--allow-warnings`, `--patch`, `--yolo`, `--help`
+- [x] Created sc-ci-automation skill for orchestration
+- [x] Created manifest.yaml with package metadata
+- [x] Created comprehensive documentation:
+  - [x] README.md with quick start and examples
+  - [x] CHANGELOG.md (v0.1.0)
+  - [x] USE-CASES.md with 8 practical workflows
+  - [x] TROUBLESHOOTING.md with common issues
+- [x] Updated registry.json (6 packages, 26 agents total)
+- [x] Published to GitHub (commit 8568280)
+- [x] Available in marketplace via `/plugin`
+
+**Key Features:**
+- Conservative mode by default (manual PR approval)
+- Optional `--yolo` mode for auto-commit/push/PR
+- Version bumping support with `--patch` flag
+- Auto-fix for straightforward build/test issues
+- Quality gates with warning detection
+- Protected branch safeguards
+- Audit logging via Agent Runner
+
+**Dependencies:**
+- Requires: git >= 2.20
+- Optional: GitHub CLI (`gh`) for PR creation
+
+---
+
+### 4.4 Version 0.7.0 - Kanban Task Management Skill (NEXT)
 **Status:** ⏳ Planned
-**Timeline:** Q1 2025
+**Timeline:** TBD
+**Effort:** 2-3 weeks
+**Design Document:** `docs/kanban-design.md`
+**Guidelines:** `docs/claude-code-skills-agents-guidelines-0.4.md`
+
+**Scope:**
+Implement configurable kanban state machine for task card management following v0.4 skill architecture guidelines.
+
+**Design Overview:**
+- Pure state machine: Kanban agents manage state, not workflow
+- Configuration-driven: Board structure defined per-repo
+- Consumer-agnostic: Works with any PM/dev agent system
+- JSON interface: Agents accept/return fenced JSON blocks
+
+**Planned Deliverables:**
+- [ ] Create package structure in `packages/sc-kanban/`
+- [ ] Implement 2 core agents:
+  - [ ] kanban-update (write operations: create, update, move, archive)
+  - [ ] kanban-query (read operations: list, filter, validate)
+- [ ] Create `/kanban` command for board operations
+- [ ] Implement configuration system (`.kanban/config.json`)
+- [ ] Support multiple column types:
+  - [ ] Aggregate columns (single file, high-volume)
+  - [ ] Directory columns (file per card, active work)
+- [ ] Implement state transition validation:
+  - [ ] Preconditions (field_required, tasks_complete, external_state)
+  - [ ] Postconditions (worktree_removed, branch_deleted, pr_merged)
+  - [ ] WIP limit enforcement
+- [ ] Implement field scrubbing for archival
+- [ ] Create manifest.yaml with package metadata
+- [ ] Create comprehensive documentation:
+  - [ ] README.md with setup and usage
+  - [ ] CHANGELOG.md (starting at v0.1.0)
+  - [ ] USE-CASES.md with board configurations
+  - [ ] TROUBLESHOOTING.md
+  - [ ] INTEGRATION.md (how to use with PM/dev agents)
+- [ ] Add comprehensive tests
+- [ ] Update registry.json with new package
+
+**Key Features:**
+- Configurable state machines (4-state, 5-state, 6-state boards)
+- WIP limit enforcement per column
+- Transition validation with pre/post conditions
+- External state validation (worktree exists, PR merged, etc.)
+- Transient field scrubbing for archival
+- Aggregate and directory column types
+- JSON-based agent interface following v0.4 guidelines
+
+**Alternative Board Configurations:**
+- Simple 4-state: backlog → planned → active → done
+- Standard 5-state: backlog → planned → active → review → done
+- With QA 6-state: backlog → planned → active → code-review → qa → done
+
+**Dependencies:**
+- Optional integration with: sc-git-worktree (for worktree validation)
+- Optional integration with: sc-github-issue (for PR status checks)
+
+**Next Steps:**
+1. Review design document (`docs/kanban-design.md`)
+2. Discuss architecture decisions with ARCH-SC
+3. Finalize board configuration schema
+4. Create package directory structure
+5. Begin implementation with kanban-update agent
+
+---
+
+### 4.5 Version 0.8.0 - SC-Project-Manager Package
+**Status:** ⏳ Planned (Deferred - Superseded by Kanban)
+**Timeline:** Q2 2025
 **Effort:** 2-3 weeks
 **Design Document:** `plans/sc-project-manager-design.md`
+
+**Note:** Project management functionality may be built on top of sc-kanban package rather than as standalone package.
 
 **Scope:**
 Create comprehensive project management package for sprint-based development with AI agents.
@@ -555,7 +672,7 @@ For context, the following projects have been completed and archived:
 
 ## Document Maintenance
 
-**Last Updated:** 2025-12-05 (Sc- Prefix Refactoring - Code Complete Phase)
+**Last Updated:** 2025-12-09 (Added SC-CI-Automation completion, Kanban skill planning)
 **Created:** 2025-12-04
 **Archive Location:** `.archive/plans/`
 
