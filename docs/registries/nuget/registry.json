@@ -40,6 +40,40 @@
       "lastUpdated": "2025-12-08",
       "dependents": []
     },
+    "sc-ci-automation": {
+      "name": "sc-ci-automation",
+      "version": "0.1.0",
+      "status": "beta",
+      "tier": 2,
+      "description": "Run CI quality gates (pull → build → test) with optional auto-fix and PR creation. Coordinates pull from upstream, builds projects, runs tests, applies straightforward fixes, and creates PRs when all quality gates pass.",
+      "github": "randlee/synaptic-canvas",
+      "repo": "https://github.com/randlee/synaptic-canvas",
+      "path": "packages/sc-ci-automation",
+      "readme": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-ci-automation/README.md",
+      "license": "MIT",
+      "author": "randlee",
+      "tags": [
+        "ci",
+        "automation",
+        "testing",
+        "build",
+        "quality-gates",
+        "pr",
+        "continuous-integration"
+      ],
+      "artifacts": {
+        "commands": 1,
+        "skills": 1,
+        "agents": 7,
+        "scripts": 0
+      },
+      "dependencies": [
+        "git >= 2.20"
+      ],
+      "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-ci-automation/CHANGELOG.md",
+      "lastUpdated": "2025-12-09",
+      "dependents": []
+    },
     "sc-git-worktree": {
       "name": "sc-git-worktree",
       "version": "0.6.0",
@@ -187,14 +221,15 @@
   "metadata": {
     "registryVersion": "2.0.0",
     "schemaVersion": "1.0.0",
-    "totalPackages": 5,
-    "totalCommands": 5,
-    "totalSkills": 5,
-    "totalAgents": 19,
+    "totalPackages": 6,
+    "totalCommands": 6,
+    "totalSkills": 6,
+    "totalAgents": 26,
     "totalScripts": 2,
     "categories": {
       "automation": [
-        "sc-delay-tasks"
+        "sc-delay-tasks",
+        "sc-ci-automation"
       ],
       "development-tools": [
         "sc-git-worktree",
@@ -226,12 +261,13 @@
       },
       "packages": [
         "sc-delay-tasks",
+        "sc-ci-automation",
         "sc-git-worktree",
         "sc-manage",
         "sc-repomix-nuget",
         "sc-github-issue"
       ],
-      "total_packages": 5
+      "total_packages": 6
     }
   }
 }

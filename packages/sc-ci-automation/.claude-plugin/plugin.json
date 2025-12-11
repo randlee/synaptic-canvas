@@ -1,0 +1,25 @@
+{
+  "name": "sc-ci-automation",
+  "description": "Run CI quality gates (pull → build → test) with optional auto-fix and PR creation. Coordinates pull from upstream, builds projects, runs tests, applies straightforward fixes, and creates PRs when all quality gates pass.",
+  "version": "0.1.0",
+  "author": {
+    "name": "randlee"
+  },
+  "license": "MIT",
+  "keywords": ["ci", "automation", "testing", "build", "quality-gates", "pr", "continuous-integration"],
+  "commands": [
+    "./commands/sc-ci-automation.md"
+  ],
+  "agents": [
+    "./agents/ci-validate-agent.md",
+    "./agents/ci-pull-agent.md",
+    "./agents/ci-build-agent.md",
+    "./agents/ci-test-agent.md",
+    "./agents/ci-fix-agent.md",
+    "./agents/ci-root-cause-agent.md",
+    "./agents/ci-pr-agent.md"
+  ],
+  "skills": [
+    "./skills/sc-ci-automation/SKILL.md"
+  ]
+}
