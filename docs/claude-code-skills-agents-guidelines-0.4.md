@@ -1,4 +1,4 @@
-# Claude Code Skills and Agents Architecture Guidelines (v0.4)
+# Claude Code Skills and Agents Architecture Guidelines (v0.5)
 
 A practical guide for designing and implementing a two-tier skill/agent architecture that optimizes context efficiency, maintains clean separation of concerns, and enables scalable AI-assisted workflows.
 
@@ -24,9 +24,11 @@ A practical guide for designing and implementing a two-tier skill/agent architec
 
 ## Quick Start
 
-This section helps you upgrade existing skills/agents to v2.4 patterns. For comprehensive examples, see the companion document: `skills-agents-examples.md`.
+This section helps you align existing skills/agents to the v0.5 guidelines. For comprehensive examples, see the companion document: `skills-agents-examples.md`.
 
 ### Minimum Viable Upgrade: Add Versioning and JSON Fencing
+
+This document is the authoritative v0.5 spec; ignore prior version references.
 
 **Step 1: Add version to agent YAML frontmatter**
 
@@ -68,7 +70,7 @@ For simple agents, use this minimal envelope:
 }
 ```
 
-For complex/stateful agents, use the full envelope (see [Standard Response Schema](#standard-response-schema)).
+For complex/stateful agents, use the full envelope (see [Structured Response Contracts](#structured-response-contracts)).
 
 **Step 4: Validate versions externally**
 
@@ -183,6 +185,24 @@ Agent Runner: Writes redacted audit record (.claude/state/logs/) and forwards JS
     ↓
 Skill formats for user: "✓ Worktree created at /repo-feature-x"
 ```
+
+### Agent Runner Invocation Contract (normative)
+
+Inputs to Runner:
+- `agent` (string, required): name in `.claude/agents/registry.yaml`.
+- `params` (object, required): arguments passed to the agent.
+- `version_constraint` (string, optional): semver range; default is exact registry version.
+- `timeout_s` (int, optional): per-agent timeout; default 120s.
+- `correlation_id` (string, optional): used for aggregation in parallel flows.
+
+Runner behaviors:
+- Resolve path and version from `registry.yaml`; fail closed on mismatch.
+- Compute file SHA-256 and include in audit record (stored under `.claude/state/logs/`).
+- Launch Task tool with isolated context; do not stream tool traces to the skill.
+- On timeout, return fenced JSON with `success: false`, `canceled: true`, `aborted_by: "timeout"`, and `error.code: "EXECUTION.TIMEOUT"`.
+- On registry/path error, return `success: false`, `error.code: "REGISTRY.RESOLUTION"`.
+
+Runner output to skill: fenced JSON matching the agent’s envelope. Skills MUST treat unfenced or malformed JSON as failure and surface a concise error.
 
 ---
 
@@ -506,11 +526,13 @@ When operations are independent, invoke agents in parallel using background exec
 
 - Set per-task timeouts (e.g., 120s default)
 - Cap concurrency to 3–4 by default (override only when safe)
-- Attach a correlation_id per invocation; aggregate results deterministically
+- Attach a `correlation_id` per invocation; aggregate results deterministically
 - On timeout, return a synthetic failure:
   ```json
   {
     "success": false,
+    "canceled": true,
+    "aborted_by": "timeout",
     "error": {
       "code": "EXECUTION.TIMEOUT",
       "message": "Agent exceeded per-task timeout",
@@ -520,19 +542,28 @@ When operations are independent, invoke agents in parallel using background exec
   }
   ```
 
-Example aggregation policy (informative):
-
+Aggregation contract (normative):
 ```json
 {
   "parallel": true,
   "concurrency": 4,
   "per_task_timeout_s": 120,
   "results": [
-    { "correlation_id": "style", "success": true,  "data": { /* ... */ } },
-{ "correlation_id": "security", "success": false, "error": { "code": "EXECUTION.TIMEOUT", "message": "Agent exceeded per-task timeout", "recoverable": false, "suggested_action": "Increase timeout parameter or split agent into smaller tasks" } }
-  ]
+    { "correlation_id": "style", "success": true, "data": { /* ... */ }, "error": null },
+    { "correlation_id": "security", "success": false, "canceled": true, "aborted_by": "timeout", "error": { "code": "EXECUTION.TIMEOUT", "message": "Agent exceeded per-task timeout", "recoverable": false, "suggested_action": "Increase timeout parameter or split agent into smaller tasks" } }
+  ],
+  "summary": {
+    "all_successful": false,
+    "failed": ["security"],
+    "succeeded": ["style"]
+  }
 }
 ```
+
+Rules:
+- Results MUST be ordered by `correlation_id` for determinism.
+- Skills SHOULD surface partial failures with the `summary` object; do not silently drop failing branches.
+- No automatic retries unless `error.recoverable` is true; cap retries at 1 by default.
 
 ---
 
@@ -540,50 +571,24 @@ Example aggregation policy (informative):
 
 ### Why Structured Outputs Matter
 
-Structured outputs (fenced JSON) provide predictable error handling, version compatibility (via frontmatter), interface contracts, and composability.
+Structured outputs (fenced JSON) provide predictable error handling, version compatibility (via frontmatter), interface contracts, and composability. The formats below are normative for v0.5.
 
-### Standard Response Schema
+### Envelope by maturity level (normative)
 
-**Minimal envelope** (for simple agents):
+| Level    | Required fields                        | Optional fields                         | Notes |
+|----------|----------------------------------------|-----------------------------------------|-------|
+| Basic    | `success` (bool), `data` (object\|null), `error` (object\|null) | none                                    | Use for single-step agents; omit extra metadata. |
+| Standard | `success`, `canceled` (bool), `aborted_by` (string\|null), `data`, `error`, `metadata.duration_ms`, `metadata.tool_calls`, `metadata.retry_count` | `metadata.correlation_id`               | Use for multi-step or tool-heavy agents. |
+| Advanced | Standard + `metadata.timestamp`, `metadata.idempotency_key`, `metadata.max_tool_calls` | Additional per-domain metadata fields    | Use only when consumers rely on enriched telemetry. |
 
-```json
-{
-  "success": true,
-  "data": { },
-  "error": null
-}
-```
+### Success and error semantics
 
-**Full envelope (Standard)** (for complex/stateful agents):
+- `success: true` → operation completed; `error` MUST be `null`.
+- `success: false, canceled: false` → fatal error; `error` MUST be populated.
+- `canceled: true` → deliberate abort (user/policy/timeout); set `aborted_by` to `"user"`, `"policy"`, or `"timeout"`.
+- `data` MAY be `null` on failure.
 
-```json
-{
-  "success": true,
-  "canceled": false,
-  "aborted_by": null,
-  "data": { },
-  "error": null,
-  "metadata": {
-    "duration_ms": 0,
-    "tool_calls": 0,
-    "retry_count": 0
-  }
-}
-```
-
-**Advanced optional metadata** (enable when needed):
-
-```json
-{
-  "metadata": {
-    "timestamp": "2025-11-29T23:58:00Z",
-    "max_tool_calls": 200,
-    "idempotency_key": null
-  }
-}
-```
-
-**Error object** (when `success: false`):
+### Error object (normative shape)
 
 ```json
 {
@@ -593,6 +598,10 @@ Structured outputs (fenced JSON) provide predictable error handling, version com
   "suggested_action": "Next step for user/skill"
 }
 ```
+
+Code namespace guidance:
+- Use uppercase, dotted namespaces scoped to domain (e.g., `EXECUTION.TIMEOUT`, `VALIDATION.INPUT`, `AUTH.CREDENTIALS`).
+- For retries, set `recoverable: true` and include a concrete `suggested_action`.
 
 ### Version Management
 
@@ -627,14 +636,14 @@ skills:
 
 ### Dependency Constraint Syntax
 
-Supported formats:
-- `1.x`: Any version with major=1 (equivalent to `>=1.0.0 <2.0.0`)
-- Future: `^1.2.0`, `>=1.0.0`, etc. (semver ranges)
+Supported formats (v0.5):
+- Exact version: `1.2.0`
+- Major range: `1.x` (equivalent to `>=1.0.0 <2.0.0`)
 
 Validation:
-- CI script checks that referenced agents exist in registry
-- Agent Runner resolves constraints at invocation time
-- Constraint mismatches fail fast before Task tool execution
+- CI script checks that referenced agents and skills exist in registry.
+- Agent Runner resolves constraints at invocation time.
+- Constraint mismatches fail fast before Task tool execution.
 
 2) Robust validation script (frontmatter-aware)
 
@@ -667,6 +676,11 @@ done
 [[ $fail -eq 0 ]] && echo "All agent versions validated"
 exit $fail
 ```
+
+Skill validation (extend script or add companion):
+- Ensure every skill listed under `skills` has declared `depends_on` entries that exist in `agents`.
+- Fail if a skill references an agent without a compatible version constraint.
+- Optional: ensure every `SKILL.md` frontmatter name matches its directory.
 
 3) Runtime attestation (optional, zero tokens)
 
@@ -763,6 +777,13 @@ This section covers baseline security requirements. Complex scenarios (input san
 
 - Prefer Agent Runner to record a redacted audit record per invocation (timestamp, agent, frontmatter version, hash, outcome, duration)
 
+### Command and path safety
+
+- Enforce path allowlists rooted at repo; reject absolute paths outside workspace.
+- Validate command arguments; do not pass unsanitized user input to shell commands.
+- Maintain an env var allowlist; strip unneeded variables before invocation.
+- Reject agents that attempt to run unknown binaries or edit outside declared scope.
+
 ---
 
 ## State Management
@@ -773,6 +794,13 @@ This section covers architectural patterns for state. Complex scenarios (concurr
 - File-based (durable): `.claude/state/` for resume capability
 - Git-based (versioned): state tracked alongside code
 - Cleanup: TTL-based expiration, explicit cleanup agent, or user command
+
+Guardrails:
+- PII and secrets must not be written to `.claude/state/`; prefer ephemeral in-memory state.
+- Default TTL for temporary state: 24h; include `expires_at` in state files when persisted.
+- Use deterministic filenames: `<skill>-<operation>-<correlation_id>.json`.
+- For shared state, use file locks or atomic writes; avoid partial writes that can corrupt JSON.
+- Document resume semantics in the skill so consumers know what can be safely retried.
 
 ---
 
@@ -806,6 +834,11 @@ This section covers architectural patterns for state. Complex scenarios (concurr
 - **Skills**: `<verb-ing>-<noun>/` e.g., `sc-managing-worktrees/`
 - **Agents**: `<noun>-<verb>.md` e.g., `sc-worktree-create.md`
 - **State files**: `<operation>-<identifier>.json`
+
+Rationale:
+- Skills use gerunds to signal orchestrations (discovery surface).
+- Agents use noun-verb to signal concrete actions (execution surface).
+- Keep prefixes aligned (e.g., `sc-`) so filtering by namespace is predictable.
 
 ---
 
@@ -856,12 +889,10 @@ This section covers architectural patterns for state. Complex scenarios (concurr
 
 ---
 
-Document version: 0.4  
-Last updated: November 2025  
-Changes from v2.3:
-- Added Agent Runner runtime attestation (zero-token) and audit recommendation
-- Replaced version validation script with frontmatter-aware, robust variant
-- Extended registry.yaml to include skill dependency constraints
-- Added parallel execution guardrails (timeouts, concurrency cap, correlation_ids)
-- Marked advanced optional metadata fields (timestamp, max_tool_calls, idempotency_key)
-- Updated SKILL.md invocation wording to prefer Agent Runner
+Document version: 0.5  
+Last updated: 2025-12-11  
+
+| Version | Date       | Notes |
+|---------|------------|-------|
+| 0.5     | 2025-12-11 | Normalized versioning, tightened response contracts, added Agent Runner invocation contract, parallel aggregation policy, and safety/state guardrails. |
+| 0.4     | 2025-11-01 | Prior baseline for two-tier skills/agents architecture. |

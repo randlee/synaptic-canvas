@@ -19,8 +19,65 @@ This document consolidates remaining action items identified from completed mark
 - ✅ Sc- Prefix Refactoring (v0.5.0): 100% Complete - Released 2025-12-06
 - ✅ GitHub Issue Skill (v0.6.0): 100% Complete - Released 2025-12-08
 - ✅ CI Automation Package (v0.1.0): 100% Complete - Released 2025-12-09
+- ✅ Agent Runner Comprehensive Guide: 100% Complete - 2025-12-11
+- ✅ Worktree Cleanup Sprint: 100% Complete - 2025-12-11 (7 worktrees cleaned)
 - ⏳ Next Up: Kanban Task Management Skill (v0.7.0)
 - ⏳ Remaining Items: Ongoing maintenance + future enhancements
+
+---
+
+## Recent Completed Work (2025-12-11)
+
+### Agent Runner Comprehensive Documentation
+**Status:** ✅ Complete
+**Completed:** 2025-12-11
+
+**Deliverables:**
+- [x] Created `docs/agent-runner-comprehensive.md` (900+ lines, 12,000+ words)
+- [x] Complete guide covering all aspects of Agent Runner
+- [x] Architecture diagrams and data flows
+- [x] Benefits analysis with quantifiable improvements
+- [x] Installation and setup guide
+- [x] 5 usage patterns with real examples
+- [x] Integration guide for existing skills
+- [x] Migration path from direct Task tool usage
+- [x] Complete API reference (Python module + CLI)
+- [x] Security model and best practices
+- [x] Troubleshooting guide (6 common issues)
+- [x] Roadmap (v1.1, v1.2, v2.0)
+- [x] Updated DOCUMENTATION-INDEX.md
+
+**Status Assessment:**
+- Implementation: Production-ready (225 lines runner.py, 81 lines CLI)
+- Registry: 21 agents registered across 4 skills
+- Adoption: Limited (only skill-creation uses it currently)
+- Next: Migrate remaining skills to Agent Runner pattern (~2-3 hours)
+
+---
+
+### Worktree Cleanup Sprint
+**Status:** ✅ Complete
+**Completed:** 2025-12-11
+
+**Cleaned Up:** 7 worktrees total
+- [x] feature/sc-prefix-git-worktree (merged to main v0.5.0)
+- [x] feature/sc-prefix-refactor (merged to main v0.5.0)
+- [x] fix/command-name-prefixes (merged via PR #19)
+- [x] fix/plugin-json-paths (merged via PR #18)
+- [x] feature/sc-prefix-sc-manage (merged to main v0.5.0)
+- [x] feature/sc-prefix-repomix-nuget (superseded by other work)
+- [x] feature/claude-marketplace-integration (merged via PR #16 v0.5.1)
+
+**Actions Taken:**
+- Removed 7 worktrees
+- Deleted 7 local branches
+- Deleted 7 remote branches
+- Updated worktree-tracking.md with cleanup records
+
+**Remaining Active:** 3 worktrees with uncommitted work
+- focused-feynman: Ready to commit (implementation checklist)
+- feature/marketplace-improvement: Ready to commit (versioning strategy Phase 1)
+- feature/repomix: Ready to commit (agents + skill complete)
 
 ---
 

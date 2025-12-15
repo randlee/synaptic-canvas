@@ -44,7 +44,8 @@ This is the central hub for all Synaptic Canvas documentation. Use this index to
 ### Tools and Infrastructure
 | Document | Purpose | Location |
 |----------|---------|----------|
-| [Agent Runner Guide](./agent-runner.md) | Agent execution and debugging | `docs/agent-runner.md` |
+| [Agent Runner Quick Ref](./agent-runner.md) | Quick reference for Agent Runner | `docs/agent-runner.md` |
+| [Agent Runner Comprehensive](./agent-runner-comprehensive.md) | Complete guide: features, benefits, integration | `docs/agent-runner-comprehensive.md` |
 | [NuGet Integration](./nuget/) | NuGet-specific documentation | `docs/nuget/` |
 | [Registry Metadata](./registries/nuget/) | Package registry and discovery | `docs/registries/nuget/` |
 
