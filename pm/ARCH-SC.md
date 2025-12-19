@@ -53,6 +53,9 @@
 📘 **[Architecture Guidelines v0.5](../docs/claude-code-skills-agents-guidelines-0.4.md)**
 Normative specification for two-tier skill/agent architecture, response contracts, security model
 
+📘 **[Marketplace Infrastructure Guide](../docs/MARKETPLACE-INFRASTRUCTURE.md)**
+Complete guide to creating and operating Claude Code marketplaces (infrastructure, hosting, security)
+
 📘 **[Agent Runner Comprehensive Guide](../docs/agent-runner-comprehensive.md)**
 Complete guide to Agent Runner pattern, API reference, migration path (900+ lines)
 

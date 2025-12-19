@@ -1,8 +1,8 @@
 # Synaptic Canvas Documentation Index
 
-**Last Updated:** December 2, 2025
+**Last Updated:** December 16, 2025
 **Status:** Active Project
-**Version:** 0.4.0 (Beta)
+**Version:** 0.6.0 (Beta)
 
 This is the central hub for all Synaptic Canvas documentation. Use this index to navigate to the specific information you need.
 
@@ -21,8 +21,9 @@ This is the central hub for all Synaptic Canvas documentation. Use this index to
 - **[Architecture Guidelines](./claude-code-skills-agents-guidelines-0.4.md)** - Best practices for agents/skills/commands
 
 ### For Registry Operators
+- **[Marketplace Infrastructure Guide](./MARKETPLACE-INFRASTRUCTURE.md)** - Complete guide to creating and operating Claude Code marketplaces
 - **[Registry Schema](./registries/nuget/registry.json)** - Central package registry
-- **[Registry Documentation](./registries/README.md)** (if exists)
+- **[Registry Documentation](./registries/README.md)** - Registry structure and usage
 
 ---
 
@@ -44,6 +45,7 @@ This is the central hub for all Synaptic Canvas documentation. Use this index to
 ### Tools and Infrastructure
 | Document | Purpose | Location |
 |----------|---------|----------|
+| [Marketplace Infrastructure](./MARKETPLACE-INFRASTRUCTURE.md) | Complete guide to building and operating Claude Code marketplaces | `docs/MARKETPLACE-INFRASTRUCTURE.md` |
 | [Agent Runner Quick Ref](./agent-runner.md) | Quick reference for Agent Runner | `docs/agent-runner.md` |
 | [Agent Runner Comprehensive](./agent-runner-comprehensive.md) | Complete guide: features, benefits, integration | `docs/agent-runner-comprehensive.md` |
 | [NuGet Integration](./nuget/) | NuGet-specific documentation | `docs/nuget/` |
@@ -279,6 +281,7 @@ This documentation is versioned alongside the marketplace platform:
 | Package Documentation | ✅ Current | Dec 1, 2025 |
 | Archive Structure | ✅ Current | Dec 2, 2025 |
 | Tools & Scripts | ✅ Current | Dec 2, 2025 |
+| Marketplace Infrastructure | ✅ Current | Dec 16, 2025 |
 
 ---
 
