@@ -26,25 +26,25 @@ PACKAGES = {
         'agents': ['sc-delay-once', 'sc-delay-poll', 'sc-git-pr-check-delay'],
         'commands': ['sc-delay'],
         'skills': ['sc-delaying-tasks'],
-        'version': '0.5.2',
+        'version': '0.6.0',
         'path': 'packages/sc-delay-tasks',
         'artifact_counts': {'agents': 3, 'commands': 1, 'skills': 1}
     },
     'sc-git-worktree': {
         'package_name': 'sc-git-worktree',
-        'agents': ['sc-git-worktree-create', 'sc-git-worktree-scan', 'sc-git-worktree-cleanup', 'sc-git-worktree-abort'],
+        'agents': ['sc-git-worktree-create', 'sc-git-worktree-scan', 'sc-git-worktree-cleanup', 'sc-git-worktree-abort', 'sc-git-worktree-update'],
         'commands': ['sc-git-worktree'],
         'skills': ['sc-managing-worktrees'],
-        'version': '0.5.2',
+        'version': '0.6.0',
         'path': 'packages/sc-git-worktree',
-        'artifact_counts': {'agents': 4, 'commands': 1, 'skills': 1}
+        'artifact_counts': {'agents': 5, 'commands': 1, 'skills': 1}
     },
     'sc-repomix-nuget': {
         'package_name': 'sc-repomix-nuget',
         'agents': ['sc-repomix-nuget-analyze', 'sc-repomix-nuget-generate', 'sc-repomix-nuget-validate'],
         'commands': ['sc-repomix-nuget'],
         'skills': ['sc-generating-nuget-context'],
-        'version': '0.5.2',
+        'version': '0.6.0',
         'path': 'packages/sc-repomix-nuget',
         'artifact_counts': {'agents': 3, 'commands': 1, 'skills': 1}
     },
@@ -53,7 +53,7 @@ PACKAGES = {
         'agents': ['sc-packages-list', 'sc-package-install', 'sc-package-uninstall', 'sc-package-docs'],
         'commands': ['sc-manage'],
         'skills': ['sc-managing-sc-packages'],
-        'version': '0.5.2',
+        'version': '0.6.0',
         'path': 'packages/sc-manage',
         'artifact_counts': {'agents': 4, 'commands': 1, 'skills': 1}
     }
