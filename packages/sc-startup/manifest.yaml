@@ -20,6 +20,8 @@ artifacts:
     - skills/sc-startup/SKILL.md
   agents:
     - agents/sc-checklist-status.md
+  plugin:
+    - .claude-plugin/plugin.json
 
 install:
   scope: local-only

@@ -18,12 +18,22 @@ def test_marketplace_json_valid():
     assert data["name"] == "synaptic-canvas", f"Expected name 'synaptic-canvas', got '{data['name']}'"
     assert "owner" in data, "marketplace.json missing 'owner' field"
     assert "plugins" in data, "marketplace.json missing 'plugins' field"
-    assert len(data["plugins"]) == 4, f"Expected 4 plugins, found {len(data['plugins'])}"
+    expected_plugins = [
+        "sc-delay-tasks",
+        "sc-git-worktree",
+        "sc-manage",
+        "sc-repomix-nuget",
+        "sc-github-issue",
+        "sc-startup",
+    ]
+    assert len(data["plugins"]) == len(expected_plugins), f"Expected {len(expected_plugins)} plugins, found {len(data['plugins'])}"
+    plugin_names = [p["name"] for p in data["plugins"]]
+    assert plugin_names == expected_plugins, f"Expected plugins {expected_plugins}, got {plugin_names}"
 
 
 def test_all_packages_have_plugin_json():
     """Verify each package has .claude-plugin/plugin.json."""
-    packages = ["sc-delay-tasks", "sc-git-worktree", "sc-manage", "sc-repomix-nuget"]
+    packages = ["sc-delay-tasks", "sc-git-worktree", "sc-manage", "sc-repomix-nuget", "sc-github-issue", "sc-startup"]
 
     for pkg in packages:
         plugin_json = Path(f"packages/{pkg}/.claude-plugin/plugin.json")
@@ -32,12 +42,12 @@ def test_all_packages_have_plugin_json():
         data = json.loads(plugin_json.read_text())
         assert data["name"] == pkg, f"Expected name '{pkg}', got '{data['name']}'"
         assert "version" in data, f"{pkg}/plugin.json missing 'version' field"
-        assert data["version"] == "0.5.2", f"{pkg} expected version 0.5.2, got {data['version']}"
+        assert data["version"] == "0.6.0", f"{pkg} expected version 0.6.0, got {data['version']}"
 
 
 def test_plugin_json_schema_valid():
     """Verify plugin.json files have required fields."""
-    packages = ["sc-delay-tasks", "sc-git-worktree", "sc-manage", "sc-repomix-nuget"]
+    packages = ["sc-delay-tasks", "sc-git-worktree", "sc-manage", "sc-repomix-nuget", "sc-github-issue", "sc-startup"]
 
     required_fields = ["name", "description", "version", "author", "license"]
 

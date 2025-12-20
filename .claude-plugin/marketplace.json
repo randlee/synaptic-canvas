@@ -68,6 +68,18 @@
       "license": "MIT",
       "keywords": ["github", "issues", "pull-requests", "worktree", "automation"],
       "category": "development"
+    },
+    {
+      "name": "sc-startup",
+      "source": "./packages/sc-startup",
+      "description": "Run project startup: prompt load, checklist sync, optional PR/worktree/CI, best-effort status output.",
+      "version": "0.6.0",
+      "author": {
+        "name": "randlee"
+      },
+      "license": "MIT",
+      "keywords": ["startup", "checklist", "git", "ci", "automation"],
+      "category": "productivity"
     }
   ]
 }
