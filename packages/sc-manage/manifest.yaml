@@ -1,5 +1,5 @@
 name: sc-manage
-version: 0.5.1
+version: 0.6.0
 description: >
   Manage Synaptic Canvas Claude packages. List available packages and their install
   status (local/global), and install or uninstall packages according to policy.

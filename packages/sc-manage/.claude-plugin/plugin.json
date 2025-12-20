@@ -1,13 +1,22 @@
 {
   "name": "sc-manage",
   "description": "Interface for managing Synaptic Canvas packages. Provides discovery, installation info, and management utilities for the marketplace.",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "author": {
     "name": "randlee"
   },
   "license": "MIT",
   "keywords": ["packages", "management", "marketplace", "installation", "discovery"],
-  "commands": ["./commands"],
-  "agents": ["./agents"],
-  "skills": ["./skills"]
+  "commands": [
+    "./commands/sc-manage.md"
+  ],
+  "agents": [
+    "./agents/sc-packages-list.md",
+    "./agents/sc-package-install.md",
+    "./agents/sc-package-uninstall.md",
+    "./agents/sc-package-docs.md"
+  ],
+  "skills": [
+    "./skills/managing-sc-packages/SKILL.md"
+  ]
 }

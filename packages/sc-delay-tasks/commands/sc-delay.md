@@ -1,7 +1,7 @@
 ---
-name: /delay
+name: delay
 description: Schedule a delayed one-shot or bounded polling action with minimal heartbeats. Emits the action text on completion for follow-up checks.
-version: 0.5.1
+version: 0.6.0
 options:
   - name: --minutes
     description: One-shot delay in minutes (or use --seconds for short waits).

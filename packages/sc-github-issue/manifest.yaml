@@ -1,0 +1,55 @@
+name: sc-github-issue
+version: 0.6.0
+description: >
+  GitHub issue lifecycle management with worktree isolation: list, create, update, and fix issues
+  with automated workflows including PR creation. Integrates with sc-git-worktree for safe isolation.
+author: randlee
+license: MIT
+tags:
+  - github
+  - issues
+  - workflow
+  - agents
+  - pull-requests
+  - worktree
+
+# Files to install (relative to package root)
+artifacts:
+  commands:
+    - commands/sc-github-issue.md
+  skills:
+    - skills/sc-managing-github-issues/SKILL.md
+  agents:
+    - agents/sc-github-issue-intake.md
+    - agents/sc-github-issue-mutate.md
+    - agents/sc-github-issue-fix.md
+    - agents/sc-github-issue-pr.md
+  references:
+    - references/github-issue-apis.md
+    - references/github-issue-checklists.md
+
+# Installation policy/metadata
+install:
+  scope: local-only  # this package may only be installed in a repo's .claude (not global)
+
+# Runtime requirements
+requires:
+  packages:
+    - sc-git-worktree >= 0.6.0
+  cli:
+    - gh >= 2.0
+
+# Install-time options
+options:
+  base-branch:
+    type: string
+    default: "main"
+    description: Default base branch for fix branches
+  branch-pattern:
+    type: string
+    default: "fix-issue-{number}"
+    description: Pattern for fix branch names (use {number} placeholder)
+  auto-pr:
+    type: boolean
+    default: true
+    description: Automatically create PR after successful fix

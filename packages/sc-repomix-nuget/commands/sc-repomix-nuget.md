@@ -1,7 +1,7 @@
 ---
-name: /sc-repomix-nuget
+name: sc-repomix-nuget
 description: Generate AI-optimized NuGet package context using Repomix.
-version: 0.5.1
+version: 0.6.0
 options:
   - name: --help
     description: Show usage and options.

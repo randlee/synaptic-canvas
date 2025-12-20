@@ -6,14 +6,14 @@
   },
   "metadata": {
     "description": "A marketplace for Claude Code skills, agents, and commands",
-    "version": "0.5.1"
+    "version": "0.6.0"
   },
   "plugins": [
     {
       "name": "sc-delay-tasks",
       "source": "./packages/sc-delay-tasks",
       "description": "Schedule delayed or interval-based actions with minimal heartbeats",
-      "version": "0.5.1",
+      "version": "0.6.0",
       "author": {
         "name": "randlee"
       },
@@ -24,20 +24,20 @@
     {
       "name": "sc-git-worktree",
       "source": "./packages/sc-git-worktree",
-      "description": "Manage git worktrees with optional tracking",
-      "version": "0.5.1",
+      "description": "Manage git worktrees with protected branch safeguards",
+      "version": "0.6.0",
       "author": {
         "name": "randlee"
       },
       "license": "MIT",
-      "keywords": ["git", "worktree", "parallel", "development"],
+      "keywords": ["git", "worktree", "parallel", "development", "protected-branches"],
       "category": "development"
     },
     {
       "name": "sc-manage",
       "source": "./packages/sc-manage",
       "description": "Synaptic Canvas package management interface",
-      "version": "0.5.1",
+      "version": "0.6.0",
       "author": {
         "name": "randlee"
       },
@@ -49,12 +49,24 @@
       "name": "sc-repomix-nuget",
       "source": "./packages/sc-repomix-nuget",
       "description": "Generate AI-optimized NuGet package context",
-      "version": "0.5.1",
+      "version": "0.6.0",
       "author": {
         "name": "randlee"
       },
       "license": "MIT",
       "keywords": ["nuget", "dotnet", "analysis", "context"],
+      "category": "development"
+    },
+    {
+      "name": "sc-github-issue",
+      "source": "./packages/sc-github-issue",
+      "description": "GitHub issue lifecycle management with worktree isolation",
+      "version": "0.6.0",
+      "author": {
+        "name": "randlee"
+      },
+      "license": "MIT",
+      "keywords": ["github", "issues", "pull-requests", "worktree", "automation"],
       "category": "development"
     }
   ]

@@ -1,0 +1,39 @@
+name: sc-ci-automation
+version: 0.1.0
+description: >
+  Run CI quality gates (pull → build → test) with optional auto-fix and PR creation.
+  Coordinates pull from upstream, builds projects, runs tests, applies straightforward fixes,
+  and creates PRs when all quality gates pass. Supports version bumping with --patch flag.
+author: randlee
+license: MIT
+tags:
+  - ci
+  - automation
+  - testing
+  - build
+  - quality-gates
+  - agents
+  - workflow
+
+# Files to install (relative to package root)
+artifacts:
+  commands:
+    - commands/sc-ci-automation.md
+  skills:
+    - skills/sc-ci-automation/SKILL.md
+  agents:
+    - agents/ci-validate-agent.md
+    - agents/ci-pull-agent.md
+    - agents/ci-build-agent.md
+    - agents/ci-test-agent.md
+    - agents/ci-fix-agent.md
+    - agents/ci-root-cause-agent.md
+    - agents/ci-pr-agent.md
+
+# Installation policy/metadata
+install:
+  scope: local-only  # this package may only be installed in a repo's .claude (not global)
+
+# Runtime requirements
+requires:
+  - git >= 2.20
