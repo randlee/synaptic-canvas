@@ -1,0 +1,35 @@
+name: sc-startup
+version: 0.1.0
+description: >
+  Startup runner for Synaptic Canvas: read startup prompt, sync master checklist, optional PR triage, worktree hygiene, and CI pull,
+  then emit a concise status with next steps. Supports read-only mode.
+author: randlee
+license: MIT
+tags:
+  - startup
+  - checklist
+  - git
+  - ci
+  - automation
+  - agents
+
+artifacts:
+  commands:
+    - commands/sc-startup.md
+  skills:
+    - skills/sc-startup/SKILL.md
+  agents:
+    - agents/sc-checklist-status.md
+
+install:
+  scope: local-only
+
+requires:
+  - git >= 2.20
+
+dependencies:
+  ci-pr-agent: 0.x
+  sc-worktree-scan: 0.x
+  sc-worktree-cleanup: 0.x
+  ci-automation: 0.x
+  sc-checklist-status: 0.x
