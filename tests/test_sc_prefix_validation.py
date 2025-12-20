@@ -32,12 +32,12 @@ PACKAGES = {
     },
     'sc-git-worktree': {
         'package_name': 'sc-git-worktree',
-        'agents': ['sc-git-worktree-create', 'sc-git-worktree-scan', 'sc-git-worktree-cleanup', 'sc-git-worktree-abort'],
+        'agents': ['sc-git-worktree-create', 'sc-git-worktree-scan', 'sc-git-worktree-cleanup', 'sc-git-worktree-abort', 'sc-git-worktree-update'],
         'commands': ['sc-git-worktree'],
         'skills': ['sc-managing-worktrees'],
         'version': '0.6.0',
         'path': 'packages/sc-git-worktree',
-        'artifact_counts': {'agents': 4, 'commands': 1, 'skills': 1}
+        'artifact_counts': {'agents': 5, 'commands': 1, 'skills': 1}
     },
     'sc-repomix-nuget': {
         'package_name': 'sc-repomix-nuget',
