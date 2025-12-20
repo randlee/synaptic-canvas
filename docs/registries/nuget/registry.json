@@ -1,11 +1,11 @@
 {
   "$schema": "https://yourcompany.github.io/schemas/package-registry.schema.json",
   "version": "2.0.0",
-  "generated": "2025-12-08T00:00:00Z",
+  "generated": "2025-12-20T21:21:55Z",
   "repo": "randlee/synaptic-canvas",
   "marketplace": {
     "name": "Synaptic Canvas",
-    "version": "0.6.0",
+    "version": "0.7.0",
     "status": "beta",
     "url": "https://github.com/randlee/synaptic-canvas"
   },
@@ -216,20 +216,55 @@
       "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-github-issue/CHANGELOG.md",
       "lastUpdated": "2025-12-08",
       "dependents": []
+    },
+    "sc-startup": {
+      "name": "sc-startup",
+      "version": "0.6.0",
+      "status": "beta",
+      "tier": 2,
+      "description": "Startup runner for Synaptic Canvas: read startup prompt, sync master checklist, optional PR triage, worktree hygiene, and CI pull, then emit a concise status with next steps.",
+      "github": "randlee/synaptic-canvas",
+      "repo": "https://github.com/randlee/synaptic-canvas",
+      "path": "packages/sc-startup",
+      "readme": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-startup/README.md",
+      "license": "MIT",
+      "author": "randlee",
+      "tags": [
+        "startup",
+        "checklist",
+        "git",
+        "ci",
+        "automation",
+        "agents"
+      ],
+      "artifacts": {
+        "commands": 1,
+        "skills": 1,
+        "agents": 1,
+        "scripts": 0
+      },
+      "dependencies": [
+        "sc-ci-automation >= 0.1.0",
+        "sc-git-worktree >= 0.6.0"
+      ],
+      "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-startup/CHANGELOG.md",
+      "lastUpdated": "2025-12-20",
+      "dependents": []
     }
   },
   "metadata": {
     "registryVersion": "2.0.0",
     "schemaVersion": "1.0.0",
-    "totalPackages": 6,
-    "totalCommands": 6,
-    "totalSkills": 6,
-    "totalAgents": 26,
+    "totalPackages": 7,
+    "totalCommands": 7,
+    "totalSkills": 7,
+    "totalAgents": 27,
     "totalScripts": 2,
     "categories": {
       "automation": [
         "sc-delay-tasks",
-        "sc-ci-automation"
+        "sc-ci-automation",
+        "sc-startup"
       ],
       "development-tools": [
         "sc-git-worktree",
@@ -244,7 +279,7 @@
     }
   },
   "versionCompatibility": {
-    "marketplace": "0.6.0",
+    "marketplace": "0.7.0",
     "minimumPackageVersion": "0.4.0",
     "maximumPackageVersion": "0.x.x",
     "note": "Marketplace is in beta. All packages should remain at 0.x versions until first stable release (1.0.0)"
@@ -265,9 +300,10 @@
         "sc-git-worktree",
         "sc-manage",
         "sc-repomix-nuget",
-        "sc-github-issue"
+        "sc-github-issue",
+        "sc-startup"
       ],
-      "total_packages": 6
+      "total_packages": 7
     }
   }
 }
