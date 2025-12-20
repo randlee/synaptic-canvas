@@ -1,7 +1,7 @@
 ---
 status: Preliminary
 created: 2025-12-19
-version: 0.1.0
+version: 0.6.0
 owner: TBD
 ---
 

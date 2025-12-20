@@ -62,7 +62,7 @@ agents:
 
   # Startup checklist
   sc-checklist-status:
-    version: 0.1.0
+    version: 0.6.0
     path: .claude/agents/sc-checklist-status.md
 
 # Optional: express skill -> agent dependency constraints
