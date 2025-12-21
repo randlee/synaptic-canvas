@@ -3,7 +3,7 @@
 [![Publisher Verified](https://img.shields.io/badge/publisher-verified-brightgreen)](https://github.com/randlee/synaptic-canvas/blob/main/docs/PUBLISHER-VERIFICATION.md)
 [![Security Scanned](https://img.shields.io/badge/security-scanned-blue)](https://github.com/randlee/synaptic-canvas/blob/main/SECURITY.md)
 [![License MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-[![Version 0.1.0](https://img.shields.io/badge/version-0.1.0-blue)](CHANGELOG.md)
+[![Version 0.7.0](https://img.shields.io/badge/version-0.7.0-blue)](CHANGELOG.md)
 
 Scope: Local-only
 Requires: git ≥ 2.20
