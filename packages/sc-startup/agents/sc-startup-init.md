@@ -21,9 +21,10 @@ Collect startup configuration signals (existing config, candidate prompt/checkli
 3) Detect packages (if `detect_plugins`):
    - Check `.claude-plugin/marketplace.json` for plugins `sc-ci-automation`, `sc-git-worktree`, `sc-startup`.
    - For each, record `installed` (bool) and `version` if present. Optionally confirm `packages/<name>` exists.
-4) Suggest candidates:
-   - `startup_prompt_candidates`: glob for `docs/**/*prompt*.md`, `docs/**/*startup*.md`, `README*.md` (bounded count).
-   - `checklist_candidates`: glob for `**/*checklist*.md`, `docs/**/*checklist*.md` (bounded count).
+4) Suggest candidates (scan `pm/`, `project(s)/`, and repo root; return multiple if found):
+   - `startup_prompt_candidates`: glob for `pm/**/*prompt*.md`, `pm/**/*startup*.md`, `pm/**/ARCH-*.md`, `project*/**/*prompt*.md`, `project*/**/*startup*.md`, `README*.md` (bounded max 10).
+   - `checklist_candidates`: glob for `pm/**/*checklist*.md`, `project*/**/*checklist*.md`, `**/*checklist*.md` (bounded max 10).
+   - Sort candidates by modification time (most recent first) to prioritize active documents.
 5) Compute `missing_keys` based on required fields (`startup-prompt`, `check-list`) plus optional flags (`worktree-scan`, `pr-enabled`, `worktree-enabled`).
 6) Return fenced JSON with a YAML payload summarizing findings.
 
@@ -35,7 +36,7 @@ Fenced JSON (minimal envelope). `data` contains a YAML string under `yaml` plus 
   "data": {
     "config_found": true,
     "config_path": ".claude/sc-startup.yaml",
-    "config": { "startup-prompt": "docs/startup-prompt.md", "check-list": "docs/master-checklist.md" },
+    "config": { "startup-prompt": "pm/ARCH-SC.md", "check-list": "pm/checklist.md" },
     "missing_keys": ["worktree-scan"],
     "plugins": {
       "sc-ci-automation": { "installed": true, "version": "0.6.0" },
@@ -43,10 +44,10 @@ Fenced JSON (minimal envelope). `data` contains a YAML string under `yaml` plus 
       "sc-startup": { "installed": true, "version": "0.6.0" }
     },
     "candidates": {
-      "startup_prompt": ["docs/startup-prompt.md", "README.md"],
-      "checklist": ["docs/master-checklist.md"]
+      "startup_prompt": ["pm/ARCH-SC.md", "pm/startup-prompt.md", "README.md"],
+      "checklist": ["pm/checklist.md", "pm/master-checklist.md"]
     },
-    "yaml": "startup-prompt: docs/startup-prompt.md\ncheck-list: docs/master-checklist.md\nworktree-scan: scan\npr-enabled: true\nworktree-enabled: true\n"
+    "yaml": "startup-prompt: pm/ARCH-SC.md\ncheck-list: pm/checklist.md\nworktree-scan: scan\npr-enabled: true\nworktree-enabled: true\n"
   },
   "error": null
 }
