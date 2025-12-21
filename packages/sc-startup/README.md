@@ -38,12 +38,20 @@ Edit paths to point to your prompt/checklist files (repo-root-relative).
 
 ## Configuration (`.claude/sc-startup.yaml`)
 ```yaml
-startup-prompt: docs/startup-prompt.md     # required
-check-list: docs/master-checklist.md       # required
+startup-prompt: pm/ARCH-SC.md              # required
+check-list: pm/checklist.md                # required
 worktree-scan: scan        # scan | cleanup | none | ""
 pr-enabled: true           # set false if PR package unavailable
 worktree-enabled: true     # set false if worktree package unavailable
 ```
+
+**Path Detection:**
+The `sc-startup-init` agent automatically scans for potential startup prompts and checklists in:
+- `pm/` directory (project management files)
+- `project*/` directories (project-specific files)
+- Repository root
+
+When multiple candidates are found, they are sorted by modification time (most recent first) and presented for selection.
 Path rules: must be repo-root-relative. Set worktree/PR toggles to false if the package is not installed.
 
 ## Dependency Validation
@@ -119,3 +127,12 @@ See `CHANGELOG.md`.
 
 ## License
 MIT, see `LICENSE`.
+/sc-startup --init     # discover config, ask for missing settings, optionally write config
+## Init Flow (`--init`)
+- Runs detection-only agent `sc-startup-init`:
+  - Finds existing config (if present), parses YAML.
+  - Suggests prompt/checklist candidates (globbed, bounded).
+  - Detects installed packages (`sc-ci-automation`, `sc-git-worktree`, `sc-startup`).
+- Skill parses results and uses AskQuestion to resolve missing/ambiguous settings (prompt path, checklist path, worktree-scan, pr-enabled, worktree-enabled).
+- If not `--readonly`, writes `.claude/sc-startup.yaml`; otherwise shows synthesized YAML and exits.
+- After init, normal startup flow can proceed with the resolved config.

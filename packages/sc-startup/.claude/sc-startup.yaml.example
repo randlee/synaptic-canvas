@@ -1,6 +1,6 @@
 # Example config for /sc-startup
-startup-prompt: docs/startup-prompt.md
-check-list: docs/master-checklist.md
+startup-prompt: pm/ARCH-SC.md
+check-list: pm/checklist.md
 worktree-scan: scan        # options: scan | cleanup | none | ""
 pr-enabled: true           # set false if PR package is unavailable
 worktree-enabled: true     # set false if worktree package is unavailable
