@@ -1,7 +1,7 @@
 {
   "$schema": "https://yourcompany.github.io/schemas/package-registry.schema.json",
   "version": "2.0.0",
-  "generated": "2025-12-20T21:21:55Z",
+  "generated": "2025-12-21T01:25:16Z",
   "repo": "randlee/synaptic-canvas",
   "marketplace": {
     "name": "Synaptic Canvas",
@@ -219,7 +219,7 @@
     },
     "sc-startup": {
       "name": "sc-startup",
-      "version": "0.6.0",
+      "version": "0.6.1",
       "status": "beta",
       "tier": 2,
       "description": "Startup runner for Synaptic Canvas: read startup prompt, sync master checklist, optional PR triage, worktree hygiene, and CI pull, then emit a concise status with next steps.",

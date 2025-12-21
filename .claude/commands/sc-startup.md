@@ -1,6 +1,6 @@
 ---
 name: sc-startup
-version: 0.6.0
+version: 0.6.1
 description: Run the repo startup workflow: load the startup prompt, sync the master checklist, launch optional PR/worktree/CI agents, and return a concise status with next steps.
 options:
   - name: --pr
