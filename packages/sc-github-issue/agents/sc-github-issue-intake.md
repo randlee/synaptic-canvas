@@ -1,6 +1,6 @@
 ---
 name: sc-github-issue-intake
-version: 0.6.0
+version: 0.7.0
 description: List and fetch GitHub issue details
 model: sonnet
 color: blue

@@ -1,6 +1,6 @@
 ---
 name: sc-github-issue-mutate
-version: 0.6.0
+version: 0.7.0
 description: Create and update GitHub issues
 model: sonnet
 color: yellow

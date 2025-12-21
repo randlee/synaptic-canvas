@@ -1,6 +1,6 @@
 ---
 name: sc-worktree-cleanup
-version: 0.6.0
+version: 0.7.0
 description: Clean up a completed/merged worktree with protected branch safeguards. Remove worktree; for non-protected branches, delete branch (local+remote) by default if merged/no unique commits; for protected branches, preserve branch. Update tracking when enabled. Stop on dirty/unmerged without approval.
 model: sonnet
 color: orange

@@ -1,7 +1,7 @@
 ---
 command: marketplace
 description: Discover, search, install, and manage Synaptic Canvas marketplace packages
-version: 0.4.0
+version: 0.7.0
 category: package-management
 ---
 

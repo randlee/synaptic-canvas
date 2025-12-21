@@ -16,6 +16,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Graph-based dependency visualization
 - Performance benchmarking for large codebases
 
+## [0.7.0] - 2025-12-21
+
+### Changed
+- Version synchronized with marketplace v0.7.0 release
+- Part of coordinated marketplace release
+
+### Notes
+- No functional changes from v0.6.0
+- Synchronized versioning for consistency across all packages
+
 ## [0.4.0] - 2025-12-02
 
 ### Status

@@ -2,7 +2,7 @@
 name: type-librarian-refresh
 description: Refresh the annotations/testing cache by running the extract script; report updated packages.
 model: sonnet
-version: 0.5.0
+version: 0.7.0
 ---
 
 # Type Librarian Refresh

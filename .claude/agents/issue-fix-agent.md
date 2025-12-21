@@ -1,6 +1,6 @@
 ---
 name: issue-fix-agent
-version: 0.1.0
+version: 0.7.0
 description: Implement fixes for GitHub issues in isolated worktrees
 ---
 

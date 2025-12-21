@@ -2,7 +2,7 @@
 name: type-librarian-cleanup
 description: Deduplicate and normalize the type catalog; remove stale/unknown entries and refresh timestamps.
 model: sonnet
-version: 0.5.0
+version: 0.7.0
 ---
 
 # Type Librarian Cleanup

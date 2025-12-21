@@ -1,6 +1,6 @@
 ---
 name: issue-pr-agent
-version: 0.1.0
+version: 0.7.0
 description: Create pull requests for issue fixes
 ---
 

@@ -1,5 +1,5 @@
 name: sc-repomix-nuget
-version: 0.6.0
+version: 0.7.0
 description: >
   Generate AI-optimized NuGet package context using Repomix with NuGet metadata
   (dependencies, dependents, namespaces, frameworks). Produces a compressed API surface.

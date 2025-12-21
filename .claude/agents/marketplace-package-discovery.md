@@ -1,6 +1,6 @@
 ---
 name: Marketplace Package Discovery
-version: 0.4.0
+version: 0.7.0
 description: Discovers and searches for packages across configured marketplace registries
 category: marketplace
 tags: [discovery, search, packages, marketplace, registry]

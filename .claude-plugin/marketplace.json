@@ -6,14 +6,14 @@
   },
   "metadata": {
     "description": "A marketplace for Claude Code skills, agents, and commands",
-    "version": "0.6.0"
+    "version": "0.7.0"
   },
   "plugins": [
     {
       "name": "sc-delay-tasks",
       "source": "./packages/sc-delay-tasks",
       "description": "Schedule delayed or interval-based actions with minimal heartbeats",
-      "version": "0.6.0",
+      "version": "0.7.0",
       "author": {
         "name": "randlee"
       },
@@ -25,7 +25,7 @@
       "name": "sc-git-worktree",
       "source": "./packages/sc-git-worktree",
       "description": "Manage git worktrees with protected branch safeguards",
-      "version": "0.6.0",
+      "version": "0.7.0",
       "author": {
         "name": "randlee"
       },
@@ -37,7 +37,7 @@
       "name": "sc-manage",
       "source": "./packages/sc-manage",
       "description": "Synaptic Canvas package management interface",
-      "version": "0.6.0",
+      "version": "0.7.0",
       "author": {
         "name": "randlee"
       },
@@ -49,7 +49,7 @@
       "name": "sc-repomix-nuget",
       "source": "./packages/sc-repomix-nuget",
       "description": "Generate AI-optimized NuGet package context",
-      "version": "0.6.0",
+      "version": "0.7.0",
       "author": {
         "name": "randlee"
       },
@@ -61,7 +61,7 @@
       "name": "sc-github-issue",
       "source": "./packages/sc-github-issue",
       "description": "GitHub issue lifecycle management with worktree isolation",
-      "version": "0.6.0",
+      "version": "0.7.0",
       "author": {
         "name": "randlee"
       },
@@ -73,7 +73,7 @@
       "name": "sc-startup",
       "source": "./packages/sc-startup",
       "description": "Run project startup: prompt load, checklist sync, optional PR/worktree/CI, best-effort status output.",
-      "version": "0.6.0",
+      "version": "0.7.0",
       "author": {
         "name": "randlee"
       },

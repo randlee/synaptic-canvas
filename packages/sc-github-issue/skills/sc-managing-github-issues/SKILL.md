@@ -1,6 +1,6 @@
 ---
 name: sc-managing-github-issues
-version: 0.6.0
+version: 0.7.0
 description: GitHub issue lifecycle management with worktree isolation
 entry_point: /sc-github-issue
 ---

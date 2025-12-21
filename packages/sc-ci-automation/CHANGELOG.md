@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2025-12-21
+
+### Changed
+- Version synchronized with marketplace v0.7.0 release
+- Part of coordinated marketplace release
+
+### Notes
+- No functional changes from v0.1.0
+- Synchronized versioning for consistency across all packages
+
 ## [0.1.0] - 2025-12-09
 
 ### Added

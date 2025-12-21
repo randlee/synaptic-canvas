@@ -1,6 +1,6 @@
 ---
 name: issue-mutate-agent
-version: 0.1.0
+version: 0.7.0
 description: Create and update GitHub issues
 ---
 

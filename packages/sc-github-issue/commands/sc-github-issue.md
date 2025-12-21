@@ -1,6 +1,6 @@
 ---
 name: sc-github-issue
-version: 0.6.0
+version: 0.7.0
 description: Manage GitHub issues - list, create, update, and fix with automated workflows
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: skill-review
-version: 0.1.0
+version: 0.7.0
 description: Review a skill/command/agent (by name or path) against v0.4 guidelines using review agents.
 options:
   - name: --scope

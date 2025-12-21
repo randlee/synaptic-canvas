@@ -1,6 +1,6 @@
 ---
 name: sc-github-issue-fix
-version: 0.6.0
+version: 0.7.0
 description: Implement fixes for GitHub issues in isolated worktrees with testing and commit automation
 model: sonnet
 color: green
