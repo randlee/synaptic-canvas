@@ -1,0 +1,18 @@
+{
+  "name": "synaptic-canvas-docs",
+  "version": "1.0.0",
+  "description": "Synaptic Canvas Plugin Documentation",
+  "type": "module",
+  "scripts": {
+    "dev": "vitepress dev docs",
+    "build": "vitepress build docs",
+    "preview": "vitepress preview docs"
+  },
+  "devDependencies": {
+    "vitepress": "^1.6.4",
+    "vue": "^3.5.26"
+  },
+  "dependencies": {
+    "d3": "^7.9.0"
+  }
+}

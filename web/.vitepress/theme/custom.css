@@ -1,0 +1,282 @@
+/* Custom styles for Synaptic Canvas docs */
+
+:root {
+  --vp-c-brand-1: #6366f1;
+  --vp-c-brand-2: #818cf8;
+  --vp-c-brand-3: #a5b4fc;
+
+  --sc-node-entry: #e1f5ff;
+  --sc-node-agent: #fff4e1;
+  --sc-node-gate: #f0e1ff;
+  --sc-node-success: #e1ffe1;
+  --sc-node-error: #ffe1e1;
+
+  --sc-edge-color: #64748b;
+  --sc-edge-hover: #3b82f6;
+}
+
+/* Plugin Flow Visualizer */
+.plugin-flow-container {
+  width: 100%;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 12px;
+  background: var(--vp-c-bg-soft);
+  overflow: hidden;
+  margin: 1.5rem 0;
+}
+
+.plugin-flow-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--vp-c-divider);
+  background: var(--vp-c-bg);
+}
+
+.plugin-flow-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.plugin-flow-legend {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.85rem;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+.legend-dot.entry { background: var(--sc-node-entry); border: 1px solid #0ea5e9; }
+.legend-dot.agent { background: var(--sc-node-agent); border: 1px solid #f59e0b; }
+.legend-dot.gate { background: var(--sc-node-gate); border: 1px solid #a855f7; }
+.legend-dot.success { background: var(--sc-node-success); border: 1px solid #22c55e; }
+.legend-dot.error { background: var(--sc-node-error); border: 1px solid #ef4444; }
+
+.plugin-flow-svg {
+  width: 100%;
+  min-height: 400px;
+}
+
+/* D3 Node Styles */
+.flow-node {
+  cursor: pointer;
+  transition: filter 0.2s ease;
+}
+
+.flow-node:hover {
+  filter: brightness(0.95);
+}
+
+.flow-node.selected {
+  filter: brightness(0.9);
+}
+
+.flow-node rect {
+  rx: 8;
+  ry: 8;
+  stroke-width: 2;
+}
+
+.flow-node.entry rect {
+  fill: var(--sc-node-entry);
+  stroke: #0ea5e9;
+}
+
+.flow-node.agent rect {
+  fill: var(--sc-node-agent);
+  stroke: #f59e0b;
+}
+
+.flow-node.gate rect {
+  fill: var(--sc-node-gate);
+  stroke: #a855f7;
+  stroke-dasharray: 4 2;
+}
+
+.flow-node.success rect {
+  fill: var(--sc-node-success);
+  stroke: #22c55e;
+}
+
+.flow-node.error rect {
+  fill: var(--sc-node-error);
+  stroke: #ef4444;
+}
+
+.flow-node text {
+  font-size: 13px;
+  font-weight: 500;
+  fill: #1e293b;
+  text-anchor: middle;
+  dominant-baseline: middle;
+  pointer-events: none;
+}
+
+.flow-node .node-subtitle {
+  font-size: 10px;
+  font-weight: 400;
+  fill: #64748b;
+}
+
+/* D3 Edge Styles */
+.flow-edge {
+  fill: none;
+  stroke: var(--sc-edge-color);
+  stroke-width: 2;
+  marker-end: url(#arrowhead);
+}
+
+.flow-edge:hover {
+  stroke: var(--sc-edge-hover);
+  stroke-width: 3;
+}
+
+.edge-label {
+  font-size: 11px;
+  fill: #64748b;
+  text-anchor: middle;
+}
+
+/* Detail Panel */
+.detail-panel {
+  border-top: 1px solid var(--vp-c-divider);
+  background: var(--vp-c-bg);
+  overflow: hidden;
+  transition: max-height 0.3s ease, padding 0.3s ease;
+}
+
+.detail-panel.collapsed {
+  max-height: 0;
+  padding: 0 1.5rem;
+}
+
+.detail-panel.expanded {
+  max-height: 800px;
+  padding: 1.5rem;
+}
+
+.detail-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.detail-panel-header h4 {
+  margin: 0;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.detail-panel-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.2rem;
+  color: var(--vp-c-text-2);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+}
+
+.detail-panel-close:hover {
+  background: var(--vp-c-bg-soft);
+  color: var(--vp-c-text-1);
+}
+
+.detail-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--vp-c-divider);
+  margin-bottom: 1rem;
+}
+
+.detail-tab {
+  padding: 0.5rem 1rem;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: var(--vp-c-text-2);
+  transition: all 0.2s ease;
+}
+
+.detail-tab:hover {
+  color: var(--vp-c-text-1);
+}
+
+.detail-tab.active {
+  color: var(--vp-c-brand-1);
+  border-bottom-color: var(--vp-c-brand-1);
+}
+
+.detail-content {
+  font-size: 0.9rem;
+}
+
+.detail-content pre {
+  background: var(--vp-c-bg-soft);
+  padding: 1rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 0.5rem 0;
+}
+
+.detail-content code {
+  font-family: var(--vp-font-family-mono);
+  font-size: 0.85rem;
+}
+
+.schema-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.schema-table th,
+.schema-table td {
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--vp-c-divider);
+}
+
+.schema-table th {
+  font-weight: 600;
+  background: var(--vp-c-bg-soft);
+}
+
+.context-badge {
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  background: var(--vp-c-brand-soft);
+  color: var(--vp-c-brand-1);
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  margin-right: 0.25rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .plugin-flow-legend {
+    display: none;
+  }
+
+  .plugin-flow-svg {
+    min-height: 300px;
+  }
+}
