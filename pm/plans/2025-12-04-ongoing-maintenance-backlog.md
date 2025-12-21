@@ -18,11 +18,151 @@ This document consolidates remaining action items identified from completed mark
 - ✅ Skill Upgrade Plan: 95% Complete (13.8/14 items)
 - ✅ Sc- Prefix Refactoring (v0.5.0): 100% Complete - Released 2025-12-06
 - ✅ GitHub Issue Skill (v0.6.0): 100% Complete - Released 2025-12-08
-- ✅ CI Automation Package (v0.1.0): 100% Complete - Released 2025-12-09
+- ✅ CI Automation Package (v0.1.0 → v0.7.0): 100% Complete - Released 2025-12-09, Synchronized 2025-12-21
 - ✅ Agent Runner Comprehensive Guide: 100% Complete - 2025-12-11
 - ✅ Worktree Cleanup Sprint: 100% Complete - 2025-12-11 (7 worktrees cleaned)
-- ⏳ Next Up: Kanban Task Management Skill (v0.7.0)
+- ✅ Marketplace Infrastructure Guide: 100% Complete - 2025-12-16
+- ✅ SC-Startup Package (v0.7.0): 100% Complete - Released 2025-12-21
+- ✅ Synchronized v0.7.0 Release: 100% Complete - 2025-12-21 (All 7 packages at v0.7.0)
+- ⏳ Next Up: Kanban Task Management Skill (Future)
 - ⏳ Remaining Items: Ongoing maintenance + future enhancements
+
+---
+
+## Recent Completed Work (2025-12-16 to 2025-12-21)
+
+### Marketplace Infrastructure Guide
+**Status:** ✅ Complete
+**Completed:** 2025-12-16
+
+**Deliverables:**
+- [x] Created `docs/MARKETPLACE-INFRASTRUCTURE.md` (1,100+ lines)
+- [x] Complete guide to creating Claude Code marketplaces
+- [x] Architecture overview with diagrams
+- [x] Infrastructure requirements (minimal to enterprise)
+- [x] Complete registry.json specification
+- [x] Four hosting options: GitHub raw, Pages, CDN, self-hosted
+- [x] Discovery protocol documentation
+- [x] Security best practices
+- [x] Step-by-step setup guides (public and private)
+- [x] Troubleshooting and advanced topics
+- [x] Updated DOCUMENTATION-INDEX.md with new guide
+- [x] Updated ARCH-SC.md key documents
+
+**Impact:**
+- Addresses critical documentation gap for marketplace operators
+- Enables anyone to create their own Claude Code marketplace
+- Comprehensive 1,100+ line reference guide
+
+---
+
+### SC-Startup Package Development & Release
+**Status:** ✅ Complete
+**Completed:** 2025-12-21
+**Package Version:** v0.7.0 (synchronized with marketplace)
+**Location:** `packages/sc-startup/`
+**PRs:** #21, #22, #23, #24
+
+**Scope:**
+Project startup automation package with parallel agent coordination for PR triage, worktree hygiene, and checklist synchronization.
+
+**Completed Deliverables:**
+- [x] Created complete package structure in `packages/sc-startup/`
+- [x] Implemented 2 core agents:
+  - [x] sc-checklist-status (checklist report/update; workspace-only, no auto-commit)
+  - [x] sc-startup-init (config detection, multi-candidate scanning)
+- [x] Created `/sc-startup` command with 4 flags:
+  - [x] `--pr` (PR triage via ci-pr-agent)
+  - [x] `--pull` (CI pull before checklist updates)
+  - [x] `--fast` (prompt-only, instant context)
+  - [x] `--readonly` (report-only mode)
+- [x] Created sc-startup skill for orchestration
+- [x] Implemented parallel background agent execution
+- [x] Best-effort status aggregation
+- [x] Configuration system (`.claude/sc-startup.yaml`)
+- [x] Created manifest.yaml with package metadata
+- [x] Created comprehensive documentation:
+  - [x] README.md (150+ lines) with install, quick start, features
+  - [x] CHANGELOG.md (v0.6.0, v0.6.1, v0.7.0)
+  - [x] USE-CASES.md (7 practical workflows)
+  - [x] TROUBLESHOOTING.md
+  - [x] LICENSE (MIT)
+- [x] Enhanced path detection:
+  - [x] Scan pm/ and project*/ directories
+  - [x] Support multiple candidates (max 10 per category)
+  - [x] Sort by modification time (most recent first)
+  - [x] ARCH-*.md pattern matching
+- [x] Created smoke test script (`scripts/smoke_sc_startup.sh`)
+- [x] Updated registry.json with sc-startup package
+- [x] Added to marketplace metadata and categories
+- [x] All tests passing (369/369)
+
+**Key Features:**
+- Parallel background agent execution (non-blocking)
+- Immediate prompt display while agents run
+- Dependency validation with fail-closed behavior
+- Path safety (repo-root-relative only)
+- No auto-commit (workspace-only checklist updates)
+- Pull-before-checklist ordering for merge safety
+- Audit logging with 14-day retention
+
+**Dependencies:**
+- Requires: sc-ci-automation >= 0.7.0
+- Requires: sc-git-worktree >= 0.7.0
+- Requires: git >= 2.20
+
+**Design Evolution:**
+- Initial design review identified complexity issues
+- Revised after clarifying parallel execution model
+- ARCH-SC review found missing docs and manifest issues
+- ARCH-CODEX fixed all critical issues before release
+
+---
+
+### Synchronized v0.7.0 Release
+**Status:** ✅ Complete
+**Completed:** 2025-12-21
+**PRs:** #24
+**Scope:** Synchronized version bump across all 7 packages to eliminate version confusion
+
+**Problem Identified:**
+- Marketplace at v0.7.0 but packages at v0.6.0/v0.6.1/v0.1.0 (confusing)
+- No clear relationship between marketplace and package versions
+- Difficult to communicate compatibility
+
+**Solution Implemented:**
+- [x] Synchronized ALL packages to v0.7.0
+- [x] Updated 104 files total:
+  - [x] 7 package manifests (version field)
+  - [x] 80 artifact files (commands, skills, agents frontmatter)
+  - [x] 7 CHANGELOGs (added v0.7.0 synchronized release entry)
+  - [x] 9 plugin/registry files (marketplace.json, plugin.json)
+  - [x] 1 platform version (version.yaml)
+- [x] Updated all dependency version requirements:
+  - [x] sc-startup: sc-ci-automation >= 0.7.0, sc-git-worktree >= 0.7.0
+  - [x] sc-github-issue: sc-git-worktree >= 0.7.0
+- [x] Updated registry.json with all synchronized versions
+- [x] Updated test expectations (2 test files)
+- [x] Fixed README badge (sc-ci-automation)
+- [x] All 369 tests passing
+- [x] Merged to main via PR #24
+
+**Version Updates:**
+| Package | Previous | New |
+|---------|----------|-----|
+| sc-delay-tasks | 0.6.0 | 0.7.0 |
+| sc-git-worktree | 0.6.0 | 0.7.0 |
+| sc-manage | 0.6.0 | 0.7.0 |
+| sc-repomix-nuget | 0.6.0 | 0.7.0 |
+| sc-github-issue | 0.6.0 | 0.7.0 |
+| sc-ci-automation | 0.1.0 | 0.7.0 |
+| sc-startup | 0.6.1 | 0.7.0 |
+
+**Current State:**
+- ✅ Marketplace: v0.7.0
+- ✅ ALL packages: v0.7.0
+- ✅ Clear versioning strategy established
+- ✅ Live and installable via `/plugin`
 
 ---
 
@@ -471,15 +611,27 @@ Create CI automation package with quality gates workflow: pull → build → tes
 
 ---
 
-### 4.4 Version 0.7.0 - Kanban Task Management Skill (NEXT)
-**Status:** ⏳ Planned
+### 4.4 Version 0.7.0 - SC-Startup Package ✅ COMPLETED
+**Status:** ✅ Released
+**Release Date:** 2025-12-21
+**Package Version:** v0.7.0
+**Location:** `packages/sc-startup/`
+
+**Note:** Originally planned for Kanban, v0.7.0 was released with sc-startup package instead due to immediate workflow automation needs. Kanban skill moved to future release.
+
+See "Recent Completed Work (2025-12-16 to 2025-12-21)" section above for full details.
+
+---
+
+### 4.5 Future Release - Kanban Task Management Skill
+**Status:** ⏳ Planned (Deferred)
 **Timeline:** TBD
 **Effort:** 2-3 weeks
-**Design Document:** `docs/kanban-design.md`
+**Design Document:** `docs/kanban-design.md`, `plans/sc-kanban-design.md`
 **Guidelines:** `docs/claude-code-skills-agents-guidelines-0.4.md`
 
 **Scope:**
-Implement configurable kanban state machine for task card management following v0.4 skill architecture guidelines.
+Implement configurable kanban state machine for task card management following v0.5 skill architecture guidelines.
 
 **Design Overview:**
 - Pure state machine: Kanban agents manage state, not workflow
@@ -539,7 +691,7 @@ Implement configurable kanban state machine for task card management following v
 
 ---
 
-### 4.5 Version 0.8.0 - SC-Project-Manager Package
+### 4.6 Version 0.8.0 - SC-Project-Manager Package
 **Status:** ⏳ Planned (Deferred - Superseded by Kanban)
 **Timeline:** Q2 2025
 **Effort:** 2-3 weeks
@@ -589,7 +741,7 @@ Create comprehensive project management package for sprint-based development wit
 
 ---
 
-### 4.4 Version 1.0.0 Breaking Changes (Future)
+### 4.7 Version 1.0.0 Breaking Changes (Future)
 **Status:** Not Started
 **Timeline:** Q2-Q3 2026 (estimated)
 **Planned Changes:**
@@ -727,11 +879,81 @@ For context, the following projects have been completed and archived:
 
 ---
 
+## Plan Divergence & Discrepancies
+
+### Divergence from Original Plan
+
+**Original Plan (2025-12-04):**
+- v0.7.0 would be Kanban Task Management Skill
+- Packages would remain at v0.6.x with independent versioning
+- CI Automation at v0.1.0 as independent package
+
+**Actual Implementation (2025-12-21):**
+- v0.7.0 is SC-Startup Package (Kanban deferred)
+- ALL packages synchronized to v0.7.0 (not independent)
+- Marketplace and package versions now aligned
+
+### Reasons for Divergence
+
+**1. Immediate Workflow Need:**
+- SC-Startup addresses daily workflow automation needs
+- Provides immediate value for project context loading
+- Enables automated PR triage, worktree hygiene, checklist sync
+- More urgent than Kanban for current development velocity
+
+**2. Version Confusion:**
+- Mixed versions (0.6.0, 0.6.1, 0.1.0) with marketplace 0.7.0 was confusing
+- Synchronized versioning provides clearer communication
+- Easier to understand compatibility and support
+- Follows standard marketplace practices
+
+**3. Design Maturity:**
+- Kanban design documents exist but need further refinement
+- SC-Startup had clearer requirements and immediate use cases
+- Kanban can benefit from sc-startup patterns when implemented
+
+### Current State vs Plan
+
+| Aspect | Plan | Actual | Status |
+|--------|------|--------|--------|
+| v0.7.0 Feature | Kanban | SC-Startup | ✅ Completed |
+| Package Versioning | Independent | Synchronized | ✅ Improved |
+| Total Packages | 6 | 7 | ✅ Exceeded |
+| Total Agents | 26 | 27 | ✅ On track |
+| Kanban Timing | v0.7.0 | Future | ⏳ Deferred |
+| Version Strategy | Mixed | Unified | ✅ Clarified |
+
+### Impact Assessment
+
+**Positive Impacts:**
+- ✅ Clear versioning eliminates user confusion
+- ✅ SC-Startup provides immediate workflow value
+- ✅ Marketplace at v0.7.0 with all packages at v0.7.0 (consistent)
+- ✅ Foundation for future synchronized releases
+- ✅ Kanban can be better designed with lessons from sc-startup
+
+**No Negative Impacts:**
+- Kanban is deferred, not cancelled
+- No functionality lost
+- Version synchronization improves clarity
+- All documentation current
+
+---
+
 ## Document Maintenance
 
-**Last Updated:** 2025-12-09 (Added SC-CI-Automation completion, Kanban skill planning)
+**Last Updated:** 2025-12-21 (Added Marketplace Infrastructure Guide, SC-Startup package, Synchronized v0.7.0 release)
 **Created:** 2025-12-04
 **Archive Location:** `.archive/plans/`
+
+### Recent Updates (2025-12-21):
+- Added Marketplace Infrastructure Guide (section 2025-12-16 to 2025-12-21)
+- Added SC-Startup Package completion (section 2025-12-16 to 2025-12-21)
+- Added Synchronized v0.7.0 Release (section 2025-12-16 to 2025-12-21)
+- Updated executive summary with latest completions
+- Renumbered sections 4.4-4.7 to accommodate sc-startup
+- Updated all package statuses to v0.7.0
+- Noted Kanban skill deferral to future release
 
 **Related Documents:**
 - `.archive/plans/2025-12-02-marketplace-improvement-plan.md` (completed)
@@ -745,10 +967,18 @@ For context, the following projects have been completed and archived:
 **Recommended Review:** 2026-03-01 (Q1 2026)
 
 At that time, assess:
-- User feedback on current releases
-- Any emerging needs for v0.5.0 features
+- User feedback on v0.7.0 synchronized release
+- sc-startup adoption and usage patterns
+- Kanban skill readiness for implementation
 - Progress on optional enhancements
 - Community integration requests
-- Readiness for v1.0.0 planning
+- Readiness for v0.8.0 or v1.0.0 planning
+
+**Current Marketplace Status (2025-12-21):**
+- 7 packages, all at v0.7.0
+- Synchronized versioning strategy established
+- All tests passing (369/369)
+- Complete documentation for marketplace operators
+- SC-Startup package live and functional
 
 ---
