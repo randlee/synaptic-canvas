@@ -119,3 +119,12 @@ See `CHANGELOG.md`.
 
 ## License
 MIT, see `LICENSE`.
+/sc-startup --init     # discover config, ask for missing settings, optionally write config
+## Init Flow (`--init`)
+- Runs detection-only agent `sc-startup-init`:
+  - Finds existing config (if present), parses YAML.
+  - Suggests prompt/checklist candidates (globbed, bounded).
+  - Detects installed packages (`sc-ci-automation`, `sc-git-worktree`, `sc-startup`).
+- Skill parses results and uses AskQuestion to resolve missing/ambiguous settings (prompt path, checklist path, worktree-scan, pr-enabled, worktree-enabled).
+- If not `--readonly`, writes `.claude/sc-startup.yaml`; otherwise shows synthesized YAML and exits.
+- After init, normal startup flow can proceed with the resolved config.

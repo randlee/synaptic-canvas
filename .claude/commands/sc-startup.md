@@ -7,6 +7,8 @@ options:
     description: Immediately deploy the `ci-pr-agent` with `--list --fix`; render PRs as a table (state “No open PRs” if none). If `--readonly`, run list-only (no fixes).
   - name: --pull
     description: Immediately deploy the `ci-automation` skill in pull-only mode to sync master → develop.
+  - name: --init
+    description: Run config discovery via `sc-startup-init` (detect existing config, candidates, plugins), then walk user through missing settings with AskQuestion before continuing.
   - name: --fast
     description: Short-circuit: read the startup prompt only, assume the assigned role, and exit (no checklist, no agents, no status report).
   - name: --readonly
@@ -42,16 +44,17 @@ Kick off the Synaptic Canvas project startup routine. Reads repo-specific config
   ```
 
 ## Execution Flow
-1) Load `.claude/sc-startup.yaml`; resolve prompt/checklist paths; abort with help if invalid. Validate feature availability against installed packages; fail closed with `DEPENDENCY.MISSING` when enabled packages are absent.
-2) `--help`: Print concise usage, flags, and config example; exit without invoking agents.
-3) If `--fast`: Read `startup-prompt` only, summarize the role, and exit (skip checklist read, status, and all agents).
-4) If `--pr`: Launch background agent via Agent Runner for `ci-pr-agent`; default `--list --fix`, but `--readonly` forces list-only (no fixes). Capture fenced JSON and render as a table (explicit “No open PRs” if empty).
-5) If `worktree-scan` is `scan` or `cleanup`: Launch background `sc-worktree-scan` or `sc-worktree-cleanup` respectively; render results as a table. If `--readonly`, always run scan/report-only; for `cleanup` without `--readonly`, include a `worktrees_cleaned` column.
-6) If `--pull`: Run `ci-automation` in pull-only mode (master → develop handle) and wait for completion before checklist updates to ensure updates reflect merged state. Report status even on failure/timeout.
-7) Always deploy `sc-checklist-status` (inputs: `--update` by default; `--report` for dry runs). Default updates the master checklist when gaps are detected unless `--readonly`, which forces report-only. Return fenced JSON `{success, data, error}` with deltas and any added checklist entries. Checklist changes remain workspace-only (no auto-commit).
-8) Read `startup-prompt` and `check-list` files (post-update if applicable).
-9) Await background agents; aggregate results in deterministic order by `correlation_id`; surface partial failures/timeouts as statuses (best-effort, do not abort).
-10) Output a concise status report:
+1) `--help`: Print concise usage, flags, and config example; exit without invoking agents.
+2) If `--init`: Agent Runner → `sc-startup-init` (detection only; fenced JSON with YAML payload). Parse results; use AskQuestion to resolve missing/ambiguous settings (prompt path, checklist path, worktree-scan mode, pr-enabled, worktree-enabled). If not `--readonly`, write `.claude/sc-startup.yaml`; otherwise show synthesized YAML only. Then continue with normal flow.
+3) Load `.claude/sc-startup.yaml`; resolve prompt/checklist paths; abort with help if invalid. Validate feature availability against installed packages; fail closed with `DEPENDENCY.MISSING` when enabled packages are absent.
+4) If `--fast`: Read `startup-prompt` only, summarize the role, and exit (skip checklist read, status, and all agents).
+5) If `--pr`: Launch background agent via Agent Runner for `ci-pr-agent`; default `--list --fix`, but `--readonly` forces list-only (no fixes). Capture fenced JSON and render as a table (explicit “No open PRs” if empty).
+6) If `worktree-scan` is `scan` or `cleanup`: Launch background `sc-worktree-scan` or `sc-worktree-cleanup` respectively; render results as a table. If `--readonly`, always run scan/report-only; for `cleanup` without `--readonly`, include a `worktrees_cleaned` column.
+7) If `--pull`: Run `ci-automation` in pull-only mode (master → develop handle) and wait for completion before checklist updates to ensure updates reflect merged state. Report status even on failure/timeout.
+8) Always deploy `sc-checklist-status` (inputs: `--update` by default; `--report` for dry runs). Default updates the master checklist when gaps are detected unless `--readonly`, which forces report-only. Return fenced JSON `{success, data, error}` with deltas and any added checklist entries. Checklist changes remain workspace-only (no auto-commit).
+9) Read `startup-prompt` and `check-list` files (post-update if applicable).
+10) Await background agents; aggregate results in deterministic order by `correlation_id`; surface partial failures/timeouts as statuses (best-effort, do not abort).
+11) Output a concise status report:
    - Prompt summary/role
    - Checklist sync summary (updated items, remaining gaps)
    - PR findings (table) if requested
@@ -64,6 +67,7 @@ Kick off the Synaptic Canvas project startup routine. Reads repo-specific config
 - `ci-pr-agent`: Run with `--list --fix` when `--pr` is set; `--readonly` switches to list-only. Show PR table even if fixes fail (include errors).
 - `sc-worktree-scan` / `sc-worktree-cleanup`: Invoked based on `worktree-scan` value; show table with worktree path/branch/state and cleaned count when applicable; `--readonly` enforces scan/report-only.
 - `ci-automation` (pull-only mode): Launched when `--pull` is set to sync master → develop handle before checklist updates.
+- `sc-startup-init`: Detection-only (config presence, candidates, package detection). Returns fenced JSON with YAML payload; skill uses AskQuestion for any user prompts. No mutations.
 - All invocations go through Agent Runner with registry version enforcement; treat malformed/unfenced JSON as failure and report succinctly.
 
 ## Output & UX
@@ -78,6 +82,7 @@ Kick off the Synaptic Canvas project startup routine. Reads repo-specific config
 /sc-startup --pull
 /sc-startup --fast
 /sc-startup --pr --readonly
+/sc-startup --init
 ```
 
 ## Error Handling
