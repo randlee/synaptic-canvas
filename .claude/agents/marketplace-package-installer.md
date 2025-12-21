@@ -1,6 +1,6 @@
 ---
 name: Marketplace Package Installer
-version: 0.4.0
+version: 0.7.0
 description: Installs packages from marketplace registries with verification
 category: marketplace
 tags: [installation, packages, marketplace, setup]

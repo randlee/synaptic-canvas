@@ -1,6 +1,6 @@
 ---
 name: skill-review-agent
-version: 0.1.0
+version: 0.7.0
 description: Background reviewer that checks skills/commands/agents against v0.4 guidelines and registry requirements.
 ---
 

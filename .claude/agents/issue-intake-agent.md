@@ -1,6 +1,6 @@
 ---
 name: issue-intake-agent
-version: 0.1.0
+version: 0.7.0
 description: List and fetch GitHub issue details
 ---
 

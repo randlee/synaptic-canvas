@@ -5,6 +5,16 @@ All notable changes to the sc-github-issue package will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2025-12-21
+
+### Changed
+- Version synchronized with marketplace v0.7.0 release
+- Part of coordinated marketplace release
+
+### Notes
+- No functional changes from v0.6.0
+- Synchronized versioning for consistency across all packages
+
 ## [0.6.0] - 2025-12-08
 
 ### Added - Initial Marketplace Release

@@ -1,6 +1,6 @@
 ---
 name: ci-root-cause-agent
-version: 0.1.0
+version: 0.7.0
 description: Analyze unresolved failures and provide recommendations.
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: skill-planning-agent
-version: 0.1.0
+version: 0.7.0
 description: Background planner that drafts Claude Code skill plans and architectures aligned to v0.4 guidelines.
 ---
 

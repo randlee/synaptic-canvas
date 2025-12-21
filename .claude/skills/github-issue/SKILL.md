@@ -1,6 +1,6 @@
 ---
 name: github-issue
-version: 0.1.0
+version: 0.7.0
 description: GitHub issue lifecycle management with worktree isolation
 entry_point: /github-issue
 ---

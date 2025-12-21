@@ -1,7 +1,7 @@
 ---
 name: sc-git-worktree
 description: Manage git worktrees for this repo (create, list/status, update, cleanup, abort) while enforcing the repo's worktree/tracking rules and protected branch safeguards.
-version: 0.6.0
+version: 0.7.0
 options:
   - name: --list
     description: List worktrees and show status/notes.

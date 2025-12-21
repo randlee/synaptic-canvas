@@ -1,7 +1,7 @@
 {
   "$schema": "https://yourcompany.github.io/schemas/package-registry.schema.json",
   "version": "2.0.0",
-  "generated": "2025-12-21T01:25:16Z",
+  "generated": "2025-12-21T10:00:00Z",
   "repo": "randlee/synaptic-canvas",
   "marketplace": {
     "name": "Synaptic Canvas",
@@ -12,7 +12,7 @@
   "packages": {
     "sc-delay-tasks": {
       "name": "sc-delay-tasks",
-      "version": "0.6.0",
+      "version": "0.7.0",
       "status": "beta",
       "tier": 0,
       "description": "Schedule delayed or interval-based actions with minimal heartbeats. Ideal for waiting before running checks (e.g., GH Actions, PR status) or polling on a bounded interval.",
@@ -37,12 +37,12 @@
       },
       "dependencies": [],
       "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-delay-tasks/CHANGELOG.md",
-      "lastUpdated": "2025-12-08",
+      "lastUpdated": "2025-12-21",
       "dependents": []
     },
     "sc-ci-automation": {
       "name": "sc-ci-automation",
-      "version": "0.1.0",
+      "version": "0.7.0",
       "status": "beta",
       "tier": 2,
       "description": "Run CI quality gates (pull → build → test) with optional auto-fix and PR creation. Coordinates pull from upstream, builds projects, runs tests, applies straightforward fixes, and creates PRs when all quality gates pass.",
@@ -71,12 +71,12 @@
         "git >= 2.20"
       ],
       "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-ci-automation/CHANGELOG.md",
-      "lastUpdated": "2025-12-09",
+      "lastUpdated": "2025-12-21",
       "dependents": []
     },
     "sc-git-worktree": {
       "name": "sc-git-worktree",
-      "version": "0.6.0",
+      "version": "0.7.0",
       "status": "beta",
       "tier": 1,
       "description": "Create, manage, scan, and clean up git worktrees for parallel development with protected branch safeguards. Maintains tracking of worktree status, branch details, and cleanup history.",
@@ -110,14 +110,14 @@
         "git >= 2.27"
       ],
       "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-git-worktree/CHANGELOG.md",
-      "lastUpdated": "2025-12-08",
+      "lastUpdated": "2025-12-21",
       "dependents": [
         "sc-github-issue"
       ]
     },
     "sc-manage": {
       "name": "sc-manage",
-      "version": "0.6.0",
+      "version": "0.7.0",
       "status": "beta",
       "tier": 0,
       "description": "Interface for managing Synaptic Canvas packages. Provides discovery, installation info, and management utilities for the marketplace.",
@@ -141,12 +141,12 @@
       },
       "dependencies": [],
       "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-manage/CHANGELOG.md",
-      "lastUpdated": "2025-12-08",
+      "lastUpdated": "2025-12-21",
       "dependents": []
     },
     "sc-repomix-nuget": {
       "name": "sc-repomix-nuget",
-      "version": "0.6.0",
+      "version": "0.7.0",
       "status": "beta",
       "tier": 1,
       "description": "Generate comprehensive NuGet repository context for AI analysis. Extracts package metadata, assembly information, and documentation for enhanced code understanding.",
@@ -179,12 +179,12 @@
         "python3 >= 3.12"
       ],
       "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-repomix-nuget/CHANGELOG.md",
-      "lastUpdated": "2025-12-08",
+      "lastUpdated": "2025-12-21",
       "dependents": []
     },
     "sc-github-issue": {
       "name": "sc-github-issue",
-      "version": "0.6.0",
+      "version": "0.7.0",
       "status": "beta",
       "tier": 2,
       "description": "GitHub issue lifecycle management with worktree isolation. List, create, update issues, and implement fixes in isolated worktrees with automated testing, commits, and PR creation.",
@@ -210,16 +210,16 @@
         "scripts": 0
       },
       "dependencies": [
-        "sc-git-worktree >= 0.6.0",
+        "sc-git-worktree >= 0.7.0",
         "gh >= 2.0"
       ],
       "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-github-issue/CHANGELOG.md",
-      "lastUpdated": "2025-12-08",
+      "lastUpdated": "2025-12-21",
       "dependents": []
     },
     "sc-startup": {
       "name": "sc-startup",
-      "version": "0.6.1",
+      "version": "0.7.0",
       "status": "beta",
       "tier": 2,
       "description": "Startup runner for Synaptic Canvas: read startup prompt, sync master checklist, optional PR triage, worktree hygiene, and CI pull, then emit a concise status with next steps.",
@@ -244,11 +244,11 @@
         "scripts": 0
       },
       "dependencies": [
-        "sc-ci-automation >= 0.1.0",
-        "sc-git-worktree >= 0.6.0"
+        "sc-ci-automation >= 0.7.0",
+        "sc-git-worktree >= 0.7.0"
       ],
       "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-startup/CHANGELOG.md",
-      "lastUpdated": "2025-12-20",
+      "lastUpdated": "2025-12-21",
       "dependents": []
     }
   },

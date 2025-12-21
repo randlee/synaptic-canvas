@@ -1,6 +1,6 @@
 ---
 name: ci-automation
-version: 0.1.0
+version: 0.7.0
 description: Run CI quality gates with optional auto-fix and PR creation.
 entry_point: /ci-automation
 ---

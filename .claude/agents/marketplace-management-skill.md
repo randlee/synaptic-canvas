@@ -1,6 +1,6 @@
 ---
 name: Marketplace Management Skill
-version: 0.4.0
+version: 0.7.0
 description: Main orchestration agent for marketplace package discovery, installation, and registry management
 category: marketplace
 tags: [orchestration, marketplace, packages, management, discovery]

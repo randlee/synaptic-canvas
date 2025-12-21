@@ -1,6 +1,6 @@
 ---
 name: Marketplace Registry Manager
-version: 0.4.0
+version: 0.7.0
 description: Manages marketplace registry configuration (list, add, remove, configure)
 category: marketplace
 tags: [registry, configuration, marketplace, management]
