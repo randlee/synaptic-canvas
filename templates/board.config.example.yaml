@@ -1,0 +1,115 @@
+# Board Configuration for sc-kanban v0.7.0
+#
+# This configuration is shared between sc-kanban and sc-project-manager to provide
+# a single source of truth for task tracking. Both systems read this file to understand
+# board structure, provider selection, and card schemas.
+#
+# Copy this file to your project: .project/board.config.yaml
+
+# Version of the board config schema (required, must be 0.7 for v0.7.0)
+version: 0.7
+
+board:
+  # File paths for the three-file lifecycle (required for kanban provider)
+  # - backlog.json: Lean backlog (100s items, unplanned work)
+  # - board.json: Rich active items (10-20 cards, in-progress work with full context)
+  # - done.json: Lean archive (100s items, scrubbed on completion)
+  backlog_path: .project/backlog.json
+  board_path: .project/board.json
+  done_path: .project/done.json
+
+  # Provider selection (required, must be "kanban" or "checklist")
+  # - kanban: Full features (gates, WIP, scrubbing, structured JSON)
+  # - checklist: Lightweight fallback (roadmap.md + prompts/, no gates)
+  provider: kanban
+
+  # Work-In-Progress (WIP) limits per column (optional, enforces focus)
+  # When a column reaches its limit, transitions to that column are blocked
+  # until work is completed and moved forward. Helps prevent multitasking.
+  wip:
+    per_column:
+      active: 3      # Max 3 items in active development simultaneously
+      review: 2      # Max 2 items awaiting code review at once
+
+  # Column definitions for the board (required, defines workflow stages)
+  # Each column represents a status that cards can be in. Cards flow through
+  # these columns from planned → active → review → done.
+  columns:
+    - id: planned           # Not yet started, ready for execution
+      name: Planned
+    - id: active            # Currently in development
+      name: In Progress
+    - id: review            # Implementation complete, awaiting review
+      name: In Review
+    - id: done              # Completed and archived (scrubbed on entry)
+      name: Done
+
+# Card field schema definitions (defines what data cards can contain)
+cards:
+  fields:
+    # Identity fields (required for all card types)
+    - id: worktree          # Worktree path (e.g., "main/1-1-project-setup")
+      required: true
+      type: string
+    - id: sprint_id         # Sprint identifier (e.g., "1.1", "2.3a")
+      required: true
+      type: string
+
+    # Execution tracking fields (optional, updated during sprint progress)
+    - id: pr_url            # Pull request URL (required for review/done transitions)
+      required: false
+      type: string
+    - id: assignee          # Person or agent assigned to the work
+      required: false
+      type: string
+    - id: acceptance_criteria  # List of success criteria for QA validation
+      required: false
+      type: array          # Array of strings
+    - id: status_report     # Current status description (updated by scrum-master)
+      required: false
+      type: string
+
+    # Timing fields (optional, automatically populated by agents)
+    - id: started_at        # ISO 8601 timestamp when work began
+      required: false
+      type: string
+    - id: completed_at      # ISO 8601 timestamp when work finished
+      required: false
+      type: string
+
+    # Metrics fields (optional, for velocity tracking)
+    - id: actual_cycles     # Number of dev→QA iterations completed
+      required: false
+      type: integer
+    - id: max_retries       # Maximum allowed iterations before escalation
+      required: false
+      type: integer
+      default: 3
+
+    # Git workflow fields (optional, for branch management)
+    - id: base_branch       # Base branch to merge into (e.g., "main", "develop")
+      required: false
+      type: string
+
+  # Naming conventions (defines how identifiers are formatted)
+  conventions:
+    # Worktree naming pattern used by sc-git-worktree integration
+    # Format: <project-branch>/<sprint-id>-<sprint-name>
+    # Example: "main/1-1-project-setup" or "develop/2-3a-auth-service"
+    # Note: Dots in sprint_id are converted to dashes (1.1 → 1-1)
+    worktree_pattern: "<project-branch>/<sprint-id>-<sprint-name>"
+
+    # Sprint ID grammar (defines valid sprint identifier format)
+    # Format: <phase>.<number>[<letter>]*
+    # Examples: "1.1", "2.3", "3a.2", "3b.2b"
+    # Allows for phase branching (3a, 3b) and sprint sub-iterations (2a, 2b)
+    sprint_id_grammar: "<phase>.<number>[<letter>]*"
+
+# Agent references (defines which agents handle operations)
+agents:
+  # Primary kanban agents (used when provider=kanban)
+  transition: sc-kanban/kanban-transition    # Handles card transitions with gates
+  query: sc-kanban/kanban-query              # Handles card queries and filtering
+
+  # Fallback agent (used when provider=checklist)
+  checklist_fallback: checklist-agent/query-update  # Markdown-based workflow

@@ -1,0 +1,40 @@
+name: sc-kanban
+version: 0.7.0
+description: >
+  Kanban state machine for Synaptic Canvas: backlog → board → done with gate validation,
+  scrubbing, and shared board config (v0.7).
+author: randlee
+license: MIT
+tags:
+  - kanban
+  - task-tracking
+  - workflow
+  - git
+  - pr
+  - gates
+
+artifacts:
+  commands:
+    - commands/sc-kanban.md
+  skills:
+    - skills/sc-kanban/SKILL.md
+  agents:
+    - agents/kanban-transition.md
+    - agents/kanban-query.md
+    - agents/checklist-agent.md
+    - agents/kanban-card.md
+    - agents/kanban_transition.py
+    - agents/kanban_query.py
+    - agents/checklist_agent.py
+    - agents/kanban_card.py
+  scripts:
+    - scripts/kanban_board.py
+    - scripts/validate_worktrees.py
+    - scripts/validate_pr_state.py
+    - scripts/run_gates.py
+
+requires:
+  - python3
+  - PyYAML
+  - pydantic
+  - sc-git-worktree>=0.5.2
