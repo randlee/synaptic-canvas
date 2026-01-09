@@ -1,7 +1,7 @@
 {
   "$schema": "https://yourcompany.github.io/schemas/package-registry.schema.json",
   "version": "2.0.0",
-  "generated": "2025-12-21T10:00:00Z",
+  "generated": "2026-01-09T22:00:00Z",
   "repo": "randlee/synaptic-canvas",
   "marketplace": {
     "name": "Synaptic Canvas",
@@ -217,6 +217,42 @@
       "lastUpdated": "2025-12-21",
       "dependents": []
     },
+    "sc-kanban": {
+      "name": "sc-kanban",
+      "version": "0.7.0",
+      "status": "beta",
+      "tier": 2,
+      "description": "Kanban state machine with three-file lifecycle (backlog → board → done), provider abstraction, automatic scrubbing, and WIP enforcement. Integrates with sc-project-manager via shared board config.",
+      "github": "randlee/synaptic-canvas",
+      "repo": "https://github.com/randlee/synaptic-canvas",
+      "path": "packages/sc-kanban",
+      "readme": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-kanban/README.md",
+      "license": "MIT",
+      "author": "randlee",
+      "tags": [
+        "kanban",
+        "task-tracking",
+        "workflow",
+        "project-management",
+        "git",
+        "pr",
+        "gates"
+      ],
+      "artifacts": {
+        "commands": 1,
+        "skills": 1,
+        "agents": 4,
+        "scripts": 4
+      },
+      "dependencies": [
+        "PyYAML",
+        "pydantic >= 2.0",
+        "sc-git-worktree >= 0.5.2"
+      ],
+      "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-kanban/CHANGELOG.md",
+      "lastUpdated": "2026-01-09",
+      "dependents": []
+    },
     "sc-startup": {
       "name": "sc-startup",
       "version": "0.7.0",
@@ -255,11 +291,11 @@
   "metadata": {
     "registryVersion": "2.0.0",
     "schemaVersion": "1.0.0",
-    "totalPackages": 7,
-    "totalCommands": 7,
-    "totalSkills": 7,
-    "totalAgents": 27,
-    "totalScripts": 2,
+    "totalPackages": 8,
+    "totalCommands": 8,
+    "totalSkills": 8,
+    "totalAgents": 31,
+    "totalScripts": 6,
     "categories": {
       "automation": [
         "sc-delay-tasks",
@@ -268,7 +304,8 @@
       ],
       "development-tools": [
         "sc-git-worktree",
-        "sc-github-issue"
+        "sc-github-issue",
+        "sc-kanban"
       ],
       "package-management": [
         "sc-manage"
@@ -301,9 +338,10 @@
         "sc-manage",
         "sc-repomix-nuget",
         "sc-github-issue",
+        "sc-kanban",
         "sc-startup"
       ],
-      "total_packages": 7
+      "total_packages": 8
     }
   }
 }
