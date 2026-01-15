@@ -11,7 +11,8 @@
     "./commands/sc-startup.md"
   ],
   "agents": [
-    "./agents/sc-checklist-status.md"
+    "./agents/sc-checklist-status.md",
+    "./agents/sc-startup-init.md"
   ],
   "skills": [
     "./skills/sc-startup/SKILL.md"
