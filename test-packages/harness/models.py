@@ -46,6 +46,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 class TestStatus(str, Enum):
     """Overall test status."""
+    __test__ = False  # Prevent pytest collection
 
     PASS = "pass"
     FAIL = "fail"
@@ -144,6 +145,7 @@ class FixtureMeta(BaseModel):
 
 class TestMetadata(BaseModel):
     """Metadata about a specific test run."""
+    __test__ = False  # Prevent pytest collection
 
     fixture: str = Field(description="Parent fixture ID")
     package: str = Field(description="Package being tested")
@@ -442,6 +444,7 @@ class TestResult(BaseModel):
     - Claude's response
     - Debug information
     """
+    __test__ = False  # Prevent pytest collection
 
     # Identification
     test_id: str = Field(description="Unique test identifier")

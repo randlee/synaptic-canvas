@@ -190,6 +190,8 @@ class TestConfig:
         skip_reason: Reason for skipping
         source_path: Path to the source YAML file
     """
+    __test__ = False  # Prevent pytest collection
+
     test_id: str
     test_name: str
     description: str = ""

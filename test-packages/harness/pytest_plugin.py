@@ -71,6 +71,7 @@ class TestReportState:
     This class accumulates test results during a pytest session and provides
     them for HTML report generation in pytest_sessionfinish.
     """
+    __test__ = False  # Prevent pytest collection
 
     def __init__(self):
         """Initialize empty state."""
