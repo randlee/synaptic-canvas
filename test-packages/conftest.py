@@ -53,6 +53,9 @@ try:
         pytest_collect_file,
         pytest_collection_modifyitems,
         pytest_configure as plugin_pytest_configure,
+        pytest_sessionstart as plugin_pytest_sessionstart,
+        pytest_runtest_makereport as plugin_pytest_runtest_makereport,
+        pytest_sessionfinish as plugin_pytest_sessionfinish,
     )
     PLUGIN_AVAILABLE = True
 except ImportError:
@@ -88,8 +91,34 @@ def pytest_configure(config: pytest.Config) -> None:
         plugin_pytest_configure(config)
 
 
+def pytest_sessionstart(session: pytest.Session) -> None:
+    """Initialize test session state."""
+    if PLUGIN_AVAILABLE:
+        plugin_pytest_sessionstart(session)
+
+
+def pytest_runtest_makereport(item: pytest.Item, call) -> None:
+    """Capture test results for report generation."""
+    if PLUGIN_AVAILABLE:
+        plugin_pytest_runtest_makereport(item, call)
+
+
+def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
+    """Generate HTML reports at session end."""
+    if PLUGIN_AVAILABLE:
+        plugin_pytest_sessionfinish(session, exitstatus)
+
+
 def pytest_addoption(parser: pytest.Parser) -> None:
-    """Add custom command line options."""
+    """Add custom command line options for harness testing.
+
+    Report generation options:
+        --generate-report: Generate HTML report (default: True for fixture tests)
+        --no-report: Disable HTML report generation
+        --open-report: Open report in browser after test run
+        --open-on-fail: Open report in browser only if tests fail
+        --report-dir: Directory for generated reports
+    """
     parser.addoption(
         "--fixtures-path",
         action="store",
@@ -99,8 +128,26 @@ def pytest_addoption(parser: pytest.Parser) -> None:
     parser.addoption(
         "--generate-report",
         action="store_true",
+        default=True,
+        help="Generate HTML report after test run (default: True)",
+    )
+    parser.addoption(
+        "--no-report",
+        action="store_true",
         default=False,
-        help="Generate HTML report after test run",
+        help="Disable HTML report generation",
+    )
+    parser.addoption(
+        "--open-report",
+        action="store_true",
+        default=False,
+        help="Open HTML report in browser after test run",
+    )
+    parser.addoption(
+        "--open-on-fail",
+        action="store_true",
+        default=False,
+        help="Open HTML report in browser only if tests fail",
     )
     parser.addoption(
         "--report-dir",

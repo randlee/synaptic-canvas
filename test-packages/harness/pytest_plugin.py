@@ -6,6 +6,7 @@ This module provides pytest integration that:
 - Generates pytest test cases dynamically from fixture definitions
 - Hooks into the existing runner infrastructure for execution
 - Supports test filtering by tags and test IDs
+- Generates HTML reports after test runs
 
 Usage:
     # Run all fixture tests
@@ -20,10 +21,18 @@ Usage:
     # Run by test ID
     pytest test-packages/fixtures/ -v -k "sc-startup-001"
 
+    # Generate and open HTML report
+    pytest test-packages/fixtures/ -v --open-report
+
+    # Open report only on failure
+    pytest test-packages/fixtures/ -v --open-on-fail
+
 Configuration:
     The plugin is registered via conftest.py and uses the following pytest hooks:
     - pytest_collect_file: Discovers fixture.yaml files
-    - pytest_collect_directory: Handles fixture directories
+    - pytest_collection_modifyitems: Adds markers to test items
+    - pytest_runtest_makereport: Captures test results for reporting
+    - pytest_sessionfinish: Generates HTML reports
 
 Based on the fixture design from:
 - docs/requirements/test-harness-design-spec.md (Section 7)
@@ -32,6 +41,9 @@ Based on the fixture design from:
 from __future__ import annotations
 
 import logging
+import time
+import webbrowser
+from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Iterator
 
@@ -43,8 +55,111 @@ from .models import TestStatus
 if TYPE_CHECKING:
     from _pytest.config import Config
     from _pytest.nodes import Collector
+    from _pytest.reports import TestReport
 
 logger = logging.getLogger(__name__)
+
+
+# =============================================================================
+# Report State Storage
+# =============================================================================
+
+
+class TestReportState:
+    """Stores test execution data for HTML report generation.
+
+    This class accumulates test results during a pytest session and provides
+    them for HTML report generation in pytest_sessionfinish.
+    """
+
+    def __init__(self):
+        """Initialize empty state."""
+        self.reset()
+
+    def reset(self):
+        """Reset all stored state."""
+        # Map: fixture_name -> list of test results
+        self._test_results: dict[str, list[dict]] = {}
+        # Map: fixture_name -> FixtureConfig
+        self._fixture_configs: dict[str, FixtureConfig] = {}
+        # Track if any tests failed
+        self._has_failures = False
+        # Session start time
+        self._session_start: datetime | None = None
+
+    def record_fixture_config(self, fixture_name: str, config: FixtureConfig):
+        """Record a fixture configuration.
+
+        Args:
+            fixture_name: Name of the fixture
+            config: FixtureConfig for the fixture
+        """
+        if fixture_name not in self._fixture_configs:
+            self._fixture_configs[fixture_name] = config
+
+    def record_test_result(
+        self,
+        fixture_name: str,
+        test_id: str,
+        test_config: TestConfig,
+        passed: bool,
+        collected_data: Any | None = None,
+        expectations: list | None = None,
+        duration_ms: float = 0,
+        error_message: str | None = None,
+        pytest_output: str = "",
+    ):
+        """Record a test result.
+
+        Args:
+            fixture_name: Name of the parent fixture
+            test_id: Test identifier
+            test_config: Test configuration
+            passed: Whether the test passed
+            collected_data: CollectedData from DataCollector
+            expectations: List of evaluated Expectation objects
+            duration_ms: Test duration in milliseconds
+            error_message: Optional error message
+            pytest_output: Raw pytest output
+        """
+        if fixture_name not in self._test_results:
+            self._test_results[fixture_name] = []
+
+        if not passed:
+            self._has_failures = True
+
+        self._test_results[fixture_name].append({
+            "test_id": test_id,
+            "test_config": test_config,
+            "passed": passed,
+            "collected_data": collected_data,
+            "expectations": expectations or [],
+            "duration_ms": duration_ms,
+            "error_message": error_message,
+            "pytest_output": pytest_output,
+        })
+
+    @property
+    def has_failures(self) -> bool:
+        """Return True if any tests failed."""
+        return self._has_failures
+
+    @property
+    def fixture_names(self) -> list[str]:
+        """Return list of fixture names with test results."""
+        return list(self._test_results.keys())
+
+    def get_fixture_config(self, fixture_name: str) -> FixtureConfig | None:
+        """Get fixture configuration by name."""
+        return self._fixture_configs.get(fixture_name)
+
+    def get_test_results(self, fixture_name: str) -> list[dict]:
+        """Get test results for a fixture."""
+        return self._test_results.get(fixture_name, [])
+
+
+# Global state instance (per pytest session)
+_report_state = TestReportState()
 
 
 # =============================================================================
@@ -145,6 +260,13 @@ class YAMLTestItem(pytest.Item):
         self.fixture_config = fixture_config
         self.test_config = test_config
 
+        # Execution result storage (populated during runtest)
+        self.collected_data = None
+        self.evaluated_expectations: list = []
+        self.execution_start: datetime | None = None
+        self.execution_duration_ms: float = 0
+        self.execution_error: str | None = None
+
         # Add markers for tags
         for tag in test_config.tags:
             self.add_marker(pytest.mark.keyword(tag))
@@ -172,6 +294,16 @@ class YAMLTestItem(pytest.Item):
         # Get merged setup from fixture and test
         merged_setup = self.fixture_config.get_merged_setup(self.test_config)
 
+        # Track execution timing
+        self.execution_start = datetime.now()
+        start_time = time.time()
+
+        # Register fixture config for report generation
+        _report_state.record_fixture_config(
+            self.fixture_config.name,
+            self.fixture_config
+        )
+
         try:
             with isolated_claude_session(
                 project_path=project_path,
@@ -196,10 +328,10 @@ class YAMLTestItem(pytest.Item):
                     trace_path=session.trace_path,
                     transcript_path=session.transcript_path,
                 )
-                collected_data = collector.collect()
+                self.collected_data = collector.collect()
 
                 # Evaluate expectations
-                evaluator = ExpectationEvaluator(collected_data)
+                evaluator = ExpectationEvaluator(self.collected_data)
                 failures = []
 
                 for exp_config in self.test_config.expectations:
@@ -213,15 +345,23 @@ class YAMLTestItem(pytest.Item):
                         expected=exp_config.expected,
                     )
 
+                    self.evaluated_expectations.append(expectation)
+
                     if expectation.status != TestStatus.PASS:
                         failures.append(expectation)
+
+                # Record duration
+                self.execution_duration_ms = (time.time() - start_time) * 1000
 
                 if failures:
                     raise YAMLTestFailure(self.test_config, failures)
 
         except YAMLTestFailure:
+            self.execution_duration_ms = (time.time() - start_time) * 1000
             raise
         except Exception as e:
+            self.execution_duration_ms = (time.time() - start_time) * 1000
+            self.execution_error = str(e)
             raise YAMLTestFailure(
                 self.test_config,
                 [],
@@ -465,6 +605,18 @@ def pytest_configure(config: Config) -> None:
     )
 
 
+def pytest_sessionstart(session: pytest.Session) -> None:
+    """Pytest hook called at session start.
+
+    Initializes the report state for this session.
+
+    Args:
+        session: Pytest session
+    """
+    _report_state.reset()
+    _report_state._session_start = datetime.now()
+
+
 def pytest_collection_modifyitems(
     config: Config,
     items: list[pytest.Item],
@@ -480,6 +632,307 @@ def pytest_collection_modifyitems(
     for item in items:
         if isinstance(item, YAMLTestItem):
             item.add_marker(pytest.mark.fixture_test)
+
+
+def pytest_runtest_makereport(
+    item: pytest.Item,
+    call: pytest.CallInfo,
+) -> None:
+    """Pytest hook called after each test phase.
+
+    Records test results for HTML report generation.
+
+    Args:
+        item: Test item
+        call: Call info with execution details
+    """
+    # Only record results from the "call" phase (actual test execution)
+    if call.when != "call":
+        return
+
+    # Only process YAML test items
+    if not isinstance(item, YAMLTestItem):
+        return
+
+    # Record the test result
+    _report_state.record_test_result(
+        fixture_name=item.fixture_config.name,
+        test_id=item.test_config.test_id,
+        test_config=item.test_config,
+        passed=call.excinfo is None,
+        collected_data=item.collected_data,
+        expectations=item.evaluated_expectations,
+        duration_ms=item.execution_duration_ms,
+        error_message=item.execution_error,
+        pytest_output="",  # Could capture pytest output here if needed
+    )
+
+
+def pytest_sessionfinish(
+    session: pytest.Session,
+    exitstatus: int,
+) -> None:
+    """Pytest hook called at session end.
+
+    Generates HTML reports for all fixtures tested.
+
+    Args:
+        session: Pytest session
+        exitstatus: Exit status code
+    """
+    config = session.config
+
+    # Check if report generation is disabled
+    if config.getoption("--no-report", default=False):
+        return
+
+    # Check if we should generate reports (default True)
+    generate_report = config.getoption("--generate-report", default=True)
+    if not generate_report:
+        return
+
+    # Skip if no YAML tests were run
+    if not _report_state.fixture_names:
+        return
+
+    # Get report directory
+    report_dir = config.getoption("--report-dir", default=None)
+    if report_dir:
+        report_path = Path(report_dir)
+    else:
+        # Default to test-packages/reports
+        root_dir = Path(config.rootdir)
+        report_path = root_dir / "test-packages" / "reports"
+
+    report_path.mkdir(parents=True, exist_ok=True)
+
+    # Generate report for each fixture
+    generated_reports: list[Path] = []
+
+    for fixture_name in _report_state.fixture_names:
+        html_path = _generate_fixture_report(
+            fixture_name=fixture_name,
+            report_path=report_path,
+            project_path=Path(config.rootdir),
+        )
+        if html_path:
+            generated_reports.append(html_path)
+            logger.info(f"Generated HTML report: {html_path}")
+
+    # Handle browser opening
+    if generated_reports:
+        open_report = config.getoption("--open-report", default=False)
+        open_on_fail = config.getoption("--open-on-fail", default=False)
+
+        should_open = open_report or (open_on_fail and _report_state.has_failures)
+
+        if should_open:
+            # Open the first report (or most relevant one)
+            report_to_open = generated_reports[0]
+            logger.info(f"Opening report in browser: {report_to_open}")
+            webbrowser.open(f"file://{report_to_open.absolute()}")
+
+
+def _generate_fixture_report(
+    fixture_name: str,
+    report_path: Path,
+    project_path: Path,
+) -> Path | None:
+    """Generate HTML report for a fixture.
+
+    Args:
+        fixture_name: Name of the fixture
+        report_path: Directory for reports
+        project_path: Project root path
+
+    Returns:
+        Path to generated HTML report, or None on failure
+    """
+    try:
+        from .html_report import HTMLReportBuilder, write_html_report
+        from .models import (
+            ClaudeResponse,
+            DebugInfo,
+            Expectation,
+            FixtureMeta,
+            FixtureReport,
+            FixtureSummary,
+            ReproduceSection,
+            SideEffects,
+            TestMetadata,
+            TestResult,
+        )
+        from .reporter import ReportBuilder
+
+        fixture_config = _report_state.get_fixture_config(fixture_name)
+        test_results_data = _report_state.get_test_results(fixture_name)
+
+        if not test_results_data:
+            return None
+
+        # Build TestResult objects from recorded data
+        report_builder = ReportBuilder(project_path)
+        test_results: list[TestResult] = []
+
+        for result_data in test_results_data:
+            test_config = result_data["test_config"]
+            collected_data = result_data["collected_data"]
+            expectations = result_data["expectations"]
+            duration_ms = result_data["duration_ms"]
+
+            # Build TestResult
+            if collected_data:
+                test_result = report_builder.build_test_result(
+                    test_id=test_config.test_id,
+                    test_name=test_config.test_name,
+                    data=collected_data,
+                    expectations=expectations,
+                    description=test_config.description,
+                    tags=test_config.tags,
+                    model=test_config.execution.model,
+                    tools_allowed=test_config.execution.tools,
+                    fixture_id=fixture_name,
+                    package=fixture_config.package if fixture_config else "",
+                    test_command=f"claude '{test_config.execution.prompt}'",
+                    setup_commands=test_config.setup.commands if test_config.setup else [],
+                )
+            else:
+                # Create minimal result for tests without collected data
+                test_result = _create_minimal_test_result(
+                    test_config=test_config,
+                    fixture_name=fixture_name,
+                    passed=result_data["passed"],
+                    duration_ms=duration_ms,
+                    error_message=result_data.get("error_message"),
+                )
+
+            test_results.append(test_result)
+
+        # Build FixtureReport
+        fixture_report = report_builder.build_fixture_report(
+            fixture_id=fixture_name,
+            fixture_name=fixture_config.description if fixture_config else fixture_name,
+            package=fixture_config.package if fixture_config else "",
+            tests=test_results,
+            report_path=str(report_path / f"{fixture_name}.html"),
+        )
+
+        # Write HTML report
+        html_path = report_path / f"{fixture_name}.html"
+        write_html_report(fixture_report, html_path)
+
+        # Also write JSON report
+        from .reporter import write_json_report
+        json_path = report_path / f"{fixture_name}.json"
+        write_json_report(fixture_report, json_path)
+
+        return html_path
+
+    except Exception as e:
+        logger.error(f"Failed to generate report for {fixture_name}: {e}")
+        import traceback
+        traceback.print_exc()
+        return None
+
+
+def _create_minimal_test_result(
+    test_config: TestConfig,
+    fixture_name: str,
+    passed: bool,
+    duration_ms: float,
+    error_message: str | None,
+) -> "TestResult":
+    """Create a minimal TestResult for tests without collected data.
+
+    Args:
+        test_config: Test configuration
+        fixture_name: Parent fixture name
+        passed: Whether test passed
+        duration_ms: Test duration
+        error_message: Optional error message
+
+    Returns:
+        Minimal TestResult
+    """
+    from .models import (
+        ClaudeResponse,
+        DebugInfo,
+        Expectation,
+        ExecutionSection,
+        ExpectationType,
+        ReproduceSection,
+        SideEffects,
+        StatusIcon,
+        TestMetadata,
+        TestResult,
+        TestStatus,
+    )
+
+    status = TestStatus.PASS if passed else TestStatus.FAIL
+    status_icon = StatusIcon.PASS if passed else StatusIcon.FAIL
+
+    # Create error expectation if there was an error
+    expectations = []
+    if error_message:
+        expectations.append(
+            Expectation(
+                id="execution",
+                type=ExpectationType.TOOL_CALL,
+                description="Test execution",
+                status=TestStatus.FAIL,
+                expected={"success": True},
+                actual={"error": error_message},
+                failure_reason=error_message,
+            )
+        )
+
+    # Calculate pass rate string
+    if passed:
+        pass_rate = "1/1" if not expectations else f"{len(expectations)}/{len(expectations)}"
+    else:
+        pass_rate = "0/1" if not expectations else f"0/{len(expectations)}"
+
+    return TestResult(
+        test_id=test_config.test_id,
+        test_name=test_config.test_name,
+        tab_label=test_config.test_id[:15],
+        description=test_config.description,
+        tags=test_config.tags,
+        status=status,
+        status_icon=status_icon,
+        pass_rate=pass_rate,
+        duration_ms=int(duration_ms),
+        timestamp=datetime.now(),
+        metadata=TestMetadata(
+            fixture=fixture_name,
+            package="",
+            model=test_config.execution.model,
+            session_id="",
+            test_repo="",
+        ),
+        execution=ExecutionSection(
+            prompt=test_config.execution.prompt,
+            model=test_config.execution.model,
+            tools_allowed=test_config.execution.tools or [],
+        ),
+        expectations=expectations,
+        timeline=[],
+        claude_response=ClaudeResponse(
+            preview=error_message[:200] if error_message else "",
+            full_text=error_message or "",
+            word_count=len(error_message.split()) if error_message else 0,
+        ),
+        reproduce=ReproduceSection(
+            setup_commands=[],
+            test_command=f"claude '{test_config.execution.prompt}'",
+            cleanup_commands=[],
+        ),
+        side_effects=SideEffects(),
+        debug=DebugInfo(
+            pytest_output=error_message or "",
+            pytest_status=status,
+        ),
+    )
 
 
 # =============================================================================
