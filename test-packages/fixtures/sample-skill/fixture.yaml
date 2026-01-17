@@ -1,0 +1,27 @@
+# Sample Fixture Configuration
+# This is an example fixture demonstrating the YAML test fixture format
+# for the Claude Code Test Harness.
+
+name: sample-skill
+description: Sample skill fixture for testing the harness infrastructure
+package: sample-skill@example
+
+# Shared setup for all tests in this fixture
+setup:
+  # Plugins to install (if needed)
+  plugins: []
+
+  # Files to copy before tests
+  files: []
+
+  # Commands to run before tests
+  commands:
+    - echo "Setting up sample-skill fixture"
+
+# Shared teardown for all tests
+teardown:
+  commands:
+    - echo "Cleaning up sample-skill fixture"
+
+# Directory containing test files (relative to fixture directory)
+tests_dir: tests

@@ -1,0 +1,55 @@
+# Category D: Control tests
+# A skill that does NOT use subagents - verify no subagent events
+
+test_id: subagent-control-001
+test_name: Skill without subagent usage
+description: |
+  The /delay skill schedules actions but does NOT spawn subagents.
+  This control test verifies that NOT all skills trigger subagent events.
+
+  Expected: Skill tool called, but NO SubagentStart/SubagentStop events.
+
+tags:
+  - control
+  - no-subagent
+  - skill-invoked
+  - category-d
+
+execution:
+  prompt: "/delay 1s echo 'test'"
+  model: haiku
+  tools:
+    - Skill
+    - Bash
+    - Task
+  timeout_ms: 30000
+
+expectations:
+  # MUST happen: Skill tool invoked
+  - id: exp-001
+    description: Skill tool invoked for delay
+    type: tool_call
+    expected:
+      tool: Skill
+      pattern: "delay"
+
+  # MUST NOT happen: No subagent for this simple skill
+  - id: exp-002
+    description: No SubagentStart hook event
+    type: hook_event_absent
+    expected:
+      event: SubagentStart
+
+  # MUST NOT happen: No subagent stop
+  - id: exp-003
+    description: No SubagentStop hook event
+    type: hook_event_absent
+    expected:
+      event: SubagentStop
+
+  # MUST NOT happen: No Task tool either
+  - id: exp-004
+    description: Task tool NOT invoked
+    type: tool_not_called
+    expected:
+      tool: Task

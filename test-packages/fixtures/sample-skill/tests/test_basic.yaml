@@ -1,0 +1,38 @@
+# Sample Test: Basic Bash Command
+# This test demonstrates the YAML test format for the Claude Code Test Harness.
+
+test_id: sample-basic-001
+test_name: Basic Bash Command Test
+description: Verify Claude can execute a simple bash command and report output
+tags:
+  - sample
+  - basic
+  - bash
+
+# Test execution configuration
+execution:
+  prompt: "List the files in the current directory using ls -la"
+  model: haiku
+  tools:
+    - Bash
+  timeout_ms: 30000
+
+# Additional test-specific setup
+setup:
+  commands: []
+
+# Expectations to evaluate after test execution
+expectations:
+  - id: exp-001
+    description: Should use Bash tool to list files
+    type: tool_call
+    expected:
+      tool: Bash
+      pattern: "ls.*-la"
+
+  - id: exp-002
+    description: Should mention file listing in response
+    type: output_contains
+    expected:
+      pattern: "(files|directory|listing)"
+      flags: "i"
