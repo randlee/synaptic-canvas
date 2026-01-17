@@ -9,7 +9,8 @@ Modules:
     - environment: Environment isolation (HOME override, cleanup)
     - collector: Data collection from hooks and transcripts
     - expectations: Assertions and expectations framework
-    - reporter: JSON and HTML report generation
+    - reporter: JSON report generation and expectation evaluation
+    - html_report: Modular HTML report builder (new)
     - runner: Test orchestration and execution
     - fixture_loader: YAML fixture loading and parsing
     - pytest_plugin: Pytest integration for dynamic test generation
@@ -23,6 +24,7 @@ Example usage:
         evaluate_expectations,
     )
     from harness.reporter import ReportBuilder
+    from harness.html_report import HTMLReportBuilder, write_html_report
 
     with isolated_claude_session() as session:
         # Run Claude with isolated environment
@@ -51,6 +53,9 @@ Example usage:
         # Build report
         report = ReportBuilder(data, results).build()
 
+        # Generate HTML report
+        write_html_report(report, "output/report.html")
+
 YAML Fixture Testing:
     from harness.fixture_loader import FixtureLoader
 
@@ -70,6 +75,7 @@ __all__ = [
     "collector",
     "expectations",
     "reporter",
+    "html_report",
     "runner",
     "fixture_loader",
     "pytest_plugin",

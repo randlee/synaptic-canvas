@@ -54,11 +54,16 @@ from .models import (
 )
 from .reporter import (
     ExpectationEvaluator,
-    HTMLReportGenerator,
     ReportBuilder,
-    write_html_report,
     write_json_report,
 )
+from .html_report import (
+    HTMLReportBuilder,
+    write_html_report,
+)
+
+# Backward compatibility alias
+HTMLReportGenerator = HTMLReportBuilder
 
 logger = logging.getLogger(__name__)
 
