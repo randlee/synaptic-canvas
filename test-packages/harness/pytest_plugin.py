@@ -808,12 +808,35 @@ def _generate_fixture_report(
 
             test_results.append(test_result)
 
+        # Get fixture path from config
+        fixture_yaml_path = None
+        if fixture_config and fixture_config.source_path:
+            fixture_yaml_path = str(fixture_config.source_path.absolute())
+
+        # Try to find skill/agent markdown file based on package name
+        agent_skill_path = None
+        if fixture_config and fixture_config.package:
+            # Package format is typically 'skill-name@repo' or just 'skill-name'
+            skill_name = fixture_config.package.split("@")[0] if "@" in fixture_config.package else fixture_config.package
+            # Look in common locations for skill markdown files
+            skill_locations = [
+                project_path / ".claude" / "skills" / f"{skill_name}.md",
+                project_path / ".claude" / "commands" / f"{skill_name}.md",
+                project_path / ".claude" / "agents" / f"{skill_name}.md",
+            ]
+            for skill_path in skill_locations:
+                if skill_path.exists():
+                    agent_skill_path = str(skill_path.absolute())
+                    break
+
         # Build FixtureReport
         fixture_report = report_builder.build_fixture_report(
             fixture_id=fixture_name,
             fixture_name=fixture_config.description if fixture_config else fixture_name,
             package=fixture_config.package if fixture_config else "",
             tests=test_results,
+            agent_or_skill_path=agent_skill_path,
+            fixture_path=fixture_yaml_path,
             report_path=str(report_path / f"{fixture_name}.html"),
         )
 

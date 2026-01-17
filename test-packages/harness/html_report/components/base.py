@@ -139,6 +139,7 @@ class FileLinkBuilder:
 
     Creates links that open files in VS Code or PyCharm based on file extension.
     Python files (.py) open in PyCharm; all other files open in VS Code.
+    Use the `editor` parameter to force a specific editor.
     """
 
     LINK_ICON = '<span class="link-icon">&#8599;</span>'
@@ -149,7 +150,8 @@ class FileLinkBuilder:
         file_path: str,
         display_text: str | None = None,
         line_number: int | None = None,
-        config: BuilderConfig | None = None
+        config: BuilderConfig | None = None,
+        editor: str | None = None,
     ) -> str:
         """Build an editor file link.
 
@@ -158,6 +160,7 @@ class FileLinkBuilder:
             display_text: Text to display (defaults to file_path)
             line_number: Optional line number to open at
             config: Builder configuration
+            editor: Force specific editor ("vscode" or "pycharm"), or None for auto
 
         Returns:
             HTML anchor tag with appropriate editor URL
@@ -165,10 +168,14 @@ class FileLinkBuilder:
         config = config or BuilderConfig()
         text = display_text or file_path
 
-        # Determine editor based on file extension
-        is_python = any(file_path.endswith(ext) for ext in config.pycharm_extensions)
-        editor_type = "pycharm" if is_python else "vscode"
-        editor_name = "PyCharm" if is_python else "VS Code"
+        # Determine editor - use forced editor or auto-detect from extension
+        if editor:
+            editor_type = editor.lower()
+        else:
+            is_python = any(file_path.endswith(ext) for ext in config.pycharm_extensions)
+            editor_type = "pycharm" if is_python else "vscode"
+
+        editor_name = "PyCharm" if editor_type == "pycharm" else "VS Code"
 
         # Build URL
         if editor_type == "pycharm":

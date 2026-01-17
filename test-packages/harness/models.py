@@ -125,6 +125,12 @@ class FixtureMeta(BaseModel):
     fixture_name: str = Field(description="Human-readable fixture name")
     package: str = Field(description="Package being tested (e.g., 'sc-startup')")
     agent_or_skill: str = Field(description="Agent or skill being tested")
+    agent_or_skill_path: str | None = Field(
+        default=None, description="Path to skill/agent markdown file"
+    )
+    fixture_path: str | None = Field(
+        default=None, description="Path to fixture.yaml file"
+    )
     report_path: str = Field(description="Path to the generated report file")
     generated_at: datetime = Field(description="When the report was generated")
     summary: FixtureSummary = Field(description="Summary statistics")

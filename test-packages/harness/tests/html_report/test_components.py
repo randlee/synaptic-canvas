@@ -113,20 +113,29 @@ class TestHeaderBuilder:
         assert "3 passed, 2 failed" in html
 
     def test_header_with_file_links(self):
-        """Test header with file path links."""
+        """Test header with file path links.
+
+        Agent/skill paths always open in VS Code (for .md files).
+        Fixture paths always open in PyCharm (for .yaml files).
+        """
         builder = HeaderBuilder()
         data = HeaderDisplayModel(
             fixture_name="Test Fixture",
             package="sc-startup",
             agent_or_skill="startup",
-            agent_or_skill_path="/path/to/agent.py",
+            agent_or_skill_path="/path/to/skill.md",
+            fixture_path="/path/to/fixture.yaml",
             total_tests=3,
             summary_text="3 passed",
             generated_at=datetime(2024, 1, 15, 10, 30, 0),
             report_path="/path/to/report.html"
         )
         html = builder.build(data)
-        assert "pycharm://open" in html  # Should have PyCharm link for .py
+        # Agent/skill should open in VS Code
+        assert "vscode://file//path/to/skill.md" in html
+        # Fixture should open in PyCharm
+        assert "pycharm://open" in html
+        assert "fixture.yaml" in html
 
 
 class TestTabsBuilder:

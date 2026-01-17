@@ -221,6 +221,8 @@ class ReportBuilder:
         package: str,
         tests: list[TestResult],
         agent_or_skill: str = "",
+        agent_or_skill_path: str | None = None,
+        fixture_path: str | None = None,
         report_path: str = "",
         tags: list[str] | None = None,
     ) -> FixtureReport:
@@ -232,6 +234,8 @@ class ReportBuilder:
             package: Package being tested
             tests: List of TestResult objects
             agent_or_skill: Agent or skill being tested
+            agent_or_skill_path: Path to skill/agent markdown file (opens in VS Code)
+            fixture_path: Path to fixture.yaml file (opens in PyCharm)
             report_path: Path where report will be saved
             tags: Tags for filtering
 
@@ -254,6 +258,8 @@ class ReportBuilder:
             fixture_name=fixture_name,
             package=package,
             agent_or_skill=agent_or_skill or package,
+            agent_or_skill_path=agent_or_skill_path,
+            fixture_path=fixture_path,
             report_path=report_path,
             generated_at=datetime.now(),
             summary=summary,

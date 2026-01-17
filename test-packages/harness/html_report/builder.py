@@ -163,8 +163,8 @@ class HTMLReportBuilder:
             fixture_name=fixture.fixture_name,
             package=fixture.package,
             agent_or_skill=fixture.agent_or_skill,
-            agent_or_skill_path=None,  # Could be added to FixtureMeta if needed
-            fixture_path=None,  # Could be added to FixtureMeta if needed
+            agent_or_skill_path=fixture.agent_or_skill_path,
+            fixture_path=fixture.fixture_path,
             total_tests=summary.total_tests,
             summary_text=summary_text,
             generated_at=fixture.generated_at,
