@@ -143,7 +143,7 @@ def clean_env(temp_home: Path) -> dict:
 @pytest.fixture
 def plugin_harness_path() -> Path:
     """Return path to plugin test harness."""
-    return REPO_ROOT / "test-packages" / "test_fixtures" / "plugin_test_harness.py"
+    return REPO_ROOT / "test-packages" / "deprecated" / "test_fixtures" / "plugin_test_harness.py"
 
 
 @pytest.fixture

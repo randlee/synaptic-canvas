@@ -1,6 +1,14 @@
 import json
 import subprocess
 from pathlib import Path
+import sys
+
+import pytest
+
+# Add deprecated path to sys.path for test_fixtures module
+_TEST_PACKAGES_ROOT = Path(__file__).resolve().parents[2]
+if str(_TEST_PACKAGES_ROOT / "deprecated") not in sys.path:
+    sys.path.insert(0, str(_TEST_PACKAGES_ROOT / "deprecated"))
 
 from test_fixtures.helpers import require_yaml
 

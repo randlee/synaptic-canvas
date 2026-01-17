@@ -14,7 +14,7 @@ def _copy_plugin_root(src_root: Path, dest_root: Path) -> None:
 
 
 def _build_bundle(plugin_root: Path, dest_root: Path) -> None:
-    harness = REPO_ROOT / "test-packages" / "test_fixtures" / "plugin_test_harness.py"
+    harness = REPO_ROOT / "test-packages" / "deprecated" / "test_fixtures" / "plugin_test_harness.py"
     cmd = ["python3", str(harness), "--plugin-root", str(plugin_root), "--dest", str(dest_root)]
     subprocess.run(cmd, check=True, capture_output=True)
 
