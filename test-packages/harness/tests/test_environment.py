@@ -403,3 +403,59 @@ class TestIsolatedSessionMethods:
                 assert result == new_transcript
                 assert session.transcript_path == new_transcript
                 assert session.session_id == "new-session"
+
+
+class TestIsolatedSessionPluginInstall:
+    """Tests for IsolatedSession.run_plugin_install method."""
+
+    def test_run_plugin_install_executes_command(self):
+        """Test that run_plugin_install executes the correct command."""
+        with tempfile.TemporaryDirectory() as project_dir:
+            project_path = Path(project_dir)
+            (project_path / ".claude").mkdir()
+            (project_path / "reports").mkdir()
+
+            with isolated_claude_session(project_path) as session:
+                with patch("subprocess.run") as mock_run:
+                    mock_run.return_value = MagicMock(
+                        returncode=0,
+                        stdout="Successfully installed",
+                        stderr=""
+                    )
+
+                    result = session.run_plugin_install(
+                        "test-plugin@marketplace",
+                        scope="project"
+                    )
+
+                    # Verify command was called
+                    mock_run.assert_called_once()
+                    call_args = mock_run.call_args
+                    cmd = call_args[0][0]
+
+                    assert cmd == [
+                        "claude", "plugin", "install",
+                        "test-plugin@marketplace",
+                        "--scope", "project"
+                    ]
+                    # Verify HOME is overridden
+                    assert call_args[1]["env"]["HOME"] == str(session.isolated_home)
+
+    def test_run_plugin_install_uses_isolated_home(self):
+        """Test that run_plugin_install uses the isolated HOME."""
+        with tempfile.TemporaryDirectory() as project_dir:
+            project_path = Path(project_dir)
+            (project_path / ".claude").mkdir()
+            (project_path / "reports").mkdir()
+
+            with isolated_claude_session(project_path) as session:
+                with patch("subprocess.run") as mock_run:
+                    mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
+
+                    session.run_plugin_install("my-plugin")
+
+                    # The env should use isolated HOME, not real HOME
+                    call_args = mock_run.call_args
+                    env = call_args[1]["env"]
+                    assert env["HOME"] != str(Path.home())
+                    assert env["HOME"] == str(session.isolated_home)

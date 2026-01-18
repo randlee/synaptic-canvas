@@ -192,6 +192,56 @@ class TestToolOutput:
         assert output.is_error is True
         assert output.exit_code == 1
 
+    def test_content_as_string(self):
+        """Test ToolOutput with content as a plain string."""
+        output = ToolOutput(content="This is the file content")
+        assert output.content == "This is the file content"
+
+    def test_content_as_list_single_text_block(self):
+        """Test ToolOutput with content as a list with single text block."""
+        content_blocks = [{"type": "text", "text": "Single text block"}]
+        output = ToolOutput(content=content_blocks)
+        assert output.content == "Single text block"
+
+    def test_content_as_list_multiple_text_blocks(self):
+        """Test ToolOutput with content as a list with multiple text blocks."""
+        content_blocks = [
+            {"type": "text", "text": "First block."},
+            {"type": "text", "text": " Second block."},
+            {"type": "text", "text": " Third block."},
+        ]
+        output = ToolOutput(content=content_blocks)
+        assert output.content == "First block. Second block. Third block."
+
+    def test_content_as_list_mixed_types(self):
+        """Test ToolOutput with content list containing non-text types (ignored)."""
+        content_blocks = [
+            {"type": "text", "text": "Text content"},
+            {"type": "image", "data": "base64data"},  # Non-text block
+            {"type": "text", "text": " More text"},
+        ]
+        output = ToolOutput(content=content_blocks)
+        assert output.content == "Text content More text"
+
+    def test_content_as_list_empty_list(self):
+        """Test ToolOutput with empty content list."""
+        output = ToolOutput(content=[])
+        assert output.content == ""
+
+    def test_content_as_none(self):
+        """Test ToolOutput with None content."""
+        output = ToolOutput(content=None)
+        assert output.content is None
+
+    def test_content_claude_api_format(self):
+        """Test ToolOutput with exact Claude API response format from error message."""
+        # This is the exact format from the error message
+        content_blocks = [
+            {"type": "text", "text": "Found a total of **518 files**."}
+        ]
+        output = ToolOutput(content=content_blocks)
+        assert output.content == "Found a total of **518 files**."
+
 
 class TestExpectation:
     """Tests for Expectation model."""

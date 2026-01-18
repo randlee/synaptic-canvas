@@ -4,7 +4,9 @@
 
 name: sample-skill
 description: Sample skill fixture for testing the harness infrastructure
-package: sample-skill@example
+# Note: No package field since this is a demonstration fixture
+# If testing a real plugin, add: package: plugin-name@source
+# and ensure setup.plugins includes the plugin
 
 # Shared setup for all tests in this fixture
 setup:

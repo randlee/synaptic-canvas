@@ -109,6 +109,8 @@ class TestReportState:
         duration_ms: float = 0,
         error_message: str | None = None,
         pytest_output: str = "",
+        expected_plugins: list[str] | None = None,
+        plugin_install_results: list | None = None,
     ):
         """Record a test result.
 
@@ -122,6 +124,8 @@ class TestReportState:
             duration_ms: Test duration in milliseconds
             error_message: Optional error message
             pytest_output: Raw pytest output
+            expected_plugins: List of expected plugin names from fixture setup
+            plugin_install_results: List of PluginInstallResult objects
         """
         if fixture_name not in self._test_results:
             self._test_results[fixture_name] = []
@@ -138,6 +142,8 @@ class TestReportState:
             "duration_ms": duration_ms,
             "error_message": error_message,
             "pytest_output": pytest_output,
+            "expected_plugins": expected_plugins or [],
+            "plugin_install_results": plugin_install_results or [],
         })
 
     @property
@@ -268,9 +274,17 @@ class YAMLTestItem(pytest.Item):
         self.execution_duration_ms: float = 0
         self.execution_error: str | None = None
 
+        # Claude CLI output capture (populated during runtest)
+        self.claude_stdout: str = ""
+        self.claude_stderr: str = ""
+
         # Track installed plugin files for cleanup
         self._installed_plugin_files: list[Path] = []
         self._installed_plugin_dirs: list[Path] = []
+
+        # Plugin installation tracking
+        self.expected_plugins: list[str] = []
+        self.plugin_install_results: list = []  # List of PluginInstallResult
 
         # Add markers for tags
         for tag in test_config.tags:
@@ -328,6 +342,10 @@ class YAMLTestItem(pytest.Item):
                     timeout=self.test_config.execution.timeout_ms // 1000,
                 )
 
+                # Capture Claude CLI output immediately after run_command
+                self.claude_stdout = session.claude_stdout
+                self.claude_stderr = session.claude_stderr
+
                 # Find transcript
                 session.find_transcript()
 
@@ -337,6 +355,10 @@ class YAMLTestItem(pytest.Item):
                     transcript_path=session.transcript_path,
                 )
                 self.collected_data = collector.collect()
+
+                # Propagate Claude CLI output to collected data for reports
+                self.collected_data.claude_cli_stdout = self.claude_stdout
+                self.collected_data.claude_cli_stderr = self.claude_stderr
 
                 # Evaluate expectations
                 evaluator = ExpectationEvaluator(self.collected_data)
@@ -382,34 +404,95 @@ class YAMLTestItem(pytest.Item):
             self._run_teardown_commands(merged_setup)
 
     def _find_project_path(self) -> Path:
-        """Find the project path from the test file location.
+        """Find the test harness project path for isolated test execution.
 
-        Traverses up the directory tree looking for indicators of the
-        project root (like .claude directory or pyproject.toml).
+        Tests should execute IN sc-test-harness to use its hooks configuration.
+        The sc-test-harness contains:
+        - .claude/settings.json with hook configuration
+        - scripts/log-hook.py for event capture
+        - reports/ directory for trace.jsonl
+
+        Resolution order:
+        1. SC_TEST_HARNESS_PATH environment variable (if set)
+        2. ../sc-test-harness relative to synaptic-canvas root
 
         Returns:
-            Path to the project root
+            Path to sc-test-harness project root
+
+        Raises:
+            FileNotFoundError: If sc-test-harness cannot be located
         """
+        import os
+
+        # 1. Check environment variable override
+        env_path = os.environ.get("SC_TEST_HARNESS_PATH")
+        if env_path:
+            harness_path = Path(env_path)
+            if harness_path.exists() and (harness_path / ".claude").exists():
+                logger.debug(f"Using SC_TEST_HARNESS_PATH: {harness_path}")
+                return harness_path.absolute()
+            else:
+                logger.warning(
+                    f"SC_TEST_HARNESS_PATH set but invalid: {env_path}"
+                )
+
+        # 2. Find synaptic-canvas root, then look for sibling sc-test-harness
         current = self.test_config.source_path or self.fspath
         if current is None:
-            # Fallback to session path
-            return Path.cwd()
+            current = Path.cwd()
+        else:
+            current = Path(current)
 
-        current = Path(current)
-
-        # Walk up looking for project root indicators
+        # Walk up to find synaptic-canvas root
+        # Detection methods:
+        # 1. pyproject.toml + test-packages (main repo)
+        # 2. .claude + test-packages (worktrees)
+        # 3. Name starts with 'synaptic-canvas' + test-packages
+        synaptic_canvas_root = None
         for parent in [current] + list(current.parents):
-            # Look for test-packages directory indicator
-            if (parent / ".claude").exists():
-                return parent
-            if (parent / "pyproject.toml").exists():
-                return parent
-            if parent.name == "test-packages":
-                # We're inside test-packages, go one level up
-                return parent.parent
+            if (parent / "pyproject.toml").exists() and (parent / "test-packages").exists():
+                synaptic_canvas_root = parent
+                break
+            # Check for worktree structure (no pyproject.toml but has .claude and test-packages)
+            if (parent / ".claude").exists() and (parent / "test-packages").exists():
+                synaptic_canvas_root = parent
+                break
+            # Also check for worktree by name pattern
+            if parent.name.startswith("synaptic-canvas") and (parent / "test-packages").exists():
+                synaptic_canvas_root = parent
+                break
 
-        # Default to current working directory
-        return Path.cwd()
+        if synaptic_canvas_root:
+            # Look for sc-test-harness as sibling
+            harness_path = synaptic_canvas_root.parent / "sc-test-harness"
+            if harness_path.exists() and (harness_path / ".claude").exists():
+                logger.debug(f"Found sc-test-harness at: {harness_path}")
+                return harness_path.absolute()
+
+            # Also check for worktrees structure: parent might be 'github' with sc-test-harness sibling
+            # e.g., /github/synaptic-canvas-worktrees/feature/xyz -> /github/sc-test-harness
+            for ancestor in synaptic_canvas_root.parents:
+                harness_path = ancestor / "sc-test-harness"
+                if harness_path.exists() and (harness_path / ".claude").exists():
+                    logger.debug(f"Found sc-test-harness in ancestor: {harness_path}")
+                    return harness_path.absolute()
+
+        # Fallback: try common development layouts
+        # Check if we're in a worktree and sc-test-harness is in the main github folder
+        for parent in [current] + list(current.parents):
+            if parent.name == "github":
+                harness_path = parent / "sc-test-harness"
+                if harness_path.exists() and (harness_path / ".claude").exists():
+                    logger.debug(f"Found sc-test-harness in github folder: {harness_path}")
+                    return harness_path.absolute()
+                break
+
+        # If still not found, raise an error with helpful message
+        raise FileNotFoundError(
+            "Could not locate sc-test-harness. Set SC_TEST_HARNESS_PATH environment "
+            "variable or ensure sc-test-harness exists as a sibling to synaptic-canvas. "
+            f"Searched from: {current}"
+        )
 
     def _run_setup_commands(self, session: Any, setup: Any) -> None:
         """Run setup commands in the isolated session.
@@ -456,116 +539,113 @@ class YAMLTestItem(pytest.Item):
     def _install_plugins(self, session: Any, setup: Any) -> None:
         """Install plugins specified in setup configuration.
 
-        Parses plugin names from setup.plugins, locates the package
-        in packages/<name>/manifest.yaml, and copies artifacts to
-        the session's project_path/.claude/ directory.
+        Uses `claude plugin install <plugin> --scope project` to properly
+        install plugins via the Claude CLI. This requires marketplace data
+        to be available in the isolated HOME directory.
 
         Args:
             session: IsolatedSession instance
             setup: SetupConfig with plugins list
-        """
-        import shutil
 
-        import yaml
+        Raises:
+            PluginInstallationError: If any plugin fails to install
+        """
+        from .environment import copy_marketplace_data
+        from .models import PluginInstallResult
 
         if not setup.plugins:
             return
 
-        # Find packages directory (relative to project root)
-        project_root = self._find_project_path()
-        packages_dir = project_root / "packages"
+        # Store expected plugins for reporting
+        self.expected_plugins = list(setup.plugins)
 
-        if not packages_dir.exists():
-            logger.warning(f"Packages directory not found: {packages_dir}")
-            return
-
-        # Target .claude directory in session's project path
-        claude_dir = session.project_path / ".claude"
-        claude_dir.mkdir(parents=True, exist_ok=True)
+        # Copy marketplace data to isolated HOME to enable plugin installation
+        # This is required for `claude plugin install` to find marketplace registries
+        copy_marketplace_data(session.isolated_home)
 
         for plugin_spec in setup.plugins:
-            # Parse plugin name (strip @registry suffix if present)
-            plugin_name = plugin_spec.split("@")[0]
-
-            # Find package manifest
-            manifest_path = packages_dir / plugin_name / "manifest.yaml"
-            if not manifest_path.exists():
-                logger.warning(f"Plugin manifest not found: {manifest_path}")
-                continue
+            stdout = ""
+            stderr = ""
+            return_code = -1
 
             try:
-                with open(manifest_path) as f:
-                    manifest = yaml.safe_load(f)
+                # Use the session's run_plugin_install method
+                result = session.run_plugin_install(
+                    plugin_name=plugin_spec,
+                    scope="project",
+                    timeout=60,
+                )
 
-                artifacts = manifest.get("artifacts", {})
-                package_root = packages_dir / plugin_name
+                stdout = result.stdout or ""
+                stderr = result.stderr or ""
+                return_code = result.returncode
 
-                # Copy all artifact categories
-                for category, files in artifacts.items():
-                    if not files:
-                        continue
+                # Create install result for reporting
+                install_result = PluginInstallResult(
+                    plugin_name=plugin_spec,
+                    success=(return_code == 0),
+                    stdout=stdout,
+                    stderr=stderr,
+                    return_code=return_code,
+                )
+                self.plugin_install_results.append(install_result)
 
-                    for artifact_path in files:
-                        src = package_root / artifact_path
-                        if not src.exists():
-                            logger.warning(f"Artifact not found: {src}")
-                            continue
+                if return_code == 0:
+                    logger.info(f"Installed plugin via CLI: {plugin_spec}")
+                    logger.debug(f"Plugin install stdout: {stdout}")
+                    # Track that we installed this plugin (for observability)
+                    self._installed_plugin_files.append(
+                        Path(f"PLUGIN:{plugin_spec}")  # Marker for installed plugins
+                    )
+                else:
+                    logger.error(
+                        f"Failed to install plugin {plugin_spec}: "
+                        f"returncode={return_code}, stderr={stderr}"
+                    )
+                    # Fail fast - raise immediately on plugin installation failure
+                    raise PluginInstallationError(
+                        plugin_name=plugin_spec,
+                        return_code=return_code,
+                        stdout=stdout,
+                        stderr=stderr,
+                    )
 
-                        # Determine destination path
-                        # Artifacts go into .claude/<category>/<filename> or
-                        # preserve structure for nested paths
-                        dest = claude_dir / artifact_path
-
-                        # Ensure parent directory exists
-                        dest.parent.mkdir(parents=True, exist_ok=True)
-
-                        # Track directories created for cleanup
-                        for parent in dest.parents:
-                            if parent == claude_dir:
-                                break
-                            if parent not in self._installed_plugin_dirs:
-                                self._installed_plugin_dirs.append(parent)
-
-                        # Copy file or directory
-                        if src.is_dir():
-                            if dest.exists():
-                                shutil.rmtree(dest)
-                            shutil.copytree(src, dest)
-                            self._installed_plugin_dirs.append(dest)
-                        else:
-                            shutil.copy2(src, dest)
-                            self._installed_plugin_files.append(dest)
-
-                logger.info(f"Installed plugin: {plugin_name}")
-
+            except PluginInstallationError:
+                # Re-raise plugin installation errors
+                raise
             except Exception as e:
-                logger.warning(f"Failed to install plugin {plugin_name}: {e}")
+                # Create install result for reporting on unexpected errors
+                install_result = PluginInstallResult(
+                    plugin_name=plugin_spec,
+                    success=False,
+                    stdout=stdout,
+                    stderr=str(e),
+                    return_code=return_code,
+                )
+                self.plugin_install_results.append(install_result)
+
+                logger.error(f"Failed to install plugin {plugin_spec}: {e}")
+                # Fail fast on any plugin installation error
+                raise PluginInstallationError(
+                    plugin_name=plugin_spec,
+                    return_code=return_code,
+                    stdout=stdout,
+                    stderr=str(e),
+                ) from e
 
     def _cleanup_plugins(self) -> None:
-        """Remove installed plugin files and directories.
+        """Log installed plugins for observability.
 
-        Cleans up files and directories that were installed by _install_plugins.
+        Since plugins are now installed via `claude plugin install` into the
+        isolated HOME directory, cleanup happens automatically when the isolated
+        session is cleaned up. This method now just logs what was installed.
         """
-        import shutil
-
-        # Remove files first
-        for file_path in self._installed_plugin_files:
-            try:
-                if file_path.exists():
-                    file_path.unlink()
-                    logger.debug(f"Removed plugin file: {file_path}")
-            except Exception as e:
-                logger.warning(f"Failed to remove plugin file {file_path}: {e}")
-
-        # Remove directories (in reverse order to handle nested dirs)
-        for dir_path in reversed(self._installed_plugin_dirs):
-            try:
-                if dir_path.exists() and dir_path.is_dir():
-                    # Only remove if empty or was a copied directory
-                    shutil.rmtree(dir_path, ignore_errors=True)
-                    logger.debug(f"Removed plugin directory: {dir_path}")
-            except Exception as e:
-                logger.warning(f"Failed to remove plugin directory {dir_path}: {e}")
+        # Log installed plugins for observability
+        for entry in self._installed_plugin_files:
+            entry_str = str(entry)
+            if entry_str.startswith("PLUGIN:"):
+                plugin_name = entry_str[7:]  # Strip "PLUGIN:" prefix
+                logger.debug(f"Plugin was installed: {plugin_name}")
 
         # Clear the tracking lists
         self._installed_plugin_files.clear()
@@ -655,6 +735,60 @@ class YAMLTestFailure(Exception):
                 if exp.actual:
                     lines.append(f"      Actual: {exp.actual}")
             lines.append("")
+
+        return "\n".join(lines)
+
+
+class PluginInstallationError(Exception):
+    """Exception raised when plugin installation fails.
+
+    This exception is raised immediately when a plugin fails to install,
+    preventing test execution from proceeding.
+
+    Attributes:
+        plugin_name: Name of the plugin that failed to install
+        return_code: Return code from the install command
+        stdout: Standard output from the install command
+        stderr: Standard error from the install command
+    """
+
+    def __init__(
+        self,
+        plugin_name: str,
+        return_code: int,
+        stdout: str = "",
+        stderr: str = "",
+    ):
+        """Initialize the error.
+
+        Args:
+            plugin_name: Name of the plugin that failed
+            return_code: Return code from install command
+            stdout: Standard output from install command
+            stderr: Standard error from install command
+        """
+        self.plugin_name = plugin_name
+        self.return_code = return_code
+        self.stdout = stdout
+        self.stderr = stderr
+        super().__init__(self.format_error())
+
+    def format_error(self) -> str:
+        """Format the error message for display.
+
+        Returns:
+            Formatted error string
+        """
+        lines = [
+            f"Plugin Installation Failed: {self.plugin_name}",
+            f"Return Code: {self.return_code}",
+        ]
+
+        if self.stdout:
+            lines.extend(["", "STDOUT:", self.stdout])
+
+        if self.stderr:
+            lines.extend(["", "STDERR:", self.stderr])
 
         return "\n".join(lines)
 
@@ -783,6 +917,13 @@ def pytest_runtest_makereport(
     if not isinstance(item, YAMLTestItem):
         return
 
+    # Build Claude session log from captured output
+    claude_session_log = ""
+    if item.claude_stdout:
+        claude_session_log += f"=== Claude CLI stdout ===\n{item.claude_stdout}\n"
+    if item.claude_stderr:
+        claude_session_log += f"=== Claude CLI stderr ===\n{item.claude_stderr}\n"
+
     # Record the test result
     _report_state.record_test_result(
         fixture_name=item.fixture_config.name,
@@ -793,7 +934,9 @@ def pytest_runtest_makereport(
         expectations=item.evaluated_expectations,
         duration_ms=item.execution_duration_ms,
         error_message=item.execution_error,
-        pytest_output="",  # Could capture pytest output here if needed
+        pytest_output=claude_session_log,
+        expected_plugins=item.expected_plugins,
+        plugin_install_results=item.plugin_install_results,
     )
 
 
@@ -886,6 +1029,8 @@ def _generate_fixture_report(
             FixtureMeta,
             FixtureReport,
             FixtureSummary,
+            PluginInstallResult,
+            PluginVerification,
             ReproduceSection,
             SideEffects,
             TestMetadata,
@@ -909,6 +1054,16 @@ def _generate_fixture_report(
             expectations = result_data["expectations"]
             duration_ms = result_data["duration_ms"]
 
+            # Build plugin verification data if plugins were configured
+            plugin_verification = None
+            expected_plugins = result_data.get("expected_plugins", [])
+            plugin_install_results = result_data.get("plugin_install_results", [])
+            if expected_plugins:
+                plugin_verification = PluginVerification(
+                    expected_plugins=expected_plugins,
+                    install_results=plugin_install_results,
+                )
+
             # Build TestResult
             if collected_data:
                 test_result = report_builder.build_test_result(
@@ -924,6 +1079,7 @@ def _generate_fixture_report(
                     package=fixture_config.package if fixture_config else "",
                     test_command=f"claude '{test_config.execution.prompt}'",
                     setup_commands=test_config.setup.commands if test_config.setup else [],
+                    plugin_verification=plugin_verification,
                 )
             else:
                 # Create minimal result for tests without collected data
@@ -933,6 +1089,7 @@ def _generate_fixture_report(
                     passed=result_data["passed"],
                     duration_ms=duration_ms,
                     error_message=result_data.get("error_message"),
+                    plugin_verification=plugin_verification,
                 )
 
             test_results.append(test_result)
@@ -993,6 +1150,7 @@ def _create_minimal_test_result(
     passed: bool,
     duration_ms: float,
     error_message: str | None,
+    plugin_verification: "PluginVerification | None" = None,
 ) -> "TestResult":
     """Create a minimal TestResult for tests without collected data.
 
@@ -1002,6 +1160,7 @@ def _create_minimal_test_result(
         passed: Whether test passed
         duration_ms: Test duration
         error_message: Optional error message
+        plugin_verification: Plugin installation verification data
 
     Returns:
         Minimal TestResult
@@ -1012,6 +1171,7 @@ def _create_minimal_test_result(
         Expectation,
         ExecutionSection,
         ExpectationType,
+        PluginVerification,
         ReproduceSection,
         SideEffects,
         StatusIcon,
@@ -1083,6 +1243,7 @@ def _create_minimal_test_result(
         debug=DebugInfo(
             pytest_output=error_message or "",
             pytest_status=status,
+            plugin_verification=plugin_verification,
         ),
     )
 

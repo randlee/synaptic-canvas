@@ -525,6 +525,10 @@ class TestPytestHookIntegration:
         item.evaluated_expectations = []
         item.execution_duration_ms = 1000.0
         item.execution_error = None
+        item.claude_stdout = ""
+        item.claude_stderr = ""
+        item.expected_plugins = []
+        item.plugin_install_results = []
 
         # Create mock call info (successful)
         call = MagicMock()

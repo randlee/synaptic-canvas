@@ -331,17 +331,20 @@ class TestRunner:
     ) -> tuple[list[Path], list[Path]]:
         """Install plugins specified in setup configuration.
 
-        Parses plugin names, locates packages in packages/<name>/manifest.yaml,
-        and copies artifacts to the session's project_path/.claude/ directory.
+        Uses `claude plugin install <plugin> --scope project` to properly
+        install plugins via the Claude CLI. This requires marketplace data
+        to be available in the isolated HOME directory.
 
         Args:
             session: IsolatedSession instance
             plugins: List of plugin specs (e.g., ["plugin-name@registry"])
 
         Returns:
-            Tuple of (installed_files, installed_dirs) for cleanup tracking
+            Tuple of (installed_files, installed_dirs) for cleanup tracking.
+            Note: installed_files now contains marker entries (PLUGIN:name)
+            since actual cleanup happens when the isolated session is removed.
         """
-        import shutil
+        from .environment import copy_marketplace_data
 
         installed_files: list[Path] = []
         installed_dirs: list[Path] = []
@@ -349,72 +352,34 @@ class TestRunner:
         if not plugins:
             return installed_files, installed_dirs
 
-        # Find packages directory (relative to project root)
-        packages_dir = self.project_path / "packages"
-
-        if not packages_dir.exists():
-            logger.warning(f"Packages directory not found: {packages_dir}")
-            return installed_files, installed_dirs
-
-        # Target .claude directory in session's project path
-        claude_dir = session.project_path / ".claude"
-        claude_dir.mkdir(parents=True, exist_ok=True)
+        # Copy marketplace data to isolated HOME to enable plugin installation
+        # This is required for `claude plugin install` to find marketplace registries
+        copy_marketplace_data(session.isolated_home)
 
         for plugin_spec in plugins:
-            # Parse plugin name (strip @registry suffix if present)
-            plugin_name = plugin_spec.split("@")[0]
-
-            # Find package manifest
-            manifest_path = packages_dir / plugin_name / "manifest.yaml"
-            if not manifest_path.exists():
-                logger.warning(f"Plugin manifest not found: {manifest_path}")
-                continue
-
             try:
-                with open(manifest_path) as f:
-                    manifest = yaml.safe_load(f)
+                # Use the session's run_plugin_install method
+                result = session.run_plugin_install(
+                    plugin_name=plugin_spec,
+                    scope="project",
+                    timeout=60,
+                )
 
-                artifacts = manifest.get("artifacts", {})
-                package_root = packages_dir / plugin_name
-
-                # Copy all artifact categories
-                for category, files in artifacts.items():
-                    if not files:
-                        continue
-
-                    for artifact_path in files:
-                        src = package_root / artifact_path
-                        if not src.exists():
-                            logger.warning(f"Artifact not found: {src}")
-                            continue
-
-                        # Determine destination path
-                        dest = claude_dir / artifact_path
-
-                        # Ensure parent directory exists
-                        dest.parent.mkdir(parents=True, exist_ok=True)
-
-                        # Track directories created for cleanup
-                        for parent in dest.parents:
-                            if parent == claude_dir:
-                                break
-                            if parent not in installed_dirs:
-                                installed_dirs.append(parent)
-
-                        # Copy file or directory
-                        if src.is_dir():
-                            if dest.exists():
-                                shutil.rmtree(dest)
-                            shutil.copytree(src, dest)
-                            installed_dirs.append(dest)
-                        else:
-                            shutil.copy2(src, dest)
-                            installed_files.append(dest)
-
-                logger.info(f"Installed plugin: {plugin_name}")
+                if result.returncode == 0:
+                    logger.info(f"Installed plugin via CLI: {plugin_spec}")
+                    logger.debug(f"Plugin install stdout: {result.stdout}")
+                    # Track that we installed this plugin (for observability)
+                    installed_files.append(
+                        Path(f"PLUGIN:{plugin_spec}")  # Marker for installed plugins
+                    )
+                else:
+                    logger.warning(
+                        f"Failed to install plugin {plugin_spec}: "
+                        f"returncode={result.returncode}, stderr={result.stderr}"
+                    )
 
             except Exception as e:
-                logger.warning(f"Failed to install plugin {plugin_name}: {e}")
+                logger.warning(f"Failed to install plugin {plugin_spec}: {e}")
 
         return installed_files, installed_dirs
 
@@ -423,31 +388,22 @@ class TestRunner:
         installed_files: list[Path],
         installed_dirs: list[Path],
     ) -> None:
-        """Remove installed plugin files and directories.
+        """Log installed plugins for observability.
+
+        Since plugins are now installed via `claude plugin install` into the
+        isolated HOME directory, cleanup happens automatically when the isolated
+        session is cleaned up. This method now just logs what was installed.
 
         Args:
-            installed_files: List of file paths to remove
-            installed_dirs: List of directory paths to remove
+            installed_files: List containing plugin markers (PLUGIN:name entries)
+            installed_dirs: List of directory paths (unused with CLI install)
         """
-        import shutil
-
-        # Remove files first
-        for file_path in installed_files:
-            try:
-                if file_path.exists():
-                    file_path.unlink()
-                    logger.debug(f"Removed plugin file: {file_path}")
-            except Exception as e:
-                logger.warning(f"Failed to remove plugin file {file_path}: {e}")
-
-        # Remove directories (in reverse order to handle nested dirs)
-        for dir_path in reversed(installed_dirs):
-            try:
-                if dir_path.exists() and dir_path.is_dir():
-                    shutil.rmtree(dir_path, ignore_errors=True)
-                    logger.debug(f"Removed plugin directory: {dir_path}")
-            except Exception as e:
-                logger.warning(f"Failed to remove plugin directory {dir_path}: {e}")
+        # Log installed plugins for observability
+        for entry in installed_files:
+            entry_str = str(entry)
+            if entry_str.startswith("PLUGIN:"):
+                plugin_name = entry_str[7:]  # Strip "PLUGIN:" prefix
+                logger.debug(f"Plugin was installed: {plugin_name}")
 
     def run_test(
         self,
@@ -518,6 +474,10 @@ class TestRunner:
                     timeout=test_config.timeout_ms // 1000,
                 )
 
+                # Capture Claude CLI output immediately after run_command
+                claude_stdout = session.claude_stdout
+                claude_stderr = session.claude_stderr
+
                 # Find transcript
                 session.find_transcript()
 
@@ -527,6 +487,10 @@ class TestRunner:
                     transcript_path=session.transcript_path,
                 )
                 collected_data = collector.collect()
+
+                # Propagate Claude CLI output to collected data
+                collected_data.claude_cli_stdout = claude_stdout
+                collected_data.claude_cli_stderr = claude_stderr
 
                 # Fill in missing data
                 if not collected_data.start_timestamp:
@@ -541,6 +505,13 @@ class TestRunner:
 
                 # Calculate duration
                 duration_ms = int((time.time() - start_time) * 1000)
+
+                # Build Claude session log from captured output
+                claude_session_log = ""
+                if claude_stdout:
+                    claude_session_log += f"=== Claude CLI stdout ===\n{claude_stdout}\n"
+                if claude_stderr:
+                    claude_session_log += f"=== Claude CLI stderr ===\n{claude_stderr}\n"
 
                 # Build result
                 builder = ReportBuilder(self.project_path)
@@ -559,6 +530,7 @@ class TestRunner:
                     test_command=test_command,
                     setup_commands=setup_commands,
                     cleanup_commands=cleanup_commands,
+                    pytest_output=claude_session_log,
                 )
 
                 # Override duration with measured time

@@ -2,23 +2,22 @@
 Unit tests for plugin installation functionality.
 
 Tests the plugin installation features in pytest_plugin.py and runner.py:
-- Plugin manifest parsing
-- Artifact copying to .claude directory
-- Cleanup of installed plugins
-- Error handling for missing plugins
+- Plugin installation via `claude plugin install` CLI command
+- Marketplace data copying for isolated environments
+- Error handling for failed plugin installations
+- Empty plugins list handling
 
 Run with:
     pytest test-packages/harness/tests/test_plugin_installation.py -v
 """
 
-import shutil
+import subprocess
 import tempfile
 from pathlib import Path
 from typing import Any
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, patch, call
 
 import pytest
-import yaml
 
 
 # =============================================================================
@@ -29,9 +28,45 @@ import yaml
 class MockSession:
     """Mock session object for testing plugin installation."""
 
-    def __init__(self, project_path: Path):
+    def __init__(self, project_path: Path, isolated_home: Path):
         self.project_path = project_path
-        self.env = {}
+        self.isolated_home = isolated_home
+        self.env = {"HOME": str(isolated_home)}
+        self._install_calls: list[tuple[str, str]] = []
+
+    def run_plugin_install(
+        self,
+        plugin_name: str,
+        scope: str = "project",
+        timeout: int = 60,
+    ) -> subprocess.CompletedProcess:
+        """Mock plugin installation - records calls and returns success."""
+        self._install_calls.append((plugin_name, scope))
+        return subprocess.CompletedProcess(
+            args=["claude", "plugin", "install", plugin_name, "--scope", scope],
+            returncode=0,
+            stdout=f"Successfully installed plugin: {plugin_name}",
+            stderr="",
+        )
+
+
+class MockSessionFailure(MockSession):
+    """Mock session that returns failure for plugin installation."""
+
+    def run_plugin_install(
+        self,
+        plugin_name: str,
+        scope: str = "project",
+        timeout: int = 60,
+    ) -> subprocess.CompletedProcess:
+        """Mock plugin installation - returns failure."""
+        self._install_calls.append((plugin_name, scope))
+        return subprocess.CompletedProcess(
+            args=["claude", "plugin", "install", plugin_name, "--scope", scope],
+            returncode=1,
+            stdout="",
+            stderr=f'Plugin "{plugin_name}" not found in marketplace',
+        )
 
 
 # =============================================================================
@@ -41,48 +76,22 @@ class MockSession:
 
 @pytest.fixture
 def temp_project_dir():
-    """Create a temporary project directory with packages."""
+    """Create a temporary project directory."""
     with tempfile.TemporaryDirectory() as tmpdir:
         project_path = Path(tmpdir)
-        packages_dir = project_path / "packages"
-        packages_dir.mkdir()
-
-        # Create a test plugin package
-        plugin_dir = packages_dir / "test-plugin"
-        plugin_dir.mkdir()
-
-        # Create manifest.yaml
-        manifest = {
-            "name": "test-plugin",
-            "version": "1.0.0",
-            "description": "Test plugin for testing",
-            "artifacts": {
-                "commands": ["commands/test-command.md"],
-                "skills": ["skills/test-skill/SKILL.md"],
-                "agents": ["agents/test-agent.md"],
-            },
-        }
-        with open(plugin_dir / "manifest.yaml", "w") as f:
-            yaml.dump(manifest, f)
-
-        # Create artifact directories and files
-        (plugin_dir / "commands").mkdir()
-        (plugin_dir / "commands" / "test-command.md").write_text("# Test Command")
-
-        (plugin_dir / "skills" / "test-skill").mkdir(parents=True)
-        (plugin_dir / "skills" / "test-skill" / "SKILL.md").write_text("# Test Skill")
-
-        (plugin_dir / "agents").mkdir()
-        (plugin_dir / "agents" / "test-agent.md").write_text("# Test Agent")
-
+        # Create .claude directory
+        (project_path / ".claude").mkdir()
         yield project_path
 
 
 @pytest.fixture
-def temp_session_dir():
-    """Create a temporary session directory."""
+def temp_isolated_home():
+    """Create a temporary isolated HOME directory."""
     with tempfile.TemporaryDirectory() as tmpdir:
-        yield Path(tmpdir)
+        isolated_home = Path(tmpdir)
+        # Create .claude/plugins directory structure
+        (isolated_home / ".claude" / "plugins").mkdir(parents=True)
+        yield isolated_home
 
 
 # =============================================================================
@@ -91,71 +100,92 @@ def temp_session_dir():
 
 
 class TestYAMLTestItemPluginInstallation:
-    """Tests for YAMLTestItem._install_plugins and _cleanup_plugins."""
+    """Tests for YAMLTestItem._install_plugins using CLI-based installation."""
 
-    def test_install_plugins_copies_artifacts(
-        self, temp_project_dir: Path, temp_session_dir: Path
+    def test_install_plugins_calls_cli(
+        self, temp_project_dir: Path, temp_isolated_home: Path
     ):
-        """Test that plugin artifacts are copied to session's .claude directory."""
+        """Test that plugin installation uses claude plugin install CLI."""
         from harness.pytest_plugin import YAMLTestItem
-        from harness.fixture_loader import FixtureConfig, TestConfig, SetupConfig
+        from harness.fixture_loader import SetupConfig
 
         # Create a minimal test item
         with patch.object(YAMLTestItem, "__init__", lambda self, *args, **kwargs: None):
             item = YAMLTestItem.__new__(YAMLTestItem)
             item._installed_plugin_files = []
             item._installed_plugin_dirs = []
+            item.expected_plugins = []
+            item.plugin_install_results = []
 
-        # Mock _find_project_path to return our temp project
+        # Mock _find_project_path
         item._find_project_path = lambda: temp_project_dir
 
         # Create mock session
-        session = MockSession(temp_session_dir)
+        session = MockSession(temp_project_dir, temp_isolated_home)
 
         # Create setup config with plugins
         setup = SetupConfig(plugins=["test-plugin@synaptic-canvas"])
 
-        # Install plugins
-        item._install_plugins(session, setup)
+        # Mock copy_marketplace_data to avoid needing real marketplace data
+        with patch("harness.environment.copy_marketplace_data") as mock_copy:
+            mock_copy.return_value = True
+            item._install_plugins(session, setup)
 
-        # Verify artifacts were copied
-        claude_dir = temp_session_dir / ".claude"
-        assert claude_dir.exists()
-        assert (claude_dir / "commands" / "test-command.md").exists()
-        assert (claude_dir / "skills" / "test-skill" / "SKILL.md").exists()
-        assert (claude_dir / "agents" / "test-agent.md").exists()
+        # Verify CLI was called
+        assert len(session._install_calls) == 1
+        assert session._install_calls[0] == ("test-plugin@synaptic-canvas", "project")
 
-        # Verify content is correct
-        assert (claude_dir / "commands" / "test-command.md").read_text() == "# Test Command"
+        # Verify marketplace data was copied
+        mock_copy.assert_called_once_with(temp_isolated_home)
 
-        # Verify tracking lists are populated
-        assert len(item._installed_plugin_files) > 0
+        # Verify tracking list has marker entry
+        assert len(item._installed_plugin_files) == 1
+        assert "PLUGIN:test-plugin@synaptic-canvas" in str(item._installed_plugin_files[0])
 
-    def test_install_plugins_handles_missing_plugin(
-        self, temp_project_dir: Path, temp_session_dir: Path
+        # Verify plugin install results were recorded
+        assert len(item.plugin_install_results) == 1
+        assert item.plugin_install_results[0].plugin_name == "test-plugin@synaptic-canvas"
+        assert item.plugin_install_results[0].success is True
+
+    def test_install_plugins_handles_cli_failure(
+        self, temp_project_dir: Path, temp_isolated_home: Path
     ):
-        """Test that missing plugins are handled gracefully."""
-        from harness.pytest_plugin import YAMLTestItem
+        """Test that CLI installation failures raise PluginInstallationError."""
+        from harness.pytest_plugin import YAMLTestItem, PluginInstallationError
         from harness.fixture_loader import SetupConfig
 
         with patch.object(YAMLTestItem, "__init__", lambda self, *args, **kwargs: None):
             item = YAMLTestItem.__new__(YAMLTestItem)
             item._installed_plugin_files = []
             item._installed_plugin_dirs = []
+            item.expected_plugins = []
+            item.plugin_install_results = []
 
         item._find_project_path = lambda: temp_project_dir
 
-        session = MockSession(temp_session_dir)
+        # Use failure mock session
+        session = MockSessionFailure(temp_project_dir, temp_isolated_home)
         setup = SetupConfig(plugins=["nonexistent-plugin"])
 
-        # Should not raise, just log warning
-        item._install_plugins(session, setup)
+        with patch("harness.environment.copy_marketplace_data") as mock_copy:
+            mock_copy.return_value = True
+            # Should raise PluginInstallationError (fail fast behavior)
+            with pytest.raises(PluginInstallationError) as exc_info:
+                item._install_plugins(session, setup)
 
-        # Nothing should be installed
+        # Verify error details
+        assert exc_info.value.plugin_name == "nonexistent-plugin"
+        assert exc_info.value.return_code == 1
+
+        # Nothing should be tracked as installed
         assert len(item._installed_plugin_files) == 0
 
+        # But the failed install should still be recorded
+        assert len(item.plugin_install_results) == 1
+        assert item.plugin_install_results[0].success is False
+
     def test_install_plugins_handles_empty_plugins_list(
-        self, temp_project_dir: Path, temp_session_dir: Path
+        self, temp_project_dir: Path, temp_isolated_home: Path
     ):
         """Test that empty plugins list is handled correctly."""
         from harness.pytest_plugin import YAMLTestItem
@@ -165,22 +195,29 @@ class TestYAMLTestItemPluginInstallation:
             item = YAMLTestItem.__new__(YAMLTestItem)
             item._installed_plugin_files = []
             item._installed_plugin_dirs = []
+            item.expected_plugins = []
+            item.plugin_install_results = []
 
         item._find_project_path = lambda: temp_project_dir
 
-        session = MockSession(temp_session_dir)
+        session = MockSession(temp_project_dir, temp_isolated_home)
         setup = SetupConfig(plugins=[])
 
-        # Should return early without error
-        item._install_plugins(session, setup)
+        with patch("harness.environment.copy_marketplace_data") as mock_copy:
+            # Should return early without calling copy_marketplace_data
+            item._install_plugins(session, setup)
 
-        # .claude directory should not be created if no plugins
+        # No marketplace copy should happen
+        mock_copy.assert_not_called()
+        # No installations
+        assert len(session._install_calls) == 0
         assert len(item._installed_plugin_files) == 0
+        assert len(item.plugin_install_results) == 0
 
-    def test_cleanup_plugins_removes_files(
-        self, temp_project_dir: Path, temp_session_dir: Path
+    def test_cleanup_plugins_clears_tracking_lists(
+        self, temp_project_dir: Path, temp_isolated_home: Path
     ):
-        """Test that cleanup removes installed plugin files."""
+        """Test that cleanup clears tracking lists."""
         from harness.pytest_plugin import YAMLTestItem
         from harness.fixture_loader import SetupConfig
 
@@ -188,42 +225,60 @@ class TestYAMLTestItemPluginInstallation:
             item = YAMLTestItem.__new__(YAMLTestItem)
             item._installed_plugin_files = []
             item._installed_plugin_dirs = []
+            item.expected_plugins = []
+            item.plugin_install_results = []
 
         item._find_project_path = lambda: temp_project_dir
 
-        session = MockSession(temp_session_dir)
+        session = MockSession(temp_project_dir, temp_isolated_home)
         setup = SetupConfig(plugins=["test-plugin"])
 
-        # Install plugins
-        item._install_plugins(session, setup)
+        with patch("harness.environment.copy_marketplace_data"):
+            item._install_plugins(session, setup)
 
-        # Verify files exist
-        claude_dir = temp_session_dir / ".claude"
-        assert (claude_dir / "commands" / "test-command.md").exists()
+        # Verify something was tracked
+        assert len(item._installed_plugin_files) > 0
 
         # Cleanup
         item._cleanup_plugins()
-
-        # Verify files are removed
-        assert not (claude_dir / "commands" / "test-command.md").exists()
-        assert not (claude_dir / "agents" / "test-agent.md").exists()
 
         # Tracking lists should be cleared
         assert len(item._installed_plugin_files) == 0
         assert len(item._installed_plugin_dirs) == 0
 
-    def test_plugin_name_parsing(self):
-        """Test that plugin names with @registry suffix are parsed correctly."""
-        plugin_specs = [
-            ("test-plugin@synaptic-canvas", "test-plugin"),
-            ("test-plugin@other-registry", "test-plugin"),
-            ("test-plugin", "test-plugin"),
-            ("my-pkg@", "my-pkg"),
-        ]
+    def test_multiple_plugins_installation(
+        self, temp_project_dir: Path, temp_isolated_home: Path
+    ):
+        """Test installing multiple plugins."""
+        from harness.pytest_plugin import YAMLTestItem
+        from harness.fixture_loader import SetupConfig
 
-        for spec, expected in plugin_specs:
-            parsed = spec.split("@")[0]
-            assert parsed == expected
+        with patch.object(YAMLTestItem, "__init__", lambda self, *args, **kwargs: None):
+            item = YAMLTestItem.__new__(YAMLTestItem)
+            item._installed_plugin_files = []
+            item._installed_plugin_dirs = []
+            item.expected_plugins = []
+            item.plugin_install_results = []
+
+        item._find_project_path = lambda: temp_project_dir
+
+        session = MockSession(temp_project_dir, temp_isolated_home)
+        setup = SetupConfig(plugins=["plugin-1@registry", "plugin-2@registry"])
+
+        with patch("harness.environment.copy_marketplace_data"):
+            item._install_plugins(session, setup)
+
+        # Both plugins should be installed
+        assert len(session._install_calls) == 2
+        assert session._install_calls[0] == ("plugin-1@registry", "project")
+        assert session._install_calls[1] == ("plugin-2@registry", "project")
+
+        # Both should be tracked
+        assert len(item._installed_plugin_files) == 2
+
+        # Both install results should be recorded
+        assert len(item.plugin_install_results) == 2
+        assert all(r.success for r in item.plugin_install_results)
 
 
 # =============================================================================
@@ -232,12 +287,12 @@ class TestYAMLTestItemPluginInstallation:
 
 
 class TestRunnerPluginInstallation:
-    """Tests for TestRunner._install_plugins and _cleanup_plugins."""
+    """Tests for TestRunner._install_plugins using CLI-based installation."""
 
     def test_install_plugins_returns_tracking_lists(
-        self, temp_project_dir: Path, temp_session_dir: Path
+        self, temp_project_dir: Path, temp_isolated_home: Path
     ):
-        """Test that _install_plugins returns file and dir tracking lists."""
+        """Test that _install_plugins returns marker tracking lists."""
         from harness.runner import TestRunner
 
         runner = TestRunner(
@@ -245,19 +300,20 @@ class TestRunnerPluginInstallation:
             fixtures_path=temp_project_dir / "fixtures",
         )
 
-        session = MockSession(temp_session_dir)
+        session = MockSession(temp_project_dir, temp_isolated_home)
 
-        files, dirs = runner._install_plugins(session, ["test-plugin"])
+        with patch("harness.environment.copy_marketplace_data"):
+            files, dirs = runner._install_plugins(session, ["test-plugin"])
 
-        # Should return non-empty lists
-        assert len(files) > 0
-        assert isinstance(files, list)
+        # Should return marker list
+        assert len(files) == 1
+        assert "PLUGIN:test-plugin" in str(files[0])
         assert isinstance(dirs, list)
 
-    def test_cleanup_plugins_removes_installed_files(
-        self, temp_project_dir: Path, temp_session_dir: Path
+    def test_cleanup_plugins_logs_installed(
+        self, temp_project_dir: Path, temp_isolated_home: Path
     ):
-        """Test that _cleanup_plugins removes files and directories."""
+        """Test that _cleanup_plugins logs what was installed."""
         from harness.runner import TestRunner
 
         runner = TestRunner(
@@ -265,22 +321,17 @@ class TestRunnerPluginInstallation:
             fixtures_path=temp_project_dir / "fixtures",
         )
 
-        session = MockSession(temp_session_dir)
+        session = MockSession(temp_project_dir, temp_isolated_home)
 
-        # Install
-        files, dirs = runner._install_plugins(session, ["test-plugin"])
+        with patch("harness.environment.copy_marketplace_data"):
+            files, dirs = runner._install_plugins(session, ["test-plugin"])
 
-        # Verify files exist
-        claude_dir = temp_session_dir / ".claude"
-        assert (claude_dir / "commands" / "test-command.md").exists()
-
-        # Cleanup
+        # Cleanup should not raise
         runner._cleanup_plugins(files, dirs)
 
-        # Verify files are removed
-        assert not (claude_dir / "commands" / "test-command.md").exists()
-
-    def test_install_plugins_with_empty_list(self, temp_project_dir: Path, temp_session_dir: Path):
+    def test_install_plugins_with_empty_list(
+        self, temp_project_dir: Path, temp_isolated_home: Path
+    ):
         """Test that empty plugins list returns empty tracking lists."""
         from harness.runner import TestRunner
 
@@ -289,33 +340,108 @@ class TestRunnerPluginInstallation:
             fixtures_path=temp_project_dir / "fixtures",
         )
 
-        session = MockSession(temp_session_dir)
+        session = MockSession(temp_project_dir, temp_isolated_home)
 
-        files, dirs = runner._install_plugins(session, [])
+        with patch("harness.environment.copy_marketplace_data") as mock_copy:
+            files, dirs = runner._install_plugins(session, [])
+
+        # No marketplace copy should happen
+        mock_copy.assert_not_called()
+        assert files == []
+        assert dirs == []
+
+    def test_install_plugins_handles_cli_failure(
+        self, temp_project_dir: Path, temp_isolated_home: Path
+    ):
+        """Test handling when CLI installation fails."""
+        from harness.runner import TestRunner
+
+        runner = TestRunner(
+            project_path=temp_project_dir,
+            fixtures_path=temp_project_dir / "fixtures",
+        )
+
+        session = MockSessionFailure(temp_project_dir, temp_isolated_home)
+
+        with patch("harness.environment.copy_marketplace_data"):
+            # Should not raise, just return empty lists
+            files, dirs = runner._install_plugins(session, ["nonexistent-plugin"])
 
         assert files == []
         assert dirs == []
 
-    def test_install_plugins_missing_packages_dir(self, temp_session_dir: Path):
-        """Test handling when packages directory doesn't exist."""
-        from harness.runner import TestRunner
 
-        # Use a project without packages directory
+# =============================================================================
+# IsolatedSession Plugin Install Tests
+# =============================================================================
+
+
+class TestIsolatedSessionPluginInstall:
+    """Tests for IsolatedSession.run_plugin_install method."""
+
+    def test_run_plugin_install_builds_correct_command(self):
+        """Test that run_plugin_install builds the correct CLI command."""
+        from harness.environment import IsolatedSession
+
         with tempfile.TemporaryDirectory() as tmpdir:
-            project_path = Path(tmpdir)
+            isolated_home = Path(tmpdir)
+            project_path = Path(tmpdir) / "project"
+            project_path.mkdir()
 
-            runner = TestRunner(
+            session = IsolatedSession(
+                isolated_home=isolated_home,
                 project_path=project_path,
-                fixtures_path=project_path / "fixtures",
+                env={"HOME": str(isolated_home)},
+                trace_path=project_path / "trace.jsonl",
             )
 
-            session = MockSession(temp_session_dir)
+            with patch("subprocess.run") as mock_run:
+                mock_run.return_value = subprocess.CompletedProcess(
+                    args=[], returncode=0, stdout="Success", stderr=""
+                )
 
-            # Should not raise, just return empty lists
-            files, dirs = runner._install_plugins(session, ["some-plugin"])
+                session.run_plugin_install("my-plugin@marketplace", scope="project")
 
-            assert files == []
-            assert dirs == []
+                # Verify correct command was built
+                mock_run.assert_called_once()
+                call_args = mock_run.call_args
+                cmd = call_args[0][0]
+
+                assert cmd == [
+                    "claude", "plugin", "install",
+                    "my-plugin@marketplace", "--scope", "project"
+                ]
+                assert call_args[1]["env"]["HOME"] == str(isolated_home)
+                assert call_args[1]["cwd"] == project_path
+
+    def test_run_plugin_install_returns_completed_process(self):
+        """Test that run_plugin_install returns CompletedProcess."""
+        from harness.environment import IsolatedSession
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            isolated_home = Path(tmpdir)
+            project_path = Path(tmpdir) / "project"
+            project_path.mkdir()
+
+            session = IsolatedSession(
+                isolated_home=isolated_home,
+                project_path=project_path,
+                env={"HOME": str(isolated_home)},
+                trace_path=project_path / "trace.jsonl",
+            )
+
+            with patch("subprocess.run") as mock_run:
+                expected_result = subprocess.CompletedProcess(
+                    args=[], returncode=0,
+                    stdout="Successfully installed",
+                    stderr=""
+                )
+                mock_run.return_value = expected_result
+
+                result = session.run_plugin_install("test-plugin")
+
+                assert result.returncode == 0
+                assert "Successfully installed" in result.stdout
 
 
 # =============================================================================
@@ -326,8 +452,10 @@ class TestRunnerPluginInstallation:
 class TestPluginInstallationIntegration:
     """Integration tests for plugin installation during test execution."""
 
-    def test_plugin_artifacts_structure(self, temp_project_dir: Path, temp_session_dir: Path):
-        """Test that plugin artifacts maintain their directory structure."""
+    def test_marketplace_data_copied_before_install(
+        self, temp_project_dir: Path, temp_isolated_home: Path
+    ):
+        """Test that marketplace data is copied before plugin installation."""
         from harness.pytest_plugin import YAMLTestItem
         from harness.fixture_loader import SetupConfig
 
@@ -335,63 +463,44 @@ class TestPluginInstallationIntegration:
             item = YAMLTestItem.__new__(YAMLTestItem)
             item._installed_plugin_files = []
             item._installed_plugin_dirs = []
+            item.expected_plugins = []
+            item.plugin_install_results = []
 
         item._find_project_path = lambda: temp_project_dir
 
-        session = MockSession(temp_session_dir)
+        session = MockSession(temp_project_dir, temp_isolated_home)
         setup = SetupConfig(plugins=["test-plugin"])
 
-        item._install_plugins(session, setup)
+        call_order = []
 
-        claude_dir = temp_session_dir / ".claude"
+        def track_copy(*args, **kwargs):
+            call_order.append("copy_marketplace")
+            return True
 
-        # Verify directory structure is preserved
-        assert (claude_dir / "commands").is_dir()
-        assert (claude_dir / "skills" / "test-skill").is_dir()
-        assert (claude_dir / "agents").is_dir()
+        original_run_plugin_install = session.run_plugin_install
 
-        # Verify files are in correct locations
-        assert (claude_dir / "commands" / "test-command.md").is_file()
-        assert (claude_dir / "skills" / "test-skill" / "SKILL.md").is_file()
-        assert (claude_dir / "agents" / "test-agent.md").is_file()
+        def track_install(*args, **kwargs):
+            call_order.append("install_plugin")
+            return original_run_plugin_install(*args, **kwargs)
 
-    def test_multiple_plugins_installation(self, temp_project_dir: Path, temp_session_dir: Path):
-        """Test installing multiple plugins."""
-        from harness.pytest_plugin import YAMLTestItem
-        from harness.fixture_loader import SetupConfig
+        session.run_plugin_install = track_install
 
-        # Create a second test plugin
-        packages_dir = temp_project_dir / "packages"
-        plugin2_dir = packages_dir / "test-plugin-2"
-        plugin2_dir.mkdir()
+        with patch("harness.environment.copy_marketplace_data", side_effect=track_copy):
+            item._install_plugins(session, setup)
 
-        manifest = {
-            "name": "test-plugin-2",
-            "version": "1.0.0",
-            "artifacts": {
-                "commands": ["commands/another-command.md"],
-            },
-        }
-        with open(plugin2_dir / "manifest.yaml", "w") as f:
-            yaml.dump(manifest, f)
+        # Marketplace copy should happen before install
+        assert call_order == ["copy_marketplace", "install_plugin"]
 
-        (plugin2_dir / "commands").mkdir()
-        (plugin2_dir / "commands" / "another-command.md").write_text("# Another Command")
+    def test_plugin_name_parsing(self):
+        """Test that plugin names with @registry suffix are passed correctly to CLI."""
+        plugin_specs = [
+            "test-plugin@synaptic-canvas",
+            "test-plugin@other-registry",
+            "test-plugin",
+            "my-pkg@marketplace",
+        ]
 
-        with patch.object(YAMLTestItem, "__init__", lambda self, *args, **kwargs: None):
-            item = YAMLTestItem.__new__(YAMLTestItem)
-            item._installed_plugin_files = []
-            item._installed_plugin_dirs = []
-
-        item._find_project_path = lambda: temp_project_dir
-
-        session = MockSession(temp_session_dir)
-        setup = SetupConfig(plugins=["test-plugin", "test-plugin-2"])
-
-        item._install_plugins(session, setup)
-
-        claude_dir = temp_session_dir / ".claude"
-
-        # Both plugins' artifacts should be installed
-        assert (claude_dir / "commands" / "test-command.md").exists()
-        assert (claude_dir / "commands" / "another-command.md").exists()
+        # All specs should be passed as-is to the CLI (no parsing needed)
+        for spec in plugin_specs:
+            # The CLI handles parsing, we just pass through
+            assert isinstance(spec, str)

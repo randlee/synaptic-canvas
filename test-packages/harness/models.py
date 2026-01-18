@@ -36,7 +36,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 # =============================================================================
@@ -346,6 +346,31 @@ class ToolOutput(BaseModel):
         default_factory=dict, description="Additional tool-specific outputs"
     )
 
+    @field_validator("content", mode="before")
+    @classmethod
+    def normalize_content(cls, v: str | list[dict[str, Any]] | None) -> str | None:
+        """Normalize content field to string.
+
+        Claude's API can return tool output content as either:
+        - A string (legacy/simple format)
+        - A list of content blocks: [{"type": "text", "text": "..."}]
+
+        This validator converts list format to concatenated string.
+        """
+        if v is None:
+            return None
+        if isinstance(v, str):
+            return v
+        if isinstance(v, list):
+            # Extract text from content blocks, ignoring non-text types
+            text_parts = []
+            for block in v:
+                if isinstance(block, dict) and block.get("type") == "text":
+                    text_parts.append(block.get("text", ""))
+            return "".join(text_parts)
+        # Fallback: convert to string
+        return str(v)
+
 
 class TimelineEntry(BaseModel):
     """A single entry in the test execution timeline.
@@ -413,6 +438,39 @@ class ClaudeResponse(BaseModel):
     word_count: int = Field(ge=0, description="Word count of response")
 
 
+class PluginInstallResult(BaseModel):
+    """Result of a plugin installation attempt."""
+
+    plugin_name: str = Field(description="Name of the plugin (e.g., 'sc-startup')")
+    success: bool = Field(description="Whether installation succeeded")
+    stdout: str = Field(default="", description="Standard output from install command")
+    stderr: str = Field(default="", description="Standard error from install command")
+    return_code: int = Field(default=0, description="Return code from install command")
+
+
+class PluginVerification(BaseModel):
+    """Plugin verification data for a test."""
+
+    expected_plugins: list[str] = Field(
+        default_factory=list, description="Plugins expected from fixture setup"
+    )
+    install_results: list[PluginInstallResult] = Field(
+        default_factory=list, description="Results of plugin installation attempts"
+    )
+
+    @property
+    def all_successful(self) -> bool:
+        """Check if all plugin installations succeeded."""
+        if not self.expected_plugins:
+            return True
+        return all(r.success for r in self.install_results)
+
+    @property
+    def failed_plugins(self) -> list[str]:
+        """Get list of plugins that failed to install."""
+        return [r.plugin_name for r in self.install_results if not r.success]
+
+
 class DebugInfo(BaseModel):
     """Debug information for troubleshooting test failures."""
 
@@ -423,6 +481,9 @@ class DebugInfo(BaseModel):
     )
     errors: list[str] = Field(
         default_factory=list, description="Errors encountered during test"
+    )
+    plugin_verification: PluginVerification | None = Field(
+        default=None, description="Plugin installation verification data"
     )
 
 

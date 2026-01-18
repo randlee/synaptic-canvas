@@ -29,6 +29,8 @@ from .models import (
     AssessmentDisplayModel,
     TabDisplayModel,
     TestCaseDisplayModel,
+    PluginVerificationDisplayModel,
+    PluginInstallResultDisplayModel,
 )
 from .components import (
     HeaderBuilder,
@@ -243,6 +245,9 @@ class HTMLReportBuilder:
             ),
         )
 
+        # Build plugin verification data
+        plugin_verification = self._transform_plugin_verification(test, index)
+
         # Build expectations data
         expectations = ExpectationsDisplayModel(
             test_index=index,
@@ -307,11 +312,53 @@ class HTMLReportBuilder:
             status_banner=status_banner,
             metadata=metadata,
             reproduce=reproduce,
+            plugin_verification=plugin_verification,
             expectations=expectations,
             timeline=timeline,
             response=response,
             debug=debug,
             assessment=assessment,
+        )
+
+    def _transform_plugin_verification(
+        self,
+        test: "TestResult",
+        index: int
+    ) -> PluginVerificationDisplayModel | None:
+        """Transform plugin verification data to display model.
+
+        Args:
+            test: TestResult containing debug info with plugin verification
+            index: 1-based test index
+
+        Returns:
+            PluginVerificationDisplayModel if plugins were configured, else None
+        """
+        # Check if plugin verification data exists
+        if not test.debug.plugin_verification:
+            return None
+
+        pv = test.debug.plugin_verification
+        if not pv.expected_plugins:
+            return None
+
+        # Transform install results to display models
+        install_results = [
+            PluginInstallResultDisplayModel(
+                plugin_name=r.plugin_name,
+                success=r.success,
+                stdout=r.stdout,
+                stderr=r.stderr,
+                return_code=r.return_code,
+            )
+            for r in pv.install_results
+        ]
+
+        return PluginVerificationDisplayModel(
+            test_index=index,
+            expected_plugins=pv.expected_plugins,
+            install_results=install_results,
+            has_plugins=len(pv.expected_plugins) > 0,
         )
 
     def _transform_expectation(self, exp: "Expectation") -> ExpectationDisplayModel:

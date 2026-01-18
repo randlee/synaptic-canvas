@@ -40,10 +40,10 @@ class DebugBuilder(BaseBuilder[DebugDisplayModel]):
             stop_propagation=True
         )
 
-        # Build pytest output section
-        pytest_html = ""
+        # Build Claude session log section
+        session_log_html = ""
         if data.pytest_output:
-            pytest_html = f'''<h3>Pytest Output</h3>
+            session_log_html = f'''<h3>Claude Session Log</h3>
     <pre>{self.escape(data.pytest_output)}</pre>'''
 
         # Build test metadata table
@@ -94,7 +94,7 @@ class DebugBuilder(BaseBuilder[DebugDisplayModel]):
     {copy_btn}
   </summary>
   <div class="content" id="debug-{n}">
-    {pytest_html}
+    {session_log_html}
 
     {table_html}
 

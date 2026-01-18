@@ -19,6 +19,7 @@ from .timeline import TimelineBuilder
 from .reproduce import ReproduceBuilder
 from .debug import DebugBuilder
 from .assessment import AssessmentBuilder
+from .plugin_verification import PluginVerificationBuilder
 
 
 class TestCaseBuilder(BaseBuilder[TestCaseDisplayModel]):
@@ -29,6 +30,7 @@ class TestCaseBuilder(BaseBuilder[TestCaseDisplayModel]):
     - Status banner
     - Test metadata grid
     - Reproduce section
+    - Plugin verification (if plugins configured)
     - Expectations list
     - Timeline (collapsible)
     - Claude response (collapsible)
@@ -51,6 +53,7 @@ class TestCaseBuilder(BaseBuilder[TestCaseDisplayModel]):
         self.reproduce_builder = ReproduceBuilder(config)
         self.debug_builder = DebugBuilder(config)
         self.assessment_builder = AssessmentBuilder(config)
+        self.plugin_verification_builder = PluginVerificationBuilder(config)
 
     def build(self, data: TestCaseDisplayModel) -> str:
         """Build complete test case HTML from display model.
@@ -67,6 +70,14 @@ class TestCaseBuilder(BaseBuilder[TestCaseDisplayModel]):
         status_banner_html = self.status_banner_builder.build(data.status_banner)
         metadata_html = self._build_metadata(data.metadata)
         reproduce_html = self.reproduce_builder.build(data.reproduce)
+
+        # Build plugin verification if present
+        plugin_verification_html = ""
+        if data.plugin_verification and data.plugin_verification.has_plugins:
+            plugin_verification_html = self.plugin_verification_builder.build(
+                data.plugin_verification
+            )
+
         expectations_html = self.expectations_builder.build(data.expectations)
         timeline_html = self.timeline_builder.build(data.timeline)
         response_html = self._build_response(data.response)
@@ -85,6 +96,8 @@ class TestCaseBuilder(BaseBuilder[TestCaseDisplayModel]):
 {metadata_html}
 
 {reproduce_html}
+
+{plugin_verification_html}
 
 {expectations_html}
 

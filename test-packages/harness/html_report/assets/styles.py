@@ -32,6 +32,22 @@ body {
   margin: 0 auto;
   padding: 24px;
   color: var(--text);
+}
+
+/* Normalize whitespace for copy/paste - prevents excessive newlines when copying text.
+   Block elements collapse HTML source whitespace so copied text is clean.
+   Pre tags are excluded to preserve intentional code formatting. */
+div, p, li, span, h1, h2, h3, h4, h5, h6, td, th, label, summary, button, a {
+  white-space: normal;
+}
+
+/* Ensure pre and code blocks preserve whitespace for code display */
+pre {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+code {
+  white-space: pre;
 }"""
 
 # Fixture header styles
@@ -709,6 +725,114 @@ CSS_ASSESSMENT = """.agent-assessment-section {
   font-style: italic;
 }"""
 
+# Plugin verification section styles
+CSS_PLUGIN_VERIFICATION = """.plugin-verification-section {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+.plugin-verification-section > summary {
+  padding: 12px 16px;
+  cursor: pointer;
+  font-weight: 600;
+  background: var(--bg-subtle);
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.plugin-verification-section[open] > summary {
+  border-bottom: 1px solid var(--border);
+  border-radius: 8px 8px 0 0;
+}
+.plugin-summary {
+  font-size: 0.85rem;
+  padding: 4px 10px;
+  border-radius: 4px;
+  margin-left: auto;
+  margin-right: 8px;
+}
+.plugin-summary.pass {
+  background: var(--pass-bg);
+  color: var(--pass);
+}
+.plugin-summary.fail {
+  background: var(--fail-bg);
+  color: var(--fail);
+}
+.plugin-expected {
+  margin-bottom: 16px;
+}
+.plugin-expected code {
+  background: #e2e8f0;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+.plugin-results {
+  margin-top: 12px;
+}
+.plugin-list {
+  margin-top: 8px;
+}
+.plugin-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  margin-bottom: 8px;
+  background: white;
+}
+.plugin-item.pass {
+  border-left: 3px solid var(--pass);
+}
+.plugin-item.fail {
+  border-left: 3px solid var(--fail);
+}
+.plugin-status {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+.plugin-name {
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+  font-weight: 500;
+}
+.plugin-result {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+.plugin-item.pass .plugin-result {
+  color: var(--pass);
+}
+.plugin-item.fail .plugin-result {
+  color: var(--fail);
+}
+.plugin-output {
+  width: 100%;
+  margin-top: 8px;
+  border: none;
+  background: transparent;
+}
+.plugin-output summary {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px 0;
+}
+.plugin-output pre {
+  background: #1e293b;
+  color: #e2e8f0;
+  padding: 12px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  overflow-x: auto;
+  margin: 8px 0 0 0;
+}"""
+
 # Editor link colors
 CSS_FILE_LINKS = """a.file-link {
   color: #3b82f6;
@@ -750,6 +874,7 @@ def get_all_css() -> str:
         CSS_METADATA,
         CSS_COPY_BUTTON,
         CSS_EXPECTATIONS,
+        CSS_PLUGIN_VERIFICATION,
         CSS_TIMELINE,
         CSS_SECTIONS,
         CSS_RESPONSE,

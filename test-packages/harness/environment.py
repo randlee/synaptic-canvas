@@ -319,6 +319,62 @@ class IsolatedSession:
         default=None, repr=False
     )
 
+    def run_plugin_install(
+        self,
+        plugin_name: str,
+        scope: str = "project",
+        timeout: int = 60,
+    ) -> subprocess.CompletedProcess:
+        """Install a plugin using the Claude CLI.
+
+        Runs `claude plugin install <plugin_name> --scope <scope>` in the
+        isolated environment. Marketplace data must be available in the
+        isolated HOME for this to work.
+
+        Args:
+            plugin_name: Plugin identifier (e.g., "sc-startup@synaptic-canvas")
+            scope: Installation scope ("project" or "user"), default "project"
+            timeout: Timeout in seconds (default: 60)
+
+        Returns:
+            CompletedProcess with stdout, stderr, and returncode
+
+        Example:
+            >>> result = session.run_plugin_install("sc-startup@synaptic-canvas")
+            >>> if result.returncode == 0:
+            ...     print("Plugin installed successfully")
+        """
+        cmd = [
+            "claude",
+            "plugin",
+            "install",
+            plugin_name,
+            "--scope",
+            scope,
+        ]
+
+        logger.info(f"Installing plugin: {plugin_name} (scope={scope})")
+        logger.debug(f"Plugin install command: {cmd}")
+
+        result = subprocess.run(
+            cmd,
+            env=self.env,
+            cwd=self.project_path,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+        )
+
+        if result.returncode == 0:
+            logger.info(f"Successfully installed plugin: {plugin_name}")
+        else:
+            logger.warning(
+                f"Plugin install failed for {plugin_name}: "
+                f"returncode={result.returncode}, stderr={result.stderr}"
+            )
+
+        return result
+
     def run_command(
         self,
         prompt: str,
@@ -414,6 +470,16 @@ class IsolatedSession:
 
         logger.debug(f"Found transcript: {most_recent}")
         return most_recent
+
+    @property
+    def claude_stdout(self) -> str:
+        """Get Claude CLI stdout from the last command."""
+        return self._process_result.stdout if self._process_result else ""
+
+    @property
+    def claude_stderr(self) -> str:
+        """Get Claude CLI stderr from the last command."""
+        return self._process_result.stderr if self._process_result else ""
 
 
 # =============================================================================

@@ -22,6 +22,7 @@ from .timeline import TimelineBuilder
 from .assessment import AssessmentBuilder
 from .reproduce import ReproduceBuilder
 from .debug import DebugBuilder
+from .plugin_verification import PluginVerificationBuilder
 
 __all__ = [
     "BaseBuilder",
@@ -35,4 +36,5 @@ __all__ = [
     "AssessmentBuilder",
     "ReproduceBuilder",
     "DebugBuilder",
+    "PluginVerificationBuilder",
 ]

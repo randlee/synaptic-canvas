@@ -6,11 +6,13 @@ Tests the fixture loading functionality including:
 - Fixture and test discovery
 - Configuration merging
 - Error handling
+- Fixture validation (fail-fast guardrails)
 
 Run with:
     pytest test-packages/harness/tests/test_fixture_loader.py -v
 """
 
+import json
 import tempfile
 from pathlib import Path
 
@@ -22,6 +24,7 @@ from harness.fixture_loader import (
     FileMapping,
     FixtureConfig,
     FixtureLoader,
+    FixtureValidationError,
     SetupConfig,
     TeardownConfig,
     TestConfig,
@@ -654,3 +657,301 @@ class TestConvenienceFunctions:
         config = load_test(fixtures_dir, "test-fixture", "test_one.yaml")
 
         assert config.test_id == "t-001"
+
+
+# =============================================================================
+# Fixture Validation Tests
+# =============================================================================
+
+
+class TestFixtureValidation:
+    """Tests for fixture validation (fail-fast guardrails)."""
+
+    @pytest.fixture
+    def project_root(self, tmp_path: Path) -> Path:
+        """Create a mock project structure with registry and packages."""
+        # Create registry directory and file
+        registry_dir = tmp_path / "docs" / "registries" / "nuget"
+        registry_dir.mkdir(parents=True)
+
+        registry_data = {
+            "packages": {
+                "valid-plugin": {
+                    "name": "valid-plugin",
+                    "version": "1.0.0",
+                    "path": "packages/valid-plugin",
+                },
+                "plugin-no-md": {
+                    "name": "plugin-no-md",
+                    "version": "1.0.0",
+                    "path": "packages/plugin-no-md",
+                },
+            }
+        }
+        (registry_dir / "registry.json").write_text(json.dumps(registry_data))
+
+        # Create packages directory structure
+        packages_dir = tmp_path / "packages"
+        packages_dir.mkdir()
+
+        # valid-plugin with markdown files
+        valid_plugin = packages_dir / "valid-plugin"
+        valid_plugin.mkdir()
+        (valid_plugin / "commands").mkdir()
+        (valid_plugin / "commands" / "valid-plugin.md").write_text(
+            "# Valid Plugin Command"
+        )
+
+        # plugin-no-md without markdown files (empty structure)
+        no_md_plugin = packages_dir / "plugin-no-md"
+        no_md_plugin.mkdir()
+        (no_md_plugin / "commands").mkdir()  # Empty commands dir
+        (no_md_plugin / "skills").mkdir()  # Empty skills dir
+
+        return tmp_path
+
+    @pytest.fixture
+    def fixtures_dir(self, project_root: Path) -> Path:
+        """Create fixtures directory inside the project root."""
+        fixtures = project_root / "test-packages" / "fixtures"
+        fixtures.mkdir(parents=True)
+        return fixtures
+
+    def test_validation_skipped_when_no_package(self, fixtures_dir: Path):
+        """Test that validation is skipped when package field is empty."""
+        fixture_dir = fixtures_dir / "no-package"
+        fixture_dir.mkdir()
+        tests_dir = fixture_dir / "tests"
+        tests_dir.mkdir()
+
+        fixture_yaml = """
+name: no-package
+description: Fixture without package field
+# No package field
+setup:
+  plugins: []
+"""
+        (fixture_dir / "fixture.yaml").write_text(fixture_yaml)
+
+        # Should not raise any exception
+        config = FixtureConfig.from_yaml(fixture_dir / "fixture.yaml")
+        assert config.name == "no-package"
+        assert config.package == ""
+
+    def test_validation_error_plugin_not_in_registry(self, fixtures_dir: Path):
+        """Test validation fails when package references non-existent plugin."""
+        fixture_dir = fixtures_dir / "bad-plugin"
+        fixture_dir.mkdir()
+        tests_dir = fixture_dir / "tests"
+        tests_dir.mkdir()
+
+        fixture_yaml = """
+name: bad-plugin
+description: References non-existent plugin
+package: nonexistent-plugin@test
+setup:
+  plugins:
+    - nonexistent-plugin@test
+"""
+        (fixture_dir / "fixture.yaml").write_text(fixture_yaml)
+
+        with pytest.raises(FixtureValidationError) as exc_info:
+            FixtureConfig.from_yaml(fixture_dir / "fixture.yaml")
+
+        assert "not found in marketplace registry" in str(exc_info.value)
+        assert "nonexistent-plugin" in str(exc_info.value)
+
+    def test_validation_error_empty_setup_plugins(self, fixtures_dir: Path):
+        """Test validation fails when setup.plugins is empty but package is specified."""
+        fixture_dir = fixtures_dir / "empty-plugins"
+        fixture_dir.mkdir()
+        tests_dir = fixture_dir / "tests"
+        tests_dir.mkdir()
+
+        fixture_yaml = """
+name: empty-plugins
+description: Has package but empty setup.plugins
+package: valid-plugin@test
+setup:
+  plugins: []
+"""
+        (fixture_dir / "fixture.yaml").write_text(fixture_yaml)
+
+        with pytest.raises(FixtureValidationError) as exc_info:
+            FixtureConfig.from_yaml(fixture_dir / "fixture.yaml")
+
+        assert "setup.plugins must include the package" in str(exc_info.value)
+
+    def test_validation_error_plugin_no_markdown_files(self, fixtures_dir: Path):
+        """Test validation fails when plugin has no skill/command/agent markdown files."""
+        fixture_dir = fixtures_dir / "no-md-fixture"
+        fixture_dir.mkdir()
+        tests_dir = fixture_dir / "tests"
+        tests_dir.mkdir()
+
+        fixture_yaml = """
+name: no-md-fixture
+description: Plugin without markdown files
+package: plugin-no-md@test
+setup:
+  plugins:
+    - plugin-no-md@test
+"""
+        (fixture_dir / "fixture.yaml").write_text(fixture_yaml)
+
+        with pytest.raises(FixtureValidationError) as exc_info:
+            FixtureConfig.from_yaml(fixture_dir / "fixture.yaml")
+
+        assert "must have at least one skill/command/agent markdown file" in str(
+            exc_info.value
+        )
+
+    def test_validation_passes_for_valid_fixture(self, fixtures_dir: Path):
+        """Test validation passes when all rules are satisfied."""
+        fixture_dir = fixtures_dir / "valid-fixture"
+        fixture_dir.mkdir()
+        tests_dir = fixture_dir / "tests"
+        tests_dir.mkdir()
+
+        fixture_yaml = """
+name: valid-fixture
+description: Valid fixture with all requirements met
+package: valid-plugin@test
+setup:
+  plugins:
+    - valid-plugin@test
+"""
+        (fixture_dir / "fixture.yaml").write_text(fixture_yaml)
+
+        # Should not raise any exception
+        config = FixtureConfig.from_yaml(fixture_dir / "fixture.yaml")
+        assert config.name == "valid-fixture"
+        assert config.package == "valid-plugin@test"
+        assert config.setup.plugins == ["valid-plugin@test"]
+
+    def test_validation_error_plugin_directory_not_found(self, fixtures_dir: Path):
+        """Test validation fails when plugin directory doesn't exist."""
+        # Add a plugin to registry but don't create its directory
+        project_root = fixtures_dir.parent.parent
+        registry_path = project_root / "docs" / "registries" / "nuget" / "registry.json"
+
+        with open(registry_path) as f:
+            registry = json.load(f)
+
+        registry["packages"]["ghost-plugin"] = {
+            "name": "ghost-plugin",
+            "version": "1.0.0",
+            "path": "packages/ghost-plugin",
+        }
+
+        with open(registry_path, "w") as f:
+            json.dump(registry, f)
+
+        fixture_dir = fixtures_dir / "ghost-fixture"
+        fixture_dir.mkdir()
+        tests_dir = fixture_dir / "tests"
+        tests_dir.mkdir()
+
+        fixture_yaml = """
+name: ghost-fixture
+description: Plugin exists in registry but directory missing
+package: ghost-plugin@test
+setup:
+  plugins:
+    - ghost-plugin@test
+"""
+        (fixture_dir / "fixture.yaml").write_text(fixture_yaml)
+
+        with pytest.raises(FixtureValidationError) as exc_info:
+            FixtureConfig.from_yaml(fixture_dir / "fixture.yaml")
+
+        assert "Plugin directory not found" in str(exc_info.value)
+
+    def test_validation_finds_md_in_nested_skills_directory(self, fixtures_dir: Path):
+        """Test validation finds markdown files in nested skills directories."""
+        project_root = fixtures_dir.parent.parent
+        registry_path = project_root / "docs" / "registries" / "nuget" / "registry.json"
+
+        with open(registry_path) as f:
+            registry = json.load(f)
+
+        registry["packages"]["nested-skill-plugin"] = {
+            "name": "nested-skill-plugin",
+            "version": "1.0.0",
+            "path": "packages/nested-skill-plugin",
+        }
+
+        with open(registry_path, "w") as f:
+            json.dump(registry, f)
+
+        # Create plugin with nested skills structure
+        plugin_dir = project_root / "packages" / "nested-skill-plugin"
+        plugin_dir.mkdir()
+        nested_skill = plugin_dir / "skills" / "nested-skill-plugin"
+        nested_skill.mkdir(parents=True)
+        (nested_skill / "SKILL.md").write_text("# Nested Skill")
+
+        fixture_dir = fixtures_dir / "nested-skill-fixture"
+        fixture_dir.mkdir()
+        tests_dir = fixture_dir / "tests"
+        tests_dir.mkdir()
+
+        fixture_yaml = """
+name: nested-skill-fixture
+description: Plugin with nested skill markdown file
+package: nested-skill-plugin@test
+setup:
+  plugins:
+    - nested-skill-plugin@test
+"""
+        (fixture_dir / "fixture.yaml").write_text(fixture_yaml)
+
+        # Should not raise any exception
+        config = FixtureConfig.from_yaml(fixture_dir / "fixture.yaml")
+        assert config.name == "nested-skill-fixture"
+
+    def test_fixture_validation_error_has_fixture_name(self, fixtures_dir: Path):
+        """Test FixtureValidationError includes fixture name in message."""
+        fixture_dir = fixtures_dir / "named-error"
+        fixture_dir.mkdir()
+        tests_dir = fixture_dir / "tests"
+        tests_dir.mkdir()
+
+        fixture_yaml = """
+name: my-fixture-name
+description: Should show fixture name in error
+package: nonexistent@test
+setup:
+  plugins:
+    - nonexistent@test
+"""
+        (fixture_dir / "fixture.yaml").write_text(fixture_yaml)
+
+        with pytest.raises(FixtureValidationError) as exc_info:
+            FixtureConfig.from_yaml(fixture_dir / "fixture.yaml")
+
+        # Error message should include fixture name prefix
+        assert "[my-fixture-name]" in str(exc_info.value)
+
+
+class TestFixtureValidationError:
+    """Tests for FixtureValidationError exception class."""
+
+    def test_error_with_fixture_name(self):
+        """Test error message includes fixture name prefix."""
+        error = FixtureValidationError(
+            "Test error message", fixture_name="test-fixture"
+        )
+        assert str(error) == "[test-fixture] Test error message"
+        assert error.fixture_name == "test-fixture"
+
+    def test_error_without_fixture_name(self):
+        """Test error message without fixture name."""
+        error = FixtureValidationError("Test error message")
+        assert str(error) == "Test error message"
+        assert error.fixture_name is None
+
+    def test_error_is_exception_subclass(self):
+        """Test FixtureValidationError is an Exception subclass."""
+        error = FixtureValidationError("Test")
+        assert isinstance(error, Exception)

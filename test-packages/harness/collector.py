@@ -171,6 +171,10 @@ class CollectedData:
     raw_hook_events: list[dict[str, Any]] = field(default_factory=list)
     raw_transcript_entries: list[dict[str, Any]] = field(default_factory=list)
 
+    # Claude CLI output (for debugging)
+    claude_cli_stdout: str = ""
+    claude_cli_stderr: str = ""
+
     @property
     def duration_ms(self) -> int | None:
         """Compute session duration in milliseconds."""

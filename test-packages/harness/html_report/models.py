@@ -364,6 +364,55 @@ class ResponseDisplayModel(BaseModel):
     full_text: str
 
 
+class PluginInstallResultDisplayModel(BaseModel):
+    """Display model for a single plugin installation result."""
+
+    plugin_name: str
+    success: bool
+    stdout: str = ""
+    stderr: str = ""
+    return_code: int = 0
+
+    @computed_field
+    @property
+    def status_class(self) -> str:
+        """CSS class for the status indicator."""
+        return "pass" if self.success else "fail"
+
+    @computed_field
+    @property
+    def status_icon(self) -> str:
+        """HTML entity for status icon."""
+        return "&#9989;" if self.success else "&#10060;"  # Green check or red X
+
+
+class PluginVerificationDisplayModel(BaseModel):
+    """Display model for plugin verification section component."""
+
+    test_index: int
+    expected_plugins: list[str] = []
+    install_results: list[PluginInstallResultDisplayModel] = []
+    has_plugins: bool = False
+
+    @computed_field
+    @property
+    def all_successful(self) -> bool:
+        """Check if all plugin installations succeeded."""
+        if not self.expected_plugins:
+            return True
+        return all(r.success for r in self.install_results)
+
+    @computed_field
+    @property
+    def summary_text(self) -> str:
+        """Summary text for the section header."""
+        if not self.expected_plugins:
+            return "No plugins required"
+        successful = sum(1 for r in self.install_results if r.success)
+        total = len(self.expected_plugins)
+        return f"{successful}/{total} plugins installed"
+
+
 class DebugDisplayModel(BaseModel):
     """Display model for debug information section component."""
 
@@ -426,6 +475,7 @@ class TestCaseDisplayModel(BaseModel):
     status_banner: StatusBannerDisplayModel
     metadata: TestMetadataDisplayModel
     reproduce: ReproduceDisplayModel
+    plugin_verification: PluginVerificationDisplayModel | None = None
     expectations: ExpectationsDisplayModel
     timeline: TimelineDisplayModel
     response: ResponseDisplayModel

@@ -33,6 +33,7 @@ Example fixture structure:
 
 from __future__ import annotations
 
+import json
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -41,6 +42,29 @@ from typing import Any
 import yaml
 
 logger = logging.getLogger(__name__)
+
+
+# =============================================================================
+# Exceptions
+# =============================================================================
+
+
+class FixtureValidationError(Exception):
+    """Exception raised when fixture validation fails.
+
+    This exception is raised during fixture loading when the fixture
+    configuration contains invalid or inconsistent values that would
+    prevent proper test execution.
+
+    Attributes:
+        message: Human-readable error message describing the validation failure
+        fixture_name: Name of the fixture that failed validation (if available)
+    """
+
+    def __init__(self, message: str, fixture_name: str | None = None):
+        self.fixture_name = fixture_name
+        prefix = f"[{fixture_name}] " if fixture_name else ""
+        super().__init__(f"{prefix}{message}")
 
 
 # =============================================================================
@@ -310,6 +334,9 @@ class FixtureConfig:
             source_path=yaml_path,
         )
 
+        # Validate fixture configuration (fail fast)
+        config._validate_fixture_config()
+
         if load_tests:
             config.tests = config.discover_tests()
 
@@ -351,6 +378,148 @@ class FixtureConfig:
             Merged SetupConfig with fixture setup first, then test setup
         """
         return self.setup.merge(test.setup)
+
+    def _validate_fixture_config(self) -> None:
+        """Validate fixture configuration and fail fast if invalid.
+
+        Performs the following validations:
+        1. If `package` is specified, verify it exists in the marketplace registry
+        2. If `package` is specified, verify `setup.plugins` is not empty
+        3. If `package` is specified, verify the plugin has at least one
+           skill/command/agent markdown file
+
+        Raises:
+            FixtureValidationError: If any validation rule fails
+        """
+        # Skip validation if no package is specified
+        if not self.package:
+            return
+
+        # Extract plugin name from package (format: "plugin-name@source" or just "plugin-name")
+        plugin_name = self.package.split("@")[0] if "@" in self.package else self.package
+
+        # Find the project root by looking for the registry
+        project_root = self._find_project_root()
+        if not project_root:
+            logger.warning(
+                f"Could not find project root for validation, skipping registry check"
+            )
+        else:
+            # Validation 1: Check plugin exists in marketplace registry
+            registry_path = project_root / "docs" / "registries" / "nuget" / "registry.json"
+            self._validate_plugin_in_registry(plugin_name, registry_path)
+
+            # Validation 3: Check plugin has markdown files
+            packages_path = project_root / "packages" / plugin_name
+            self._validate_plugin_has_markdown_files(plugin_name, packages_path)
+
+        # Validation 2: Check setup.plugins is not empty when package is specified
+        self._validate_setup_plugins_not_empty(plugin_name)
+
+    def _find_project_root(self) -> Path | None:
+        """Find the project root by searching for the registry file.
+
+        Searches upward from the fixture's source_path looking for
+        docs/registries/nuget/registry.json.
+
+        Returns:
+            Path to project root, or None if not found
+        """
+        if not self.source_path:
+            return None
+
+        current = self.source_path.parent.absolute()
+        # Search up to 10 levels to find project root
+        for _ in range(10):
+            registry_path = current / "docs" / "registries" / "nuget" / "registry.json"
+            if registry_path.exists():
+                return current
+            if current.parent == current:
+                break
+            current = current.parent
+        return None
+
+    def _validate_plugin_in_registry(self, plugin_name: str, registry_path: Path) -> None:
+        """Validate plugin exists in marketplace registry.
+
+        Args:
+            plugin_name: Name of the plugin to check
+            registry_path: Path to the registry.json file
+
+        Raises:
+            FixtureValidationError: If plugin not found in registry
+        """
+        if not registry_path.exists():
+            logger.warning(f"Registry file not found: {registry_path}")
+            return
+
+        try:
+            with open(registry_path) as f:
+                registry = json.load(f)
+
+            packages = registry.get("packages", {})
+            if plugin_name not in packages:
+                raise FixtureValidationError(
+                    f"Plugin '{plugin_name}' not found in marketplace registry",
+                    fixture_name=self.name,
+                )
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to parse registry.json: {e}")
+            raise FixtureValidationError(
+                f"Failed to parse marketplace registry: {e}",
+                fixture_name=self.name,
+            ) from e
+
+    def _validate_setup_plugins_not_empty(self, plugin_name: str) -> None:
+        """Validate setup.plugins is not empty when package is specified.
+
+        Args:
+            plugin_name: Name of the plugin for error message
+
+        Raises:
+            FixtureValidationError: If setup.plugins is empty
+        """
+        if not self.setup.plugins:
+            raise FixtureValidationError(
+                f"setup.plugins must include the package when package field is specified",
+                fixture_name=self.name,
+            )
+
+    def _validate_plugin_has_markdown_files(
+        self, plugin_name: str, packages_path: Path
+    ) -> None:
+        """Validate plugin has at least one skill/command/agent markdown file.
+
+        Args:
+            plugin_name: Name of the plugin
+            packages_path: Path to the plugin's package directory
+
+        Raises:
+            FixtureValidationError: If plugin has no markdown files
+        """
+        if not packages_path.exists():
+            raise FixtureValidationError(
+                f"Plugin directory not found: {packages_path}",
+                fixture_name=self.name,
+            )
+
+        # Check for markdown files in skills/, commands/, and agents/ directories
+        md_dirs = ["skills", "commands", "agents"]
+        found_md_files = []
+
+        for md_dir in md_dirs:
+            dir_path = packages_path / md_dir
+            if dir_path.exists():
+                # Search recursively for .md files
+                md_files = list(dir_path.glob("**/*.md"))
+                found_md_files.extend(md_files)
+
+        if not found_md_files:
+            raise FixtureValidationError(
+                f"Plugin '{plugin_name}' must have at least one "
+                f"skill/command/agent markdown file",
+                fixture_name=self.name,
+            )
 
 
 # =============================================================================

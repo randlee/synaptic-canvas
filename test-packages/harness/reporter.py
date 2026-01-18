@@ -48,6 +48,7 @@ from .models import (
     FixtureReport,
     FixtureSummary,
     GitState,
+    PluginVerification,
     ReproduceSection,
     SideEffects,
     StatusIcon,
@@ -109,6 +110,7 @@ class ReportBuilder:
         cleanup_commands: list[str] | None = None,
         pytest_output: str = "",
         pytest_status: TestStatus | None = None,
+        plugin_verification: "PluginVerification | None" = None,
     ) -> TestResult:
         """Build a complete TestResult from collected data.
 
@@ -130,6 +132,7 @@ class ReportBuilder:
             cleanup_commands: Cleanup commands for reproduction
             pytest_output: Raw pytest output
             pytest_status: Pytest result status
+            plugin_verification: Plugin installation verification data
 
         Returns:
             Complete TestResult model
@@ -209,6 +212,7 @@ class ReportBuilder:
                 pytest_status=pytest_status,
                 raw_trace_file=str(data.transcript_path) if data.transcript_path else None,
                 errors=[e.error_content for e in data.errors],
+                plugin_verification=plugin_verification,
             ),
         )
 
