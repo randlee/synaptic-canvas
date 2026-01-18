@@ -1,0 +1,51 @@
+# P0 Test: Help flag shows usage
+# Component Type: COMMAND
+# Tests: /sc-startup --help
+
+test_id: sc-startup-help-001
+test_name: Help flag shows usage
+component_type: command
+description: |
+  Verify /sc-startup --help displays usage information and available flags
+  without invoking any agents or performing startup operations.
+
+execution:
+  prompt: "/sc-startup --help"
+  model: haiku
+  timeout_ms: 30000
+  tools:
+    - Read
+    - Bash
+    - Skill
+
+expectations:
+  - id: exp-help-usage
+    description: Output contains usage or options information
+    type: output_contains
+    expected:
+      pattern: "(usage|options|flags|command)"
+      flags: "i"
+
+  - id: exp-help-readonly-flag
+    description: Output mentions --readonly flag
+    type: output_contains
+    expected:
+      pattern: "--readonly"
+
+  - id: exp-help-init-flag
+    description: Output mentions --init flag
+    type: output_contains
+    expected:
+      pattern: "--init"
+
+  - id: exp-help-fast-flag
+    description: Output mentions --fast flag
+    type: output_contains
+    expected:
+      pattern: "--fast"
+
+  - id: exp-no-agent-spawn
+    description: No agents should be spawned for help
+    type: hook_event_absent
+    expected:
+      event: SubagentStart

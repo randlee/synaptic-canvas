@@ -1,0 +1,47 @@
+# P0 Test: Missing config shows error
+# Component Type: COMMAND
+# Tests: /sc-startup without .claude/sc-startup.yaml
+
+test_id: sc-startup-missing-001
+test_name: Missing config shows error
+component_type: command
+description: |
+  Verify /sc-startup without a config file shows an actionable error message
+  that guides the user to either run --init or create the config manually.
+
+setup:
+  commands:
+    # Ensure no config file exists (override fixture setup)
+    - rm -f .claude/sc-startup.yaml
+
+execution:
+  prompt: "/sc-startup"
+  model: haiku
+  timeout_ms: 45000
+  tools:
+    - Read
+    - Bash
+    - Skill
+    - Glob
+
+expectations:
+  - id: exp-missing-error
+    description: Error mentions missing config or sc-startup.yaml
+    type: output_contains
+    expected:
+      pattern: "(missing|not found|does not exist|no config|sc-startup\\.yaml)"
+      flags: "i"
+
+  - id: exp-suggestion-init
+    description: Suggests using --init to configure
+    type: output_contains
+    expected:
+      pattern: "(--init|initialize|create|configure|setup)"
+      flags: "i"
+
+  - id: exp-no-crash
+    description: Should not produce error traces or stack dumps
+    type: output_not_contains
+    expected:
+      pattern: "(Traceback|Exception:|Error:.*at line)"
+      flags: "i"
