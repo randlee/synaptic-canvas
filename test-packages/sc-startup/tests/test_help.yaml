@@ -44,8 +44,5 @@ expectations:
     expected:
       pattern: "--fast"
 
-  - id: exp-no-agent-spawn
-    description: No agents should be spawned for help
-    type: hook_event_absent
-    expected:
-      event: SubagentStart
+# Note: hook_event_absent not yet implemented in harness
+# Would verify no SubagentStart events occur
