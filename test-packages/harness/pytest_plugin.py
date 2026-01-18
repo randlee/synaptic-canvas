@@ -1461,6 +1461,13 @@ def _generate_fixture_report(
         json_path = report_path / f"{fixture_name}.json"
         write_json_report(fixture_report, json_path)
 
+        # Preserve artifacts in folder next to HTML report
+        _preserve_artifacts(
+            fixture_name=fixture_name,
+            report_path=report_path,
+            test_results_data=test_results_data,
+        )
+
         return html_path
 
     except Exception as e:
@@ -1468,6 +1475,174 @@ def _generate_fixture_report(
         import traceback
         traceback.print_exc()
         return None
+
+
+def _preserve_artifacts(
+    fixture_name: str,
+    report_path: Path,
+    test_results_data: list[dict],
+) -> None:
+    """Preserve test artifacts in a folder next to the HTML report.
+
+    Creates a folder with the same name as the report (without .html extension)
+    and writes artifacts from collected_data. Also creates a timestamped copy
+    in the history folder for retention.
+
+    Artifacts preserved:
+    - {test_id}-session.jsonl: Session transcript from raw_transcript_entries
+    - {test_id}-trace.jsonl: Hook events from raw_hook_events
+    - {test_id}-claude-cli.txt: Claude CLI stdout/stderr
+    - {test_id}-pytest.txt: Pytest output
+
+    Args:
+        fixture_name: Name of the fixture (used for folder name)
+        report_path: Directory where reports are stored
+        test_results_data: List of test result dictionaries containing collected_data
+    """
+    import json
+    import shutil
+
+    # Create "latest" artifacts folder and clean it first
+    latest_dir = report_path / fixture_name
+    if latest_dir.exists():
+        # Clean existing files in latest folder
+        for item in latest_dir.iterdir():
+            if item.is_file():
+                item.unlink()
+            elif item.is_dir():
+                shutil.rmtree(item)
+        logger.info(f"Cleaned latest artifacts folder: {latest_dir}")
+    latest_dir.mkdir(parents=True, exist_ok=True)
+
+    # Create timestamped history folder
+    # Use ISO format with hyphens instead of colons for filesystem safety: YYYY-MM-DDTHH-MM-SS
+    timestamp = datetime.now().strftime("%Y-%m-%dT%H-%M-%S")
+    history_dir = report_path / "history" / fixture_name / timestamp
+    history_dir.mkdir(parents=True, exist_ok=True)
+    logger.info(f"Created history folder: {history_dir}")
+
+    written_count = 0
+    for i, result_data in enumerate(test_results_data, 1):
+        collected_data = result_data.get("collected_data")
+        test_id = result_data.get("test_id", f"test-{i}")
+
+        # Write session transcript (raw_transcript_entries)
+        if collected_data and hasattr(collected_data, "raw_transcript_entries"):
+            entries = collected_data.raw_transcript_entries
+            if entries:
+                dest_name = f"{test_id}-session.jsonl"
+                for dest_dir in [latest_dir, history_dir]:
+                    dest_path = dest_dir / dest_name
+                    try:
+                        with open(dest_path, "w") as f:
+                            for entry in entries:
+                                f.write(json.dumps(entry) + "\n")
+                        logger.debug(f"Preserved session transcript: {dest_path}")
+                    except Exception as e:
+                        logger.warning(f"Failed to write transcript {dest_path}: {e}")
+                written_count += 1
+            else:
+                logger.warning(f"Empty session transcript for test {test_id}")
+
+        # Write trace file (raw_hook_events)
+        if collected_data and hasattr(collected_data, "raw_hook_events"):
+            events = collected_data.raw_hook_events
+            if events:
+                dest_name = f"{test_id}-trace.jsonl"
+                for dest_dir in [latest_dir, history_dir]:
+                    dest_path = dest_dir / dest_name
+                    try:
+                        with open(dest_path, "w") as f:
+                            for event in events:
+                                f.write(json.dumps(event) + "\n")
+                        logger.debug(f"Preserved trace file: {dest_path}")
+                    except Exception as e:
+                        logger.warning(f"Failed to write trace {dest_path}: {e}")
+                written_count += 1
+            else:
+                logger.warning(f"Empty trace file for test {test_id}")
+
+        # Write Claude CLI output (stdout + stderr)
+        claude_stdout = ""
+        claude_stderr = ""
+        if collected_data:
+            claude_stdout = getattr(collected_data, "claude_cli_stdout", "") or ""
+            claude_stderr = getattr(collected_data, "claude_cli_stderr", "") or ""
+
+        if claude_stdout or claude_stderr:
+            dest_name = f"{test_id}-claude-cli.txt"
+            cli_content = ""
+            if claude_stdout:
+                cli_content += "=== Claude CLI stdout ===\n" + claude_stdout + "\n"
+            if claude_stderr:
+                cli_content += "=== Claude CLI stderr ===\n" + claude_stderr + "\n"
+
+            for dest_dir in [latest_dir, history_dir]:
+                dest_path = dest_dir / dest_name
+                try:
+                    with open(dest_path, "w") as f:
+                        f.write(cli_content)
+                    logger.debug(f"Preserved Claude CLI output: {dest_path}")
+                except Exception as e:
+                    logger.warning(f"Failed to write CLI output {dest_path}: {e}")
+            written_count += 1
+
+        # Write pytest output
+        pytest_output = result_data.get("pytest_output", "")
+        if pytest_output:
+            dest_name = f"{test_id}-pytest.txt"
+            for dest_dir in [latest_dir, history_dir]:
+                dest_path = dest_dir / dest_name
+                try:
+                    with open(dest_path, "w") as f:
+                        f.write(pytest_output)
+                    logger.debug(f"Preserved pytest output: {dest_path}")
+                except Exception as e:
+                    logger.warning(f"Failed to write pytest output {dest_path}: {e}")
+            written_count += 1
+
+    # Verify latest folder was created successfully
+    assert latest_dir.exists(), f"Failed to create latest artifacts folder: {latest_dir}"
+
+    if written_count > 0:
+        logger.info(
+            f"Preserved {written_count} artifact type(s) to: {latest_dir} and {history_dir}"
+        )
+
+    # Cleanup: keep only the last 10 history folders per fixture
+    _cleanup_history_folders(report_path / "history" / fixture_name, max_folders=10)
+
+
+def _cleanup_history_folders(history_fixture_dir: Path, max_folders: int = 10) -> None:
+    """Clean up old history folders, keeping only the most recent ones.
+
+    History folders are named with ISO timestamps (YYYY-MM-DDTHH-MM-SS), so
+    sorting alphabetically also sorts chronologically.
+
+    Args:
+        history_fixture_dir: Path to the fixture's history directory
+        max_folders: Maximum number of history folders to keep (default 10)
+    """
+    import shutil
+
+    if not history_fixture_dir.exists():
+        return
+
+    # Get all subdirectories (history folders) sorted by name (chronologically)
+    history_folders = sorted(
+        [d for d in history_fixture_dir.iterdir() if d.is_dir()],
+        key=lambda d: d.name
+    )
+
+    # If we have more than max_folders, delete the oldest ones
+    folders_to_delete = len(history_folders) - max_folders
+    if folders_to_delete > 0:
+        for folder in history_folders[:folders_to_delete]:
+            try:
+                shutil.rmtree(folder)
+                logger.info(f"Deleted old history folder: {folder}")
+            except Exception as e:
+                logger.warning(f"Failed to delete history folder {folder}: {e}")
 
 
 def _create_minimal_test_result(

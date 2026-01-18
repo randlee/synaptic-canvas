@@ -411,6 +411,7 @@ class TimelineEntry(BaseModel):
 
     # Process info (captured via hooks)
     pid: int | None = Field(default=None, description="Process ID of the hook handler")
+    tool_use_id: str | None = Field(default=None, description="Unique tool use identifier")
 
 
 # =============================================================================

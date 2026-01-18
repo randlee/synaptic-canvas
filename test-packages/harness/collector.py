@@ -837,6 +837,7 @@ class DataCollector:
                     agent_id=agent_info[0] if agent_info else None,
                     agent_type=agent_info[1] if agent_info else None,
                     pid=tool_call.pid,
+                    tool_use_id=tool_call.tool_use_id,
                 )
             )
 

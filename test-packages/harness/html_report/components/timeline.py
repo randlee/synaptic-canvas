@@ -80,10 +80,14 @@ class TimelineBuilder(BaseBuilder[TimelineDisplayModel]):
         if entry.intent:
             intent_html = f'<div class="timeline-intent">{self.escape(entry.intent)}</div>'
 
-        # Build meta line with pid and agent info
+        # Build meta line with pid, tool_use_id, and agent info
         meta_parts = []
         if entry.pid:
             meta_parts.append(f"pid:{entry.pid}")
+        if entry.tool_use_id:
+            # Truncate tool_use_id to first 8 chars for readability
+            truncated_id = entry.tool_use_id[:8] if len(entry.tool_use_id) > 8 else entry.tool_use_id
+            meta_parts.append(f"id:{truncated_id}")
         if entry.agent_type:
             agent_text = f"{entry.agent_type}"
             if entry.agent_id:

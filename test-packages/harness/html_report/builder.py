@@ -437,6 +437,7 @@ class HTMLReportBuilder:
                 command=command,
                 output=output,
                 pid=entry.pid,
+                tool_use_id=entry.tool_use_id,
             ))
 
             if entry.type == TimelineEntryType.TOOL_CALL:

@@ -311,6 +311,7 @@ class TimelineItemDisplayModel(BaseModel):
     command: str | None = None
     output: str | None = None
     pid: int | None = None
+    tool_use_id: str | None = None
 
     @computed_field
     @property
