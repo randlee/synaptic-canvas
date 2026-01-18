@@ -1,5 +1,6 @@
 # Local temp files
 .tmp/
+temp/
 
 # Archive directory (for historical reference, not in version control)
 .archive/
