@@ -302,8 +302,9 @@ class TestTimelineBuilder:
         assert '<details>' in html
         assert "Timeline (1 tool calls)" in html
         assert 'id="timeline-1"' in html
-        assert 'class="timeline-item prompt"' in html
-        assert 'class="timeline-item tool_call"' in html
+        # Check for timeline-item classes with depth (depth-0 is default)
+        assert 'class="timeline-item prompt depth-0"' in html
+        assert 'class="timeline-item tool_call depth-0"' in html
         assert "#1" in html
         assert "#2" in html
 

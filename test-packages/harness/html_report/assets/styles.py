@@ -575,6 +575,75 @@ CSS_TIMELINE = """.timeline {
   display: inline-block;
 }"""
 
+# Timeline tree depth indentation and subagent styles
+CSS_TIMELINE_TREE = """/* Timeline tree depth indentation */
+.timeline-item.depth-0 { margin-left: 0; }
+.timeline-item.depth-1 { margin-left: 24px; border-left: 2px solid #8b5cf6; padding-left: 12px; }
+.timeline-item.depth-2 { margin-left: 48px; border-left: 2px solid #a78bfa; padding-left: 12px; }
+.timeline-item.depth-3 { margin-left: 72px; border-left: 2px solid #c4b5fd; padding-left: 12px; }
+.timeline-item.depth-4 { margin-left: 96px; border-left: 2px solid #ddd6fe; padding-left: 12px; }
+.timeline-item.depth-5 { margin-left: 120px; border-left: 2px solid #ede9fe; padding-left: 12px; }
+
+/* Subagent section collapsible */
+.subagent-section {
+  margin: 8px 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-subtle);
+}
+.subagent-section > summary {
+  padding: 8px 12px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 500;
+}
+.subagent-section > summary:hover {
+  background: rgba(139, 92, 246, 0.1);
+}
+.agent-badge {
+  background: #8b5cf6;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.tool-count {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+.subagent-duration {
+  font-family: monospace;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* Timeline item dot colors for subagent context */
+.timeline-item.depth-1 .timeline-dot,
+.timeline-item.depth-2 .timeline-dot,
+.timeline-item.depth-3 .timeline-dot {
+  border-color: #8b5cf6;
+}
+
+/* Highlighted path for debugging */
+.timeline-item.highlighted {
+  background: rgba(59, 130, 246, 0.1);
+  border-left-color: #3b82f6 !important;
+}
+
+/* Agent filter dropdown */
+.agent-filter-select {
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.85rem;
+}
+"""
+
 # Response preview styles
 CSS_RESPONSE = """.response-preview {
   background: var(--bg-subtle);
@@ -886,6 +955,7 @@ def get_all_css() -> str:
         CSS_EXPECTATIONS,
         CSS_PLUGIN_VERIFICATION,
         CSS_TIMELINE,
+        CSS_TIMELINE_TREE,
         CSS_SECTIONS,
         CSS_RESPONSE,
         CSS_DEBUG,

@@ -66,6 +66,14 @@ class TimelineBuilder(BaseBuilder[TimelineDisplayModel]):
         """
         type_display = entry.type_display
 
+        # Build depth class for tree indentation
+        depth_class = f"depth-{entry.depth}" if entry.depth else "depth-0"
+
+        # Build data attributes for tree structure
+        agent_attr = f'data-agent-id="{entry.agent_id}"' if entry.agent_id else ''
+        uuid_attr = f'data-uuid="{entry.uuid}"' if entry.uuid else ''
+        parent_uuid_attr = f'data-parent-uuid="{entry.parent_uuid}"' if entry.parent_uuid else ''
+
         # Build copy button
         copy_btn = CopyButtonBuilder.build(
             tooltip="Copy this step",
@@ -97,7 +105,12 @@ class TimelineBuilder(BaseBuilder[TimelineDisplayModel]):
         if meta_parts:
             meta_html = f'<div class="timeline-meta">{" | ".join(meta_parts)}</div>'
 
-        return f'''<div class="timeline-item {type_display.css_class}" data-seq="{entry.seq}" data-elapsed="{entry.elapsed_ms}ms">
+        return f'''<div class="timeline-item {type_display.css_class} {depth_class}"
+        data-seq="{entry.seq}"
+        data-elapsed="{entry.elapsed_ms}ms"
+        {agent_attr}
+        {uuid_attr}
+        {parent_uuid_attr}>
         <div class="timeline-dot"></div>
         <div class="timeline-header">
           <span class="timeline-type">{self.escape(type_display.display_label)}</span>
