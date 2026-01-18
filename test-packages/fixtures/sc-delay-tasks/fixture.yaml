@@ -1,0 +1,18 @@
+# sc-delay-tasks Skill Test Fixture
+# Tests the /delay and /sc-delay commands for scheduling delayed actions
+
+name: sc-delay-tasks
+description: Tests for the sc-delay-tasks plugin (delay/polling commands)
+package: sc-delay-tasks@synaptic-canvas
+
+setup:
+  plugins:
+    - sc-delay-tasks@synaptic-canvas
+  files: []
+  commands: []
+
+teardown:
+  commands:
+    - echo "Cleaned up sc-delay-tasks tests"
+
+tests_dir: tests

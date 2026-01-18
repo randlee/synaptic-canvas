@@ -1,0 +1,37 @@
+# Category A: NO subagent expected (baseline)
+# This test reads a file - NO subagent should be spawned
+
+test_id: subagent-baseline-002
+test_name: File read without subagent
+description: |
+  Read a file using the Read tool. This should NOT spawn any subagent.
+  Verifies basic tool usage without Task delegation.
+
+tags:
+  - baseline
+  - no-subagent
+  - category-a
+
+execution:
+  prompt: "Read the contents of the file README.md and summarize its first 5 lines."
+  model: haiku
+  tools:
+    - Read
+  timeout_ms: 30000
+
+expectations:
+  # MUST happen: Read tool is called
+  - id: exp-001
+    description: Read tool invoked for README
+    type: tool_call
+    expected:
+      tool: Read
+      pattern: "README"
+
+  # Output should contain summary
+  - id: exp-002
+    description: Response mentions the file content
+    type: output_contains
+    expected:
+      pattern: "(README|repository|project|test)"
+      flags: "i"
