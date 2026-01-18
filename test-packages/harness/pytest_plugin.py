@@ -268,6 +268,10 @@ class YAMLTestItem(pytest.Item):
         self.execution_duration_ms: float = 0
         self.execution_error: str | None = None
 
+        # Track installed plugin files for cleanup
+        self._installed_plugin_files: list[Path] = []
+        self._installed_plugin_dirs: list[Path] = []
+
         # Add markers for tags
         for tag in test_config.tags:
             self.add_marker(pytest.mark.keyword(tag))
@@ -310,6 +314,9 @@ class YAMLTestItem(pytest.Item):
                 project_path=project_path,
                 trace_path=project_path / "reports" / "trace.jsonl",
             ) as session:
+                # Install plugins before setup commands
+                self._install_plugins(session, merged_setup)
+
                 # Run setup commands
                 self._run_setup_commands(session, merged_setup)
 
@@ -369,6 +376,8 @@ class YAMLTestItem(pytest.Item):
                 error_message=str(e),
             ) from e
         finally:
+            # Clean up installed plugins
+            self._cleanup_plugins()
             # Run teardown commands
             self._run_teardown_commands(merged_setup)
 
@@ -442,6 +451,125 @@ class YAMLTestItem(pytest.Item):
                 )
             except Exception as e:
                 logger.warning(f"Teardown command failed: {cmd} - {e}")
+
+
+    def _install_plugins(self, session: Any, setup: Any) -> None:
+        """Install plugins specified in setup configuration.
+
+        Parses plugin names from setup.plugins, locates the package
+        in packages/<name>/manifest.yaml, and copies artifacts to
+        the session's project_path/.claude/ directory.
+
+        Args:
+            session: IsolatedSession instance
+            setup: SetupConfig with plugins list
+        """
+        import shutil
+
+        import yaml
+
+        if not setup.plugins:
+            return
+
+        # Find packages directory (relative to project root)
+        project_root = self._find_project_path()
+        packages_dir = project_root / "packages"
+
+        if not packages_dir.exists():
+            logger.warning(f"Packages directory not found: {packages_dir}")
+            return
+
+        # Target .claude directory in session's project path
+        claude_dir = session.project_path / ".claude"
+        claude_dir.mkdir(parents=True, exist_ok=True)
+
+        for plugin_spec in setup.plugins:
+            # Parse plugin name (strip @registry suffix if present)
+            plugin_name = plugin_spec.split("@")[0]
+
+            # Find package manifest
+            manifest_path = packages_dir / plugin_name / "manifest.yaml"
+            if not manifest_path.exists():
+                logger.warning(f"Plugin manifest not found: {manifest_path}")
+                continue
+
+            try:
+                with open(manifest_path) as f:
+                    manifest = yaml.safe_load(f)
+
+                artifacts = manifest.get("artifacts", {})
+                package_root = packages_dir / plugin_name
+
+                # Copy all artifact categories
+                for category, files in artifacts.items():
+                    if not files:
+                        continue
+
+                    for artifact_path in files:
+                        src = package_root / artifact_path
+                        if not src.exists():
+                            logger.warning(f"Artifact not found: {src}")
+                            continue
+
+                        # Determine destination path
+                        # Artifacts go into .claude/<category>/<filename> or
+                        # preserve structure for nested paths
+                        dest = claude_dir / artifact_path
+
+                        # Ensure parent directory exists
+                        dest.parent.mkdir(parents=True, exist_ok=True)
+
+                        # Track directories created for cleanup
+                        for parent in dest.parents:
+                            if parent == claude_dir:
+                                break
+                            if parent not in self._installed_plugin_dirs:
+                                self._installed_plugin_dirs.append(parent)
+
+                        # Copy file or directory
+                        if src.is_dir():
+                            if dest.exists():
+                                shutil.rmtree(dest)
+                            shutil.copytree(src, dest)
+                            self._installed_plugin_dirs.append(dest)
+                        else:
+                            shutil.copy2(src, dest)
+                            self._installed_plugin_files.append(dest)
+
+                logger.info(f"Installed plugin: {plugin_name}")
+
+            except Exception as e:
+                logger.warning(f"Failed to install plugin {plugin_name}: {e}")
+
+    def _cleanup_plugins(self) -> None:
+        """Remove installed plugin files and directories.
+
+        Cleans up files and directories that were installed by _install_plugins.
+        """
+        import shutil
+
+        # Remove files first
+        for file_path in self._installed_plugin_files:
+            try:
+                if file_path.exists():
+                    file_path.unlink()
+                    logger.debug(f"Removed plugin file: {file_path}")
+            except Exception as e:
+                logger.warning(f"Failed to remove plugin file {file_path}: {e}")
+
+        # Remove directories (in reverse order to handle nested dirs)
+        for dir_path in reversed(self._installed_plugin_dirs):
+            try:
+                if dir_path.exists() and dir_path.is_dir():
+                    # Only remove if empty or was a copied directory
+                    shutil.rmtree(dir_path, ignore_errors=True)
+                    logger.debug(f"Removed plugin directory: {dir_path}")
+            except Exception as e:
+                logger.warning(f"Failed to remove plugin directory {dir_path}: {e}")
+
+        # Clear the tracking lists
+        self._installed_plugin_files.clear()
+        self._installed_plugin_dirs.clear()
 
     def repr_failure(self, excinfo: pytest.ExceptionInfo[BaseException]) -> str:
         """Generate a failure representation.

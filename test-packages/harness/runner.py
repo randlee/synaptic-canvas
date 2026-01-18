@@ -323,6 +323,132 @@ class TestRunner:
         )
         return report
 
+
+    def _install_plugins(
+        self,
+        session: Any,
+        plugins: list[str],
+    ) -> tuple[list[Path], list[Path]]:
+        """Install plugins specified in setup configuration.
+
+        Parses plugin names, locates packages in packages/<name>/manifest.yaml,
+        and copies artifacts to the session's project_path/.claude/ directory.
+
+        Args:
+            session: IsolatedSession instance
+            plugins: List of plugin specs (e.g., ["plugin-name@registry"])
+
+        Returns:
+            Tuple of (installed_files, installed_dirs) for cleanup tracking
+        """
+        import shutil
+
+        installed_files: list[Path] = []
+        installed_dirs: list[Path] = []
+
+        if not plugins:
+            return installed_files, installed_dirs
+
+        # Find packages directory (relative to project root)
+        packages_dir = self.project_path / "packages"
+
+        if not packages_dir.exists():
+            logger.warning(f"Packages directory not found: {packages_dir}")
+            return installed_files, installed_dirs
+
+        # Target .claude directory in session's project path
+        claude_dir = session.project_path / ".claude"
+        claude_dir.mkdir(parents=True, exist_ok=True)
+
+        for plugin_spec in plugins:
+            # Parse plugin name (strip @registry suffix if present)
+            plugin_name = plugin_spec.split("@")[0]
+
+            # Find package manifest
+            manifest_path = packages_dir / plugin_name / "manifest.yaml"
+            if not manifest_path.exists():
+                logger.warning(f"Plugin manifest not found: {manifest_path}")
+                continue
+
+            try:
+                with open(manifest_path) as f:
+                    manifest = yaml.safe_load(f)
+
+                artifacts = manifest.get("artifacts", {})
+                package_root = packages_dir / plugin_name
+
+                # Copy all artifact categories
+                for category, files in artifacts.items():
+                    if not files:
+                        continue
+
+                    for artifact_path in files:
+                        src = package_root / artifact_path
+                        if not src.exists():
+                            logger.warning(f"Artifact not found: {src}")
+                            continue
+
+                        # Determine destination path
+                        dest = claude_dir / artifact_path
+
+                        # Ensure parent directory exists
+                        dest.parent.mkdir(parents=True, exist_ok=True)
+
+                        # Track directories created for cleanup
+                        for parent in dest.parents:
+                            if parent == claude_dir:
+                                break
+                            if parent not in installed_dirs:
+                                installed_dirs.append(parent)
+
+                        # Copy file or directory
+                        if src.is_dir():
+                            if dest.exists():
+                                shutil.rmtree(dest)
+                            shutil.copytree(src, dest)
+                            installed_dirs.append(dest)
+                        else:
+                            shutil.copy2(src, dest)
+                            installed_files.append(dest)
+
+                logger.info(f"Installed plugin: {plugin_name}")
+
+            except Exception as e:
+                logger.warning(f"Failed to install plugin {plugin_name}: {e}")
+
+        return installed_files, installed_dirs
+
+    def _cleanup_plugins(
+        self,
+        installed_files: list[Path],
+        installed_dirs: list[Path],
+    ) -> None:
+        """Remove installed plugin files and directories.
+
+        Args:
+            installed_files: List of file paths to remove
+            installed_dirs: List of directory paths to remove
+        """
+        import shutil
+
+        # Remove files first
+        for file_path in installed_files:
+            try:
+                if file_path.exists():
+                    file_path.unlink()
+                    logger.debug(f"Removed plugin file: {file_path}")
+            except Exception as e:
+                logger.warning(f"Failed to remove plugin file {file_path}: {e}")
+
+        # Remove directories (in reverse order to handle nested dirs)
+        for dir_path in reversed(installed_dirs):
+            try:
+                if dir_path.exists() and dir_path.is_dir():
+                    shutil.rmtree(dir_path, ignore_errors=True)
+                    logger.debug(f"Removed plugin directory: {dir_path}")
+            except Exception as e:
+                logger.warning(f"Failed to remove plugin directory {dir_path}: {e}")
+
     def run_test(
         self,
         fixture_name: str,
@@ -366,6 +492,10 @@ class TestRunner:
 
         cleanup_commands = fixture_config.teardown_commands.copy()
 
+        # Track installed plugins for cleanup
+        installed_files: list[Path] = []
+        installed_dirs: list[Path] = []
+
         # Execute test
         start_time = time.time()
         start_timestamp = datetime.now()
@@ -375,6 +505,11 @@ class TestRunner:
                 project_path=self.project_path,
                 trace_path=self.reports_path / "trace.jsonl",
             ) as session:
+                # Install plugins before running the test
+                installed_files, installed_dirs = self._install_plugins(
+                    session, fixture_config.setup_plugins
+                )
+
                 # Run the test
                 result = session.run_command(
                     prompt=test_config.prompt,
@@ -446,6 +581,10 @@ class TestRunner:
                 test_config, fixture_config, duration_ms, str(e),
                 test_command, setup_commands, cleanup_commands
             )
+
+        finally:
+            # Clean up installed plugins
+            self._cleanup_plugins(installed_files, installed_dirs)
 
     def _build_test_command(self, test_config: TestConfig) -> str:
         """Build the Claude CLI command string."""
