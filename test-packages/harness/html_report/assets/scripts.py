@@ -73,10 +73,20 @@ function showCopyFeedback(btn) {
   }, 1500);
 }
 
+// Normalize whitespace: trim trailing spaces, collapse multiple empty lines to one
+function normalizeWhitespace(text) {
+  return text
+    .split('\\n')
+    .map(line => line.trimEnd())
+    .join('\\n')
+    .replace(/\\n{3,}/g, '\\n\\n')
+    .trim();
+}
+
 // Copy element text by ID
 function copyElement(elementId) {
   const element = document.getElementById(elementId);
-  const text = element.textContent;
+  const text = normalizeWhitespace(element.textContent);
   navigator.clipboard.writeText(text).then(() => {
     showCopyFeedback(event.target.closest('.copy-icon-btn'));
   });
@@ -85,7 +95,7 @@ function copyElement(elementId) {
 // Copy section with title and source attribution
 function copySection(elementId, sectionTitle) {
   const element = document.getElementById(elementId);
-  const content = element.textContent.trim();
+  const content = normalizeWhitespace(element.textContent);
   const activeTab = document.querySelector('.tab-content.active');
   const tabId = activeTab ? activeTab.id : 'test-1';
   const fragmentId = elementId;
@@ -97,7 +107,7 @@ ${content}
 ---
 source: ${reportPath}#${fragmentId}`;
 
-  navigator.clipboard.writeText(markdown).then(() => {
+  navigator.clipboard.writeText(normalizeWhitespace(markdown)).then(() => {
     showCopyFeedback(event.target.closest('.copy-icon-btn'));
   });
 }
@@ -105,8 +115,8 @@ source: ${reportPath}#${fragmentId}`;
 // Copy expectation
 function copyExpectation(expId) {
   const item = document.querySelector(`[data-exp-id="${expId}"]`);
-  const label = item.querySelector('.expectation-label').textContent;
-  const details = item.querySelector('.expectation-details').textContent;
+  const label = item.querySelector('.expectation-label').textContent.trim();
+  const details = item.querySelector('.expectation-details').textContent.trim();
   const icon = item.querySelector('.expectation-icon').textContent;
   const status = icon.includes('\\u2705') ? 'PASS' : (icon.includes('\\u274C') ? 'FAIL' : 'WARNING');
 
@@ -139,7 +149,7 @@ ${actualPre.textContent.trim()}
 ---
 source: ${reportPath}#${expId}`;
 
-  navigator.clipboard.writeText(markdown).then(() => {
+  navigator.clipboard.writeText(normalizeWhitespace(markdown)).then(() => {
     showCopyFeedback(event.target.closest('.copy-icon-btn'));
   });
 }
@@ -147,16 +157,16 @@ source: ${reportPath}#${expId}`;
 // Copy timeline item
 function copyTimelineItem(btn) {
   const item = btn.closest('.timeline-item');
-  const type = item.querySelector('.timeline-type').textContent;
-  const seq = item.querySelector('.timeline-seq').textContent;
-  const elapsed = item.querySelector('.timeline-elapsed').textContent;
+  const type = item.querySelector('.timeline-type').textContent.trim();
+  const seq = item.querySelector('.timeline-seq').textContent.trim();
+  const elapsed = item.querySelector('.timeline-elapsed').textContent.trim();
   const intent = item.querySelector('.timeline-intent');
   const pre = item.querySelector('.timeline-content pre');
 
   let markdown = `### Timeline ${seq}: ${type} (${elapsed})`;
 
   if (intent) {
-    markdown += `\\n**Intent:** ${intent.textContent}`;
+    markdown += `\\n**Intent:** ${intent.textContent.trim()}`;
   }
 
   if (pre) {
@@ -168,7 +178,7 @@ function copyTimelineItem(btn) {
 ---
 source: ${reportPath}#timeline-item-${item.dataset.seq}`;
 
-  navigator.clipboard.writeText(markdown).then(() => {
+  navigator.clipboard.writeText(normalizeWhitespace(markdown)).then(() => {
     showCopyFeedback(btn);
   });
 }
@@ -181,16 +191,16 @@ function copyTimeline(timelineId) {
   let markdown = `## Timeline\\n\\n`;
 
   items.forEach(item => {
-    const type = item.querySelector('.timeline-type').textContent;
-    const seq = item.querySelector('.timeline-seq').textContent;
-    const elapsed = item.querySelector('.timeline-elapsed').textContent;
+    const type = item.querySelector('.timeline-type').textContent.trim();
+    const seq = item.querySelector('.timeline-seq').textContent.trim();
+    const elapsed = item.querySelector('.timeline-elapsed').textContent.trim();
     const intent = item.querySelector('.timeline-intent');
     const pre = item.querySelector('.timeline-content pre');
 
     markdown += `### ${seq}: ${type} (${elapsed})\\n`;
 
     if (intent) {
-      markdown += `**Intent:** ${intent.textContent}\\n`;
+      markdown += `**Intent:** ${intent.textContent.trim()}\\n`;
     }
 
     if (pre) {
@@ -203,7 +213,7 @@ function copyTimeline(timelineId) {
   markdown += `---
 source: ${reportPath}#${timelineId}`;
 
-  navigator.clipboard.writeText(markdown).then(() => {
+  navigator.clipboard.writeText(normalizeWhitespace(markdown)).then(() => {
     showCopyFeedback(event.target.closest('.copy-icon-btn'));
   });
 }
@@ -215,7 +225,7 @@ function copyAssessment(elementId) {
 
   let markdown = `## Agent Assessment\\n\\n`;
   if (metaEl && metaEl.textContent) {
-    markdown += `*${metaEl.textContent}*\\n\\n`;
+    markdown += `*${metaEl.textContent.trim()}*\\n\\n`;
   }
   // Get the raw markdown if stored, otherwise extract text
   const rawMarkdown = contentEl.dataset.rawMarkdown || contentEl.textContent;
@@ -223,7 +233,7 @@ function copyAssessment(elementId) {
 
   markdown += `\\n\\n---\\nsource: ${reportPath}#${elementId}`;
 
-  navigator.clipboard.writeText(markdown).then(() => {
+  navigator.clipboard.writeText(normalizeWhitespace(markdown)).then(() => {
     showCopyFeedback(event.target.closest('.copy-icon-btn'));
   });
 }"""
