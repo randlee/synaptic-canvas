@@ -1,4 +1,5 @@
 ---
+allowed-tools: Bash(python3 scripts/sc_manage_dispatch.py*)
 name: sc-manage
 description: List, install, or uninstall Synaptic Canvas Claude packages for the current machine or this repo.
 version: 0.7.0
@@ -36,3 +37,7 @@ Manage Synaptic Canvas packages:
 Notes:
 - Some packages are local-only (e.g., sc-git-worktree). The manager will block global installation for those.
 - Listing includes: Package | Installed | Description.
+
+## Context
+
+- Package status and actions: !`python3 scripts/sc_manage_dispatch.py $ARGUMENTS`

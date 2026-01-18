@@ -4,6 +4,12 @@ version: 0.7.0
 description: Uninstall a Synaptic Canvas package locally (repo .claude) or globally according to package policy.
 model: sonnet
 color: blue
+hooks:
+  PreToolUse:
+    - matcher: "Bash"
+      hooks:
+        - type: command
+          command: "python3 scripts/validate_sc_manage_hook.py"
 ---
 
 # sc-package-uninstall
@@ -15,14 +21,10 @@ color: blue
 - `global_claude_dir`: absolute path to the global `.claude`. Default: `/Users/randlee/Documents/.claude`.
 
 ## Execution
-1. Validate `package` exists under `<sc_repo_path>/packages/`.
-2. If `install.scope: local-only` and `scope=global`, return error (same policy as install).
-3. Resolve destination as in install.
-4. Run uninstaller:
-   ```
-   python3 <sc_repo_path>/tools/sc-install.py uninstall <package> --dest <dest>
-   ```
-5. Return JSON summary.
+1. Run: `python3 scripts/sc_manage_uninstall.py` with JSON stdin.
+2. The script validates package, scope, and install policy.
+3. The script resolves destination and runs `tools/sc-install.py`.
+4. Return JSON summary.
 
 ## Output
 

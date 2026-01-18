@@ -4,6 +4,12 @@ version: 0.7.0
 description: Locate and return package documentation (README.md) for a given Synaptic Canvas package.
 model: sonnet
 color: blue
+hooks:
+  PreToolUse:
+    - matcher: "Bash"
+      hooks:
+        - type: command
+          command: "python3 scripts/validate_sc_manage_hook.py"
 ---
 
 # sc-package-docs
@@ -13,9 +19,8 @@ color: blue
 - `sc_repo_path`: absolute path to the Synaptic Canvas repo. Default: `/Users/randlee/Documents/github/synaptic-canvas`.
 
 ## Execution
-1. Resolve package directory at `<sc_repo_path>/packages/<package>`.
-2. Read `README.md` from the package directory, if present.
-3. Return a summary JSON with the path and size in bytes. The skill will present the document and handle Q&A.
+1. Run: `python3 scripts/sc_manage_docs.py` with JSON stdin.
+2. The script validates package and returns README path + size.
 
 ## Output
 
@@ -37,7 +42,7 @@ color: blue
   "success": false,
   "data": null,
   "error": {
-    "code": "DOC_NOT_FOUND",
+    "code": "README_NOT_FOUND",
     "message": "Package README.md not found",
     "recoverable": false,
     "suggested_action": "ensure README.md exists under the package root"
