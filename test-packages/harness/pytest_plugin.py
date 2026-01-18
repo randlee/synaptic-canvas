@@ -1005,6 +1005,164 @@ def pytest_sessionfinish(
             webbrowser.open(f"file://{report_to_open.absolute()}")
 
 
+def _build_test_command(test_config: "TestConfig") -> str:
+    """Build the complete Claude CLI command with all flags.
+
+    Args:
+        test_config: Test configuration containing execution settings
+
+    Returns:
+        Complete CLI command string
+    """
+    parts = ["claude"]
+
+    # Add -p flag for prompt
+    parts.append("-p")
+    parts.append(f"'{test_config.execution.prompt}'")
+
+    # Add model flag
+    if test_config.execution.model:
+        parts.append(f"--model {test_config.execution.model}")
+
+    # Add tools flag (comma-separated)
+    if test_config.execution.tools:
+        tools_str = ",".join(test_config.execution.tools)
+        parts.append(f"--tools {tools_str}")
+
+    # Add standard test flags
+    parts.append("--dangerously-skip-permissions")
+    parts.append("--setting-sources project")
+
+    return " ".join(parts)
+
+
+def _build_setup_commands(
+    fixture_config: "FixtureConfig | None",
+    test_config: "TestConfig",
+) -> list[str]:
+    """Build setup commands including plugin installation.
+
+    Args:
+        fixture_config: Fixture configuration with plugins
+        test_config: Test configuration with additional setup
+
+    Returns:
+        List of setup commands in order of execution
+    """
+    setup_commands: list[str] = []
+
+    # Add plugin installation commands from fixture setup
+    if fixture_config and fixture_config.setup and fixture_config.setup.plugins:
+        for plugin in fixture_config.setup.plugins:
+            setup_commands.append(f"claude plugin install {plugin} --scope project")
+
+    # Add fixture-level setup commands
+    if fixture_config and fixture_config.setup and fixture_config.setup.commands:
+        setup_commands.extend(fixture_config.setup.commands)
+
+    # Add test-specific setup commands
+    if test_config.setup and test_config.setup.commands:
+        setup_commands.extend(test_config.setup.commands)
+
+    return setup_commands
+
+
+def _find_agent_skill_path(
+    fixture_config: "FixtureConfig | None",
+    project_path: Path,
+) -> str | None:
+    """Find the skill/agent markdown file for the package.
+
+    Searches in the following locations:
+    1. Source synaptic-canvas repo: packages/<plugin-name>/skills|commands|agents/
+    2. Installed location in test harness: .claude/skills|commands|agents/
+
+    Args:
+        fixture_config: Fixture configuration with package info
+        project_path: Test harness project path
+
+    Returns:
+        Absolute path to markdown file, or None if not found
+    """
+    if not fixture_config or not fixture_config.package:
+        return None
+
+    # Package format is typically 'skill-name@repo' or just 'skill-name'
+    skill_name = (
+        fixture_config.package.split("@")[0]
+        if "@" in fixture_config.package
+        else fixture_config.package
+    )
+
+    # Try to find synaptic-canvas repo root (parent or sibling of test harness)
+    sc_root = _find_synaptic_canvas_root(project_path)
+
+    skill_locations: list[Path] = []
+
+    # Priority 1: Look in synaptic-canvas packages directory (source files)
+    if sc_root:
+        package_path = sc_root / "packages" / skill_name
+        if package_path.exists():
+            for subdir in ["skills", "commands", "agents"]:
+                dir_path = package_path / subdir
+                if dir_path.exists():
+                    # Find all markdown files recursively
+                    for md_file in dir_path.glob("**/*.md"):
+                        skill_locations.append(md_file)
+
+    # Priority 2: Look in installed location in test harness
+    for subdir in ["skills", "commands", "agents"]:
+        installed_path = project_path / ".claude" / subdir / f"{skill_name}.md"
+        skill_locations.append(installed_path)
+
+    # Return the first existing path
+    for skill_path in skill_locations:
+        if skill_path.exists():
+            return str(skill_path.absolute())
+
+    return None
+
+
+def _find_synaptic_canvas_root(project_path: Path) -> Path | None:
+    """Find the synaptic-canvas repository root.
+
+    Searches for a directory containing 'packages/' and 'docs/registries/'
+    which indicates a synaptic-canvas repo.
+
+    Args:
+        project_path: Starting path (typically test harness root)
+
+    Returns:
+        Path to synaptic-canvas root, or None if not found
+    """
+    # Check if we're already in synaptic-canvas
+    if (project_path / "packages").exists() and (project_path / "docs" / "registries").exists():
+        return project_path
+
+    # Check parent directory (if test harness is under synaptic-canvas)
+    parent = project_path.parent
+    if (parent / "packages").exists() and (parent / "docs" / "registries").exists():
+        return parent
+
+    # Check grandparent (e.g., test-packages/harness -> synaptic-canvas)
+    grandparent = parent.parent
+    if (grandparent / "packages").exists() and (grandparent / "docs" / "registries").exists():
+        return grandparent
+
+    # Check siblings (e.g., synaptic-canvas-worktrees/feature/agent-test-fixture)
+    # In worktree setup, the harness is at <worktree>/test-packages/harness
+    # and packages are at <worktree>/packages
+    current = project_path
+    for _ in range(5):  # Search up to 5 levels
+        if (current / "packages").exists() and (current / "docs" / "registries").exists():
+            return current
+        if current.parent == current:
+            break
+        current = current.parent
+
+    return None
+
+
 def _generate_fixture_report(
     fixture_name: str,
     report_path: Path,
@@ -1064,6 +1222,12 @@ def _generate_fixture_report(
                     install_results=plugin_install_results,
                 )
 
+            # Build complete CLI test command with all flags
+            test_command = _build_test_command(test_config)
+
+            # Build setup commands including plugin installation
+            setup_commands = _build_setup_commands(fixture_config, test_config)
+
             # Build TestResult
             if collected_data:
                 test_result = report_builder.build_test_result(
@@ -1077,8 +1241,8 @@ def _generate_fixture_report(
                     tools_allowed=test_config.execution.tools,
                     fixture_id=fixture_name,
                     package=fixture_config.package if fixture_config else "",
-                    test_command=f"claude '{test_config.execution.prompt}'",
-                    setup_commands=test_config.setup.commands if test_config.setup else [],
+                    test_command=test_command,
+                    setup_commands=setup_commands,
                     plugin_verification=plugin_verification,
                 )
             else:
@@ -1100,20 +1264,7 @@ def _generate_fixture_report(
             fixture_yaml_path = str(fixture_config.source_path.absolute())
 
         # Try to find skill/agent markdown file based on package name
-        agent_skill_path = None
-        if fixture_config and fixture_config.package:
-            # Package format is typically 'skill-name@repo' or just 'skill-name'
-            skill_name = fixture_config.package.split("@")[0] if "@" in fixture_config.package else fixture_config.package
-            # Look in common locations for skill markdown files
-            skill_locations = [
-                project_path / ".claude" / "skills" / f"{skill_name}.md",
-                project_path / ".claude" / "commands" / f"{skill_name}.md",
-                project_path / ".claude" / "agents" / f"{skill_name}.md",
-            ]
-            for skill_path in skill_locations:
-                if skill_path.exists():
-                    agent_skill_path = str(skill_path.absolute())
-                    break
+        agent_skill_path = _find_agent_skill_path(fixture_config, project_path)
 
         # Build FixtureReport
         fixture_report = report_builder.build_fixture_report(
