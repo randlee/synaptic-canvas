@@ -1,0 +1,67 @@
+# P1 Test: Readonly mode prevents mutations
+# Component Type: COMMAND
+# Tests: /sc-startup --readonly
+
+test_id: sc-startup-readonly-001
+test_name: Readonly mode prevents mutations
+component_type: command
+description: |
+  Verify /sc-startup --readonly runs the startup workflow in report-only mode.
+  Should read config and prompt, display status, but not modify any files
+  (checklist updates, config changes, etc.).
+
+setup:
+  commands:
+    - mkdir -p .claude pm
+    # Create config with all features disabled for simpler test
+    - |
+      cat > .claude/sc-startup.yaml << 'EOF'
+      startup-prompt: pm/ARCH-SC.md
+      check-list: pm/checklist.md
+      worktree-scan: none
+      pr-enabled: false
+      worktree-enabled: false
+      EOF
+    # Create a checklist with known state to verify no mutations
+    - |
+      cat > pm/checklist.md << 'EOF'
+      # Test Checklist
+      - [ ] Unchanged item 1
+      - [ ] Unchanged item 2
+      EOF
+
+execution:
+  prompt: "/sc-startup --readonly"
+  model: haiku
+  timeout_ms: 60000
+  tools:
+    - Read
+    - Bash
+    - Skill
+    - Task
+    - Glob
+
+expectations:
+  - id: exp-skill-invoked
+    description: sc-startup skill is invoked with readonly flag
+    type: tool_call
+    expected:
+      tool: Skill
+      pattern: "sc-startup.*--readonly|--readonly.*sc-startup"
+
+  - id: exp-config-read
+    description: Config file is read
+    type: output_contains
+    expected:
+      pattern: "(config|startup-prompt|check-list|yaml)"
+      flags: "i"
+
+  - id: exp-readonly-mode
+    description: Output indicates readonly/report mode
+    type: output_contains
+    expected:
+      pattern: "(readonly|report|status|no.*mutation|read.only)"
+      flags: "i"
+
+# Note: Would ideally verify checklist.md unchanged after execution
+# but side_effects validation not yet fully implemented

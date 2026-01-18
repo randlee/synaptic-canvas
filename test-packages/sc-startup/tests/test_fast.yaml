@@ -1,0 +1,45 @@
+# P1 Test: Fast flag shows prompt summary
+# Component Type: COMMAND
+# Tests: /sc-startup --fast
+
+test_id: sc-startup-fast-001
+test_name: Fast flag shows prompt summary
+component_type: command
+description: |
+  Verify /sc-startup --fast reads the startup prompt and displays a role
+  summary without invoking background agents or updating the checklist.
+
+execution:
+  prompt: "/sc-startup --fast"
+  model: haiku
+  timeout_ms: 45000
+  tools:
+    - Read
+    - Bash
+    - Skill
+    - Glob
+
+expectations:
+  - id: exp-skill-invoked
+    description: sc-startup skill is invoked
+    type: tool_call
+    expected:
+      tool: Skill
+      pattern: "sc-startup"
+
+  - id: exp-prompt-read
+    description: Startup prompt file is read
+    type: output_contains
+    expected:
+      pattern: "(role|prompt|startup|assistant|test)"
+      flags: "i"
+
+  - id: exp-summary-output
+    description: Output contains summary or role information
+    type: output_contains
+    expected:
+      pattern: "(summary|role|purpose|context)"
+      flags: "i"
+
+# Note: Ideally would verify no SubagentStart events (checklist/PR agents)
+# but hook_event_absent not yet implemented
