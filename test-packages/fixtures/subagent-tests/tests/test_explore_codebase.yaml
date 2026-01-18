@@ -1,0 +1,68 @@
+# Category B: Subagent CLEARLY expected (Task tool)
+# Explicitly request the Explore agent - subagent MUST be spawned
+
+test_id: subagent-explore-001
+test_name: Explore agent invoked for codebase search
+description: |
+  Explicitly ask Claude to use the Explore agent to find files.
+  This MUST trigger:
+  1. Task tool invocation
+  2. SubagentStart hook with agent_type "Explore"
+  3. SubagentStop hook when exploration completes
+
+  This is the clearest possible test for subagent spawning.
+
+tags:
+  - subagent-required
+  - explore-agent
+  - category-b
+
+execution:
+  prompt: |
+    Use the Explore agent to find all Python test files in this repository.
+    Do NOT do this yourself - delegate to the Explore subagent.
+  model: haiku
+  tools:
+    - Task
+    - Bash
+    - Read
+    - Glob
+    - Grep
+  timeout_ms: 120000
+
+expectations:
+  # MUST happen: Task tool invoked
+  - id: exp-001
+    description: Task tool invoked to spawn Explore agent
+    type: tool_call
+    expected:
+      tool: Task
+      # Task tool input should mention explore/search behavior
+      pattern: "(explore|search|find).*python"
+      flags: "i"
+
+  # MUST happen: SubagentStart hook fires
+  - id: exp-002
+    description: SubagentStart hook event captured
+    type: hook_event
+    expected:
+      event: SubagentStart
+      # The agent_type field should be present
+      has_field: agent_type
+
+  # MUST happen: SubagentStop hook fires
+  - id: exp-003
+    description: SubagentStop hook event captured
+    type: hook_event
+    expected:
+      event: SubagentStop
+      # Should have agent_id matching the start event
+      has_field: agent_id
+
+  # SHOULD have: Explore agent type specifically
+  - id: exp-004
+    description: Agent type is Explore
+    type: subagent_event
+    expected:
+      event: SubagentStart
+      agent_type: Explore

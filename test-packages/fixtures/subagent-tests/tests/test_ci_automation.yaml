@@ -1,0 +1,67 @@
+# Category C: Skill-invoked subagents
+# The /ci-automation skill should invoke CI checking agents
+
+test_id: subagent-skill-003
+test_name: CI automation skill invokes check agents
+description: |
+  The /ci-automation skill should delegate CI checks to subagents.
+  This tests the CI automation workflow's subagent spawning.
+
+  Expected flow:
+  1. Skill tool invoked (Skill)
+  2. Skill spawns CI check subagent(s)
+  3. SubagentStart/SubagentStop hooks fire
+
+tags:
+  - subagent-required
+  - skill-invoked
+  - ci-automation
+  - category-c
+
+execution:
+  prompt: "/ci-automation --check-only"
+  model: haiku
+  tools:
+    - Skill
+    - Task
+    - Bash
+    - Read
+  timeout_ms: 120000
+
+setup:
+  plugins:
+    - ci-automation@synaptic-canvas
+
+expectations:
+  # MUST happen: Skill tool invoked
+  - id: exp-001
+    description: Skill tool invoked for ci-automation
+    type: tool_call
+    expected:
+      tool: Skill
+      pattern: "ci-automation"
+
+  # MAY happen: Subagent spawned by skill
+  - id: exp-002
+    description: SubagentStart hook event captured (if subagent used)
+    type: hook_event
+    expected:
+      event: SubagentStart
+    optional: true
+
+  # MAY happen: Subagent completes
+  - id: exp-003
+    description: SubagentStop hook event captured (if subagent used)
+    type: hook_event
+    expected:
+      event: SubagentStop
+    optional: true
+
+  # MUST happen: Some CI-related activity
+  - id: exp-004
+    description: CI-related bash commands or checks performed
+    type: tool_call
+    expected:
+      tool: Bash
+      pattern: "(git|npm|pytest|build|test)"
+      flags: "i"

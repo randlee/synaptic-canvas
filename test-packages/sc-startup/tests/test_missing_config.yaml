@@ -1,0 +1,45 @@
+# P0 Test: Missing config shows guidance
+# Component Type: COMMAND
+# Tests: /sc-startup without .claude/sc-startup.yaml and no candidate files
+
+test_id: sc-startup-missing-001
+test_name: Missing config shows guidance
+component_type: command
+description: |
+  Verify /sc-startup without a config file AND without candidate files
+  provides guidance to the user about configuration options.
+
+setup:
+  commands:
+    # Remove config and ALL candidate files so auto-configure can't run
+    - rm -f .claude/sc-startup.yaml
+    - rm -f pm/ARCH-SC.md pm/checklist.md pm/startup-prompt.md
+    - rm -rf pm/
+
+execution:
+  prompt: "/sc-startup"
+  model: haiku
+  timeout_ms: 45000
+  tools:
+    - Read
+    - Bash
+    - Skill
+    - Glob
+
+expectations:
+  - id: exp-skill-loaded
+    description: sc-startup skill is loaded or config issue mentioned
+    type: output_contains
+    expected:
+      pattern: "(sc-startup|startup|config)"
+      flags: "i"
+
+  - id: exp-guidance-provided
+    description: Provides some guidance about setup or configuration
+    type: output_contains
+    expected:
+      pattern: "(init|config|setup|create|prompt|checklist)"
+      flags: "i"
+
+# Note: With no candidate files, Claude should indicate config is needed
+# rather than auto-creating one

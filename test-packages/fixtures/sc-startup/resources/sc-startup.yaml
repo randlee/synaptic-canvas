@@ -1,0 +1,8 @@
+# Minimal sc-startup config for testing
+# This config file enables the sc-startup skill to run without errors
+
+startup-prompt: ""         # No startup prompt for test
+check-list: ""             # No checklist for test
+worktree-scan: none        # Disable worktree scanning
+pr-enabled: false          # Disable PR features
+worktree-enabled: false    # Disable worktree features

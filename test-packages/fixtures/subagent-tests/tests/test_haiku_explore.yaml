@@ -1,0 +1,62 @@
+# Category D: Control tests
+# Same explore test but explicitly with haiku model
+
+test_id: subagent-control-002
+test_name: Explore agent with haiku model
+description: |
+  Control test: Same as test_explore_codebase but explicitly using haiku.
+  Verifies that model choice doesn't affect subagent hook capture.
+
+  This test should produce identical subagent events to test_explore_codebase.
+
+tags:
+  - control
+  - subagent-required
+  - explore-agent
+  - haiku
+  - category-d
+
+execution:
+  prompt: |
+    Use the Explore agent to find all YAML files in this repository.
+    Delegate to Explore - do not search yourself.
+  model: haiku
+  tools:
+    - Task
+    - Bash
+    - Read
+    - Glob
+    - Grep
+  timeout_ms: 120000
+
+expectations:
+  # MUST happen: Task tool invoked
+  - id: exp-001
+    description: Task tool invoked with haiku model
+    type: tool_call
+    expected:
+      tool: Task
+      pattern: "(explore|find|search).*yaml"
+      flags: "i"
+
+  # MUST happen: SubagentStart hook fires
+  - id: exp-002
+    description: SubagentStart captured with haiku
+    type: hook_event
+    expected:
+      event: SubagentStart
+
+  # MUST happen: SubagentStop hook fires
+  - id: exp-003
+    description: SubagentStop captured with haiku
+    type: hook_event
+    expected:
+      event: SubagentStop
+
+  # Verify model used
+  - id: exp-004
+    description: Execution used haiku model
+    type: execution_param
+    expected:
+      param: model
+      value: haiku

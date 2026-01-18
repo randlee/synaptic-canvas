@@ -1,0 +1,31 @@
+# Test: sc-startup basic invocation
+# Verifies that /sc-startup skill responds appropriately
+
+test_id: sc-startup-001
+test_name: Basic sc-startup invocation
+description: Verify sc-startup skill responds with startup guidance
+tags:
+  - skill
+  - sc-startup
+  - basic
+
+execution:
+  prompt: "/sc-startup"
+  model: haiku
+  tools:
+    - Bash
+    - Read
+    - Glob
+    - Grep
+  timeout_ms: 60000
+
+setup:
+  commands: []
+
+expectations:
+  - id: exp-001
+    description: Should mention startup or initialization
+    type: output_contains
+    expected:
+      pattern: "(startup|initialize|configuration|setup)"
+      flags: "i"

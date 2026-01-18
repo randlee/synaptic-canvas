@@ -1,0 +1,18 @@
+# sc-startup Skill Test Fixture
+# Tests the /sc-startup command for Synaptic Canvas project initialization
+
+name: sc-startup
+description: Tests for the sc-startup skill
+package: sc-startup@synaptic-canvas
+
+setup:
+  plugins:
+    - sc-startup@synaptic-canvas
+  files: []
+  commands: []
+
+teardown:
+  commands:
+    - echo "Cleaned up sc-startup tests"
+
+tests_dir: tests

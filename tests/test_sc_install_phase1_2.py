@@ -1586,8 +1586,9 @@ class TestConfigIntegrationPhase2:
         assert "test" in out
         assert "https://example.com" in out
         assert "active" in out
-        # Date should be shown
-        assert "2025" in out
+        # Date should be shown (format: YYYY-MM-DD)
+        import re
+        assert re.search(r"20\d{2}-\d{2}-\d{2}", out), f"Expected date in YYYY-MM-DD format in output: {out}"
 
     def test_config_handles_mixed_operations(self, temp_home):
         # Mix of add, remove, update

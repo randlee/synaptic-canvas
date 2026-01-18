@@ -1,0 +1,65 @@
+# Category C: Skill-invoked subagents
+# The /sc-git-worktree scan command should invoke a scan agent
+
+test_id: subagent-skill-002
+test_name: Worktree skill invokes scan agent
+description: |
+  The /sc-git-worktree scan command should delegate scanning to a subagent.
+  This tests skill-based subagent invocation for git worktree operations.
+
+  Expected flow:
+  1. Skill tool invoked (Skill)
+  2. Skill spawns scan subagent
+  3. SubagentStart/SubagentStop hooks fire
+
+tags:
+  - subagent-required
+  - skill-invoked
+  - worktree
+  - category-c
+
+execution:
+  prompt: "/sc-git-worktree scan"
+  model: haiku
+  tools:
+    - Skill
+    - Task
+    - Bash
+    - Read
+  timeout_ms: 90000
+
+setup:
+  plugins:
+    - sc-git-worktree@synaptic-canvas
+
+expectations:
+  # MUST happen: Skill tool invoked
+  - id: exp-001
+    description: Skill tool invoked for sc-git-worktree
+    type: tool_call
+    expected:
+      tool: Skill
+      pattern: "(sc-git-worktree|worktree)"
+
+  # SHOULD happen: Subagent spawned by skill
+  - id: exp-002
+    description: SubagentStart hook event captured
+    type: hook_event
+    expected:
+      event: SubagentStart
+
+  # SHOULD happen: Subagent completes
+  - id: exp-003
+    description: SubagentStop hook event captured
+    type: hook_event
+    expected:
+      event: SubagentStop
+
+  # Bash commands should be executed (by main agent or subagent)
+  - id: exp-004
+    description: Git worktree commands executed
+    type: tool_call
+    expected:
+      tool: Bash
+      pattern: "git.*worktree"
+    optional: true

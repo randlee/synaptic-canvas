@@ -1,0 +1,46 @@
+# Fixture for sc-startup package tests
+# Tests the /sc-startup command, sc-startup-init agent, and sc-checklist-status agent
+
+name: sc-startup
+description: Tests for the sc-startup startup workflow orchestration package
+package: sc-startup@synaptic-canvas
+
+setup:
+  plugins:
+    - sc-startup@synaptic-canvas
+  commands:
+    # Create base test data - individual tests may override or extend
+    - mkdir -p pm .claude
+    - |
+      cat > pm/ARCH-SC.md << 'PROMPT_EOF'
+      # Test Startup Prompt
+
+      This is a test startup prompt for the sc-test-harness repository.
+
+      ## Role
+      You are a test assistant validating the sc-startup package.
+
+      ## Context
+      This prompt is created during test fixture setup and should be
+      removed during teardown.
+      PROMPT_EOF
+    - |
+      cat > pm/checklist.md << 'CHECKLIST_EOF'
+      # Test Checklist
+
+      ## Active Tasks
+      - [ ] Test item 1 - pending
+      - [ ] Test item 2 - pending
+      - [x] Test item 3 - completed
+
+      ## Notes
+      This checklist is created during test fixture setup.
+      CHECKLIST_EOF
+
+teardown:
+  commands:
+    - rm -f .claude/sc-startup.yaml
+    - rm -f pm/ARCH-SC.md pm/checklist.md
+    # Don't remove pm/ directory itself, just the test files
+
+tests_dir: tests

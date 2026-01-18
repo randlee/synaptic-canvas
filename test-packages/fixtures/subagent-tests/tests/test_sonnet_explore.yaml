@@ -1,0 +1,63 @@
+# Category D: Control tests
+# Same explore test but with sonnet model - compare to haiku
+
+test_id: subagent-control-003
+test_name: Explore agent with sonnet model
+description: |
+  Control test: Same explore task but using sonnet model.
+  Compare results with test_haiku_explore to verify consistent
+  subagent hook capture across models.
+
+  Both tests should produce SubagentStart/SubagentStop events.
+
+tags:
+  - control
+  - subagent-required
+  - explore-agent
+  - sonnet
+  - category-d
+
+execution:
+  prompt: |
+    Use the Explore agent to find all YAML files in this repository.
+    Delegate to Explore - do not search yourself.
+  model: sonnet
+  tools:
+    - Task
+    - Bash
+    - Read
+    - Glob
+    - Grep
+  timeout_ms: 120000
+
+expectations:
+  # MUST happen: Task tool invoked
+  - id: exp-001
+    description: Task tool invoked with sonnet model
+    type: tool_call
+    expected:
+      tool: Task
+      pattern: "(explore|find|search).*yaml"
+      flags: "i"
+
+  # MUST happen: SubagentStart hook fires
+  - id: exp-002
+    description: SubagentStart captured with sonnet
+    type: hook_event
+    expected:
+      event: SubagentStart
+
+  # MUST happen: SubagentStop hook fires
+  - id: exp-003
+    description: SubagentStop captured with sonnet
+    type: hook_event
+    expected:
+      event: SubagentStop
+
+  # Verify model used
+  - id: exp-004
+    description: Execution used sonnet model
+    type: execution_param
+    expected:
+      param: model
+      value: sonnet

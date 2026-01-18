@@ -1,0 +1,65 @@
+# Category B: Subagent CLEARLY expected (Task tool)
+# Explicitly request the Plan agent - subagent MUST be spawned
+
+test_id: subagent-plan-001
+test_name: Plan agent invoked for feature design
+description: |
+  Explicitly ask Claude to use the Plan agent to design a feature.
+  This MUST trigger:
+  1. Task tool invocation
+  2. SubagentStart hook with agent_type "Plan"
+  3. SubagentStop hook when planning completes
+
+  Tests that the Plan subagent type is captured correctly.
+
+tags:
+  - subagent-required
+  - plan-agent
+  - category-b
+
+execution:
+  prompt: |
+    Use the Plan agent to design a simple "hello world" CLI command.
+    Delegate to the Plan subagent - do not plan it yourself.
+    Keep it brief - just 2-3 high level steps.
+  model: haiku
+  tools:
+    - Task
+    - Bash
+    - Read
+    - Write
+  timeout_ms: 120000
+
+expectations:
+  # MUST happen: Task tool invoked
+  - id: exp-001
+    description: Task tool invoked to spawn Plan agent
+    type: tool_call
+    expected:
+      tool: Task
+      pattern: "(plan|design|architect)"
+      flags: "i"
+
+  # MUST happen: SubagentStart hook fires
+  - id: exp-002
+    description: SubagentStart hook event captured
+    type: hook_event
+    expected:
+      event: SubagentStart
+      has_field: agent_type
+
+  # MUST happen: SubagentStop hook fires
+  - id: exp-003
+    description: SubagentStop hook event captured
+    type: hook_event
+    expected:
+      event: SubagentStop
+      has_field: agent_id
+
+  # SHOULD have: Plan agent type specifically
+  - id: exp-004
+    description: Agent type is Plan
+    type: subagent_event
+    expected:
+      event: SubagentStart
+      agent_type: Plan

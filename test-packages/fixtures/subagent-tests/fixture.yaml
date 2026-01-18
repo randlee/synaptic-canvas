@@ -1,0 +1,44 @@
+# Fixture-level configuration for subagent behavior tests
+name: subagent-tests
+description: |
+  Test fixtures designed to validate subagent hook capture.
+  These tests have CLEAR, UNAMBIGUOUS expectations about whether
+  a subagent should or should not be invoked.
+
+# Categories:
+# A: NO subagent expected (baseline)
+# B: Subagent CLEARLY expected (Task tool)
+# C: Skill-invoked subagents
+# D: Control tests
+
+# No shared setup - tests are self-contained
+setup:
+  plugins: []
+  files: []
+
+# Shared teardown
+teardown:
+  commands:
+    - rm -f reports/trace.jsonl
+
+# Test listing with categories
+tests:
+  # Category A: NO subagent expected
+  - tests/test_simple_bash.yaml
+  - tests/test_file_read.yaml
+  - tests/test_simple_prompt.yaml
+
+  # Category B: Subagent CLEARLY expected
+  - tests/test_explore_codebase.yaml
+  - tests/test_plan_feature.yaml
+  - tests/test_explicit_task_tool.yaml
+
+  # Category C: Skill-invoked subagents
+  - tests/test_github_issue_list.yaml
+  - tests/test_worktree_scan.yaml
+  - tests/test_ci_automation.yaml
+
+  # Category D: Control tests
+  - tests/test_skill_no_subagent.yaml
+  - tests/test_haiku_explore.yaml
+  - tests/test_sonnet_explore.yaml

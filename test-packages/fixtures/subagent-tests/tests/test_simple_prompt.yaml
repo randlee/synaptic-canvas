@@ -1,0 +1,28 @@
+# Category A: NO subagent expected (baseline)
+# Simple Q&A - no tools needed
+
+test_id: subagent-baseline-003
+test_name: Simple Q&A without tools or subagents
+description: |
+  Ask a simple math question. Claude should answer directly
+  without using any tools or spawning subagents.
+
+tags:
+  - baseline
+  - no-subagent
+  - no-tools
+  - category-a
+
+execution:
+  prompt: "What is 2 + 2? Just give me the number."
+  model: haiku
+  tools: []
+  timeout_ms: 30000
+
+expectations:
+  # Output should contain the answer
+  - id: exp-001
+    description: Response contains the number 4
+    type: output_contains
+    expected:
+      pattern: "4"

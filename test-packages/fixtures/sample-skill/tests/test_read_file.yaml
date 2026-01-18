@@ -1,0 +1,35 @@
+# Sample Test: Read File Operation
+# Tests Claude's ability to read a file using the Read tool.
+
+test_id: sample-read-001
+test_name: Read File Test
+description: Verify Claude can read a file and report its contents
+tags:
+  - sample
+  - read
+  - file-operations
+
+# Test execution configuration
+execution:
+  prompt: "Read the contents of the README.md file if it exists"
+  model: haiku
+  tools:
+    - Read
+    - Bash
+  timeout_ms: 30000
+
+# Expectations to evaluate
+expectations:
+  - id: exp-001
+    description: Should attempt to read README.md
+    type: tool_call
+    expected:
+      tool: Read
+      pattern: "README"
+
+  - id: exp-002
+    description: Should provide file contents or indicate file status
+    type: output_contains
+    expected:
+      pattern: "(contents|file|README|not found|exist)"
+      flags: "i"
