@@ -5,6 +5,22 @@
 **Schemas:** [schemas.py](../test-packages/harness/schemas.py)
 **Worktree:** `/Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/timeline-tree-architecture`
 **Branch:** `feature/timeline-tree-architecture` (based on `develop`)
+**PR:** [#31](https://github.com/randlee/synaptic-canvas/pull/31)
+
+---
+
+## Progress Tracker
+
+| Sprint | Status | Commit | Date | Notes |
+|--------|--------|--------|------|-------|
+| 1 | ✅ Complete | `112e8ab` | 2026-01-18 | Renamed `-session.jsonl` to `-transcript.jsonl` |
+| 2 | ✅ Complete | `c875bb0` | 2026-01-18 | Created `enrichment.py` module + 38 tests |
+| 3 | ⏳ Pending | - | - | Integration with artifact preservation |
+| 4 | ⏳ Pending | - | - | Fixture report integration |
+| 5 | ⏳ Pending | - | - | HTML rendering updates |
+| 6 | ⏳ Pending | - | - | Schema validation & documentation |
+
+**Current Test Count:** 485 tests (447 original + 38 enrichment tests)
 
 ---
 
@@ -66,7 +82,10 @@ This plan implements the timeline tree architecture as specified in the design d
 
 ---
 
-## Sprint 1: Artifact Storage Refactor
+## Sprint 1: Artifact Storage Refactor ✅
+
+**Status:** Complete (2026-01-18)
+**Commit:** `112e8ab` - `refactor(harness): rename -session.jsonl artifacts to -transcript.jsonl`
 
 **Goal:** Update artifact preservation to use new file naming and ensure native transcript is stored untouched.
 
@@ -120,9 +139,21 @@ ls -la test-packages/reports/sc-startup/*.jsonl 2>/dev/null | head -5
 
 **Deliverable:** PR to develop, then develop -> main
 
+**Files Modified (Sprint 1):**
+- `test-packages/harness/pytest_plugin.py` - Artifact file naming
+- `test-packages/harness/collector.py` - Docstrings
+- `test-packages/harness/models.py` - Section comment
+- `test-packages/harness/tests/test_environment.py` - Test fixtures
+- `test-packages/conftest.py` - Sample trace events
+- `test-packages/docs/report-artifacts.md` - Documentation
+- `test-packages/docs/timeline-tree-architecture-design.md` - Design doc reference
+
 ---
 
-## Sprint 2: Enrichment Generator Module
+## Sprint 2: Enrichment Generator Module ✅
+
+**Status:** Complete (2026-01-18)
+**Commit:** `c875bb0` - `feat(harness): add enrichment module for timeline tree building`
 
 **Goal:** Create the enrichment module that builds tree structure from transcript + trace data.
 
@@ -215,6 +246,28 @@ python -m pytest test-packages/harness/tests/ -v
 ```
 
 **Deliverable:** PR to develop, then develop -> main
+
+**Files Created (Sprint 2):**
+- `test-packages/harness/enrichment.py` (12,922 bytes) - Main enrichment module
+- `test-packages/harness/tests/test_enrichment.py` (38 tests) - Test suite
+
+**Functions Implemented:**
+- `build_timeline_tree()` - Main entry point returning `EnrichedData`
+- `_classify_node_type()` - Classify transcript entries as PROMPT/RESPONSE/TOOL_CALL/TOOL_RESULT
+- `_build_tool_to_agent_map()` - Correlate `tool_use_id` to subagent context
+- `_compute_tree_stats()` - Calculate total_nodes, max_depth, agent_count, tool_call_count
+- `_compute_depths()` - Recursively compute node depths
+- `_build_agent_summaries()` - Build AgentSummary objects from trace events
+
+**Test Coverage (38 tests):**
+- Basic tree building (5 tests)
+- parentUuid chain resolution (4 tests)
+- Agent correlation via tool_use_id (5 tests)
+- Stats calculation (5 tests)
+- Orphan handling (3 tests)
+- Node type classification (5 tests)
+- Edge cases (9 tests)
+- Schema validation (2 tests)
 
 ---
 
