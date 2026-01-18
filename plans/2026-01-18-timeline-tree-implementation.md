@@ -4,6 +4,52 @@
 **Design Doc:** [timeline-tree-architecture-design.md](../test-packages/docs/timeline-tree-architecture-design.md)
 **Schemas:** [schemas.py](../test-packages/harness/schemas.py)
 **Worktree:** `/Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/timeline-tree-architecture`
+**Branch:** `feature/timeline-tree-architecture` (based on `develop`)
+
+---
+
+## Session Startup Checklist
+
+When starting a new session to work on this plan:
+
+```bash
+# 1. Verify worktree exists and is clean
+cd /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/timeline-tree-architecture
+git status
+
+# 2. Sync with develop (get any merged PRs)
+git fetch origin
+git merge origin/develop
+
+# 3. Verify tests pass before starting work
+python -m pytest test-packages/harness/tests/ -v --tb=short
+```
+
+**Context files to read:**
+- `pm/PQA.md` - Role and responsibilities
+- `plans/2026-01-18-timeline-tree-implementation.md` - This plan
+- `test-packages/docs/timeline-tree-architecture-design.md` - Technical design
+
+---
+
+## Agent Execution Model
+
+**IMPORTANT: All implementation work should be done by BACKGROUND AGENTS.**
+
+For each sprint:
+1. Launch parallel background agents (one per Agent task listed)
+2. Each agent works in the worktree at `/Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/timeline-tree-architecture`
+3. Wait for all parallel agents to complete
+4. Run QA gate checks
+5. If QA passes: commit, push, create PR
+6. If QA fails: debug with additional agents
+
+**Example agent launch for Sprint 1:**
+```
+Task tool with subagent_type="general-purpose", run_in_background=true:
+- Agent 1A: "Implement Sprint 1 Agent 1A tasks from timeline-tree-implementation.md..."
+- Agent 1B: "Implement Sprint 1 Agent 1B tasks from timeline-tree-implementation.md..."
+```
 
 ---
 
