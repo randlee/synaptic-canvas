@@ -72,10 +72,15 @@ ls test-packages/reports/
 
 📦 **[Architecture Guidelines](../docs/claude-code-skills-agents-guidelines-0.4.md)** - Two-tier skill/agent pattern
 
-### sc-test-harness Docs
-📋 **[../sc-test-harness/docs/SETUP.md](../sc-test-harness/docs/SETUP.md)** - Environment setup
-📋 **[../sc-test-harness/docs/HOOKS.md](../sc-test-harness/docs/HOOKS.md)** - Pre/Post ToolUse hooks
+### sc-test-harness Docs (MUST READ)
+📚 **[../sc-test-harness/README.md](../sc-test-harness/README.md)** - **Architecture overview, HOME isolation, hook setup**
+📋 **[../sc-test-harness/docs/spike-1-clean-environment-configuration.md](../sc-test-harness/docs/spike-1-clean-environment-configuration.md)** - Environment isolation mechanism
+📋 **[../sc-test-harness/docs/spike-2-hook-observability.md](../sc-test-harness/docs/spike-2-hook-observability.md)** - Hook event schemas and coverage
+📋 **[../sc-test-harness/docs/HOOKS.md](../sc-test-harness/docs/HOOKS.md)** - Hook configuration reference
 📋 **[../sc-test-harness/docs/TRACE.md](../sc-test-harness/docs/TRACE.md)** - Trace JSONL format
+
+### Plugin Test Creation (MUST READ)
+📝 **[test-packages/docs/plugin-test-creation-guidelines.md](../test-packages/docs/plugin-test-creation-guidelines.md)** - **How to create valid test fixtures**
 
 ---
 
