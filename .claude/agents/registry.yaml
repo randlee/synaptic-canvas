@@ -69,6 +69,14 @@ agents:
     version: 0.6.0
     path: .claude/agents/sc-startup-init.md
 
+  # Roslyn diff agents
+  sc-diff:
+    version: 0.7.0
+    path: .claude/agents/sc-diff.md
+  sc-git-diff:
+    version: 0.7.0
+    path: .claude/agents/sc-git-diff.md
+
 # Optional: express skill -> agent dependency constraints
 skills:
   skill-creation:
@@ -112,3 +120,9 @@ skills:
       ci-automation: 0.x
       sc-startup-init: 0.x
     entry_point: /sc-startup
+
+  sc-diff:
+    depends_on:
+      sc-diff: 0.x
+      sc-git-diff: 0.x
+    entry_point: /sc-diff

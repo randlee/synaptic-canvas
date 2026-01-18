@@ -409,6 +409,10 @@ class TimelineEntry(BaseModel):
         default=None, description="Path to subagent transcript"
     )
 
+    # Process info (captured via hooks)
+    pid: int | None = Field(default=None, description="Process ID of the hook handler")
+    tool_use_id: str | None = Field(default=None, description="Unique tool use identifier")
+
 
 # =============================================================================
 # Side Effects and Response Models

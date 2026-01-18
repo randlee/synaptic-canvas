@@ -1,5 +1,6 @@
 # Local temp files
 .tmp/
+temp/
 
 # Archive directory (for historical reference, not in version control)
 .archive/
@@ -12,6 +13,9 @@
 
 # local test reports
 test-packages/reports/
+
+# Test artifact history (timestamped runs)
+test-packages/reports/history/
 
 # Python
 __pycache__/
