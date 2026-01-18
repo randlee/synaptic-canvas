@@ -65,6 +65,7 @@ Each package in `packages/*/` maintains its own documentation:
 | **sc-git-worktree** | 0.4.0 | Git worktree management | [README](../packages/sc-git-worktree/README.md) |
 | **sc-manage** | 0.4.0 | Synaptic Canvas package manager | [README](../packages/sc-manage/README.md) |
 | **sc-repomix-nuget** | 0.4.0 | NuGet context generation | [README](../packages/sc-repomix-nuget/README.md) |
+| **sc-roslyn-diff** | 0.7.0 | Semantic .NET diffs with roslyn-diff | [README](../packages/sc-roslyn-diff/README.md) |
 
 **→ See each package's README.md for details on usage, features, and skills**
 
