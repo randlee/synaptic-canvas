@@ -656,7 +656,20 @@ The `*-enriched.json` file references native transcript entries by UUID rather t
     "fixture_id": "sc-startup",
     "test_id": "sc-startup-init-001",
     "test_name": "Init agent spawns and reads config",
-    "package": "sc-startup@synaptic-canvas"
+    "package": "sc-startup@synaptic-canvas",
+    "paths": {
+      "fixture_yaml": "fixtures/sc-startup/fixture.yaml",
+      "test_yaml": "fixtures/sc-startup/tests/test_init.yaml",
+      "skill_md": "../../packages/sc-startup/skills/sc-startup/SKILL.md",
+      "agent_md": "../../packages/sc-startup/agents/sc-startup-init.md"
+    }
+  },
+  "artifacts": {
+    "transcript": "sc-startup/sc-startup-init-001-transcript.jsonl",
+    "trace": "sc-startup/sc-startup-init-001-trace.jsonl",
+    "enriched": "sc-startup/sc-startup-init-001-enriched.json",
+    "claude_cli": "sc-startup/sc-startup-init-001-claude-cli.txt",
+    "pytest_output": "sc-startup/sc-startup-init-001-pytest.txt"
   },
   "tree": {
     "root_uuid": "session-root",
@@ -703,6 +716,18 @@ The `*-enriched.json` file references native transcript entries by UUID rather t
 - `test_id`: Unique test case identifier
 - `test_name`: Human-readable test description
 - `package`: Plugin package under test
+- `paths`: Source file paths for traceability
+  - `fixture_yaml`: Path to fixture definition file
+  - `test_yaml`: Path to test case definition file
+  - `skill_md`: Path to skill markdown file (optional)
+  - `agent_md`: Path to agent markdown file (optional)
+
+**`artifacts`** - Test output file paths (relative to reports directory):
+- `transcript`: Claude session transcript (JSONL)
+- `trace`: Hook event trace (JSONL)
+- `enriched`: Enriched tree data (JSON)
+- `claude_cli`: CLI output capture (optional)
+- `pytest_output`: Pytest output capture (optional)
 
 **`tree`** - Hierarchical structure:
 - `root_uuid`: Entry point for tree traversal
@@ -724,6 +749,19 @@ The `*-enriched.json` file references native transcript entries by UUID rather t
 2. **UUID is the join key** - All cross-file references use transcript UUIDs
 3. **Computed data only** - Enriched file contains only derived/correlated information
 4. **Self-documenting** - test_context provides full provenance at file level
+
+### 10.4 Schema Definitions
+
+All JSON structures have corresponding Pydantic schemas in `test-packages/harness/schemas.py`:
+
+| Schema Class | File | Validation |
+|--------------|------|------------|
+| `EnrichedData` | `*-enriched.json` | Strict |
+| `ClaudeTranscriptEntry` | `*-transcript.jsonl` | Lenient (extra="allow") |
+| `HookEvent` | `*-trace.jsonl` | Lenient (extra="allow") |
+
+Claude schemas use `model_config = {"extra": "allow"}` to handle future Claude upgrades gracefully.
+Runtime uses best-effort parsing; test suite validates schema compliance.
 
 ---
 
