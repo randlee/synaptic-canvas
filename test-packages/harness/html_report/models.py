@@ -114,6 +114,7 @@ class TimelineTypeDisplay(BaseModel):
 
     entry_type: TimelineEntryType
     tool_name: str | None = None
+    agent_type: str | None = None
 
     @computed_field
     @property
@@ -133,6 +134,8 @@ class TimelineTypeDisplay(BaseModel):
     def display_label(self) -> str:
         """Label to display for this timeline type."""
         if self.entry_type == TimelineEntryType.TOOL_CALL and self.tool_name:
+            if self.agent_type:
+                return f"{self.tool_name} ({self.agent_type})"
             return self.tool_name
 
         labels = {
@@ -300,6 +303,7 @@ class TimelineItemDisplayModel(BaseModel):
     seq: int
     entry_type: TimelineEntryType
     tool_name: str | None = None
+    agent_type: str | None = None
     elapsed_ms: int
     content: str | None = None
     intent: str | None = None
@@ -310,7 +314,11 @@ class TimelineItemDisplayModel(BaseModel):
     @property
     def type_display(self) -> TimelineTypeDisplay:
         """Get timeline type display attributes."""
-        return TimelineTypeDisplay(entry_type=self.entry_type, tool_name=self.tool_name)
+        return TimelineTypeDisplay(
+            entry_type=self.entry_type,
+            tool_name=self.tool_name,
+            agent_type=self.agent_type
+        )
 
     @computed_field
     @property
@@ -339,6 +347,7 @@ class TimelineDisplayModel(BaseModel):
                 seq=entry.seq,
                 entry_type=entry.type,
                 tool_name=entry.tool,
+                agent_type=entry.agent_type,
                 elapsed_ms=entry.elapsed_ms,
                 content=entry.content or entry.content_preview,
                 intent=entry.intent,

@@ -438,6 +438,99 @@ def correlate_events(
     return tool_calls, subagents
 
 
+def correlate_tool_calls_with_agents(
+    events: list[dict[str, Any]]
+) -> dict[str, tuple[str, str | None]]:
+    """Correlate tool_use_ids with their parent subagent.
+
+    Uses ppid (parent process ID) to determine which subagent context
+    a tool call executed in. Falls back to timestamp-based correlation
+    if ppid is not available.
+
+    Args:
+        events: List of hook events
+
+    Returns:
+        Dict mapping tool_use_id -> (agent_id, agent_type)
+    """
+    sorted_events = sorted(
+        events,
+        key=lambda e: parse_timestamp(e.get("ts")) or datetime.min
+    )
+
+    # Track active subagents by ppid: ppid -> (agent_id, agent_type)
+    active_by_ppid: dict[int, tuple[str, str | None]] = {}
+
+    # Track subagent time ranges for fallback: agent_id -> (start_ts, stop_ts, agent_type)
+    subagent_ranges: dict[str, tuple[datetime | None, datetime | None, str | None]] = {}
+
+    # Result: tool_use_id -> (agent_id, agent_type)
+    tool_to_agent: dict[str, tuple[str, str | None]] = {}
+
+    # First pass: build ppid mapping and time ranges
+    for event in sorted_events:
+        event_type = event.get("event") or event.get("hook_event_name")
+        ppid = event.get("ppid")
+        agent_id = event.get("agent_id")
+        agent_type = event.get("agent_type")
+        ts = parse_timestamp(event.get("ts"))
+
+        if event_type == "SubagentStart" and agent_id:
+            if ppid:
+                active_by_ppid[ppid] = (agent_id, agent_type)
+            subagent_ranges[agent_id] = (ts, None, agent_type)
+
+        elif event_type == "SubagentStop" and agent_id:
+            # Remove from ppid mapping
+            for key, (aid, _) in list(active_by_ppid.items()):
+                if aid == agent_id:
+                    del active_by_ppid[key]
+                    break
+            # Update time range
+            if agent_id in subagent_ranges:
+                start_ts, _, atype = subagent_ranges[agent_id]
+                subagent_ranges[agent_id] = (start_ts, ts, atype)
+
+    # Reset ppid mapping for second pass
+    active_by_ppid.clear()
+
+    # Second pass: correlate tool calls
+    for event in sorted_events:
+        event_type = event.get("event") or event.get("hook_event_name")
+        ppid = event.get("ppid")
+        agent_id = event.get("agent_id")
+        agent_type = event.get("agent_type")
+
+        if event_type == "SubagentStart" and agent_id and ppid:
+            active_by_ppid[ppid] = (agent_id, agent_type)
+
+        elif event_type == "SubagentStop" and agent_id:
+            for key, (aid, _) in list(active_by_ppid.items()):
+                if aid == agent_id:
+                    del active_by_ppid[key]
+                    break
+
+        elif event_type == "PreToolUse":
+            tool_use_id = event.get("tool_use_id")
+            if not tool_use_id:
+                continue
+
+            # Try ppid correlation first
+            if ppid and ppid in active_by_ppid:
+                tool_to_agent[tool_use_id] = active_by_ppid[ppid]
+            else:
+                # Fallback: timestamp-based correlation
+                ts = parse_timestamp(event.get("ts"))
+                if ts:
+                    for aid, (start_ts, stop_ts, atype) in subagent_ranges.items():
+                        if start_ts and start_ts <= ts:
+                            if stop_ts is None or ts <= stop_ts:
+                                tool_to_agent[tool_use_id] = (aid, atype)
+                                break
+
+    return tool_to_agent
+
+
 def extract_errors_from_transcript(
     entries: list[dict[str, Any]],
 ) -> list[ToolError]:
@@ -570,6 +663,7 @@ class DataCollector:
         """
         self.trace_path = Path(trace_path) if trace_path else None
         self.transcript_path = Path(transcript_path) if transcript_path else None
+        self._tool_to_agent_map: dict[str, tuple[str, str | None]] = {}
 
     def collect(self) -> CollectedData:
         """Collect and correlate all data from trace and transcript.
@@ -607,6 +701,9 @@ class DataCollector:
 
             # Correlate tool calls and subagents
             data.tool_calls, data.subagents = correlate_events(hook_events)
+
+            # Correlate tool calls with their parent agents
+            self._tool_to_agent_map = correlate_tool_calls_with_agents(hook_events)
 
         # Parse transcript file
         if self.transcript_path:
@@ -706,6 +803,9 @@ class DataCollector:
                     is_error=tool_call.is_error,
                 )
 
+            # Get agent association for this tool call
+            agent_info = self._tool_to_agent_map.get(tool_call.tool_use_id)
+
             entries.append(
                 TimelineEntry(
                     seq=seq,
@@ -717,6 +817,8 @@ class DataCollector:
                     output=tool_output,
                     duration_ms=tool_call.duration_ms,
                     intent=self._infer_intent(tool_call),
+                    agent_id=agent_info[0] if agent_info else None,
+                    agent_type=agent_info[1] if agent_info else None,
                 )
             )
 
