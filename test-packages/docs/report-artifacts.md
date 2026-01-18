@@ -17,10 +17,11 @@ When pytest runs fixture tests, the harness captures multiple data sources for d
 
 | File | Source | Description |
 |------|--------|-------------|
-| `{test_id}-transcript.jsonl` | `collected_data.raw_transcript_entries` | Claude session transcript with full message history |
-| `{test_id}-trace.jsonl` | `collected_data.raw_hook_events` | Hook events (SessionStart, PreToolUse, PostToolUse, etc.) |
-| `{test_id}-claude-cli.txt` | `collected_data.claude_cli_stdout/stderr` | Raw Claude CLI output |
-| `{test_id}-pytest.txt` | `result_data["pytest_output"]` | Pytest captured output for the test |
+| `{test_id}-transcript.jsonl` | Claude SDK | Native Claude session transcript (immutable) |
+| `{test_id}-trace.jsonl` | Test hooks | Hook events from log-hook.py (immutable) |
+| `{test_id}-enriched.json` | Enrichment processing | Tree structure with computed metadata (regenerable) |
+| `{test_id}-claude-cli.txt` | Claude CLI | Raw CLI stdout/stderr output |
+| `{test_id}-pytest.txt` | Pytest | Test framework captured output |
 
 ### Session Transcript (`-transcript.jsonl`)
 
@@ -52,6 +53,58 @@ Pytest's captured output including:
 - Test setup/teardown output
 - Assertion details on failure
 
+### Enriched Data (`-enriched.json`)
+
+Contains computed tree structure and metadata, built from transcript and trace files:
+
+```json
+{
+  "test_context": {
+    "fixture_id": "sc-startup",
+    "test_id": "sc-startup-init-001",
+    "test_name": "Init agent spawns and reads config",
+    "package": "sc-startup@synaptic-canvas"
+  },
+  "artifacts": {
+    "transcript": "sc-startup/sc-startup-init-001-transcript.jsonl",
+    "trace": "sc-startup/sc-startup-init-001-trace.jsonl",
+    "enriched": "sc-startup/sc-startup-init-001-enriched.json"
+  },
+  "tree": {
+    "root_uuid": "root",
+    "nodes": {
+      "uuid-123": {
+        "parent_uuid": null,
+        "depth": 1,
+        "node_type": "tool_call",
+        "agent_id": "a262306",
+        "tool_name": "Glob",
+        "children": []
+      }
+    }
+  },
+  "agents": {
+    "a262306": {
+      "agent_type": "sc-startup-init",
+      "tool_count": 5
+    }
+  },
+  "stats": {
+    "total_nodes": 25,
+    "max_depth": 3,
+    "agent_count": 1,
+    "tool_call_count": 17
+  }
+}
+```
+
+Key sections:
+- **test_context**: Test identification and source file paths
+- **artifacts**: Relative paths to all artifact files
+- **tree**: Hierarchical structure with node metadata (references transcript entries by UUID)
+- **agents**: Summary of agent activity with tool counts
+- **stats**: Pre-computed metrics for quick reporting
+
 ---
 
 ## Folder Structure
@@ -61,8 +114,9 @@ test-packages/reports/
 ├── sc-startup.html                         # Latest HTML report
 ├── sc-startup.json                         # Latest JSON report
 ├── sc-startup/                             # Latest artifacts
-│   ├── sc-startup-init-001-transcript.jsonl
-│   ├── sc-startup-init-001-trace.jsonl
+│   ├── sc-startup-init-001-transcript.jsonl  # Native Claude session
+│   ├── sc-startup-init-001-trace.jsonl       # Hook events
+│   ├── sc-startup-init-001-enriched.json     # Tree + metadata
 │   ├── sc-startup-init-001-claude-cli.txt
 │   └── sc-startup-init-001-pytest.txt
 │

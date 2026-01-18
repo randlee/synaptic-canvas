@@ -918,8 +918,91 @@ Key implementation notes:
 
 ---
 
-## 14. References
+## 14. Implementation Notes
 
-- **Current Implementation**: `collector.py:correlate_tool_calls_with_agents()` (lines 453-543)
+This section documents the actual implementation details for developers maintaining the system.
+
+### 14.1 Enrichment Module
+
+**Location:** `test-packages/harness/enrichment.py`
+
+The enrichment module implements the tree-building algorithm described in this design document. It builds the hierarchical timeline tree from raw transcript and trace data.
+
+**Key Functions:**
+
+| Function | Purpose |
+|----------|---------|
+| `build_timeline_tree()` | Main entry point - orchestrates all phases of tree construction |
+| `_classify_node_type()` | Classifies transcript entries into TimelineNodeType enum values |
+| `_build_tool_to_agent_map()` | Correlates tool_use_id to agent context using SubagentStart/Stop events |
+| `_create_tree_node()` | Creates a TreeNode from a transcript entry with agent attribution |
+| `_compute_depths()` | Recursive depth computation for tree nodes |
+| `_build_agent_summaries()` | Extracts agent lifecycle and tool count statistics |
+| `_compute_tree_stats()` | Computes aggregate tree statistics |
+
+**Algorithm Phases:**
+
+1. **Index** - Build UUID lookup table from transcript entries
+2. **Map Agents** - Build tool_use_id to agent mapping from trace events
+3. **Create Nodes** - Create TreeNode for each transcript entry with type classification
+4. **Link Tree** - Connect parent-child relationships via parentUuid field
+5. **Compute Depths** - Recursive depth assignment from root
+6. **Statistics** - Compute aggregate stats for reporting
+
+### 14.2 Test Coverage
+
+**Location:** `test-packages/harness/tests/test_enrichment.py`
+
+The enrichment module has comprehensive test coverage with **38 tests** covering:
+
+- Node type classification (prompt, response, tool_call, tool_result)
+- Tree structure building with parent-child relationships
+- Agent attribution from trace events
+- Depth computation for nested structures
+- Edge cases (missing parentUuid, empty inputs, orphan nodes)
+- Statistics computation
+
+### 14.3 HTML Rendering Integration
+
+The timeline tree structure integrates with HTML report rendering through:
+
+**Depth Classes:**
+```css
+.depth-0 { margin-left: 0; }
+.depth-1 { margin-left: 24px; border-left: 2px solid var(--subagent); }
+.depth-2 { margin-left: 48px; border-left: 2px solid var(--subagent); }
+```
+
+**Collapsible Sections:**
+- Subagent activity wrapped in `<details>` elements
+- Smart default: expanded if agent performs >66% of tasks, collapsed otherwise
+
+**Agent Filtering:**
+- JavaScript filter function using `data-agent` attributes on timeline nodes
+- Path highlighting traces from selected node up through parent chain
+
+### 14.4 Schema Definitions
+
+All data structures have Pydantic schemas in `test-packages/harness/schemas.py`:
+
+| Schema | Purpose |
+|--------|---------|
+| `EnrichedData` | Top-level enriched.json structure |
+| `TestContext` | Test identification metadata |
+| `ArtifactPaths` | Relative paths to artifact files |
+| `TimelineTree` | Tree container with root_uuid and nodes dict |
+| `TreeNode` | Individual node with type, depth, agent attribution |
+| `AgentSummary` | Agent lifecycle and statistics |
+| `TreeStats` | Aggregate tree metrics |
+| `TimelineNodeType` | Enum: ROOT, PROMPT, RESPONSE, TOOL_CALL, TOOL_RESULT |
+
+---
+
+## 15. References
+
+- **Enrichment Implementation**: `test-packages/harness/enrichment.py`
+- **Schema Definitions**: `test-packages/harness/schemas.py`
+- **Test Suite**: `test-packages/harness/tests/test_enrichment.py`
 - **HTML Report Design**: `test-packages/docs/html-report-builder-design.md`
+- **Artifact Documentation**: `test-packages/docs/report-artifacts.md`
 - **Example Artifacts**: `test-packages/reports/sc-startup/` (transcript.jsonl, trace.jsonl, enriched.json)

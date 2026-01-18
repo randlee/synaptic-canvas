@@ -49,6 +49,8 @@ from typing import TYPE_CHECKING, Any, Iterator
 
 import pytest
 
+from pydantic import ValidationError
+
 from .fixture_loader import FixtureConfig, FixtureLoader, TestConfig
 from .models import TestStatus
 
@@ -1608,6 +1610,28 @@ def _preserve_artifacts(
                     test_context=test_context,
                     artifact_paths=artifact_paths,
                 )
+
+                # Validate enriched data before writing
+                try:
+                    from .schemas import EnrichedData as EnrichedDataSchema
+                    EnrichedDataSchema.model_validate(enriched_data.model_dump())
+                    logger.debug(f"Schema validation passed for {test_id}")
+                except ValidationError as e:
+                    logger.warning(f"Enriched data schema validation failed for {test_id}: {e}")
+
+                # Lenient validation for Claude transcript entries
+                # Log warnings but don't fail - Claude schema may evolve
+                try:
+                    from .schemas import ClaudeTranscriptEntry
+                    for idx, entry in enumerate(entries):
+                        try:
+                            ClaudeTranscriptEntry.model_validate(entry)
+                        except ValidationError as e:
+                            logger.warning(
+                                f"Claude transcript entry {idx} validation warning for {test_id}: {e}"
+                            )
+                except Exception as e:
+                    logger.warning(f"Claude transcript validation skipped for {test_id}: {e}")
 
                 # Write enriched.json
                 dest_name = f"{test_id}-enriched.json"
