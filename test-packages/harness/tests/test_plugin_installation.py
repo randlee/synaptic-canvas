@@ -2,8 +2,8 @@
 Unit tests for plugin installation functionality.
 
 Tests the plugin installation features in pytest_plugin.py and runner.py:
-- Plugin installation via `claude plugin install` CLI command
-- Marketplace data copying for isolated environments
+- Plugin installation via sc-install.py subprocess (new method)
+- sc-manage deferred installation via Claude invocation
 - Error handling for failed plugin installations
 - Empty plugins list handling
 
@@ -100,12 +100,12 @@ def temp_isolated_home():
 
 
 class TestYAMLTestItemPluginInstallation:
-    """Tests for YAMLTestItem._install_plugins using CLI-based installation."""
+    """Tests for YAMLTestItem._install_plugins using sc-install.py subprocess."""
 
-    def test_install_plugins_calls_cli(
+    def test_install_plugins_calls_sc_install(
         self, temp_project_dir: Path, temp_isolated_home: Path
     ):
-        """Test that plugin installation uses claude plugin install CLI."""
+        """Test that plugin installation uses sc-install.py subprocess."""
         from harness.pytest_plugin import YAMLTestItem
         from harness.fixture_loader import SetupConfig
 
@@ -116,9 +116,9 @@ class TestYAMLTestItemPluginInstallation:
             item._installed_plugin_dirs = []
             item.expected_plugins = []
             item.plugin_install_results = []
-
-        # Mock _find_project_path
-        item._find_project_path = lambda: temp_project_dir
+            item._sc_manage_install_pending = []
+            item.test_config = MagicMock()
+            item.test_config.source_path = temp_project_dir
 
         # Create mock session
         session = MockSession(temp_project_dir, temp_isolated_home)
@@ -126,17 +126,25 @@ class TestYAMLTestItemPluginInstallation:
         # Create setup config with plugins
         setup = SetupConfig(plugins=["test-plugin@synaptic-canvas"])
 
-        # Mock copy_marketplace_data to avoid needing real marketplace data
-        with patch("harness.environment.copy_marketplace_data") as mock_copy:
-            mock_copy.return_value = True
-            item._install_plugins(session, setup)
+        # Mock _find_synaptic_canvas_path to return a valid path
+        mock_sc_path = temp_project_dir / "synaptic-canvas"
+        mock_sc_path.mkdir()
+        (mock_sc_path / "tools").mkdir()
+        (mock_sc_path / "tools" / "sc-install.py").touch()
+        (mock_sc_path / "packages").mkdir()
 
-        # Verify CLI was called
-        assert len(session._install_calls) == 1
-        assert session._install_calls[0] == ("test-plugin@synaptic-canvas", "project")
+        # Mock _install_with_sc_install to return success
+        with patch.object(item, "_find_synaptic_canvas_path", return_value=mock_sc_path):
+            with patch.object(item, "_install_with_sc_install") as mock_sc_install:
+                mock_sc_install.return_value = (0, "Installed successfully", "")
+                item._install_plugins(session, setup)
 
-        # Verify marketplace data was copied
-        mock_copy.assert_called_once_with(temp_isolated_home)
+        # Verify sc-install was called with extracted package name
+        mock_sc_install.assert_called_once_with(
+            package_name="test-plugin",
+            project_path=session.project_path,
+            sc_path=mock_sc_path,
+        )
 
         # Verify tracking list has marker entry
         assert len(item._installed_plugin_files) == 1
@@ -147,10 +155,10 @@ class TestYAMLTestItemPluginInstallation:
         assert item.plugin_install_results[0].plugin_name == "test-plugin@synaptic-canvas"
         assert item.plugin_install_results[0].success is True
 
-    def test_install_plugins_handles_cli_failure(
+    def test_install_plugins_handles_sc_install_failure(
         self, temp_project_dir: Path, temp_isolated_home: Path
     ):
-        """Test that CLI installation failures raise PluginInstallationError."""
+        """Test that sc-install.py failures raise PluginInstallationError."""
         from harness.pytest_plugin import YAMLTestItem, PluginInstallationError
         from harness.fixture_loader import SetupConfig
 
@@ -160,18 +168,25 @@ class TestYAMLTestItemPluginInstallation:
             item._installed_plugin_dirs = []
             item.expected_plugins = []
             item.plugin_install_results = []
+            item._sc_manage_install_pending = []
+            item.test_config = MagicMock()
+            item.test_config.source_path = temp_project_dir
 
-        item._find_project_path = lambda: temp_project_dir
-
-        # Use failure mock session
-        session = MockSessionFailure(temp_project_dir, temp_isolated_home)
+        session = MockSession(temp_project_dir, temp_isolated_home)
         setup = SetupConfig(plugins=["nonexistent-plugin"])
 
-        with patch("harness.environment.copy_marketplace_data") as mock_copy:
-            mock_copy.return_value = True
-            # Should raise PluginInstallationError (fail fast behavior)
-            with pytest.raises(PluginInstallationError) as exc_info:
-                item._install_plugins(session, setup)
+        mock_sc_path = temp_project_dir / "synaptic-canvas"
+        mock_sc_path.mkdir()
+        (mock_sc_path / "tools").mkdir()
+        (mock_sc_path / "tools" / "sc-install.py").touch()
+        (mock_sc_path / "packages").mkdir()
+
+        with patch.object(item, "_find_synaptic_canvas_path", return_value=mock_sc_path):
+            with patch.object(item, "_install_with_sc_install") as mock_sc_install:
+                mock_sc_install.return_value = (1, "", "Package not found: nonexistent-plugin")
+                # Should raise PluginInstallationError (fail fast behavior)
+                with pytest.raises(PluginInstallationError) as exc_info:
+                    item._install_plugins(session, setup)
 
         # Verify error details
         assert exc_info.value.plugin_name == "nonexistent-plugin"
@@ -197,22 +212,58 @@ class TestYAMLTestItemPluginInstallation:
             item._installed_plugin_dirs = []
             item.expected_plugins = []
             item.plugin_install_results = []
-
-        item._find_project_path = lambda: temp_project_dir
+            item._sc_manage_install_pending = []
 
         session = MockSession(temp_project_dir, temp_isolated_home)
         setup = SetupConfig(plugins=[])
 
-        with patch("harness.environment.copy_marketplace_data") as mock_copy:
-            # Should return early without calling copy_marketplace_data
-            item._install_plugins(session, setup)
+        # Should return early without calling sc-install
+        item._install_plugins(session, setup)
 
-        # No marketplace copy should happen
-        mock_copy.assert_not_called()
         # No installations
-        assert len(session._install_calls) == 0
         assert len(item._installed_plugin_files) == 0
         assert len(item.plugin_install_results) == 0
+
+    def test_sc_manage_defers_to_claude_invocation(
+        self, temp_project_dir: Path, temp_isolated_home: Path
+    ):
+        """Test that sc-manage installation is deferred to Claude invocation."""
+        from harness.pytest_plugin import YAMLTestItem
+        from harness.fixture_loader import SetupConfig
+
+        with patch.object(YAMLTestItem, "__init__", lambda self, *args, **kwargs: None):
+            item = YAMLTestItem.__new__(YAMLTestItem)
+            item._installed_plugin_files = []
+            item._installed_plugin_dirs = []
+            item.expected_plugins = []
+            item.plugin_install_results = []
+            item._sc_manage_install_pending = []
+            item.test_config = MagicMock()
+            item.test_config.source_path = temp_project_dir
+
+        session = MockSession(temp_project_dir, temp_isolated_home)
+        setup = SetupConfig(plugins=["sc-manage@synaptic-canvas"])
+
+        mock_sc_path = temp_project_dir / "synaptic-canvas"
+        mock_sc_path.mkdir()
+        (mock_sc_path / "tools").mkdir()
+        (mock_sc_path / "tools" / "sc-install.py").touch()
+        (mock_sc_path / "packages").mkdir()
+
+        with patch.object(item, "_find_synaptic_canvas_path", return_value=mock_sc_path):
+            with patch.object(item, "_install_with_sc_install") as mock_sc_install:
+                # sc-manage should NOT call _install_with_sc_install
+                item._install_plugins(session, setup)
+                mock_sc_install.assert_not_called()
+
+        # sc-manage should be in pending list
+        assert len(item._sc_manage_install_pending) == 1
+        assert item._sc_manage_install_pending[0] == "sc-manage@synaptic-canvas"
+
+        # Should still have a success result (deferred)
+        assert len(item.plugin_install_results) == 1
+        assert item.plugin_install_results[0].success is True
+        assert "Deferred" in item.plugin_install_results[0].stdout
 
     def test_cleanup_plugins_clears_tracking_lists(
         self, temp_project_dir: Path, temp_isolated_home: Path
@@ -227,14 +278,22 @@ class TestYAMLTestItemPluginInstallation:
             item._installed_plugin_dirs = []
             item.expected_plugins = []
             item.plugin_install_results = []
-
-        item._find_project_path = lambda: temp_project_dir
+            item._sc_manage_install_pending = []
+            item.test_config = MagicMock()
+            item.test_config.source_path = temp_project_dir
 
         session = MockSession(temp_project_dir, temp_isolated_home)
         setup = SetupConfig(plugins=["test-plugin"])
 
-        with patch("harness.environment.copy_marketplace_data"):
-            item._install_plugins(session, setup)
+        mock_sc_path = temp_project_dir / "synaptic-canvas"
+        mock_sc_path.mkdir()
+        (mock_sc_path / "tools").mkdir()
+        (mock_sc_path / "tools" / "sc-install.py").touch()
+        (mock_sc_path / "packages").mkdir()
+
+        with patch.object(item, "_find_synaptic_canvas_path", return_value=mock_sc_path):
+            with patch.object(item, "_install_with_sc_install", return_value=(0, "", "")):
+                item._install_plugins(session, setup)
 
         # Verify something was tracked
         assert len(item._installed_plugin_files) > 0
@@ -259,19 +318,33 @@ class TestYAMLTestItemPluginInstallation:
             item._installed_plugin_dirs = []
             item.expected_plugins = []
             item.plugin_install_results = []
-
-        item._find_project_path = lambda: temp_project_dir
+            item._sc_manage_install_pending = []
+            item.test_config = MagicMock()
+            item.test_config.source_path = temp_project_dir
 
         session = MockSession(temp_project_dir, temp_isolated_home)
         setup = SetupConfig(plugins=["plugin-1@registry", "plugin-2@registry"])
 
-        with patch("harness.environment.copy_marketplace_data"):
-            item._install_plugins(session, setup)
+        mock_sc_path = temp_project_dir / "synaptic-canvas"
+        mock_sc_path.mkdir()
+        (mock_sc_path / "tools").mkdir()
+        (mock_sc_path / "tools" / "sc-install.py").touch()
+        (mock_sc_path / "packages").mkdir()
 
-        # Both plugins should be installed
-        assert len(session._install_calls) == 2
-        assert session._install_calls[0] == ("plugin-1@registry", "project")
-        assert session._install_calls[1] == ("plugin-2@registry", "project")
+        sc_install_calls = []
+
+        def mock_install(package_name, project_path, sc_path):
+            sc_install_calls.append(package_name)
+            return (0, f"Installed {package_name}", "")
+
+        with patch.object(item, "_find_synaptic_canvas_path", return_value=mock_sc_path):
+            with patch.object(item, "_install_with_sc_install", side_effect=mock_install):
+                item._install_plugins(session, setup)
+
+        # Both plugins should be installed via sc-install
+        assert len(sc_install_calls) == 2
+        assert sc_install_calls[0] == "plugin-1"
+        assert sc_install_calls[1] == "plugin-2"
 
         # Both should be tracked
         assert len(item._installed_plugin_files) == 2
@@ -279,6 +352,71 @@ class TestYAMLTestItemPluginInstallation:
         # Both install results should be recorded
         assert len(item.plugin_install_results) == 2
         assert all(r.success for r in item.plugin_install_results)
+
+    def test_extract_package_name(self, temp_project_dir: Path):
+        """Test the package name extraction helper."""
+        from harness.pytest_plugin import YAMLTestItem
+
+        with patch.object(YAMLTestItem, "__init__", lambda self, *args, **kwargs: None):
+            item = YAMLTestItem.__new__(YAMLTestItem)
+
+        # Test various formats
+        assert item._extract_package_name("sc-startup@synaptic-canvas") == "sc-startup"
+        assert item._extract_package_name("sc-manage@registry") == "sc-manage"
+        assert item._extract_package_name("plain-plugin") == "plain-plugin"
+        assert item._extract_package_name("name@multi@at") == "name"
+
+    def test_find_synaptic_canvas_path_from_env(self, temp_project_dir: Path):
+        """Test finding synaptic-canvas path from environment variable."""
+        from harness.pytest_plugin import YAMLTestItem
+        import os
+
+        with patch.object(YAMLTestItem, "__init__", lambda self, *args, **kwargs: None):
+            item = YAMLTestItem.__new__(YAMLTestItem)
+            item.test_config = MagicMock()
+            item.test_config.source_path = temp_project_dir
+
+        # Create mock synaptic-canvas structure
+        mock_sc_path = temp_project_dir / "synaptic-canvas"
+        mock_sc_path.mkdir()
+        (mock_sc_path / "tools").mkdir()
+        (mock_sc_path / "tools" / "sc-install.py").touch()
+        (mock_sc_path / "packages").mkdir()
+
+        # Test with environment variable
+        with patch.dict(os.environ, {"SC_SYNAPTIC_CANVAS_PATH": str(mock_sc_path)}):
+            result = item._find_synaptic_canvas_path()
+
+        assert result is not None
+        assert result == mock_sc_path.absolute()
+
+    def test_missing_synaptic_canvas_raises_error(
+        self, temp_project_dir: Path, temp_isolated_home: Path
+    ):
+        """Test that missing synaptic-canvas repo raises error."""
+        from harness.pytest_plugin import YAMLTestItem, PluginInstallationError
+        from harness.fixture_loader import SetupConfig
+
+        with patch.object(YAMLTestItem, "__init__", lambda self, *args, **kwargs: None):
+            item = YAMLTestItem.__new__(YAMLTestItem)
+            item._installed_plugin_files = []
+            item._installed_plugin_dirs = []
+            item.expected_plugins = []
+            item.plugin_install_results = []
+            item._sc_manage_install_pending = []
+            item.test_config = MagicMock()
+            item.test_config.source_path = temp_project_dir
+
+        session = MockSession(temp_project_dir, temp_isolated_home)
+        setup = SetupConfig(plugins=["test-plugin"])
+
+        # Mock _find_synaptic_canvas_path to return None (not found)
+        with patch.object(item, "_find_synaptic_canvas_path", return_value=None):
+            with pytest.raises(PluginInstallationError) as exc_info:
+                item._install_plugins(session, setup)
+
+        assert exc_info.value.plugin_name == "(all)"
+        assert "Could not find synaptic-canvas" in exc_info.value.stderr
 
 
 # =============================================================================
@@ -452,10 +590,74 @@ class TestIsolatedSessionPluginInstall:
 class TestPluginInstallationIntegration:
     """Integration tests for plugin installation during test execution."""
 
-    def test_marketplace_data_copied_before_install(
+    def test_sc_install_subprocess_integration(
         self, temp_project_dir: Path, temp_isolated_home: Path
     ):
-        """Test that marketplace data is copied before plugin installation."""
+        """Test that _install_with_sc_install runs subprocess correctly."""
+        from harness.pytest_plugin import YAMLTestItem
+
+        with patch.object(YAMLTestItem, "__init__", lambda self, *args, **kwargs: None):
+            item = YAMLTestItem.__new__(YAMLTestItem)
+            item.test_config = MagicMock()
+            item.test_config.source_path = temp_project_dir
+
+        # Create mock synaptic-canvas structure
+        mock_sc_path = temp_project_dir / "synaptic-canvas"
+        mock_sc_path.mkdir()
+        (mock_sc_path / "tools").mkdir()
+        (mock_sc_path / "tools" / "sc-install.py").touch()
+
+        # Mock subprocess.run to capture the command
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = subprocess.CompletedProcess(
+                args=[], returncode=0, stdout="Installed", stderr=""
+            )
+
+            return_code, stdout, stderr = item._install_with_sc_install(
+                package_name="test-plugin",
+                project_path=temp_project_dir,
+                sc_path=mock_sc_path,
+            )
+
+            # Verify subprocess was called
+            mock_run.assert_called_once()
+            call_args = mock_run.call_args
+            cmd = call_args[0][0]
+
+            # Verify command structure
+            assert cmd[0] == "python3"
+            assert "sc-install.py" in cmd[1]
+            assert "install" in cmd
+            assert "test-plugin" in cmd
+            assert "--dest" in cmd
+            assert "--force" in cmd
+
+            # Verify return values
+            assert return_code == 0
+            assert stdout == "Installed"
+
+    def test_plugin_name_extraction(self):
+        """Test that package names are correctly extracted from plugin specs."""
+        from harness.pytest_plugin import YAMLTestItem
+
+        with patch.object(YAMLTestItem, "__init__", lambda self, *args, **kwargs: None):
+            item = YAMLTestItem.__new__(YAMLTestItem)
+
+        test_cases = [
+            ("test-plugin@synaptic-canvas", "test-plugin"),
+            ("test-plugin@other-registry", "test-plugin"),
+            ("test-plugin", "test-plugin"),
+            ("my-pkg@marketplace", "my-pkg"),
+            ("sc-manage@synaptic-canvas", "sc-manage"),
+        ]
+
+        for spec, expected_name in test_cases:
+            assert item._extract_package_name(spec) == expected_name
+
+    def test_sc_manage_mixed_with_other_plugins(
+        self, temp_project_dir: Path, temp_isolated_home: Path
+    ):
+        """Test that sc-manage is deferred while other plugins install normally."""
         from harness.pytest_plugin import YAMLTestItem
         from harness.fixture_loader import SetupConfig
 
@@ -465,42 +667,37 @@ class TestPluginInstallationIntegration:
             item._installed_plugin_dirs = []
             item.expected_plugins = []
             item.plugin_install_results = []
-
-        item._find_project_path = lambda: temp_project_dir
+            item._sc_manage_install_pending = []
+            item.test_config = MagicMock()
+            item.test_config.source_path = temp_project_dir
 
         session = MockSession(temp_project_dir, temp_isolated_home)
-        setup = SetupConfig(plugins=["test-plugin"])
+        setup = SetupConfig(plugins=["sc-startup@synaptic-canvas", "sc-manage@synaptic-canvas"])
 
-        call_order = []
+        mock_sc_path = temp_project_dir / "synaptic-canvas"
+        mock_sc_path.mkdir()
+        (mock_sc_path / "tools").mkdir()
+        (mock_sc_path / "tools" / "sc-install.py").touch()
+        (mock_sc_path / "packages").mkdir()
 
-        def track_copy(*args, **kwargs):
-            call_order.append("copy_marketplace")
-            return True
+        sc_install_calls = []
 
-        original_run_plugin_install = session.run_plugin_install
+        def mock_install(package_name, project_path, sc_path):
+            sc_install_calls.append(package_name)
+            return (0, f"Installed {package_name}", "")
 
-        def track_install(*args, **kwargs):
-            call_order.append("install_plugin")
-            return original_run_plugin_install(*args, **kwargs)
+        with patch.object(item, "_find_synaptic_canvas_path", return_value=mock_sc_path):
+            with patch.object(item, "_install_with_sc_install", side_effect=mock_install):
+                item._install_plugins(session, setup)
 
-        session.run_plugin_install = track_install
+        # sc-startup should be installed via sc-install
+        assert "sc-startup" in sc_install_calls
+        # sc-manage should NOT be installed via sc-install
+        assert "sc-manage" not in sc_install_calls
 
-        with patch("harness.environment.copy_marketplace_data", side_effect=track_copy):
-            item._install_plugins(session, setup)
+        # sc-manage should be in pending list
+        assert "sc-manage@synaptic-canvas" in item._sc_manage_install_pending
 
-        # Marketplace copy should happen before install
-        assert call_order == ["copy_marketplace", "install_plugin"]
-
-    def test_plugin_name_parsing(self):
-        """Test that plugin names with @registry suffix are passed correctly to CLI."""
-        plugin_specs = [
-            "test-plugin@synaptic-canvas",
-            "test-plugin@other-registry",
-            "test-plugin",
-            "my-pkg@marketplace",
-        ]
-
-        # All specs should be passed as-is to the CLI (no parsing needed)
-        for spec in plugin_specs:
-            # The CLI handles parsing, we just pass through
-            assert isinstance(spec, str)
+        # Both should be tracked in results
+        assert len(item.plugin_install_results) == 2
+        assert all(r.success for r in item.plugin_install_results)

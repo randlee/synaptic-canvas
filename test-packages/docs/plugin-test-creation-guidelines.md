@@ -26,6 +26,41 @@ Every plugin test fixture must:
 
 ---
 
+## Plugin Installation in Test Fixtures
+
+Test fixtures can specify plugins to install in their `fixture.yaml` setup section:
+
+```yaml
+setup:
+  plugins:
+    - sc-startup@synaptic-canvas
+    - sc-git-worktree@synaptic-canvas
+```
+
+### How Plugin Installation Works
+
+The test harness uses two different approaches for plugin installation depending on the package being tested:
+
+1. **For all packages except sc-manage**: The harness uses `sc-install.py` directly (via subprocess) to install package files into the test project's `.claude/` directory. This ensures packages are available even in isolated test environments.
+
+2. **For sc-manage package**: The harness has Claude invoke `/sc-manage --install <package> --local` as part of the test execution. This is necessary to test sc-manage's own installation functionality.
+
+### Prerequisites
+
+- The synaptic-canvas repo must be available (set `SC_SYNAPTIC_CANVAS_PATH` environment variable or place it as a sibling directory)
+- For sc-manage testing: sc-manage must be pre-installed in the test harness via:
+  ```bash
+  python3 /path/to/synaptic-canvas/tools/sc-install.py install sc-manage --dest /path/to/sc-test-harness/.claude
+  ```
+
+### Plugin Specification Format
+
+Plugins are specified as `<package-name>@<marketplace>`:
+- `sc-startup@synaptic-canvas` - installs sc-startup from synaptic-canvas
+- `sc-manage@synaptic-canvas` - triggers Claude-based installation for testing
+
+---
+
 ## Fixture Structure
 
 ```

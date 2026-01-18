@@ -429,11 +429,15 @@ class HTMLReportBuilder:
                 seq=entry.seq,
                 entry_type=entry.type,
                 tool_name=entry.tool,
+                agent_id=entry.agent_id,
+                agent_type=entry.agent_type,
                 elapsed_ms=entry.elapsed_ms,
                 content=content,
                 intent=entry.intent,
                 command=command,
                 output=output,
+                pid=entry.pid,
+                tool_use_id=entry.tool_use_id,
             ))
 
             if entry.type == TimelineEntryType.TOOL_CALL:

@@ -286,6 +286,9 @@ class YAMLTestItem(pytest.Item):
         self.expected_plugins: list[str] = []
         self.plugin_install_results: list = []  # List of PluginInstallResult
 
+        # Deferred sc-manage installation (for self-testing sc-manage package)
+        self._sc_manage_install_pending: list[str] = []
+
         # Add markers for tags
         for tag in test_config.tags:
             self.add_marker(pytest.mark.keyword(tag))
@@ -334,9 +337,21 @@ class YAMLTestItem(pytest.Item):
                 # Run setup commands
                 self._run_setup_commands(session, merged_setup)
 
+                # Build the prompt, prepending sc-manage install if needed
+                prompt = self.test_config.execution.prompt
+                if hasattr(self, "_sc_manage_install_pending") and self._sc_manage_install_pending:
+                    # Prepend sc-manage install commands for each pending package
+                    install_commands = []
+                    for pkg_spec in self._sc_manage_install_pending:
+                        pkg_name = self._extract_package_name(pkg_spec)
+                        install_commands.append(f"/sc-manage --install {pkg_name} --local")
+                    install_prefix = " ".join(install_commands) + " && "
+                    prompt = install_prefix + prompt
+                    logger.info(f"Prepending sc-manage install to prompt: {install_commands}")
+
                 # Execute the test
                 result = session.run_command(
-                    prompt=self.test_config.execution.prompt,
+                    prompt=prompt,
                     model=self.test_config.execution.model,
                     tools=self.test_config.execution.tools or None,
                     timeout=self.test_config.execution.timeout_ms // 1000,
@@ -536,12 +551,144 @@ class YAMLTestItem(pytest.Item):
                 logger.warning(f"Teardown command failed: {cmd} - {e}")
 
 
+    def _find_synaptic_canvas_path(self) -> Path | None:
+        """Find the synaptic-canvas repository path for sc-install.py.
+
+        Resolution order:
+        1. SC_SYNAPTIC_CANVAS_PATH environment variable (if set)
+        2. Find relative to the test fixture location (sibling or parent)
+
+        Returns:
+            Path to synaptic-canvas repo root, or None if not found
+        """
+        import os
+
+        # 1. Check environment variable override
+        env_path = os.environ.get("SC_SYNAPTIC_CANVAS_PATH")
+        if env_path:
+            sc_path = Path(env_path)
+            if sc_path.exists() and (sc_path / "tools" / "sc-install.py").exists():
+                logger.debug(f"Using SC_SYNAPTIC_CANVAS_PATH: {sc_path}")
+                return sc_path.absolute()
+            else:
+                logger.warning(
+                    f"SC_SYNAPTIC_CANVAS_PATH set but invalid or missing sc-install.py: {env_path}"
+                )
+
+        # 2. Find relative to fixture location
+        current = self.test_config.source_path or self.fspath
+        if current is None:
+            current = Path.cwd()
+        else:
+            current = Path(current)
+
+        # Walk up to find synaptic-canvas root with tools/sc-install.py
+        for parent in [current] + list(current.parents):
+            # Check for synaptic-canvas indicators with sc-install.py
+            sc_install = parent / "tools" / "sc-install.py"
+            if sc_install.exists() and (parent / "packages").exists():
+                logger.debug(f"Found synaptic-canvas at: {parent}")
+                return parent.absolute()
+
+            # Also check for worktree or sibling patterns
+            # e.g., synaptic-canvas-worktrees/feature/xyz -> look for tools/sc-install.py
+            if parent.name.startswith("synaptic-canvas") or "synaptic-canvas" in str(parent):
+                if sc_install.exists():
+                    logger.debug(f"Found synaptic-canvas worktree at: {parent}")
+                    return parent.absolute()
+
+        # 3. Check if there's a sibling synaptic-canvas directory
+        for parent in [current] + list(current.parents):
+            sibling = parent / "synaptic-canvas"
+            if sibling.exists() and (sibling / "tools" / "sc-install.py").exists():
+                logger.debug(f"Found synaptic-canvas as sibling at: {sibling}")
+                return sibling.absolute()
+
+        logger.warning("Could not find synaptic-canvas repo with tools/sc-install.py")
+        return None
+
+    def _extract_package_name(self, plugin_spec: str) -> str:
+        """Extract the package name from a plugin specification.
+
+        Args:
+            plugin_spec: Plugin spec like "sc-startup@synaptic-canvas" or "sc-startup"
+
+        Returns:
+            Package name (e.g., "sc-startup")
+        """
+        # Handle formats like "sc-startup@synaptic-canvas" or just "sc-startup"
+        if "@" in plugin_spec:
+            return plugin_spec.split("@")[0]
+        return plugin_spec
+
+    def _install_with_sc_install(
+        self,
+        package_name: str,
+        project_path: Path,
+        sc_path: Path,
+    ) -> tuple[int, str, str]:
+        """Install a plugin using sc-install.py directly via subprocess.
+
+        Args:
+            package_name: Name of the package to install (e.g., "sc-startup")
+            project_path: Path to the test project (destination for .claude)
+            sc_path: Path to the synaptic-canvas repo containing sc-install.py
+
+        Returns:
+            Tuple of (return_code, stdout, stderr)
+        """
+        import subprocess
+
+        sc_install_script = sc_path / "tools" / "sc-install.py"
+        dest_claude = project_path / ".claude"
+
+        cmd = [
+            "python3",
+            str(sc_install_script),
+            "install",
+            package_name,
+            "--dest",
+            str(dest_claude),
+            "--force",  # Allow overwriting existing files
+        ]
+
+        logger.info(f"Installing plugin via sc-install.py: {package_name}")
+        logger.debug(f"sc-install command: {' '.join(cmd)}")
+
+        try:
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=60,
+                cwd=str(sc_path),  # Run from synaptic-canvas repo for proper path resolution
+            )
+
+            if result.returncode == 0:
+                logger.info(f"Successfully installed plugin via sc-install: {package_name}")
+            else:
+                logger.warning(
+                    f"sc-install failed for {package_name}: "
+                    f"returncode={result.returncode}, stderr={result.stderr}"
+                )
+
+            return result.returncode, result.stdout or "", result.stderr or ""
+
+        except subprocess.TimeoutExpired:
+            logger.error(f"sc-install timed out for {package_name}")
+            return -1, "", "Installation timed out after 60 seconds"
+        except Exception as e:
+            logger.error(f"sc-install failed for {package_name}: {e}")
+            return -1, "", str(e)
+
     def _install_plugins(self, session: Any, setup: Any) -> None:
         """Install plugins specified in setup configuration.
 
-        Uses `claude plugin install <plugin> --scope project` to properly
-        install plugins via the Claude CLI. This requires marketplace data
-        to be available in the isolated HOME directory.
+        For most packages: Uses sc-install.py directly via subprocess for
+        reliable installation in isolated environments.
+
+        For sc-manage package: Sets a flag to use Claude invocation with
+        `/sc-manage --install <package> --local` for self-testing.
 
         Args:
             session: IsolatedSession instance
@@ -550,7 +697,6 @@ class YAMLTestItem(pytest.Item):
         Raises:
             PluginInstallationError: If any plugin fails to install
         """
-        from .environment import copy_marketplace_data
         from .models import PluginInstallResult
 
         if not setup.plugins:
@@ -559,26 +705,55 @@ class YAMLTestItem(pytest.Item):
         # Store expected plugins for reporting
         self.expected_plugins = list(setup.plugins)
 
-        # Copy marketplace data to isolated HOME to enable plugin installation
-        # This is required for `claude plugin install` to find marketplace registries
-        copy_marketplace_data(session.isolated_home)
+        # Find synaptic-canvas repo for sc-install.py
+        sc_path = self._find_synaptic_canvas_path()
+        if sc_path is None:
+            raise PluginInstallationError(
+                plugin_name="(all)",
+                return_code=-1,
+                stdout="",
+                stderr="Could not find synaptic-canvas repo with tools/sc-install.py. "
+                       "Set SC_SYNAPTIC_CANVAS_PATH environment variable.",
+            )
+
+        # Track if sc-manage needs to be installed via Claude invocation
+        self._sc_manage_install_pending: list[str] = []
 
         for plugin_spec in setup.plugins:
+            package_name = self._extract_package_name(plugin_spec)
             stdout = ""
             stderr = ""
             return_code = -1
 
             try:
-                # Use the session's run_plugin_install method
-                result = session.run_plugin_install(
-                    plugin_name=plugin_spec,
-                    scope="project",
-                    timeout=60,
-                )
+                if package_name == "sc-manage":
+                    # For sc-manage, defer to Claude invocation for self-testing
+                    # Store the package spec for later use in runtest()
+                    self._sc_manage_install_pending.append(plugin_spec)
+                    logger.info(
+                        f"Deferring sc-manage installation to Claude invocation: {plugin_spec}"
+                    )
 
-                stdout = result.stdout or ""
-                stderr = result.stderr or ""
-                return_code = result.returncode
+                    # Create a successful install result (will actually install via Claude)
+                    install_result = PluginInstallResult(
+                        plugin_name=plugin_spec,
+                        success=True,
+                        stdout="Deferred to Claude /sc-manage --install invocation",
+                        stderr="",
+                        return_code=0,
+                    )
+                    self.plugin_install_results.append(install_result)
+                    self._installed_plugin_files.append(
+                        Path(f"PLUGIN:{plugin_spec}")
+                    )
+                    continue
+
+                # For all other packages, use sc-install.py directly
+                return_code, stdout, stderr = self._install_with_sc_install(
+                    package_name=package_name,
+                    project_path=session.project_path,
+                    sc_path=sc_path,
+                )
 
                 # Create install result for reporting
                 install_result = PluginInstallResult(
@@ -591,7 +766,7 @@ class YAMLTestItem(pytest.Item):
                 self.plugin_install_results.append(install_result)
 
                 if return_code == 0:
-                    logger.info(f"Installed plugin via CLI: {plugin_spec}")
+                    logger.info(f"Installed plugin via sc-install: {plugin_spec}")
                     logger.debug(f"Plugin install stdout: {stdout}")
                     # Track that we installed this plugin (for observability)
                     self._installed_plugin_files.append(
@@ -1286,6 +1461,13 @@ def _generate_fixture_report(
         json_path = report_path / f"{fixture_name}.json"
         write_json_report(fixture_report, json_path)
 
+        # Preserve artifacts in folder next to HTML report
+        _preserve_artifacts(
+            fixture_name=fixture_name,
+            report_path=report_path,
+            test_results_data=test_results_data,
+        )
+
         return html_path
 
     except Exception as e:
@@ -1293,6 +1475,174 @@ def _generate_fixture_report(
         import traceback
         traceback.print_exc()
         return None
+
+
+def _preserve_artifacts(
+    fixture_name: str,
+    report_path: Path,
+    test_results_data: list[dict],
+) -> None:
+    """Preserve test artifacts in a folder next to the HTML report.
+
+    Creates a folder with the same name as the report (without .html extension)
+    and writes artifacts from collected_data. Also creates a timestamped copy
+    in the history folder for retention.
+
+    Artifacts preserved:
+    - {test_id}-session.jsonl: Session transcript from raw_transcript_entries
+    - {test_id}-trace.jsonl: Hook events from raw_hook_events
+    - {test_id}-claude-cli.txt: Claude CLI stdout/stderr
+    - {test_id}-pytest.txt: Pytest output
+
+    Args:
+        fixture_name: Name of the fixture (used for folder name)
+        report_path: Directory where reports are stored
+        test_results_data: List of test result dictionaries containing collected_data
+    """
+    import json
+    import shutil
+
+    # Create "latest" artifacts folder and clean it first
+    latest_dir = report_path / fixture_name
+    if latest_dir.exists():
+        # Clean existing files in latest folder
+        for item in latest_dir.iterdir():
+            if item.is_file():
+                item.unlink()
+            elif item.is_dir():
+                shutil.rmtree(item)
+        logger.info(f"Cleaned latest artifacts folder: {latest_dir}")
+    latest_dir.mkdir(parents=True, exist_ok=True)
+
+    # Create timestamped history folder
+    # Use ISO format with hyphens instead of colons for filesystem safety: YYYY-MM-DDTHH-MM-SS
+    timestamp = datetime.now().strftime("%Y-%m-%dT%H-%M-%S")
+    history_dir = report_path / "history" / fixture_name / timestamp
+    history_dir.mkdir(parents=True, exist_ok=True)
+    logger.info(f"Created history folder: {history_dir}")
+
+    written_count = 0
+    for i, result_data in enumerate(test_results_data, 1):
+        collected_data = result_data.get("collected_data")
+        test_id = result_data.get("test_id", f"test-{i}")
+
+        # Write session transcript (raw_transcript_entries)
+        if collected_data and hasattr(collected_data, "raw_transcript_entries"):
+            entries = collected_data.raw_transcript_entries
+            if entries:
+                dest_name = f"{test_id}-session.jsonl"
+                for dest_dir in [latest_dir, history_dir]:
+                    dest_path = dest_dir / dest_name
+                    try:
+                        with open(dest_path, "w") as f:
+                            for entry in entries:
+                                f.write(json.dumps(entry) + "\n")
+                        logger.debug(f"Preserved session transcript: {dest_path}")
+                    except Exception as e:
+                        logger.warning(f"Failed to write transcript {dest_path}: {e}")
+                written_count += 1
+            else:
+                logger.warning(f"Empty session transcript for test {test_id}")
+
+        # Write trace file (raw_hook_events)
+        if collected_data and hasattr(collected_data, "raw_hook_events"):
+            events = collected_data.raw_hook_events
+            if events:
+                dest_name = f"{test_id}-trace.jsonl"
+                for dest_dir in [latest_dir, history_dir]:
+                    dest_path = dest_dir / dest_name
+                    try:
+                        with open(dest_path, "w") as f:
+                            for event in events:
+                                f.write(json.dumps(event) + "\n")
+                        logger.debug(f"Preserved trace file: {dest_path}")
+                    except Exception as e:
+                        logger.warning(f"Failed to write trace {dest_path}: {e}")
+                written_count += 1
+            else:
+                logger.warning(f"Empty trace file for test {test_id}")
+
+        # Write Claude CLI output (stdout + stderr)
+        claude_stdout = ""
+        claude_stderr = ""
+        if collected_data:
+            claude_stdout = getattr(collected_data, "claude_cli_stdout", "") or ""
+            claude_stderr = getattr(collected_data, "claude_cli_stderr", "") or ""
+
+        if claude_stdout or claude_stderr:
+            dest_name = f"{test_id}-claude-cli.txt"
+            cli_content = ""
+            if claude_stdout:
+                cli_content += "=== Claude CLI stdout ===\n" + claude_stdout + "\n"
+            if claude_stderr:
+                cli_content += "=== Claude CLI stderr ===\n" + claude_stderr + "\n"
+
+            for dest_dir in [latest_dir, history_dir]:
+                dest_path = dest_dir / dest_name
+                try:
+                    with open(dest_path, "w") as f:
+                        f.write(cli_content)
+                    logger.debug(f"Preserved Claude CLI output: {dest_path}")
+                except Exception as e:
+                    logger.warning(f"Failed to write CLI output {dest_path}: {e}")
+            written_count += 1
+
+        # Write pytest output
+        pytest_output = result_data.get("pytest_output", "")
+        if pytest_output:
+            dest_name = f"{test_id}-pytest.txt"
+            for dest_dir in [latest_dir, history_dir]:
+                dest_path = dest_dir / dest_name
+                try:
+                    with open(dest_path, "w") as f:
+                        f.write(pytest_output)
+                    logger.debug(f"Preserved pytest output: {dest_path}")
+                except Exception as e:
+                    logger.warning(f"Failed to write pytest output {dest_path}: {e}")
+            written_count += 1
+
+    # Verify latest folder was created successfully
+    assert latest_dir.exists(), f"Failed to create latest artifacts folder: {latest_dir}"
+
+    if written_count > 0:
+        logger.info(
+            f"Preserved {written_count} artifact type(s) to: {latest_dir} and {history_dir}"
+        )
+
+    # Cleanup: keep only the last 10 history folders per fixture
+    _cleanup_history_folders(report_path / "history" / fixture_name, max_folders=10)
+
+
+def _cleanup_history_folders(history_fixture_dir: Path, max_folders: int = 10) -> None:
+    """Clean up old history folders, keeping only the most recent ones.
+
+    History folders are named with ISO timestamps (YYYY-MM-DDTHH-MM-SS), so
+    sorting alphabetically also sorts chronologically.
+
+    Args:
+        history_fixture_dir: Path to the fixture's history directory
+        max_folders: Maximum number of history folders to keep (default 10)
+    """
+    import shutil
+
+    if not history_fixture_dir.exists():
+        return
+
+    # Get all subdirectories (history folders) sorted by name (chronologically)
+    history_folders = sorted(
+        [d for d in history_fixture_dir.iterdir() if d.is_dir()],
+        key=lambda d: d.name
+    )
+
+    # If we have more than max_folders, delete the oldest ones
+    folders_to_delete = len(history_folders) - max_folders
+    if folders_to_delete > 0:
+        for folder in history_folders[:folders_to_delete]:
+            try:
+                shutil.rmtree(folder)
+                logger.info(f"Deleted old history folder: {folder}")
+            except Exception as e:
+                logger.warning(f"Failed to delete history folder {folder}: {e}")
 
 
 def _create_minimal_test_result(

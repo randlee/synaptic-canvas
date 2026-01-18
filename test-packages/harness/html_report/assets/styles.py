@@ -563,6 +563,16 @@ CSS_TIMELINE = """.timeline {
   font-style: italic;
   color: var(--text-muted);
   font-size: 0.85rem;
+}
+.timeline-meta {
+  font-family: monospace;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  background: var(--bg-subtle);
+  padding: 2px 6px;
+  border-radius: 3px;
+  margin-bottom: 4px;
+  display: inline-block;
 }"""
 
 # Response preview styles

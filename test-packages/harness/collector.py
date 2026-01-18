@@ -86,6 +86,7 @@ class CorrelatedToolCall:
     is_error: bool = False
     error_content: str | None = None
     duration_ms: int | None = None
+    pid: int | None = None
 
     def __post_init__(self):
         """Compute duration if both timestamps available."""
@@ -167,6 +168,9 @@ class CollectedData:
     # Errors (from transcript, for when PostToolUse doesn't fire)
     errors: list[ToolError] = field(default_factory=list)
 
+    # Tool to agent correlation: tool_use_id -> (agent_id, agent_type)
+    tool_to_agent_map: dict[str, tuple[str, str | None]] = field(default_factory=dict)
+
     # Raw events (for timeline building)
     raw_hook_events: list[dict[str, Any]] = field(default_factory=list)
     raw_transcript_entries: list[dict[str, Any]] = field(default_factory=list)
@@ -234,17 +238,24 @@ def parse_trace_file(trace_path: Path | str) -> list[dict[str, Any]]:
                 event = json.loads(line)
 
                 # Parse stdin JSON and merge into event (for agent_id, tool_use_id, etc.)
-                # The log-hook.py stores the Claude payload as a JSON string in stdin
+                # The log-hook.py may store stdin as a JSON string (old) or as a dict (new)
                 stdin_raw = event.get("stdin", "")
-                if stdin_raw and isinstance(stdin_raw, str):
+                stdin_data = None
+                if isinstance(stdin_raw, dict):
+                    # Already parsed (new log-hook.py format)
+                    stdin_data = stdin_raw
+                elif stdin_raw and isinstance(stdin_raw, str):
+                    # Legacy format - stdin is a JSON string
                     try:
                         stdin_data = json.loads(stdin_raw)
-                        # Merge stdin data, but don't overwrite existing top-level fields
-                        for key, value in stdin_data.items():
-                            if key not in event:
-                                event[key] = value
                     except json.JSONDecodeError:
                         logger.debug(f"stdin is not valid JSON at line {line_num}")
+
+                # Merge stdin data, but don't overwrite existing top-level fields
+                if stdin_data and isinstance(stdin_data, dict):
+                    for key, value in stdin_data.items():
+                        if key not in event:
+                            event[key] = value
 
                 events.append(event)
             except json.JSONDecodeError as e:
@@ -380,6 +391,7 @@ def correlate_events(
             post_timestamp=(
                 parse_timestamp(post_event.get("ts")) if post_event else None
             ),
+            pid=pre_event.get("pid"),
         )
         tool_calls.append(tool_call)
         seen_ids.add(tool_use_id)
@@ -393,6 +405,7 @@ def correlate_events(
                 tool_input=post_event.get("tool_input", {}),
                 tool_response=post_event.get("tool_response"),
                 post_timestamp=parse_timestamp(post_event.get("ts")),
+                pid=post_event.get("pid"),
             )
             tool_calls.append(tool_call)
 
@@ -436,6 +449,99 @@ def correlate_events(
         f"Correlated {len(tool_calls)} tool calls and {len(subagents)} subagents"
     )
     return tool_calls, subagents
+
+
+def correlate_tool_calls_with_agents(
+    events: list[dict[str, Any]]
+) -> dict[str, tuple[str, str | None]]:
+    """Correlate tool_use_ids with their parent subagent.
+
+    Uses ppid (parent process ID) to determine which subagent context
+    a tool call executed in. Falls back to timestamp-based correlation
+    if ppid is not available.
+
+    Args:
+        events: List of hook events
+
+    Returns:
+        Dict mapping tool_use_id -> (agent_id, agent_type)
+    """
+    sorted_events = sorted(
+        events,
+        key=lambda e: parse_timestamp(e.get("ts")) or datetime.min
+    )
+
+    # Track active subagents by ppid: ppid -> (agent_id, agent_type)
+    active_by_ppid: dict[int, tuple[str, str | None]] = {}
+
+    # Track subagent time ranges for fallback: agent_id -> (start_ts, stop_ts, agent_type)
+    subagent_ranges: dict[str, tuple[datetime | None, datetime | None, str | None]] = {}
+
+    # Result: tool_use_id -> (agent_id, agent_type)
+    tool_to_agent: dict[str, tuple[str, str | None]] = {}
+
+    # First pass: build ppid mapping and time ranges
+    for event in sorted_events:
+        event_type = event.get("event") or event.get("hook_event_name")
+        ppid = event.get("ppid")
+        agent_id = event.get("agent_id")
+        agent_type = event.get("agent_type")
+        ts = parse_timestamp(event.get("ts"))
+
+        if event_type == "SubagentStart" and agent_id:
+            if ppid:
+                active_by_ppid[ppid] = (agent_id, agent_type)
+            subagent_ranges[agent_id] = (ts, None, agent_type)
+
+        elif event_type == "SubagentStop" and agent_id:
+            # Remove from ppid mapping
+            for key, (aid, _) in list(active_by_ppid.items()):
+                if aid == agent_id:
+                    del active_by_ppid[key]
+                    break
+            # Update time range
+            if agent_id in subagent_ranges:
+                start_ts, _, atype = subagent_ranges[agent_id]
+                subagent_ranges[agent_id] = (start_ts, ts, atype)
+
+    # Reset ppid mapping for second pass
+    active_by_ppid.clear()
+
+    # Second pass: correlate tool calls
+    for event in sorted_events:
+        event_type = event.get("event") or event.get("hook_event_name")
+        ppid = event.get("ppid")
+        agent_id = event.get("agent_id")
+        agent_type = event.get("agent_type")
+
+        if event_type == "SubagentStart" and agent_id and ppid:
+            active_by_ppid[ppid] = (agent_id, agent_type)
+
+        elif event_type == "SubagentStop" and agent_id:
+            for key, (aid, _) in list(active_by_ppid.items()):
+                if aid == agent_id:
+                    del active_by_ppid[key]
+                    break
+
+        elif event_type == "PreToolUse":
+            tool_use_id = event.get("tool_use_id")
+            if not tool_use_id:
+                continue
+
+            # Try ppid correlation first
+            if ppid and ppid in active_by_ppid:
+                tool_to_agent[tool_use_id] = active_by_ppid[ppid]
+            else:
+                # Fallback: timestamp-based correlation
+                ts = parse_timestamp(event.get("ts"))
+                if ts:
+                    for aid, (start_ts, stop_ts, atype) in subagent_ranges.items():
+                        if start_ts and start_ts <= ts:
+                            if stop_ts is None or ts <= stop_ts:
+                                tool_to_agent[tool_use_id] = (aid, atype)
+                                break
+
+    return tool_to_agent
 
 
 def extract_errors_from_transcript(
@@ -570,6 +676,7 @@ class DataCollector:
         """
         self.trace_path = Path(trace_path) if trace_path else None
         self.transcript_path = Path(transcript_path) if transcript_path else None
+        self._tool_to_agent_map: dict[str, tuple[str, str | None]] = {}
 
     def collect(self) -> CollectedData:
         """Collect and correlate all data from trace and transcript.
@@ -607,6 +714,10 @@ class DataCollector:
 
             # Correlate tool calls and subagents
             data.tool_calls, data.subagents = correlate_events(hook_events)
+
+            # Correlate tool calls with their parent agents
+            self._tool_to_agent_map = correlate_tool_calls_with_agents(hook_events)
+            data.tool_to_agent_map = self._tool_to_agent_map
 
         # Parse transcript file
         if self.transcript_path:
@@ -706,6 +817,12 @@ class DataCollector:
                     is_error=tool_call.is_error,
                 )
 
+            # Get agent association for this tool call
+            # Use data.tool_to_agent_map if self._tool_to_agent_map is empty
+            # (this happens when a new collector is created in reporter.py)
+            tool_map = self._tool_to_agent_map or data.tool_to_agent_map
+            agent_info = tool_map.get(tool_call.tool_use_id)
+
             entries.append(
                 TimelineEntry(
                     seq=seq,
@@ -717,6 +834,10 @@ class DataCollector:
                     output=tool_output,
                     duration_ms=tool_call.duration_ms,
                     intent=self._infer_intent(tool_call),
+                    agent_id=agent_info[0] if agent_info else None,
+                    agent_type=agent_info[1] if agent_info else None,
+                    pid=tool_call.pid,
+                    tool_use_id=tool_call.tool_use_id,
                 )
             )
 
