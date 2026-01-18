@@ -1,0 +1,83 @@
+# P1 Test: Checklist agent reports status
+# Component Type: AGENT
+# Agent: sc-checklist-status
+# Tests: Basic checklist status reporting functionality
+
+test_id: sc-checklist-report-001
+test_name: Checklist agent reports status
+component_type: agent
+agent_name: sc-checklist-status
+description: |
+  Verify the sc-checklist-status agent correctly reads and reports on
+  a checklist file. The agent should parse checklist items and report
+  their status (checked/unchecked counts, pending items, etc.).
+
+setup:
+  commands:
+    - mkdir -p .claude pm
+    # Create config pointing to our test checklist
+    - |
+      cat > .claude/sc-startup.yaml << 'EOF'
+      startup-prompt: pm/ARCH-SC.md
+      check-list: pm/checklist.md
+      worktree-scan: none
+      pr-enabled: false
+      worktree-enabled: false
+      EOF
+    # Create startup prompt
+    - |
+      cat > pm/ARCH-SC.md << 'EOF'
+      # Test Prompt
+      Test startup prompt for checklist agent testing.
+      EOF
+    # Create checklist with known items for verification
+    - |
+      cat > pm/checklist.md << 'EOF'
+      # Test Checklist
+
+      ## Phase 1
+      - [ ] Pending task A
+      - [x] Completed task B
+      - [ ] Pending task C
+
+      ## Phase 2
+      - [x] Completed task D
+      - [ ] Pending task E
+      EOF
+
+execution:
+  # Invoke via /sc-startup --readonly which should trigger checklist agent
+  prompt: "/sc-startup --readonly"
+  model: haiku
+  timeout_ms: 60000
+  tools:
+    - Read
+    - Bash
+    - Skill
+    - Task
+    - Glob
+
+expectations:
+  - id: exp-checklist-read
+    description: Checklist file is read
+    type: output_contains
+    expected:
+      pattern: "(checklist|check.list|task)"
+      flags: "i"
+
+  - id: exp-status-reported
+    description: Status of items is reported
+    type: output_contains
+    expected:
+      pattern: "(pending|completed|done|status|item)"
+      flags: "i"
+
+  - id: exp-counts-or-items
+    description: Either counts or specific items mentioned
+    type: output_contains
+    expected:
+      pattern: "(\\d+.*task|task.*\\d+|pending|completed|Phase)"
+      flags: "i"
+
+# Note: Would verify SubagentStart event for sc-checklist-status
+# but subagent_event type needs hook infrastructure confirmation
