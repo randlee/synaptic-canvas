@@ -331,7 +331,7 @@ def sample_trace_events() -> list[dict]:
             "ts": "2026-01-16T12:00:00.000Z",
             "event": "SessionStart",
             "session_id": "test-session-123",
-            "transcript_path": "/tmp/test/session.jsonl",
+            "transcript_path": "/tmp/test/transcript.jsonl",
             "cwd": "/path/to/project",
         },
         {

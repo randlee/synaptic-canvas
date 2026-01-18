@@ -49,6 +49,8 @@ from typing import TYPE_CHECKING, Any, Iterator
 
 import pytest
 
+from pydantic import ValidationError
+
 from .fixture_loader import FixtureConfig, FixtureLoader, TestConfig
 from .models import TestStatus
 
@@ -1466,6 +1468,7 @@ def _generate_fixture_report(
             fixture_name=fixture_name,
             report_path=report_path,
             test_results_data=test_results_data,
+            fixture_config=fixture_config,
         )
 
         return html_path
@@ -1481,6 +1484,7 @@ def _preserve_artifacts(
     fixture_name: str,
     report_path: Path,
     test_results_data: list[dict],
+    fixture_config: FixtureConfig | None = None,
 ) -> None:
     """Preserve test artifacts in a folder next to the HTML report.
 
@@ -1489,8 +1493,9 @@ def _preserve_artifacts(
     in the history folder for retention.
 
     Artifacts preserved:
-    - {test_id}-session.jsonl: Session transcript from raw_transcript_entries
+    - {test_id}-transcript.jsonl: Native Claude session transcript from raw_transcript_entries
     - {test_id}-trace.jsonl: Hook events from raw_hook_events
+    - {test_id}-enriched.json: Enriched data with timeline tree structure
     - {test_id}-claude-cli.txt: Claude CLI stdout/stderr
     - {test_id}-pytest.txt: Pytest output
 
@@ -1498,6 +1503,7 @@ def _preserve_artifacts(
         fixture_name: Name of the fixture (used for folder name)
         report_path: Directory where reports are stored
         test_results_data: List of test result dictionaries containing collected_data
+        fixture_config: Optional FixtureConfig for enrichment metadata
     """
     import json
     import shutil
@@ -1526,23 +1532,24 @@ def _preserve_artifacts(
         collected_data = result_data.get("collected_data")
         test_id = result_data.get("test_id", f"test-{i}")
 
-        # Write session transcript (raw_transcript_entries)
+        # Write native Claude transcript (raw_transcript_entries) - preserved verbatim
         if collected_data and hasattr(collected_data, "raw_transcript_entries"):
             entries = collected_data.raw_transcript_entries
             if entries:
-                dest_name = f"{test_id}-session.jsonl"
+                dest_name = f"{test_id}-transcript.jsonl"
                 for dest_dir in [latest_dir, history_dir]:
                     dest_path = dest_dir / dest_name
                     try:
                         with open(dest_path, "w") as f:
                             for entry in entries:
+                                # Write native Claude transcript entries verbatim (no transformation)
                                 f.write(json.dumps(entry) + "\n")
-                        logger.debug(f"Preserved session transcript: {dest_path}")
+                        logger.debug(f"Preserved transcript: {dest_path}")
                     except Exception as e:
                         logger.warning(f"Failed to write transcript {dest_path}: {e}")
                 written_count += 1
             else:
-                logger.warning(f"Empty session transcript for test {test_id}")
+                logger.warning(f"Empty transcript for test {test_id}")
 
         # Write trace file (raw_hook_events)
         if collected_data and hasattr(collected_data, "raw_hook_events"):
@@ -1561,6 +1568,82 @@ def _preserve_artifacts(
                 written_count += 1
             else:
                 logger.warning(f"Empty trace file for test {test_id}")
+
+        # Write enriched.json with timeline tree structure
+        try:
+            from .enrichment import build_timeline_tree
+            from .schemas import TestContext, TestContextPaths, ArtifactPaths
+
+            # Get test_config for metadata
+            test_config = result_data.get("test_config")
+
+            # Get entries and events (may have been set in the transcript/trace blocks above)
+            entries = []
+            events = []
+            if collected_data and hasattr(collected_data, "raw_transcript_entries"):
+                entries = collected_data.raw_transcript_entries or []
+            if collected_data and hasattr(collected_data, "raw_hook_events"):
+                events = collected_data.raw_hook_events or []
+
+            # Only proceed if we have data to enrich
+            if entries or events:
+                test_context = TestContext(
+                    fixture_id=fixture_name,
+                    test_id=test_id,
+                    test_name=test_config.test_name if test_config else test_id,
+                    package=fixture_config.package if fixture_config else "",
+                    paths=TestContextPaths(
+                        fixture_yaml=str(fixture_config.source_path) if fixture_config else "",
+                        test_yaml=str(test_config.source_path) if test_config else "",
+                    )
+                )
+
+                artifact_paths = ArtifactPaths(
+                    transcript=f"{fixture_name}/{test_id}-transcript.jsonl",
+                    trace=f"{fixture_name}/{test_id}-trace.jsonl",
+                    enriched=f"{fixture_name}/{test_id}-enriched.json",
+                )
+
+                enriched_data = build_timeline_tree(
+                    transcript_entries=entries,
+                    trace_events=events,
+                    test_context=test_context,
+                    artifact_paths=artifact_paths,
+                )
+
+                # Validate enriched data before writing
+                try:
+                    from .schemas import EnrichedData as EnrichedDataSchema
+                    EnrichedDataSchema.model_validate(enriched_data.model_dump())
+                    logger.debug(f"Schema validation passed for {test_id}")
+                except ValidationError as e:
+                    logger.warning(f"Enriched data schema validation failed for {test_id}: {e}")
+
+                # Lenient validation for Claude transcript entries
+                # Log warnings but don't fail - Claude schema may evolve
+                try:
+                    from .schemas import ClaudeTranscriptEntry
+                    for idx, entry in enumerate(entries):
+                        try:
+                            ClaudeTranscriptEntry.model_validate(entry)
+                        except ValidationError as e:
+                            logger.warning(
+                                f"Claude transcript entry {idx} validation warning for {test_id}: {e}"
+                            )
+                except Exception as e:
+                    logger.warning(f"Claude transcript validation skipped for {test_id}: {e}")
+
+                # Write enriched.json
+                dest_name = f"{test_id}-enriched.json"
+                for dest_dir in [latest_dir, history_dir]:
+                    dest_path = dest_dir / dest_name
+                    with open(dest_path, "w") as f:
+                        f.write(enriched_data.model_dump_json(indent=2))
+                    logger.debug(f"Preserved enriched data: {dest_path}")
+                written_count += 1
+
+        except Exception as e:
+            logger.warning(f"Failed to generate enriched data for {test_id}: {e}")
 
         # Write Claude CLI output (stdout + stderr)
         claude_stdout = ""

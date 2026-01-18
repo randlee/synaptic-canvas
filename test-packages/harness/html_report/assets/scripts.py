@@ -394,6 +394,83 @@ function tryFetchAssessment(paths, index, section, contentEl, metaEl) {
     });
 }"""
 
+# Timeline tree interactivity - agent filtering, path highlighting, collapse/expand
+JS_TIMELINE_TREE = """
+// Filter timeline by agent
+function filterByAgent(agentId) {
+  document.querySelectorAll('.timeline-item').forEach(node => {
+    const nodeAgent = node.dataset.agentId;
+    if (agentId === 'all' || nodeAgent === agentId || !nodeAgent) {
+      node.style.display = 'block';
+    } else {
+      node.style.display = 'none';
+    }
+  });
+  // Persist selection
+  sessionStorage.setItem('timelineAgentFilter', agentId);
+}
+
+// Highlight path from node up to root
+function highlightPath(uuid) {
+  // Clear existing highlights
+  document.querySelectorAll('.highlighted').forEach(el => {
+    el.classList.remove('highlighted');
+  });
+
+  // Highlight path to root
+  let current = document.querySelector(`[data-uuid="${uuid}"]`);
+  while (current) {
+    current.classList.add('highlighted');
+    const parentUuid = current.dataset.parentUuid;
+    current = parentUuid ? document.querySelector(`[data-uuid="${parentUuid}"]`) : null;
+  }
+}
+
+// Collapse/expand all subagent sections
+function toggleAllSubagents(expand) {
+  document.querySelectorAll('.subagent-section').forEach(section => {
+    section.open = expand;
+  });
+}
+
+// Build agent filter dropdown
+function buildAgentFilter(containerId) {
+  const agents = new Set();
+  document.querySelectorAll('[data-agent-id]').forEach(el => {
+    if (el.dataset.agentId) {
+      agents.add(el.dataset.agentId);
+    }
+  });
+
+  if (agents.size === 0) return;
+
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  const select = document.createElement('select');
+  select.className = 'agent-filter-select';
+  select.innerHTML = '<option value="all">All Agents</option>';
+  agents.forEach(agent => {
+    select.innerHTML += `<option value="${agent}">${agent}</option>`;
+  });
+  select.onchange = () => filterByAgent(select.value);
+  container.appendChild(select);
+
+  // Restore persisted selection
+  const saved = sessionStorage.getItem('timelineAgentFilter');
+  if (saved && agents.has(saved)) {
+    select.value = saved;
+    filterByAgent(saved);
+  }
+}
+
+// Initialize timeline tree features on page load
+document.addEventListener('DOMContentLoaded', function() {
+  // Build agent filter if container exists
+  buildAgentFilter('agent-filter-container');
+});
+"""
+
 # Initialization - DOMContentLoaded setup, no-content prevention
 JS_INITIALIZATION = """// Prevent toggle buttons with no content from doing anything
 document.querySelectorAll('.expectation-toggle.no-content').forEach(btn => {
@@ -426,6 +503,7 @@ def get_all_scripts() -> str:
         JS_TOGGLE_FUNCTIONS,
         JS_MARKDOWN_RENDERER,
         JS_ASSESSMENT_LOADER,
+        JS_TIMELINE_TREE,
         JS_INITIALIZATION,
     ]
     return "\n\n".join(sections)

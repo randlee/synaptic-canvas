@@ -312,6 +312,10 @@ class TimelineItemDisplayModel(BaseModel):
     output: str | None = None
     pid: int | None = None
     tool_use_id: str | None = None
+    # Tree structure fields
+    depth: int = 0
+    uuid: str | None = None
+    parent_uuid: str | None = None
 
     @computed_field
     @property
