@@ -15,7 +15,7 @@
 |--------|--------|--------|------|-------|
 | 1 | ✅ Complete | `112e8ab` | 2026-01-18 | Renamed `-session.jsonl` to `-transcript.jsonl` |
 | 2 | ✅ Complete | `c875bb0` | 2026-01-18 | Created `enrichment.py` module + 38 tests |
-| 3 | ⏳ Pending | - | - | Integration with artifact preservation |
+| 3 | ✅ Complete | `c6b98f8` | 2026-01-18 | Integrated enrichment into artifact preservation |
 | 4 | ⏳ Pending | - | - | Fixture report integration |
 | 5 | ⏳ Pending | - | - | HTML rendering updates |
 | 6 | ⏳ Pending | - | - | Schema validation & documentation |
