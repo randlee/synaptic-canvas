@@ -34,9 +34,11 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import Enum
-from typing import Any
+from typing import Any, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+from .schemas import TimelineTree, ArtifactPaths
 
 
 # =============================================================================
@@ -543,6 +545,10 @@ class TestResult(BaseModel):
     )
     claude_response: ClaudeResponse = Field(description="Claude's response")
     debug: DebugInfo = Field(default_factory=DebugInfo, description="Debug information")
+
+    # Timeline tree architecture fields (Sprint 4)
+    timeline_tree: Optional[TimelineTree] = None
+    artifacts: Optional[ArtifactPaths] = None
 
     def compute_status(self) -> TestStatus:
         """Compute overall status from expectations.

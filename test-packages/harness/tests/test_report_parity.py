@@ -691,10 +691,10 @@ class TestNewSectionDetection:
             "reproduce": {"reproduce"},
             "execution": {"execution"},
             "expectations": {"expectations"},
-            "timeline": {"timeline"},
+            "timeline": {"timeline", "timeline_tree"},
             "response": {"claude_response"},
             "side_effects": {"side_effects"},
-            "debug": {"debug"},
+            "debug": {"debug", "artifacts"},
         }
 
         # Flatten all mapped fields

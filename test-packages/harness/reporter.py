@@ -38,6 +38,7 @@ from typing import Any
 
 from .collector import CollectedData, DataCollector
 from .environment import get_git_state
+from .schemas import ArtifactPaths, EnrichedData, TimelineTree
 from .models import (
     ClaudeResponse,
     DebugInfo,
@@ -111,6 +112,8 @@ class ReportBuilder:
         pytest_output: str = "",
         pytest_status: TestStatus | None = None,
         plugin_verification: "PluginVerification | None" = None,
+        reports_dir: Path | str | None = None,
+        fixture_name: str | None = None,
     ) -> TestResult:
         """Build a complete TestResult from collected data.
 
@@ -133,6 +136,8 @@ class ReportBuilder:
             pytest_output: Raw pytest output
             pytest_status: Pytest result status
             plugin_verification: Plugin installation verification data
+            reports_dir: Directory containing report artifacts (for enriched data loading)
+            fixture_name: Name of the fixture (for enriched data file path)
 
         Returns:
             Complete TestResult model
@@ -168,6 +173,21 @@ class ReportBuilder:
             full_text=data.final_response,
             word_count=len(data.final_response.split()) if data.final_response else 0,
         )
+
+        # Load enriched data if available (timeline tree integration)
+        timeline_tree: TimelineTree | None = None
+        artifacts: ArtifactPaths | None = None
+        if reports_dir and fixture_name:
+            enriched_path = Path(reports_dir) / fixture_name / f"{test_id}-enriched.json"
+            if enriched_path.exists():
+                try:
+                    with open(enriched_path) as f:
+                        enriched_data = EnrichedData.model_validate(json.load(f))
+                    timeline_tree = enriched_data.tree
+                    artifacts = enriched_data.artifacts
+                    logger.debug(f"Loaded enriched data from {enriched_path}")
+                except Exception as e:
+                    logger.warning(f"Failed to load enriched data from {enriched_path}: {e}")
 
         # Build the TestResult
         result = TestResult(
@@ -214,6 +234,8 @@ class ReportBuilder:
                 errors=[e.error_content for e in data.errors],
                 plugin_verification=plugin_verification,
             ),
+            timeline_tree=timeline_tree,
+            artifacts=artifacts,
         )
 
         return result
