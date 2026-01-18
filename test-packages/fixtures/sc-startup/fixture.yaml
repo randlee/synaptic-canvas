@@ -1,0 +1,23 @@
+# sc-startup Skill Test Fixture
+# Tests the /sc-startup command for Synaptic Canvas project initialization
+
+name: sc-startup
+description: Tests for the sc-startup skill
+package: sc-startup@synaptic-canvas
+
+setup:
+  plugins: []
+  files: []
+  commands:
+    # Copy the sc-startup config file to .claude directory
+    - mkdir -p .claude
+    - cp test-packages/fixtures/sc-startup/resources/sc-startup.yaml .claude/sc-startup.yaml
+    - echo "sc-startup config installed at .claude/sc-startup.yaml"
+
+teardown:
+  commands:
+    # Remove the test config file
+    - rm -f .claude/sc-startup.yaml
+    - echo "Cleaned up sc-startup tests"
+
+tests_dir: tests

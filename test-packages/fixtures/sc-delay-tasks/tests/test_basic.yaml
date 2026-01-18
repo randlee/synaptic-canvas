@@ -1,0 +1,37 @@
+# Test: sc-delay-tasks basic invocation
+# Verifies that /delay command responds with help/usage information
+
+test_id: sc-delay-tasks-001
+test_name: Basic delay command help
+description: Verify /delay command shows usage information when invoked with --help
+tags:
+  - skill
+  - sc-delay-tasks
+  - basic
+
+execution:
+  prompt: "/delay --help"
+  model: haiku
+  tools:
+    - Bash
+    - Read
+    - Glob
+  timeout_ms: 60000
+
+setup:
+  commands: []
+
+expectations:
+  - id: exp-001
+    description: Should show delay-related options or modes
+    type: output_contains
+    expected:
+      pattern: "(delay|poll|minutes|seconds|interval|action)"
+      flags: "i"
+
+  - id: exp-002
+    description: Should mention one-shot or polling modes
+    type: output_contains
+    expected:
+      pattern: "(one-shot|polling|wait|bounded)"
+      flags: "i"
