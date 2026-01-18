@@ -303,12 +303,14 @@ class TimelineItemDisplayModel(BaseModel):
     seq: int
     entry_type: TimelineEntryType
     tool_name: str | None = None
+    agent_id: str | None = None
     agent_type: str | None = None
     elapsed_ms: int
     content: str | None = None
     intent: str | None = None
     command: str | None = None
     output: str | None = None
+    pid: int | None = None
 
     @computed_field
     @property
@@ -347,12 +349,14 @@ class TimelineDisplayModel(BaseModel):
                 seq=entry.seq,
                 entry_type=entry.type,
                 tool_name=entry.tool,
+                agent_id=entry.agent_id,
                 agent_type=entry.agent_type,
                 elapsed_ms=entry.elapsed_ms,
                 content=entry.content or entry.content_preview,
                 intent=entry.intent,
                 command=entry.input.command if entry.input else None,
                 output=(entry.output.stdout or entry.output.content) if entry.output else None,
+                pid=entry.pid,
             )
             display_entries.append(item)
 

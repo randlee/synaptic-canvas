@@ -86,6 +86,7 @@ class CorrelatedToolCall:
     is_error: bool = False
     error_content: str | None = None
     duration_ms: int | None = None
+    pid: int | None = None
 
     def __post_init__(self):
         """Compute duration if both timestamps available."""
@@ -167,6 +168,9 @@ class CollectedData:
     # Errors (from transcript, for when PostToolUse doesn't fire)
     errors: list[ToolError] = field(default_factory=list)
 
+    # Tool to agent correlation: tool_use_id -> (agent_id, agent_type)
+    tool_to_agent_map: dict[str, tuple[str, str | None]] = field(default_factory=dict)
+
     # Raw events (for timeline building)
     raw_hook_events: list[dict[str, Any]] = field(default_factory=list)
     raw_transcript_entries: list[dict[str, Any]] = field(default_factory=list)
@@ -234,17 +238,24 @@ def parse_trace_file(trace_path: Path | str) -> list[dict[str, Any]]:
                 event = json.loads(line)
 
                 # Parse stdin JSON and merge into event (for agent_id, tool_use_id, etc.)
-                # The log-hook.py stores the Claude payload as a JSON string in stdin
+                # The log-hook.py may store stdin as a JSON string (old) or as a dict (new)
                 stdin_raw = event.get("stdin", "")
-                if stdin_raw and isinstance(stdin_raw, str):
+                stdin_data = None
+                if isinstance(stdin_raw, dict):
+                    # Already parsed (new log-hook.py format)
+                    stdin_data = stdin_raw
+                elif stdin_raw and isinstance(stdin_raw, str):
+                    # Legacy format - stdin is a JSON string
                     try:
                         stdin_data = json.loads(stdin_raw)
-                        # Merge stdin data, but don't overwrite existing top-level fields
-                        for key, value in stdin_data.items():
-                            if key not in event:
-                                event[key] = value
                     except json.JSONDecodeError:
                         logger.debug(f"stdin is not valid JSON at line {line_num}")
+
+                # Merge stdin data, but don't overwrite existing top-level fields
+                if stdin_data and isinstance(stdin_data, dict):
+                    for key, value in stdin_data.items():
+                        if key not in event:
+                            event[key] = value
 
                 events.append(event)
             except json.JSONDecodeError as e:
@@ -380,6 +391,7 @@ def correlate_events(
             post_timestamp=(
                 parse_timestamp(post_event.get("ts")) if post_event else None
             ),
+            pid=pre_event.get("pid"),
         )
         tool_calls.append(tool_call)
         seen_ids.add(tool_use_id)
@@ -393,6 +405,7 @@ def correlate_events(
                 tool_input=post_event.get("tool_input", {}),
                 tool_response=post_event.get("tool_response"),
                 post_timestamp=parse_timestamp(post_event.get("ts")),
+                pid=post_event.get("pid"),
             )
             tool_calls.append(tool_call)
 
@@ -704,6 +717,7 @@ class DataCollector:
 
             # Correlate tool calls with their parent agents
             self._tool_to_agent_map = correlate_tool_calls_with_agents(hook_events)
+            data.tool_to_agent_map = self._tool_to_agent_map
 
         # Parse transcript file
         if self.transcript_path:
@@ -804,7 +818,10 @@ class DataCollector:
                 )
 
             # Get agent association for this tool call
-            agent_info = self._tool_to_agent_map.get(tool_call.tool_use_id)
+            # Use data.tool_to_agent_map if self._tool_to_agent_map is empty
+            # (this happens when a new collector is created in reporter.py)
+            tool_map = self._tool_to_agent_map or data.tool_to_agent_map
+            agent_info = tool_map.get(tool_call.tool_use_id)
 
             entries.append(
                 TimelineEntry(
@@ -819,6 +836,7 @@ class DataCollector:
                     intent=self._infer_intent(tool_call),
                     agent_id=agent_info[0] if agent_info else None,
                     agent_type=agent_info[1] if agent_info else None,
+                    pid=tool_call.pid,
                 )
             )
 

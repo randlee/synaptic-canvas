@@ -80,6 +80,19 @@ class TimelineBuilder(BaseBuilder[TimelineDisplayModel]):
         if entry.intent:
             intent_html = f'<div class="timeline-intent">{self.escape(entry.intent)}</div>'
 
+        # Build meta line with pid and agent info
+        meta_parts = []
+        if entry.pid:
+            meta_parts.append(f"pid:{entry.pid}")
+        if entry.agent_type:
+            agent_text = f"{entry.agent_type}"
+            if entry.agent_id:
+                agent_text += f" ({entry.agent_id})"
+            meta_parts.append(f"agent:{agent_text}")
+        meta_html = ""
+        if meta_parts:
+            meta_html = f'<div class="timeline-meta">{" | ".join(meta_parts)}</div>'
+
         return f'''<div class="timeline-item {type_display.css_class}" data-seq="{entry.seq}" data-elapsed="{entry.elapsed_ms}ms">
         <div class="timeline-dot"></div>
         <div class="timeline-header">
@@ -91,6 +104,7 @@ class TimelineBuilder(BaseBuilder[TimelineDisplayModel]):
           </div>
         </div>
         <div class="timeline-content">
+          {meta_html}
           {intent_html}
           {content_html}
         </div>
