@@ -1489,7 +1489,7 @@ def _preserve_artifacts(
     in the history folder for retention.
 
     Artifacts preserved:
-    - {test_id}-session.jsonl: Session transcript from raw_transcript_entries
+    - {test_id}-transcript.jsonl: Native Claude session transcript from raw_transcript_entries
     - {test_id}-trace.jsonl: Hook events from raw_hook_events
     - {test_id}-claude-cli.txt: Claude CLI stdout/stderr
     - {test_id}-pytest.txt: Pytest output
@@ -1526,23 +1526,24 @@ def _preserve_artifacts(
         collected_data = result_data.get("collected_data")
         test_id = result_data.get("test_id", f"test-{i}")
 
-        # Write session transcript (raw_transcript_entries)
+        # Write native Claude transcript (raw_transcript_entries) - preserved verbatim
         if collected_data and hasattr(collected_data, "raw_transcript_entries"):
             entries = collected_data.raw_transcript_entries
             if entries:
-                dest_name = f"{test_id}-session.jsonl"
+                dest_name = f"{test_id}-transcript.jsonl"
                 for dest_dir in [latest_dir, history_dir]:
                     dest_path = dest_dir / dest_name
                     try:
                         with open(dest_path, "w") as f:
                             for entry in entries:
+                                # Write native Claude transcript entries verbatim (no transformation)
                                 f.write(json.dumps(entry) + "\n")
-                        logger.debug(f"Preserved session transcript: {dest_path}")
+                        logger.debug(f"Preserved transcript: {dest_path}")
                     except Exception as e:
                         logger.warning(f"Failed to write transcript {dest_path}: {e}")
                 written_count += 1
             else:
-                logger.warning(f"Empty session transcript for test {test_id}")
+                logger.warning(f"Empty transcript for test {test_id}")
 
         # Write trace file (raw_hook_events)
         if collected_data and hasattr(collected_data, "raw_hook_events"):

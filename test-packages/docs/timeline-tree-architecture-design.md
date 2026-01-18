@@ -39,7 +39,7 @@ The current `TimelineEntry` model lacks:
 
 ### 1.3 Underutilized Data Sources
 
-The session transcript (`-session.jsonl`) contains rich relationship data that is currently ignored:
+The session transcript (`-transcript.jsonl`) contains rich relationship data that is currently ignored:
 
 | Field | Purpose | Current Usage |
 |-------|---------|---------------|

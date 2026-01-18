@@ -388,21 +388,21 @@ class TestIsolatedSessionMethods:
                 projects_dir.mkdir(parents=True)
 
                 # Create older transcript
-                old_transcript = projects_dir / "old-session.jsonl"
+                old_transcript = projects_dir / "old-transcript.jsonl"
                 old_transcript.write_text('{"type": "old"}')
 
                 import time
                 time.sleep(0.1)
 
                 # Create newer transcript
-                new_transcript = projects_dir / "new-session.jsonl"
+                new_transcript = projects_dir / "new-transcript.jsonl"
                 new_transcript.write_text('{"type": "new"}')
 
                 result = session.find_transcript()
 
                 assert result == new_transcript
                 assert session.transcript_path == new_transcript
-                assert session.session_id == "new-session"
+                assert session.session_id == "new-transcript"
 
 
 class TestIsolatedSessionPluginInstall:

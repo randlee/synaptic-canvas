@@ -714,7 +714,7 @@ HookEvent = (
 
 
 # =============================================================================
-# Transcript Entry Models (for session.jsonl parsing)
+# Transcript Entry Models (for transcript.jsonl parsing)
 # =============================================================================
 
 

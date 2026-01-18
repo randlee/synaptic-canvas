@@ -17,12 +17,12 @@ When pytest runs fixture tests, the harness captures multiple data sources for d
 
 | File | Source | Description |
 |------|--------|-------------|
-| `{test_id}-session.jsonl` | `collected_data.raw_transcript_entries` | Claude session transcript with full message history |
+| `{test_id}-transcript.jsonl` | `collected_data.raw_transcript_entries` | Claude session transcript with full message history |
 | `{test_id}-trace.jsonl` | `collected_data.raw_hook_events` | Hook events (SessionStart, PreToolUse, PostToolUse, etc.) |
 | `{test_id}-claude-cli.txt` | `collected_data.claude_cli_stdout/stderr` | Raw Claude CLI output |
 | `{test_id}-pytest.txt` | `result_data["pytest_output"]` | Pytest captured output for the test |
 
-### Session Transcript (`-session.jsonl`)
+### Session Transcript (`-transcript.jsonl`)
 
 Contains the full Claude session record including:
 - User messages and prompts
@@ -61,7 +61,7 @@ test-packages/reports/
 ├── sc-startup.html                         # Latest HTML report
 ├── sc-startup.json                         # Latest JSON report
 ├── sc-startup/                             # Latest artifacts
-│   ├── sc-startup-init-001-session.jsonl
+│   ├── sc-startup-init-001-transcript.jsonl
 │   ├── sc-startup-init-001-trace.jsonl
 │   ├── sc-startup-init-001-claude-cli.txt
 │   └── sc-startup-init-001-pytest.txt

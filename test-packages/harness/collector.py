@@ -4,7 +4,7 @@ Data collection for Claude Code test harness.
 This module provides functionality to collect and correlate data from
 two sources:
 1. Hooks (trace.jsonl) - Real-time capture of tool calls, subagents
-2. Transcript (session.jsonl) - Complete session record including errors
+2. Transcript (transcript.jsonl) - Complete session record including errors
 
 Key capabilities:
 - Parse trace.jsonl from hook events
@@ -22,7 +22,7 @@ Example usage:
 
     collector = DataCollector(
         trace_path="/path/to/trace.jsonl",
-        transcript_path="/path/to/session.jsonl"
+        transcript_path="/path/to/transcript.jsonl"
     )
     data = collector.collect()
 
@@ -273,7 +273,7 @@ def parse_transcript(transcript_path: Path | str) -> list[dict[str, Any]]:
     session record including messages, tool uses, and results.
 
     Args:
-        transcript_path: Path to session.jsonl transcript file
+        transcript_path: Path to transcript.jsonl transcript file
 
     Returns:
         List of parsed transcript entries
@@ -648,17 +648,17 @@ class DataCollector:
     """Collects and correlates data from trace and transcript files.
 
     The DataCollector reads both hook events (trace.jsonl) and the session
-    transcript (session.jsonl), correlating them to produce a comprehensive
+    transcript (transcript.jsonl), correlating them to produce a comprehensive
     view of test execution.
 
     Attributes:
         trace_path: Path to trace.jsonl file
-        transcript_path: Path to session.jsonl transcript file
+        transcript_path: Path to transcript.jsonl transcript file
 
     Example:
         collector = DataCollector(
             trace_path="reports/trace.jsonl",
-            transcript_path="~/.claude/projects/.../session.jsonl"
+            transcript_path="~/.claude/projects/.../transcript.jsonl"
         )
         data = collector.collect()
     """
@@ -672,7 +672,7 @@ class DataCollector:
 
         Args:
             trace_path: Path to trace.jsonl file (optional)
-            transcript_path: Path to session.jsonl transcript (optional)
+            transcript_path: Path to transcript.jsonl transcript (optional)
         """
         self.trace_path = Path(trace_path) if trace_path else None
         self.transcript_path = Path(transcript_path) if transcript_path else None
