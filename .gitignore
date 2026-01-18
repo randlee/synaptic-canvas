@@ -11,6 +11,9 @@ temp/
 # macOS
 .DS_Store
 
+# local test reports
+test-packages/reports/
+
 # Python
 __pycache__/
 *.py[cod]

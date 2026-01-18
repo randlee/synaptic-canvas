@@ -21,6 +21,8 @@ artifacts:
   agents:
     - agents/sc-checklist-status.md
     - agents/sc-startup-init.md
+    - agents/sc_checklist_status.py
+    - agents/sc_startup_init.py
   plugin:
     - .claude-plugin/plugin.json
 
@@ -29,6 +31,9 @@ install:
 
 requires:
   - git >= 2.20
+  - python3
+  - PyYAML
+  - pydantic
 
 dependencies:
   - "sc-ci-automation >= 0.7.0"
