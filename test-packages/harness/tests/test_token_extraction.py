@@ -501,12 +501,17 @@ class TestEnrichmentTokenUsage:
             artifact_paths=artifact_paths,
         )
 
+        # build_timeline_tree now returns Result - unwrap it
+        from harness.result import Success
+        assert isinstance(result, Success), f"Expected Success, got {type(result)}"
+        enriched_data = result.value
+
         # Check that stats includes token_usage
-        assert result.stats.token_usage is not None
-        assert result.stats.token_usage.input_tokens == 100
-        assert result.stats.token_usage.output_tokens == 50
-        assert result.stats.token_usage.cache_creation_tokens == 500
-        assert result.stats.token_usage.cache_read_tokens == 1000
+        assert enriched_data.stats.token_usage is not None
+        assert enriched_data.stats.token_usage.input_tokens == 100
+        assert enriched_data.stats.token_usage.output_tokens == 50
+        assert enriched_data.stats.token_usage.cache_creation_tokens == 500
+        assert enriched_data.stats.token_usage.cache_read_tokens == 1000
 
     @pytest.mark.skipif(not EXTRACTION_AVAILABLE, reason="extract_token_usage not yet implemented")
     def test_enrichment_with_no_usage_data(self, test_context, artifact_paths):
@@ -528,7 +533,12 @@ class TestEnrichmentTokenUsage:
             artifact_paths=artifact_paths,
         )
 
+        # build_timeline_tree now returns Result - unwrap it
+        from harness.result import Success
+        assert isinstance(result, Success), f"Expected Success, got {type(result)}"
+        enriched_data = result.value
+
         # token_usage should exist but be zeros (or None - depends on implementation)
-        if result.stats.token_usage is not None:
-            assert result.stats.token_usage.input_tokens == 0
-            assert result.stats.token_usage.output_tokens == 0
+        if enriched_data.stats.token_usage is not None:
+            assert enriched_data.stats.token_usage.input_tokens == 0
+            assert enriched_data.stats.token_usage.output_tokens == 0

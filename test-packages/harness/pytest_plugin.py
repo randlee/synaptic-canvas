@@ -53,6 +53,7 @@ from pydantic import ValidationError
 
 from .fixture_loader import FixtureConfig, FixtureLoader, TestConfig
 from .models import TestStatus
+from .result import ArtifactError, Failure, Result, Success, collect_results
 
 if TYPE_CHECKING:
     from _pytest.config import Config
@@ -1466,12 +1467,28 @@ def _generate_fixture_report(
         write_json_report(fixture_report, json_path)
 
         # Preserve artifacts in folder next to HTML report
-        _preserve_artifacts(
+        # Result pattern ensures we never fail tests due to artifact errors
+        artifact_result = _preserve_artifacts(
             fixture_name=fixture_name,
             report_path=report_path,
             test_results_data=test_results_data,
             fixture_config=fixture_config,
         )
+
+        # Log artifact preservation results (but never fail the test)
+        if isinstance(artifact_result, Failure):
+            # Even on failure, artifact_result.partial_result contains the ArtifactReport
+            partial_report = artifact_result.partial_result
+            if partial_report:
+                logger.info(
+                    f"Artifact preservation completed with partial success: "
+                    f"{partial_report.success_count} succeeded, "
+                    f"{partial_report.failure_count} failed"
+                )
+        else:
+            report = artifact_result.value
+            if report.warnings:
+                logger.debug(f"Artifact preservation warnings: {report.warnings}")
 
         return html_path
 
@@ -1482,17 +1499,229 @@ def _generate_fixture_report(
         return None
 
 
+
+# =============================================================================
+# Artifact Preservation Types and Helpers
+# =============================================================================
+
+from dataclasses import dataclass, field
+
+
+@dataclass
+class ArtifactReport:
+    """Report of artifact preservation results.
+
+    Tracks which artifacts were successfully written and any errors encountered.
+    """
+
+    successful_writes: list[Path] = field(default_factory=list)
+    failed_writes: list[ArtifactError] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
+
+    @property
+    def total_attempted(self) -> int:
+        """Total number of artifact writes attempted."""
+        return len(self.successful_writes) + len(self.failed_writes)
+
+    @property
+    def success_count(self) -> int:
+        """Number of successful writes."""
+        return len(self.successful_writes)
+
+    @property
+    def failure_count(self) -> int:
+        """Number of failed writes."""
+        return len(self.failed_writes)
+
+    @property
+    def has_failures(self) -> bool:
+        """True if any writes failed."""
+        return len(self.failed_writes) > 0
+
+
+def _write_artifact(path: Path, content: str, artifact_type: str) -> Result[Path, ArtifactError]:
+    """Write a single artifact file, returning Result.
+
+    Args:
+        path: Destination path for the artifact
+        content: Content to write
+        artifact_type: Type of artifact (for error context)
+
+    Returns:
+        Success[Path]: If write succeeded, with the path written
+        Failure[ArtifactError]: If write failed, with error details
+    """
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with open(path, "w") as f:
+            f.write(content)
+        return Success(path)
+    except Exception as e:
+        return Failure(ArtifactError(
+            operation="write",
+            path=str(path),
+            message=f"{artifact_type}: {e}"
+        ))
+
+
+def _write_enriched_artifact(
+    test_id: str,
+    fixture_name: str,
+    result_data: dict,
+    collected_data: Any,
+    fixture_config: FixtureConfig | None,
+    latest_dir: Path,
+    history_dir: Path,
+) -> Result[list[Path], ArtifactError]:
+    """Write enriched.json artifact with timeline tree structure.
+
+    Handles the enrichment process separately to isolate potential failures
+    and provide detailed error information.
+
+    Args:
+        test_id: Test identifier
+        fixture_name: Name of the fixture
+        result_data: Test result dictionary
+        collected_data: Collected test data
+        fixture_config: Optional fixture configuration
+        latest_dir: Latest artifacts directory
+        history_dir: History artifacts directory
+
+    Returns:
+        Success[list[Path]]: List of successfully written paths, with any validation warnings
+        Failure[ArtifactError]: If enrichment or writing failed
+    """
+    try:
+        from .enrichment import build_timeline_tree
+        from .schemas import TestContext, TestContextPaths, ArtifactPaths
+
+        # Get test_config for metadata
+        test_config = result_data.get("test_config")
+
+        # Get entries and events
+        entries: list = []
+        events: list = []
+        if collected_data and hasattr(collected_data, "raw_transcript_entries"):
+            entries = collected_data.raw_transcript_entries or []
+        if collected_data and hasattr(collected_data, "raw_hook_events"):
+            events = collected_data.raw_hook_events or []
+
+        # Only proceed if we have data to enrich
+        if not entries and not events:
+            return Success(value=[], warnings=[f"No data to enrich for {test_id}"])
+
+        test_context = TestContext(
+            fixture_id=fixture_name,
+            test_id=test_id,
+            test_name=test_config.test_name if test_config else test_id,
+            package=fixture_config.package if fixture_config else "",
+            paths=TestContextPaths(
+                fixture_yaml=str(fixture_config.source_path) if fixture_config else "",
+                test_yaml=str(test_config.source_path) if test_config else "",
+            )
+        )
+
+        artifact_paths = ArtifactPaths(
+            transcript=f"{fixture_name}/{test_id}-transcript.jsonl",
+            trace=f"{fixture_name}/{test_id}-trace.jsonl",
+            enriched=f"{fixture_name}/{test_id}-enriched.json",
+        )
+
+        # Build the timeline tree - returns Result[EnrichedData, EnrichmentError]
+        tree_result = build_timeline_tree(
+            transcript_entries=entries,
+            trace_events=events,
+            test_context=test_context,
+            artifact_paths=artifact_paths,
+        )
+
+        warnings: list[str] = []
+
+        # Handle Result from build_timeline_tree
+        if isinstance(tree_result, Failure):
+            # Log warning but try to use partial result if available
+            error_msg = f"Enrichment failed for {test_id}: {tree_result.error}"
+            warnings.append(error_msg)
+            logger.warning(error_msg)
+
+            # If there's a partial result, try to use it
+            if tree_result.partial_result is not None:
+                enriched_data = tree_result.partial_result
+                warnings.append(f"Using partial enrichment data for {test_id}")
+            else:
+                # No data to write
+                return Success(value=[], warnings=warnings)
+        else:
+            enriched_data = tree_result.value
+            # Carry over any warnings from the enrichment
+            warnings.extend(tree_result.warnings)
+
+        # Validate enriched data before writing
+        try:
+            from .schemas import EnrichedData as EnrichedDataSchema
+            EnrichedDataSchema.model_validate(enriched_data.model_dump())
+            logger.debug(f"Schema validation passed for {test_id}")
+        except ValidationError as e:
+            warnings.append(f"Enriched data schema validation warning for {test_id}: {e}")
+            logger.warning(f"Enriched data schema validation failed for {test_id}: {e}")
+
+        # Lenient validation for Claude transcript entries
+        # Log warnings but don't fail - Claude schema may evolve
+        try:
+            from .schemas import ClaudeTranscriptEntry
+            for idx, entry in enumerate(entries):
+                try:
+                    ClaudeTranscriptEntry.model_validate(entry)
+                except ValidationError as e:
+                    warnings.append(
+                        f"Claude transcript entry {idx} validation warning for {test_id}: {e}"
+                    )
+                    logger.warning(
+                        f"Claude transcript entry {idx} validation warning for {test_id}: {e}"
+                    )
+        except Exception as e:
+            warnings.append(f"Claude transcript validation skipped for {test_id}: {e}")
+            logger.warning(f"Claude transcript validation skipped for {test_id}: {e}")
+
+        # Write enriched.json to both directories
+        dest_name = f"{test_id}-enriched.json"
+        content = enriched_data.model_dump_json(indent=2)
+        written_paths: list[Path] = []
+
+        for dest_dir in [latest_dir, history_dir]:
+            if dest_dir.exists():
+                result = _write_artifact(dest_dir / dest_name, content, "enriched")
+                if isinstance(result, Success):
+                    written_paths.append(result.value)
+                    logger.debug(f"Preserved enriched data: {result.value}")
+                else:
+                    # Continue trying other writes, but collect the error
+                    warnings.append(f"Failed to write enriched to {dest_dir}: {result.error.message}")
+
+        return Success(value=written_paths, warnings=warnings)
+
+    except Exception as e:
+        return Failure(ArtifactError(
+            operation="enrichment",
+            path=f"{fixture_name}/{test_id}-enriched.json",
+            message=f"Failed to generate enriched data: {e}"
+        ))
+
+
 def _preserve_artifacts(
     fixture_name: str,
     report_path: Path,
     test_results_data: list[dict],
     fixture_config: FixtureConfig | None = None,
-) -> None:
+) -> Result[ArtifactReport, list[ArtifactError]]:
     """Preserve test artifacts in a folder next to the HTML report.
 
     Creates a folder with the same name as the report (without .html extension)
     and writes artifacts from collected_data. Also creates a timestamped copy
     in the history folder for retention.
+
+    Uses the Result pattern to accumulate errors while preserving as many
+    artifacts as possible. Never fails the test due to artifact errors.
 
     Artifacts preserved:
     - {test_id}-transcript.jsonl: Native Claude session transcript from raw_transcript_entries
@@ -1506,30 +1735,55 @@ def _preserve_artifacts(
         report_path: Directory where reports are stored
         test_results_data: List of test result dictionaries containing collected_data
         fixture_config: Optional FixtureConfig for enrichment metadata
+
+    Returns:
+        Success[ArtifactReport]: Contains list of successful writes and any warnings
+        Failure[list[ArtifactError]]: Contains all errors if any writes failed,
+            with partial_result containing successful writes
     """
     import json
     import shutil
 
+    # Initialize report to track results
+    report = ArtifactReport()
+
     # Create "latest" artifacts folder and clean it first
     latest_dir = report_path / fixture_name
-    if latest_dir.exists():
-        # Clean existing files in latest folder
-        for item in latest_dir.iterdir():
-            if item.is_file():
-                item.unlink()
-            elif item.is_dir():
-                shutil.rmtree(item)
-        logger.info(f"Cleaned latest artifacts folder: {latest_dir}")
-    latest_dir.mkdir(parents=True, exist_ok=True)
+    try:
+        if latest_dir.exists():
+            # Clean existing files in latest folder
+            for item in latest_dir.iterdir():
+                if item.is_file():
+                    item.unlink()
+                elif item.is_dir():
+                    shutil.rmtree(item)
+            logger.info(f"Cleaned latest artifacts folder: {latest_dir}")
+        latest_dir.mkdir(parents=True, exist_ok=True)
+    except Exception as e:
+        error = ArtifactError(
+            operation="create_directory",
+            path=str(latest_dir),
+            message=f"Failed to create/clean latest directory: {e}"
+        )
+        report.failed_writes.append(error)
+        logger.warning(f"Failed to create/clean latest directory: {latest_dir}: {e}")
 
     # Create timestamped history folder
     # Use ISO format with hyphens instead of colons for filesystem safety: YYYY-MM-DDTHH-MM-SS
     timestamp = datetime.now().strftime("%Y-%m-%dT%H-%M-%S")
     history_dir = report_path / "history" / fixture_name / timestamp
-    history_dir.mkdir(parents=True, exist_ok=True)
-    logger.info(f"Created history folder: {history_dir}")
+    try:
+        history_dir.mkdir(parents=True, exist_ok=True)
+        logger.info(f"Created history folder: {history_dir}")
+    except Exception as e:
+        error = ArtifactError(
+            operation="create_directory",
+            path=str(history_dir),
+            message=f"Failed to create history directory: {e}"
+        )
+        report.failed_writes.append(error)
+        logger.warning(f"Failed to create history directory: {history_dir}: {e}")
 
-    written_count = 0
     for i, result_data in enumerate(test_results_data, 1):
         collected_data = result_data.get("collected_data")
         test_id = result_data.get("test_id", f"test-{i}")
@@ -1539,18 +1793,21 @@ def _preserve_artifacts(
             entries = collected_data.raw_transcript_entries
             if entries:
                 dest_name = f"{test_id}-transcript.jsonl"
+                content = "\n".join(json.dumps(entry) for entry in entries) + "\n"
+
                 for dest_dir in [latest_dir, history_dir]:
-                    dest_path = dest_dir / dest_name
-                    try:
-                        with open(dest_path, "w") as f:
-                            for entry in entries:
-                                # Write native Claude transcript entries verbatim (no transformation)
-                                f.write(json.dumps(entry) + "\n")
-                        logger.debug(f"Preserved transcript: {dest_path}")
-                    except Exception as e:
-                        logger.warning(f"Failed to write transcript {dest_path}: {e}")
-                written_count += 1
+                    if dest_dir.exists():  # Only write if directory was created
+                        result = _write_artifact(
+                            dest_dir / dest_name, content, "transcript"
+                        )
+                        if isinstance(result, Success):
+                            report.successful_writes.append(result.value)
+                            logger.debug(f"Preserved transcript: {result.value}")
+                        else:
+                            report.failed_writes.append(result.error)
+                            logger.warning(f"Failed to write transcript: {result.error.message}")
             else:
+                report.warnings.append(f"Empty transcript for test {test_id}")
                 logger.warning(f"Empty transcript for test {test_id}")
 
         # Write trace file (raw_hook_events)
@@ -1558,94 +1815,39 @@ def _preserve_artifacts(
             events = collected_data.raw_hook_events
             if events:
                 dest_name = f"{test_id}-trace.jsonl"
+                content = "\n".join(json.dumps(event) for event in events) + "\n"
+
                 for dest_dir in [latest_dir, history_dir]:
-                    dest_path = dest_dir / dest_name
-                    try:
-                        with open(dest_path, "w") as f:
-                            for event in events:
-                                f.write(json.dumps(event) + "\n")
-                        logger.debug(f"Preserved trace file: {dest_path}")
-                    except Exception as e:
-                        logger.warning(f"Failed to write trace {dest_path}: {e}")
-                written_count += 1
+                    if dest_dir.exists():
+                        result = _write_artifact(
+                            dest_dir / dest_name, content, "trace"
+                        )
+                        if isinstance(result, Success):
+                            report.successful_writes.append(result.value)
+                            logger.debug(f"Preserved trace file: {result.value}")
+                        else:
+                            report.failed_writes.append(result.error)
+                            logger.warning(f"Failed to write trace: {result.error.message}")
             else:
+                report.warnings.append(f"Empty trace file for test {test_id}")
                 logger.warning(f"Empty trace file for test {test_id}")
 
         # Write enriched.json with timeline tree structure
-        try:
-            from .enrichment import build_timeline_tree
-            from .schemas import TestContext, TestContextPaths, ArtifactPaths
-
-            # Get test_config for metadata
-            test_config = result_data.get("test_config")
-
-            # Get entries and events (may have been set in the transcript/trace blocks above)
-            entries = []
-            events = []
-            if collected_data and hasattr(collected_data, "raw_transcript_entries"):
-                entries = collected_data.raw_transcript_entries or []
-            if collected_data and hasattr(collected_data, "raw_hook_events"):
-                events = collected_data.raw_hook_events or []
-
-            # Only proceed if we have data to enrich
-            if entries or events:
-                test_context = TestContext(
-                    fixture_id=fixture_name,
-                    test_id=test_id,
-                    test_name=test_config.test_name if test_config else test_id,
-                    package=fixture_config.package if fixture_config else "",
-                    paths=TestContextPaths(
-                        fixture_yaml=str(fixture_config.source_path) if fixture_config else "",
-                        test_yaml=str(test_config.source_path) if test_config else "",
-                    )
-                )
-
-                artifact_paths = ArtifactPaths(
-                    transcript=f"{fixture_name}/{test_id}-transcript.jsonl",
-                    trace=f"{fixture_name}/{test_id}-trace.jsonl",
-                    enriched=f"{fixture_name}/{test_id}-enriched.json",
-                )
-
-                enriched_data = build_timeline_tree(
-                    transcript_entries=entries,
-                    trace_events=events,
-                    test_context=test_context,
-                    artifact_paths=artifact_paths,
-                )
-
-                # Validate enriched data before writing
-                try:
-                    from .schemas import EnrichedData as EnrichedDataSchema
-                    EnrichedDataSchema.model_validate(enriched_data.model_dump())
-                    logger.debug(f"Schema validation passed for {test_id}")
-                except ValidationError as e:
-                    logger.warning(f"Enriched data schema validation failed for {test_id}: {e}")
-
-                # Lenient validation for Claude transcript entries
-                # Log warnings but don't fail - Claude schema may evolve
-                try:
-                    from .schemas import ClaudeTranscriptEntry
-                    for idx, entry in enumerate(entries):
-                        try:
-                            ClaudeTranscriptEntry.model_validate(entry)
-                        except ValidationError as e:
-                            logger.warning(
-                                f"Claude transcript entry {idx} validation warning for {test_id}: {e}"
-                            )
-                except Exception as e:
-                    logger.warning(f"Claude transcript validation skipped for {test_id}: {e}")
-
-                # Write enriched.json
-                dest_name = f"{test_id}-enriched.json"
-                for dest_dir in [latest_dir, history_dir]:
-                    dest_path = dest_dir / dest_name
-                    with open(dest_path, "w") as f:
-                        f.write(enriched_data.model_dump_json(indent=2))
-                    logger.debug(f"Preserved enriched data: {dest_path}")
-                written_count += 1
-
-        except Exception as e:
-            logger.warning(f"Failed to generate enriched data for {test_id}: {e}")
+        enrichment_result = _write_enriched_artifact(
+            test_id=test_id,
+            fixture_name=fixture_name,
+            result_data=result_data,
+            collected_data=collected_data,
+            fixture_config=fixture_config,
+            latest_dir=latest_dir,
+            history_dir=history_dir,
+        )
+        if isinstance(enrichment_result, Success):
+            report.successful_writes.extend(enrichment_result.value)
+            report.warnings.extend(enrichment_result.warnings)
+        else:
+            report.failed_writes.append(enrichment_result.error)
+            report.warnings.append(f"Enrichment failed for {test_id}: {enrichment_result.error.message}")
 
         # Write Claude CLI output (stdout + stderr)
         claude_stdout = ""
@@ -1663,39 +1865,56 @@ def _preserve_artifacts(
                 cli_content += "=== Claude CLI stderr ===\n" + claude_stderr + "\n"
 
             for dest_dir in [latest_dir, history_dir]:
-                dest_path = dest_dir / dest_name
-                try:
-                    with open(dest_path, "w") as f:
-                        f.write(cli_content)
-                    logger.debug(f"Preserved Claude CLI output: {dest_path}")
-                except Exception as e:
-                    logger.warning(f"Failed to write CLI output {dest_path}: {e}")
-            written_count += 1
+                if dest_dir.exists():
+                    result = _write_artifact(dest_dir / dest_name, cli_content, "cli_output")
+                    if isinstance(result, Success):
+                        report.successful_writes.append(result.value)
+                        logger.debug(f"Preserved Claude CLI output: {result.value}")
+                    else:
+                        report.failed_writes.append(result.error)
+                        logger.warning(f"Failed to write CLI output: {result.error.message}")
 
         # Write pytest output
         pytest_output = result_data.get("pytest_output", "")
         if pytest_output:
             dest_name = f"{test_id}-pytest.txt"
             for dest_dir in [latest_dir, history_dir]:
-                dest_path = dest_dir / dest_name
-                try:
-                    with open(dest_path, "w") as f:
-                        f.write(pytest_output)
-                    logger.debug(f"Preserved pytest output: {dest_path}")
-                except Exception as e:
-                    logger.warning(f"Failed to write pytest output {dest_path}: {e}")
-            written_count += 1
+                if dest_dir.exists():
+                    result = _write_artifact(dest_dir / dest_name, pytest_output, "pytest_output")
+                    if isinstance(result, Success):
+                        report.successful_writes.append(result.value)
+                        logger.debug(f"Preserved pytest output: {result.value}")
+                    else:
+                        report.failed_writes.append(result.error)
+                        logger.warning(f"Failed to write pytest output: {result.error.message}")
 
-    # Verify latest folder was created successfully
-    assert latest_dir.exists(), f"Failed to create latest artifacts folder: {latest_dir}"
-
-    if written_count > 0:
+    # Log summary
+    if report.success_count > 0:
         logger.info(
-            f"Preserved {written_count} artifact type(s) to: {latest_dir} and {history_dir}"
+            f"Preserved {report.success_count} artifact(s) to: {latest_dir} and {history_dir}"
+        )
+
+    if report.failure_count > 0:
+        logger.warning(
+            f"Failed to write {report.failure_count} artifact(s). "
+            f"Errors: {[e.message for e in report.failed_writes]}"
         )
 
     # Cleanup: keep only the last 10 history folders per fixture
-    _cleanup_history_folders(report_path / "history" / fixture_name, max_folders=10)
+    try:
+        _cleanup_history_folders(report_path / "history" / fixture_name, max_folders=10)
+    except Exception as e:
+        report.warnings.append(f"History cleanup failed: {e}")
+        logger.warning(f"History cleanup failed: {e}")
+
+    # Return Result based on whether there were failures
+    if report.has_failures:
+        return Failure(
+            error=report.failed_writes,
+            partial_result=report
+        )
+
+    return Success(value=report, warnings=report.warnings)
 
 
 def _cleanup_history_folders(history_fixture_dir: Path, max_folders: int = 10) -> None:

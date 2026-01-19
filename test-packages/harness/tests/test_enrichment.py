@@ -8,6 +8,7 @@ Tests the enrichment functionality including:
 - Tree stats calculation
 - Orphan handling
 - Edge cases
+- Result pattern (Success/Failure with warnings)
 """
 
 import pytest
@@ -18,6 +19,7 @@ from harness.enrichment import (
     _build_tool_to_agent_map,
     _compute_tree_stats,
 )
+from harness.result import Success, Failure, EnrichmentError
 from harness.schemas import (
     TestContext,
     TestContextPaths,
@@ -232,10 +234,12 @@ class TestBasicTreeBuilding:
             artifact_paths=sample_artifact_paths,
         )
 
-        assert isinstance(result, EnrichedData)
-        assert result.tree is not None
-        assert result.tree.root_uuid is not None
-        assert len(result.tree.nodes) > 0
+        assert isinstance(result, Success)
+        enriched = result.value
+        assert isinstance(enriched, EnrichedData)
+        assert enriched.tree is not None
+        assert enriched.tree.root_uuid is not None
+        assert len(enriched.tree.nodes) > 0
 
     def test_creates_root_node(self, sample_test_context, sample_artifact_paths):
         """Test that a root node is created."""
@@ -246,9 +250,11 @@ class TestBasicTreeBuilding:
             artifact_paths=sample_artifact_paths,
         )
 
-        root_uuid = result.tree.root_uuid
-        assert root_uuid in result.tree.nodes
-        root_node = result.tree.nodes[root_uuid]
+        assert isinstance(result, Success)
+        enriched = result.value
+        root_uuid = enriched.tree.root_uuid
+        assert root_uuid in enriched.tree.nodes
+        root_node = enriched.tree.nodes[root_uuid]
         assert root_node.node_type == TimelineNodeType.ROOT
         assert root_node.depth == 0
         assert root_node.parent_uuid is None
@@ -262,14 +268,16 @@ class TestBasicTreeBuilding:
             artifact_paths=sample_artifact_paths,
         )
 
+        assert isinstance(result, Success)
+        enriched = result.value
         # Find uuid-2 node and verify it has uuid-1 as parent
-        if "uuid-2" in result.tree.nodes:
-            node_2 = result.tree.nodes["uuid-2"]
+        if "uuid-2" in enriched.tree.nodes:
+            node_2 = enriched.tree.nodes["uuid-2"]
             assert node_2.parent_uuid == "uuid-1"
 
         # Verify children list is populated
-        if "uuid-1" in result.tree.nodes:
-            node_1 = result.tree.nodes["uuid-1"]
+        if "uuid-1" in enriched.tree.nodes:
+            node_1 = enriched.tree.nodes["uuid-1"]
             assert "uuid-2" in node_1.children
 
     def test_preserves_test_context(self, sample_test_context, sample_artifact_paths):
@@ -281,10 +289,12 @@ class TestBasicTreeBuilding:
             artifact_paths=sample_artifact_paths,
         )
 
-        assert result.test_context.fixture_id == "test-fixture"
-        assert result.test_context.test_id == "test-001"
-        assert result.test_context.test_name == "Test Name"
-        assert result.test_context.package == "test-package"
+        assert isinstance(result, Success)
+        enriched = result.value
+        assert enriched.test_context.fixture_id == "test-fixture"
+        assert enriched.test_context.test_id == "test-001"
+        assert enriched.test_context.test_name == "Test Name"
+        assert enriched.test_context.package == "test-package"
 
     def test_preserves_artifact_paths(self, sample_test_context, sample_artifact_paths):
         """Test that artifact paths are preserved in enriched data."""
@@ -295,9 +305,11 @@ class TestBasicTreeBuilding:
             artifact_paths=sample_artifact_paths,
         )
 
-        assert result.artifacts.transcript == "test-fixture/test-001-transcript.jsonl"
-        assert result.artifacts.trace == "test-fixture/test-001-trace.jsonl"
-        assert result.artifacts.enriched == "test-fixture/test-001-enriched.json"
+        assert isinstance(result, Success)
+        enriched = result.value
+        assert enriched.artifacts.transcript == "test-fixture/test-001-transcript.jsonl"
+        assert enriched.artifacts.trace == "test-fixture/test-001-trace.jsonl"
+        assert enriched.artifacts.enriched == "test-fixture/test-001-enriched.json"
 
 
 # =============================================================================
@@ -317,10 +329,12 @@ class TestParentUuidChainResolution:
             artifact_paths=sample_artifact_paths,
         )
 
+        assert isinstance(result, Success)
+        enriched = result.value
         # uuid-4 should be at depth 4 (root=0, uuid-1=1, uuid-2=2, uuid-3=3, uuid-4=4)
         # or depth 3 if counting from first transcript entry
-        if "uuid-4" in result.tree.nodes:
-            node_4 = result.tree.nodes["uuid-4"]
+        if "uuid-4" in enriched.tree.nodes:
+            node_4 = enriched.tree.nodes["uuid-4"]
             assert node_4.depth >= 3  # At least depth 3 from root
 
     def test_resolves_deep_chain_depth_5(self, sample_test_context, sample_artifact_paths):
@@ -332,10 +346,12 @@ class TestParentUuidChainResolution:
             artifact_paths=sample_artifact_paths,
         )
 
+        assert isinstance(result, Success)
+        enriched = result.value
         # entry-5 should have the highest depth (depth 6 counting from synthetic root)
         # root(0) -> entry-0(1) -> entry-1(2) -> entry-2(3) -> entry-3(4) -> entry-4(5) -> entry-5(6)
-        if "entry-5" in result.tree.nodes:
-            node = result.tree.nodes["entry-5"]
+        if "entry-5" in enriched.tree.nodes:
+            node = enriched.tree.nodes["entry-5"]
             assert node.depth >= 6
 
     def test_depth_calculation_is_correct(self, sample_test_context, sample_artifact_paths):
@@ -347,12 +363,14 @@ class TestParentUuidChainResolution:
             artifact_paths=sample_artifact_paths,
         )
 
+        assert isinstance(result, Success)
+        enriched = result.value
         # Verify depth increases by 1 at each level
         # entry-0 is at depth 1 (child of synthetic root at depth 0)
         # entry-1 is at depth 2 (child of entry-0)
-        if "entry-0" in result.tree.nodes and "entry-1" in result.tree.nodes:
-            entry0_depth = result.tree.nodes["entry-0"].depth
-            entry1_depth = result.tree.nodes["entry-1"].depth
+        if "entry-0" in enriched.tree.nodes and "entry-1" in enriched.tree.nodes:
+            entry0_depth = enriched.tree.nodes["entry-0"].depth
+            entry1_depth = enriched.tree.nodes["entry-1"].depth
             assert entry1_depth == entry0_depth + 1
 
     def test_max_depth_stat_matches_deepest_node(
@@ -366,9 +384,11 @@ class TestParentUuidChainResolution:
             artifact_paths=sample_artifact_paths,
         )
 
+        assert isinstance(result, Success)
+        enriched = result.value
         # Find actual max depth in nodes
-        actual_max_depth = max(node.depth for node in result.tree.nodes.values())
-        assert result.stats.max_depth == actual_max_depth
+        actual_max_depth = max(node.depth for node in enriched.tree.nodes.values())
+        assert enriched.stats.max_depth == actual_max_depth
 
 
 # =============================================================================
@@ -390,13 +410,15 @@ class TestAgentCorrelation:
             artifact_paths=sample_artifact_paths,
         )
 
+        assert isinstance(result, Success)
+        enriched = result.value
         # Check if any node has agent attribution
         nodes_with_agent = [
-            node for node in result.tree.nodes.values() if node.agent_id is not None
+            node for node in enriched.tree.nodes.values() if node.agent_id is not None
         ]
 
         # The tool_use with toolu_01ABC should be attributed to agent a123
-        for uuid, node in result.tree.nodes.items():
+        for uuid, node in enriched.tree.nodes.items():
             if node.tool_name == "Read":
                 assert node.agent_id == "a123"
                 assert node.agent_type == "Explore"
@@ -412,12 +434,14 @@ class TestAgentCorrelation:
             artifact_paths=sample_artifact_paths,
         )
 
+        assert isinstance(result, Success)
+        enriched = result.value
         # Check agents dictionary is populated
-        assert "a123" in result.agents or len(result.agents) > 0
+        assert "a123" in enriched.agents or len(enriched.agents) > 0
 
         # Verify agent summary contains expected data
-        if "a123" in result.agents:
-            agent_summary = result.agents["a123"]
+        if "a123" in enriched.agents:
+            agent_summary = enriched.agents["a123"]
             assert agent_summary.agent_type == "Explore"
 
     def test_multiple_agents_tracked_separately(
@@ -431,11 +455,13 @@ class TestAgentCorrelation:
             artifact_paths=sample_artifact_paths,
         )
 
+        assert isinstance(result, Success)
+        enriched = result.value
         # Should have 2 agents
-        assert len(result.agents) >= 2
+        assert len(enriched.agents) >= 2
 
         # Verify different agent types
-        agent_types = [agent.agent_type for agent in result.agents.values()]
+        agent_types = [agent.agent_type for agent in enriched.agents.values()]
         assert "Explore" in agent_types
         assert "Task" in agent_types
 
@@ -481,10 +507,12 @@ class TestStatsCalculation:
             artifact_paths=sample_artifact_paths,
         )
 
+        assert isinstance(result, Success)
+        enriched = result.value
         # Total nodes excludes the synthetic root node
         # So it should be len(nodes) - 1
-        expected_count = len(result.tree.nodes) - 1  # Exclude synthetic root
-        assert result.stats.total_nodes == expected_count
+        expected_count = len(enriched.tree.nodes) - 1  # Exclude synthetic root
+        assert enriched.stats.total_nodes == expected_count
 
     def test_max_depth_calculation(self, sample_test_context, sample_artifact_paths):
         """Test max_depth calculation is correct."""
@@ -495,9 +523,11 @@ class TestStatsCalculation:
             artifact_paths=sample_artifact_paths,
         )
 
+        assert isinstance(result, Success)
+        enriched = result.value
         # Max depth should be at least 6 for deep nested transcript
         # synthetic root(0) -> entry-0(1) -> ... -> entry-5(6)
-        assert result.stats.max_depth >= 6
+        assert enriched.stats.max_depth >= 6
 
     def test_agent_count(self, sample_test_context, sample_artifact_paths):
         """Test agent_count is correct."""
@@ -508,8 +538,10 @@ class TestStatsCalculation:
             artifact_paths=sample_artifact_paths,
         )
 
+        assert isinstance(result, Success)
+        enriched = result.value
         # Should count 2 agents
-        assert result.stats.agent_count == 2
+        assert enriched.stats.agent_count == 2
 
     def test_tool_call_count(self, sample_test_context, sample_artifact_paths):
         """Test tool_call_count is correct."""
@@ -520,8 +552,10 @@ class TestStatsCalculation:
             artifact_paths=sample_artifact_paths,
         )
 
+        assert isinstance(result, Success)
+        enriched = result.value
         # MULTI_TOOL_TRANSCRIPT has 3 tool_use entries
-        assert result.stats.tool_call_count == 3
+        assert enriched.stats.tool_call_count == 3
 
     def test_compute_tree_stats_directly(self):
         """Test _compute_tree_stats function directly."""
@@ -577,14 +611,16 @@ class TestOrphanHandling:
             artifact_paths=sample_artifact_paths,
         )
 
-        root_uuid = result.tree.root_uuid
-        root_node = result.tree.nodes[root_uuid]
+        assert isinstance(result, Success)
+        enriched = result.value
+        root_uuid = enriched.tree.root_uuid
+        root_node = enriched.tree.nodes[root_uuid]
 
         # Both orphan-1 and orphan-2 should be children of root
         assert "orphan-1" in root_node.children or any(
-            result.tree.nodes[child].parent_uuid == root_uuid
+            enriched.tree.nodes[child].parent_uuid == root_uuid
             for child in root_node.children
-            if child in result.tree.nodes
+            if child in enriched.tree.nodes
         )
 
     def test_multiple_root_level_entries(
@@ -598,13 +634,15 @@ class TestOrphanHandling:
             artifact_paths=sample_artifact_paths,
         )
 
+        assert isinstance(result, Success)
+        enriched = result.value
         # orphan-1 and orphan-2 should both exist
-        assert "orphan-1" in result.tree.nodes
-        assert "orphan-2" in result.tree.nodes
+        assert "orphan-1" in enriched.tree.nodes
+        assert "orphan-2" in enriched.tree.nodes
 
         # Both should have depth 1 (children of root)
-        orphan1_depth = result.tree.nodes["orphan-1"].depth
-        orphan2_depth = result.tree.nodes["orphan-2"].depth
+        orphan1_depth = enriched.tree.nodes["orphan-1"].depth
+        orphan2_depth = enriched.tree.nodes["orphan-2"].depth
         assert orphan1_depth == orphan2_depth
 
     def test_orphan_children_still_linked(
@@ -618,9 +656,11 @@ class TestOrphanHandling:
             artifact_paths=sample_artifact_paths,
         )
 
+        assert isinstance(result, Success)
+        enriched = result.value
         # child-1 should have orphan-1 as parent
-        if "child-1" in result.tree.nodes:
-            child_node = result.tree.nodes["child-1"]
+        if "child-1" in enriched.tree.nodes:
+            child_node = enriched.tree.nodes["child-1"]
             assert child_node.parent_uuid == "orphan-1"
 
 
@@ -696,13 +736,15 @@ class TestEdgeCases:
             artifact_paths=sample_artifact_paths,
         )
 
-        assert isinstance(result, EnrichedData)
-        assert result.tree is not None
-        assert result.tree.root_uuid is not None
+        assert isinstance(result, Success)
+        enriched = result.value
+        assert isinstance(enriched, EnrichedData)
+        assert enriched.tree is not None
+        assert enriched.tree.root_uuid is not None
         # Tree should have the synthetic root node
-        assert len(result.tree.nodes) >= 1
+        assert len(enriched.tree.nodes) >= 1
         # total_nodes excludes root, so empty transcript = 0 nodes
-        assert result.stats.total_nodes == 0
+        assert enriched.stats.total_nodes == 0
 
     def test_empty_trace_still_builds_tree(
         self, sample_test_context, sample_artifact_paths
@@ -715,10 +757,12 @@ class TestEdgeCases:
             artifact_paths=sample_artifact_paths,
         )
 
-        assert isinstance(result, EnrichedData)
-        assert len(result.tree.nodes) > 1  # More than just root
+        assert isinstance(result, Success)
+        enriched = result.value
+        assert isinstance(enriched, EnrichedData)
+        assert len(enriched.tree.nodes) > 1  # More than just root
         # No agents should be present
-        assert len(result.agents) == 0
+        assert len(enriched.agents) == 0
 
     def test_handles_missing_uuid_field_gracefully(
         self, sample_test_context, sample_artifact_paths
@@ -741,8 +785,13 @@ class TestEdgeCases:
             artifact_paths=sample_artifact_paths,
         )
 
-        assert isinstance(result, EnrichedData)
+        assert isinstance(result, Success)
+        enriched = result.value
+        assert isinstance(enriched, EnrichedData)
         # Should handle gracefully without crashing
+        # Should have warning about missing uuid
+        assert len(result.warnings) > 0
+        assert "missing uuid" in result.warnings[0].lower()
 
     def test_handles_missing_message_field_gracefully(
         self, sample_test_context, sample_artifact_paths
@@ -759,13 +808,17 @@ class TestEdgeCases:
             artifact_paths=sample_artifact_paths,
         )
 
-        assert isinstance(result, EnrichedData)
+        assert isinstance(result, Success)
+        assert isinstance(result.value, EnrichedData)
 
     def test_handles_circular_reference_gracefully(
         self, sample_test_context, sample_artifact_paths
     ):
         """Test handling of circular parentUuid references."""
         # This shouldn't happen in practice but we should handle it gracefully
+        # Note: Our current implementation doesn't detect true cycles in the
+        # depth computation since the cycle causes nodes to become orphans
+        # (attached to root) rather than infinite recursion
         transcript = [
             {"uuid": "a", "parentUuid": "b", "type": "user", "message": {}},
             {"uuid": "b", "parentUuid": "a", "type": "user", "message": {}},
@@ -779,7 +832,10 @@ class TestEdgeCases:
             artifact_paths=sample_artifact_paths,
         )
 
-        assert isinstance(result, EnrichedData)
+        # This case produces a Success with warnings since both nodes
+        # reference each other but get attached to root (broken refs)
+        assert isinstance(result, Success)
+        assert isinstance(result.value, EnrichedData)
 
     def test_handles_broken_parent_chain_gracefully(
         self, sample_test_context, sample_artifact_paths
@@ -796,9 +852,14 @@ class TestEdgeCases:
             artifact_paths=sample_artifact_paths,
         )
 
-        assert isinstance(result, EnrichedData)
+        assert isinstance(result, Success)
+        enriched = result.value
+        assert isinstance(enriched, EnrichedData)
         # Child should still be in the tree (attached to root as orphan)
-        assert "child" in result.tree.nodes or len(result.tree.nodes) > 1
+        assert "child" in enriched.tree.nodes or len(enriched.tree.nodes) > 1
+        # Should have warning about broken parent reference
+        assert len(result.warnings) > 0
+        assert "broken" in result.warnings[0].lower() or "parentuuid" in result.warnings[0].lower()
 
     def test_build_tool_to_agent_map_empty_trace(self):
         """Test _build_tool_to_agent_map with empty trace."""
@@ -846,8 +907,10 @@ class TestSchemaValidation:
             artifact_paths=sample_artifact_paths,
         )
 
+        assert isinstance(result, Success)
+        enriched = result.value
         # Should not raise an exception
-        json_str = result.model_dump_json()
+        json_str = enriched.model_dump_json()
         assert isinstance(json_str, str)
         assert len(json_str) > 0
 
@@ -864,11 +927,252 @@ class TestSchemaValidation:
             artifact_paths=sample_artifact_paths,
         )
 
+        assert isinstance(result, Success)
+        enriched = result.value
         # Serialize and deserialize
-        json_str = result.model_dump_json()
+        json_str = enriched.model_dump_json()
         data_dict = json.loads(json_str)
         restored = EnrichedData.model_validate(data_dict)
 
-        assert restored.test_context.test_id == result.test_context.test_id
-        assert restored.stats.total_nodes == result.stats.total_nodes
-        assert restored.tree.root_uuid == result.tree.root_uuid
+        assert restored.test_context.test_id == enriched.test_context.test_id
+        assert restored.stats.total_nodes == enriched.stats.total_nodes
+        assert restored.tree.root_uuid == enriched.tree.root_uuid
+
+
+# =============================================================================
+# Test: Result Pattern (Success/Failure/Warnings)
+# =============================================================================
+
+
+class TestResultPattern:
+    """Tests for Result pattern implementation in enrichment."""
+
+    def test_success_result_has_empty_warnings_on_clean_input(
+        self, sample_test_context, sample_artifact_paths
+    ):
+        """Test that clean input produces Success with no warnings."""
+        result = build_timeline_tree(
+            transcript_entries=SAMPLE_TRANSCRIPT,
+            trace_events=SAMPLE_TRACE,
+            test_context=sample_test_context,
+            artifact_paths=sample_artifact_paths,
+        )
+
+        assert isinstance(result, Success)
+        assert result.is_success()
+        assert not result.is_failure()
+        # Clean input should have no warnings
+        assert len(result.warnings) == 0
+
+    def test_success_with_warnings_for_missing_uuid(
+        self, sample_test_context, sample_artifact_paths
+    ):
+        """Test that missing uuid entries produce Success with warnings."""
+        transcript = [
+            {"type": "user", "message": {"content": "No uuid"}},  # Missing uuid
+            {"uuid": "valid-1", "parentUuid": None, "type": "user", "message": {}},
+        ]
+
+        result = build_timeline_tree(
+            transcript_entries=transcript,
+            trace_events=[],
+            test_context=sample_test_context,
+            artifact_paths=sample_artifact_paths,
+        )
+
+        assert isinstance(result, Success)
+        assert len(result.warnings) >= 1
+        # Warning should mention Phase 1 and missing uuid
+        assert any("Phase 1" in w for w in result.warnings)
+
+    def test_success_with_warnings_for_broken_parent_refs(
+        self, sample_test_context, sample_artifact_paths
+    ):
+        """Test that broken parentUuid refs produce Success with warnings."""
+        transcript = [
+            {"uuid": "orphan", "parentUuid": "non-existent", "type": "user", "message": {}},
+        ]
+
+        result = build_timeline_tree(
+            transcript_entries=transcript,
+            trace_events=[],
+            test_context=sample_test_context,
+            artifact_paths=sample_artifact_paths,
+        )
+
+        assert isinstance(result, Success)
+        assert len(result.warnings) >= 1
+        # Warning should mention Phase 2 and broken references
+        assert any("Phase 2" in w for w in result.warnings)
+        assert any("broken" in w.lower() for w in result.warnings)
+
+    def test_success_with_warnings_for_uncorrelated_tools(
+        self, sample_test_context, sample_artifact_paths
+    ):
+        """Test that tool calls without agent correlation produce warnings."""
+        # Transcript with tool calls but trace without agents
+        transcript = [
+            {"uuid": "u1", "parentUuid": None, "type": "user", "message": {"content": "Run"}},
+            {
+                "uuid": "a1",
+                "parentUuid": "u1",
+                "type": "assistant",
+                "message": {"content": [{"type": "tool_use", "id": "t1", "name": "Bash"}]},
+            },
+        ]
+        # Trace with tool events but no SubagentStart/Stop
+        trace = [
+            {"ts": "2026-01-16T12:00:00.000Z", "event": "SessionStart"},
+            {"ts": "2026-01-16T12:00:01.000Z", "event": "PreToolUse", "tool_use_id": "t1"},
+        ]
+
+        result = build_timeline_tree(
+            transcript_entries=transcript,
+            trace_events=trace,
+            test_context=sample_test_context,
+            artifact_paths=sample_artifact_paths,
+        )
+
+        assert isinstance(result, Success)
+        # Should have warning about uncorrelated tool calls
+        assert len(result.warnings) >= 1
+        assert any("Phase 3" in w for w in result.warnings)
+
+    def test_accumulated_warnings_from_multiple_phases(
+        self, sample_test_context, sample_artifact_paths
+    ):
+        """Test that warnings from multiple phases accumulate."""
+        # Input that triggers warnings from multiple phases
+        transcript = [
+            {"type": "user", "message": {"content": "No uuid"}},  # Phase 1 warning
+            {"uuid": "orphan", "parentUuid": "missing", "type": "user", "message": {}},  # Phase 2
+        ]
+
+        result = build_timeline_tree(
+            transcript_entries=transcript,
+            trace_events=[],
+            test_context=sample_test_context,
+            artifact_paths=sample_artifact_paths,
+        )
+
+        assert isinstance(result, Success)
+        # Should have warnings from both Phase 1 and Phase 2
+        assert len(result.warnings) >= 2
+        phases_mentioned = [w for w in result.warnings if "Phase" in w]
+        assert len(phases_mentioned) >= 2
+
+    def test_success_value_accessible(
+        self, sample_test_context, sample_artifact_paths
+    ):
+        """Test that Success.value contains complete EnrichedData."""
+        result = build_timeline_tree(
+            transcript_entries=SAMPLE_TRANSCRIPT,
+            trace_events=SAMPLE_TRACE,
+            test_context=sample_test_context,
+            artifact_paths=sample_artifact_paths,
+        )
+
+        assert isinstance(result, Success)
+        enriched = result.value
+
+        # Verify complete structure
+        assert enriched.test_context == sample_test_context
+        assert enriched.artifacts == sample_artifact_paths
+        assert enriched.tree is not None
+        assert enriched.tree.root_uuid is not None
+        assert len(enriched.tree.nodes) > 0
+        assert enriched.stats is not None
+        assert isinstance(enriched.agents, dict)
+
+    def test_result_is_success_and_is_failure_methods(
+        self, sample_test_context, sample_artifact_paths
+    ):
+        """Test is_success() and is_failure() methods work correctly."""
+        result = build_timeline_tree(
+            transcript_entries=SAMPLE_TRANSCRIPT,
+            trace_events=SAMPLE_TRACE,
+            test_context=sample_test_context,
+            artifact_paths=sample_artifact_paths,
+        )
+
+        assert result.is_success() is True
+        assert result.is_failure() is False
+
+    def test_warnings_include_context_details(
+        self, sample_test_context, sample_artifact_paths
+    ):
+        """Test that warnings include useful context details."""
+        transcript = [
+            {"uuid": "c1", "parentUuid": "missing-1", "type": "user", "message": {}},
+            {"uuid": "c2", "parentUuid": "missing-2", "type": "user", "message": {}},
+            {"uuid": "c3", "parentUuid": "missing-3", "type": "user", "message": {}},
+        ]
+
+        result = build_timeline_tree(
+            transcript_entries=transcript,
+            trace_events=[],
+            test_context=sample_test_context,
+            artifact_paths=sample_artifact_paths,
+        )
+
+        assert isinstance(result, Success)
+        # Warning should include count of broken references
+        broken_warning = [w for w in result.warnings if "broken" in w.lower()]
+        assert len(broken_warning) >= 1
+        assert "3" in broken_warning[0]  # Should mention the count
+
+    def test_partial_result_not_present_on_success(
+        self, sample_test_context, sample_artifact_paths
+    ):
+        """Test that Success does not have partial_result attribute."""
+        result = build_timeline_tree(
+            transcript_entries=SAMPLE_TRANSCRIPT,
+            trace_events=SAMPLE_TRACE,
+            test_context=sample_test_context,
+            artifact_paths=sample_artifact_paths,
+        )
+
+        assert isinstance(result, Success)
+        # Success should have value and warnings, not partial_result
+        assert hasattr(result, "value")
+        assert hasattr(result, "warnings")
+        assert not hasattr(result, "partial_result")
+
+
+class TestResultPatternFailure:
+    """Tests for Failure cases in Result pattern."""
+
+    def test_failure_has_error_attribute(
+        self, sample_test_context, sample_artifact_paths
+    ):
+        """Test that if we get a Failure, it has proper error structure."""
+        # Note: Currently our implementation is very resilient and
+        # doesn't return Failure for most edge cases. This test documents
+        # the expected structure if a Failure were returned.
+
+        # For now, verify the EnrichmentError structure
+        error = EnrichmentError(
+            phase="test_phase",
+            message="Test error message",
+            context={"key": "value"},
+        )
+
+        assert error.phase == "test_phase"
+        assert error.message == "Test error message"
+        assert error.context == {"key": "value"}
+
+    def test_failure_structure_with_partial_result(self):
+        """Test Failure dataclass with partial_result."""
+        # Create a mock failure with partial result
+        partial_data = {"some": "data"}
+        error = EnrichmentError(
+            phase="depth_compute",
+            message="Circular reference",
+            context={},
+        )
+        failure = Failure(error=error, partial_result=partial_data)
+
+        assert failure.is_failure() is True
+        assert failure.is_success() is False
+        assert failure.error == error
+        assert failure.partial_result == partial_data
