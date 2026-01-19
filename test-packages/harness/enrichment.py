@@ -18,6 +18,7 @@ rather than duplicating content, following the design principle of "preserve nat
 from typing import List, Dict, Tuple, Optional, Any
 
 from .collector import extract_token_usage
+from .result import Result, Success, Failure, EnrichmentError, collect_results
 from .schemas import (
     EnrichedData,
     TestContext,
@@ -35,7 +36,7 @@ def build_timeline_tree(
     trace_events: List[dict],
     test_context: TestContext,
     artifact_paths: ArtifactPaths,
-) -> EnrichedData:
+) -> Result[EnrichedData, EnrichmentError]:
     """Build enriched data with tree structure from raw transcript and trace.
 
     This is the main entry point for tree construction. It follows the algorithm
@@ -53,14 +54,24 @@ def build_timeline_tree(
         artifact_paths: Paths to artifact files
 
     Returns:
-        EnrichedData with complete tree structure and statistics
+        Success[EnrichedData]: Complete tree structure and statistics with any warnings
+        Failure[EnrichmentError]: On critical error, with partial_result containing
+            work completed so far
     """
+    warnings: List[str] = []
+
     # Phase 1: Index transcript entries by uuid
     by_uuid: Dict[str, dict] = {}
+    entries_without_uuid = 0
     for entry in transcript_entries:
         uuid = entry.get("uuid")
         if uuid:
             by_uuid[uuid] = entry
+        else:
+            entries_without_uuid += 1
+
+    if entries_without_uuid > 0:
+        warnings.append(f"Phase 1: {entries_without_uuid} entries skipped (missing uuid)")
 
     # Phase 3 (early): Build tool_use_id to agent mapping from trace events
     # We do this before creating nodes so we can attribute agents during node creation
@@ -69,6 +80,8 @@ def build_timeline_tree(
     # Phase 2: Build tree structure
     nodes: Dict[str, TreeNode] = {}
     root_children: List[str] = []
+    orphan_count = 0
+    broken_parent_refs: List[str] = []
 
     # First pass: Create all nodes
     for uuid, entry in by_uuid.items():
@@ -84,9 +97,20 @@ def build_timeline_tree(
             # Add child UUID to parent's children list
             if uuid not in nodes[parent_uuid].children:
                 nodes[parent_uuid].children.append(uuid)
-        else:
-            # No parent or parent not found - this is a root-level entry
+        elif parent_uuid and parent_uuid not in nodes:
+            # Parent UUID specified but not found - broken reference
+            broken_parent_refs.append(uuid)
             root_children.append(uuid)
+            orphan_count += 1
+        else:
+            # No parent - this is a root-level entry
+            root_children.append(uuid)
+
+    if broken_parent_refs:
+        warnings.append(
+            f"Phase 2: {len(broken_parent_refs)} entries have broken parentUuid references "
+            f"(attached to root): {broken_parent_refs[:5]}{'...' if len(broken_parent_refs) > 5 else ''}"
+        )
 
     # Create synthetic root node
     root_uuid = "root"
@@ -102,7 +126,43 @@ def build_timeline_tree(
     nodes[root_uuid] = root_node
 
     # Phase 4: Compute depths (root is 0, children are parent+1)
-    _compute_depths(nodes, root_uuid, 0)
+    try:
+        _compute_depths(nodes, root_uuid, 0)
+    except RecursionError:
+        # Circular reference detected - return failure with partial result
+        partial_tree = TimelineTree(root_uuid=root_uuid, nodes=nodes)
+        partial_result = EnrichedData(
+            test_context=test_context,
+            artifacts=artifact_paths,
+            tree=partial_tree,
+            agents={},
+            stats=TreeStats(
+                total_nodes=len(nodes) - 1,
+                max_depth=0,
+                agent_count=0,
+                tool_call_count=0,
+                token_usage=extract_token_usage([]),
+            ),
+        )
+        return Failure(
+            error=EnrichmentError(
+                phase="depth_compute",
+                message="Circular reference detected in parent-child relationships",
+                context={"node_count": len(nodes), "warnings": warnings},
+            ),
+            partial_result=partial_result,
+        )
+
+    # Phase 3 (continued): Check for missing agent correlations
+    tool_calls_without_agent = 0
+    for node in nodes.values():
+        if node.node_type == TimelineNodeType.TOOL_CALL and node.agent_id is None:
+            tool_calls_without_agent += 1
+
+    if tool_calls_without_agent > 0 and trace_events:
+        warnings.append(
+            f"Phase 3: {tool_calls_without_agent} tool calls could not be correlated to agents"
+        )
 
     # Build agent summaries from trace events
     agents = _build_agent_summaries(trace_events, nodes)
@@ -116,13 +176,15 @@ def build_timeline_tree(
         nodes=nodes,
     )
 
-    return EnrichedData(
+    enriched_data = EnrichedData(
         test_context=test_context,
         artifacts=artifact_paths,
         tree=tree,
         agents=agents,
         stats=stats,
     )
+
+    return Success(value=enriched_data, warnings=warnings)
 
 
 def _create_tree_node(entry: dict, agent_map: Dict[str, Tuple[str, str]]) -> TreeNode:
