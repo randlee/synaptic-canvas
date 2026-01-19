@@ -684,7 +684,7 @@ def extract_token_usage(entries: list[dict[str, Any]]) -> TokenUsage:
 
         # Extract from toolUseResult.totalTokens for subagent tokens
         tool_use_result = entry.get("toolUseResult", {})
-        if tool_use_result:
+        if tool_use_result and isinstance(tool_use_result, dict):
             total_tokens = tool_use_result.get("totalTokens", 0)
             if total_tokens:
                 subagent_tokens += total_tokens
