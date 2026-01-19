@@ -215,6 +215,15 @@ class StatusBannerDisplayModel(BaseModel):
     duration_seconds: float
     timestamp: datetime
 
+    # Token usage fields (populated from timeline_tree.stats.token_usage if available)
+    token_input: int = 0
+    token_output: int = 0
+    token_cache_creation: int = 0
+    token_cache_read: int = 0
+    token_subagent: int = 0
+    token_total_billable: int = 0
+    token_total_all: int = 0
+
     @computed_field
     @property
     def status_display(self) -> StatusDisplay:
@@ -238,6 +247,30 @@ class StatusBannerDisplayModel(BaseModel):
     def formatted_timestamp(self) -> str:
         """Timestamp formatted for display."""
         return self.timestamp.strftime("%Y-%m-%d %H:%M:%S")
+
+    @computed_field
+    @property
+    def has_token_data(self) -> bool:
+        """Whether token data is available."""
+        return self.token_total_all > 0
+
+    @computed_field
+    @property
+    def formatted_token_input(self) -> str:
+        """Input tokens formatted with commas."""
+        return f"{self.token_input:,}"
+
+    @computed_field
+    @property
+    def formatted_token_output(self) -> str:
+        """Output tokens formatted with commas."""
+        return f"{self.token_output:,}"
+
+    @computed_field
+    @property
+    def formatted_token_total(self) -> str:
+        """Total tokens formatted with commas."""
+        return f"{self.token_total_all:,}"
 
 
 class TestMetadataDisplayModel(BaseModel):

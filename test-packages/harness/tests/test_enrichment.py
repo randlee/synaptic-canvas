@@ -546,13 +546,16 @@ class TestStatsCalculation:
             "a1": AgentSummary(agent_type="Explore", tool_count=2),
         }
 
-        stats = _compute_tree_stats(nodes, agents)
+        stats = _compute_tree_stats(nodes, agents, [])
 
         # total_nodes excludes the synthetic root node
         assert stats.total_nodes == 2  # n1 and n2, not counting root
         assert stats.max_depth == 1
         assert stats.agent_count == 1
         assert stats.tool_call_count == 2
+        # token_usage should be zero with empty transcript
+        assert stats.token_usage is not None
+        assert stats.token_usage.total_all == 0
 
 
 # =============================================================================
@@ -814,11 +817,14 @@ class TestEdgeCases:
 
     def test_compute_tree_stats_empty_nodes(self):
         """Test _compute_tree_stats with empty nodes dictionary."""
-        stats = _compute_tree_stats({}, {})
+        stats = _compute_tree_stats({}, {}, [])
         assert stats.total_nodes == 0
         assert stats.max_depth == 0
         assert stats.agent_count == 0
         assert stats.tool_call_count == 0
+        # token_usage should be zero with empty transcript
+        assert stats.token_usage is not None
+        assert stats.token_usage.total_all == 0
 
 
 # =============================================================================

@@ -17,6 +17,7 @@ rather than duplicating content, following the design principle of "preserve nat
 
 from typing import List, Dict, Tuple, Optional, Any
 
+from .collector import extract_token_usage
 from .schemas import (
     EnrichedData,
     TestContext,
@@ -107,7 +108,7 @@ def build_timeline_tree(
     agents = _build_agent_summaries(trace_events, nodes)
 
     # Compute tree statistics
-    stats = _compute_tree_stats(nodes, agents)
+    stats = _compute_tree_stats(nodes, agents, transcript_entries)
 
     # Build the timeline tree
     tree = TimelineTree(
@@ -358,13 +359,16 @@ def _build_agent_summaries(
 
 
 def _compute_tree_stats(
-    nodes: Dict[str, TreeNode], agents: Dict[str, AgentSummary]
+    nodes: Dict[str, TreeNode],
+    agents: Dict[str, AgentSummary],
+    transcript_entries: List[dict],
 ) -> TreeStats:
     """Compute summary statistics for the tree.
 
     Args:
         nodes: Dict mapping UUID to TreeNode
         agents: Dict mapping agent_id to AgentSummary
+        transcript_entries: List of raw transcript entry dicts for token extraction
 
     Returns:
         TreeStats with computed values
@@ -384,9 +388,13 @@ def _compute_tree_stats(
         if node.node_type == TimelineNodeType.TOOL_CALL:
             tool_call_count += 1
 
+    # Extract token usage from transcript entries
+    token_usage = extract_token_usage(transcript_entries)
+
     return TreeStats(
         total_nodes=total_nodes,
         max_depth=max_depth,
         agent_count=len(agents),
         tool_call_count=tool_call_count,
+        token_usage=token_usage,
     )

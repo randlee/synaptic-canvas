@@ -214,6 +214,25 @@ class HTMLReportBuilder:
         )
         total_count = len(test.expectations)
 
+        # Extract token usage from timeline_tree.stats if available
+        # Agent 7A is adding stats.token_usage - handle None gracefully
+        token_kwargs = {}
+        if test.timeline_tree is not None:
+            # Check if timeline_tree has stats attribute (may be added by Agent 7A)
+            stats = getattr(test.timeline_tree, 'stats', None)
+            if stats is not None:
+                token_usage = getattr(stats, 'token_usage', None)
+                if token_usage is not None:
+                    token_kwargs = {
+                        'token_input': getattr(token_usage, 'input_tokens', 0),
+                        'token_output': getattr(token_usage, 'output_tokens', 0),
+                        'token_cache_creation': getattr(token_usage, 'cache_creation_tokens', 0),
+                        'token_cache_read': getattr(token_usage, 'cache_read_tokens', 0),
+                        'token_subagent': getattr(token_usage, 'subagent_tokens', 0),
+                        'token_total_billable': getattr(token_usage, 'total_billable', 0),
+                        'token_total_all': getattr(token_usage, 'total_all', 0),
+                    }
+
         # Build status banner data
         status_banner = StatusBannerDisplayModel(
             status=test.status,
@@ -221,6 +240,7 @@ class HTMLReportBuilder:
             total_count=total_count,
             duration_seconds=test.duration_ms / 1000.0,
             timestamp=test.timestamp,
+            **token_kwargs,
         )
 
         # Build metadata data

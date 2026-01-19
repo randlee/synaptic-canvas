@@ -17,6 +17,7 @@ class StatusBannerBuilder(BaseBuilder[StatusBannerDisplayModel]):
     - Expectations passed summary (e.g., "4 of 7 expectations passed")
     - Test duration in seconds
     - Test execution timestamp
+    - Token usage (if available)
     """
 
     def build(self, data: StatusBannerDisplayModel) -> str:
@@ -32,6 +33,28 @@ class StatusBannerBuilder(BaseBuilder[StatusBannerDisplayModel]):
 
         status_display = data.status_display
 
+        # Build token display section if token data is available
+        token_html = ""
+        if data.has_token_data:
+            token_html = f'''
+  <div class="token-section">
+    <div class="token-summary">
+      <span>Tokens: Input {data.formatted_token_input} | Output {data.formatted_token_output} | Total {data.formatted_token_total}</span>
+    </div>
+    <details class="token-details">
+      <summary>Token Details</summary>
+      <dl class="token-detail">
+        <div><dt>Input tokens</dt><dd>{data.token_input:,}</dd></div>
+        <div><dt>Output tokens</dt><dd>{data.token_output:,}</dd></div>
+        <div><dt>Cache creation tokens</dt><dd>{data.token_cache_creation:,}</dd></div>
+        <div><dt>Cache read tokens</dt><dd>{data.token_cache_read:,}</dd></div>
+        <div><dt>Subagent tokens</dt><dd>{data.token_subagent:,}</dd></div>
+        <div><dt>Total billable</dt><dd>{data.token_total_billable:,}</dd></div>
+        <div><dt>Total all</dt><dd>{data.token_total_all:,}</dd></div>
+      </dl>
+    </details>
+  </div>'''
+
         return f'''<div class="status-banner {status_display.css_class}">
   <div class="status-badge">
     <span>{status_display.label}</span>
@@ -39,6 +62,6 @@ class StatusBannerBuilder(BaseBuilder[StatusBannerDisplayModel]):
   </div>
   <div class="status-meta">
     <div class="duration">{data.formatted_duration}</div>
-    <div>{data.formatted_timestamp}</div>
+    <div>{data.formatted_timestamp}</div>{token_html}
   </div>
 </div>'''
