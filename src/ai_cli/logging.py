@@ -15,7 +15,7 @@ def _default_log_dir() -> Path:
 def write_log(event: Dict[str, Any], log_dir: Optional[Path] = None) -> str:
     log_dir = log_dir or _default_log_dir()
     log_dir.mkdir(parents=True, exist_ok=True)
-    ts = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    ts = datetime.now(timezone.utc).isoformat(timespec="milliseconds")
     record = {
         "timestamp": ts,
         "pid": os.getpid(),
@@ -23,5 +23,8 @@ def write_log(event: Dict[str, Any], log_dir: Optional[Path] = None) -> str:
     }
     fname = f"ai-cli-{ts.replace(':','').replace('-','').replace('T','_')}.json"
     path = log_dir / fname
+    if path.exists():
+        suffix = datetime.now(timezone.utc).strftime("%f")
+        path = log_dir / f"{path.stem}-{suffix}.json"
     path.write_text(json.dumps(record, indent=2), encoding="utf-8")
     return str(path)
