@@ -262,6 +262,7 @@ class TestScriptQuality:
         check = scanner.checks["script_quality"]
         assert check.status in [CheckStatus.PASSED, CheckStatus.WARNING]
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="Windows doesn't support Unix executable bits")
     def test_non_executable_script(self, temp_repo):
         """Test detection of non-executable scripts."""
         script = temp_repo / "test.sh"

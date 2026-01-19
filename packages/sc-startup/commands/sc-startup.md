@@ -1,18 +1,18 @@
 ---
 name: sc-startup
 version: 0.7.0
-description: Run the repo startup workflow: load the startup prompt, sync the master checklist, launch optional PR/worktree/CI agents, and return a concise status with next steps.
+description: "Run the repo startup workflow: load the startup prompt, sync the master checklist, launch optional PR/worktree/CI agents, and return a concise status with next steps."
 options:
   - name: --pr
-    description: Immediately deploy the `ci-pr-agent` with `--list --fix`; render PRs as a table (state "No open PRs" if none). If `--readonly`, run list-only (no fixes).
+    description: "Immediately deploy the `ci-pr-agent` with `--list --fix`; render PRs as a table (state \"No open PRs\" if none). If `--readonly`, run list-only (no fixes)."
   - name: --pull
-    description: Immediately deploy the `ci-automation` skill in pull-only mode to sync master → develop.
+    description: "Immediately deploy the `ci-automation` skill in pull-only mode to sync master → develop."
   - name: --init
-    description: Run config discovery via `sc-startup-init` (detect existing config, candidates, plugins), then walk user through missing settings with AskQuestion before continuing.
+    description: "Run config discovery via `sc-startup-init` (detect existing config, candidates, plugins), then walk user through missing settings with AskQuestion before continuing."
   - name: --fast
-    description: Short-circuit: read the startup prompt only, assume the assigned role, and exit (no checklist, no agents, no status report).
+    description: "Short-circuit: read the startup prompt only, assume the assigned role, and exit (no checklist, no agents, no status report)."
   - name: --readonly
-    description: Global report-only mode; disable fixes/updates/cleanup. PRs list-only, checklist agent report-only, worktree cleanup becomes scan/report.
+    description: "Global report-only mode; disable fixes/updates/cleanup. PRs list-only, checklist agent report-only, worktree cleanup becomes scan/report."
   - name: --help
     description: Show usage and config requirements, then exit.
 ---

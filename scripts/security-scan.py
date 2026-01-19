@@ -250,8 +250,8 @@ class SecurityScanner:
         total_scripts = len(scripts)
 
         for script in scripts:
-            # Check if executable
-            if not os.access(script, os.X_OK):
+            # Check if executable (skip on Windows where this doesn't work properly)
+            if sys.platform != "win32" and not os.access(script, os.X_OK):
                 issues.append(
                     SecurityIssue(
                         severity=Severity.MEDIUM,
