@@ -114,3 +114,5 @@ Resolution order for agent files:
 If no agent file is found:
 - `codex`: fail with an error
 - `claude`: skip hooks (assumes built-in agent)
+
+Hook executions are logged with `hook_start`/`hook_end` events (status + command).

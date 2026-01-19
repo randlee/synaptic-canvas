@@ -216,6 +216,16 @@ def run_pretool_hooks(agent_path: Optional[Path], payload: TaskToolInput) -> Non
             command = hook.get("command")
             if not command:
                 continue
+            write_log(
+                {
+                    "component": "ai_cli",
+                    "event": "hook_start",
+                    "hook_type": "PreToolUse",
+                    "agent_path": str(agent_path),
+                    "command": command,
+                    "params": payload.model_dump(),
+                }
+            )
             res = subprocess.run(
                 command,
                 shell=True,
@@ -225,7 +235,28 @@ def run_pretool_hooks(agent_path: Optional[Path], payload: TaskToolInput) -> Non
             )
             if res.returncode != 0:
                 msg = res.stderr.strip() or res.stdout.strip() or "PreToolUse hook failed"
+                write_log(
+                    {
+                        "component": "ai_cli",
+                        "event": "hook_end",
+                        "hook_type": "PreToolUse",
+                        "agent_path": str(agent_path),
+                        "command": command,
+                        "status": "error",
+                        "error": msg,
+                    }
+                )
                 raise RuntimeError(msg)
+            write_log(
+                {
+                    "component": "ai_cli",
+                    "event": "hook_end",
+                    "hook_type": "PreToolUse",
+                    "agent_path": str(agent_path),
+                    "command": command,
+                    "status": "success",
+                }
+            )
 
 
 def run_background(payload: TaskToolInput, runner: RunnerType, model: str, output_dir: Path) -> TaskToolOutputBackground:
