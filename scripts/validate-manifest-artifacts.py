@@ -205,7 +205,7 @@ def get_disk_files(package_path: Path) -> list[str]:
         package_path: Path to package directory
 
     Returns:
-        List of relative file paths
+        List of relative file paths (normalized to forward slashes)
     """
     disk_files = []
     artifact_dirs = ["commands", "skills", "agents", "scripts"]
@@ -219,7 +219,8 @@ def get_disk_files(package_path: Path) -> list[str]:
             if file_path.is_file():
                 # Get path relative to package root
                 rel_path = file_path.relative_to(package_path)
-                disk_files.append(str(rel_path))
+                # Normalize to forward slashes for cross-platform compatibility
+                disk_files.append(rel_path.as_posix())
 
     return disk_files
 
