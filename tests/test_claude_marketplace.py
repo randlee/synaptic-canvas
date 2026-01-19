@@ -25,6 +25,9 @@ def test_marketplace_json_valid():
         "sc-repomix-nuget",
         "sc-github-issue",
         "sc-startup",
+        "sc-ci-automation",
+        "sc-roslyn-diff",
+        "sc-kanban",
     ]
     assert len(data["plugins"]) == len(expected_plugins), f"Expected {len(expected_plugins)} plugins, found {len(data['plugins'])}"
     plugin_names = [p["name"] for p in data["plugins"]]
