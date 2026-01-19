@@ -65,7 +65,7 @@ ls test-packages/reports/
 
 🔧 **[scripts/validate-agents.sh](../scripts/validate-agents.sh)** - Agent version validation against registry
 
-🔧 **[scripts/security-scan.sh](../scripts/security-scan.sh)** - Security scanning (secrets, scripts, deps)
+🔧 **[scripts/security-scan.py](../scripts/security-scan.py)** - Security scanning (secrets, scripts, deps)
 
 ### Marketplace & Packages
 📦 **[MARKETPLACE-INFRASTRUCTURE.md](../docs/MARKETPLACE-INFRASTRUCTURE.md)** - Architecture, distribution, validation
