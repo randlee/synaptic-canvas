@@ -184,6 +184,55 @@ CSS_STATUS_BANNER = """.status-banner {
 }
 .status-meta .duration { font-size: 1.1rem; font-weight: 600; color: var(--text); }"""
 
+# Token display styles for status banner
+CSS_TOKEN_DISPLAY = """.token-section {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.token-summary {
+  display: flex;
+  gap: 16px;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+  font-size: 0.9rem;
+}
+.token-details {
+  margin-top: 8px;
+  border: none;
+}
+.token-details summary {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px 0;
+  background: transparent;
+  border: none;
+  font-weight: normal;
+}
+.token-details summary:hover {
+  color: var(--text);
+}
+.token-detail {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: var(--bg-subtle);
+  border-radius: 4px;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+  font-size: 0.85rem;
+}
+.token-detail > div {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+}
+.token-detail dt {
+  color: var(--text-muted);
+}
+.token-detail dd {
+  font-weight: 500;
+  margin-left: 8px;
+}"""
+
 # Test metadata grid styles
 CSS_METADATA = """.test-metadata {
   background: var(--bg-subtle);
@@ -950,6 +999,7 @@ def get_all_css() -> str:
         CSS_FILE_LINKS,
         CSS_TABS,
         CSS_STATUS_BANNER,
+        CSS_TOKEN_DISPLAY,
         CSS_METADATA,
         CSS_COPY_BUTTON,
         CSS_EXPECTATIONS,

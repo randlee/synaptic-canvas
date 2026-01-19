@@ -998,11 +998,357 @@ All data structures have Pydantic schemas in `test-packages/harness/schemas.py`:
 
 ---
 
-## 15. References
+## 15. Token Consumption Reporting
 
-- **Enrichment Implementation**: `test-packages/harness/enrichment.py`
+### 15.1 Data Source
+
+Token usage is available in `-transcript.jsonl` files in two locations:
+
+**Direct Claude API responses** (`type: "assistant"`):
+```json
+{
+  "message": {
+    "usage": {
+      "input_tokens": 46,
+      "output_tokens": 9,
+      "cache_creation_input_tokens": 15466,
+      "cache_read_input_tokens": 99728,
+      "service_tier": "standard"
+    }
+  }
+}
+```
+
+**Subagent results** (`toolUseResult`):
+```json
+{
+  "toolUseResult": {
+    "totalTokens": 11414,
+    "totalToolUseCount": 15,
+    "usage": { ... }
+  }
+}
+```
+
+### 15.2 Token Usage Schema
+
+```python
+class TokenUsage(BaseModel):
+    """Detailed token consumption breakdown."""
+
+    input_tokens: int = 0          # Direct input tokens
+    output_tokens: int = 0         # Generated output tokens
+    cache_creation_tokens: int = 0 # Tokens written to cache
+    cache_read_tokens: int = 0     # Tokens read from cache (reduced cost)
+    subagent_tokens: int = 0       # Total from subagent tasks
+
+    @property
+    def total_billable(self) -> int:
+        """Tokens likely to incur charges (excludes cache reads)."""
+        return self.input_tokens + self.output_tokens + self.cache_creation_tokens
+
+    @property
+    def total_all(self) -> int:
+        """All tokens including cache reads."""
+        return (self.input_tokens + self.output_tokens +
+                self.cache_creation_tokens + self.cache_read_tokens +
+                self.subagent_tokens)
+```
+
+### 15.3 HTML Report Display
+
+**Status Banner (summary):**
+```
+[PASS] 3/3 expectations | 4.2s | Input: 46 | Output: 9 | Total: 126,663
+```
+
+**Detailed Breakdown (collapsible section):**
+```
+Token Usage:
+  Input tokens:          46
+  Output tokens:          9
+  Cache creation:    15,466
+  Cache read:        99,728
+  Subagent:          11,414
+  ─────────────────────────
+  Total:            126,663
+  Billable:          15,521
+```
+
+### 15.4 Usage for Performance Comparison
+
+Token counts enable:
+- Cost estimation per test
+- Comparison across test runs (regression detection)
+- Identifying expensive operations
+- Cache efficiency analysis (cache_read / total ratio)
+
+---
+
+## 16. Error Handling: Result[T,E] Pattern
+
+### 16.1 Design Principles
+
+1. **Explicit over implicit**: Functions return `Result[T, E]` not exceptions
+2. **Fail late**: Complete as much work as possible before reporting errors
+3. **Error accumulation**: Collect multiple errors rather than stopping at first
+4. **Type safety**: Errors are typed and documented in signatures
+5. **No silent failures**: Every error must be visible in reports
+
+### 16.2 Result Type Definition
+
+```python
+from typing import TypeVar, Generic, Union, Any
+from dataclasses import dataclass, field
+
+T = TypeVar('T')
+E = TypeVar('E')
+
+@dataclass(frozen=True)
+class Success(Generic[T]):
+    """Successful operation result."""
+    value: T
+    warnings: list[str] = field(default_factory=list)
+
+    def is_success(self) -> bool:
+        return True
+
+@dataclass(frozen=True)
+class Failure(Generic[E]):
+    """Failed operation with optional partial result."""
+    error: E
+    partial_result: Any = None  # Work completed before failure
+
+    def is_success(self) -> bool:
+        return False
+
+Result = Union[Success[T], Failure[E]]
+```
+
+### 16.3 Error Types
+
+```python
+@dataclass
+class EnrichmentError:
+    """Error during tree enrichment."""
+    phase: str        # "index", "tree_build", "depth_compute", "stats"
+    message: str
+    context: dict = field(default_factory=dict)
+
+@dataclass
+class ArtifactError:
+    """Error during artifact preservation."""
+    operation: str    # "read", "write", "validate", "serialize"
+    path: str
+    message: str
+```
+
+### 16.4 Usage Pattern
+
+```python
+def build_timeline_tree(...) -> Result[EnrichedData, EnrichmentError]:
+    """Build enriched data, returning Result instead of raising."""
+
+    # Phase 1: Index
+    try:
+        uuid_index = _index_entries(transcript_entries)
+    except Exception as e:
+        return Failure(
+            EnrichmentError("index", str(e)),
+            partial_result=None
+        )
+
+    # Phase 2: Build tree
+    try:
+        nodes = _build_nodes(uuid_index, tool_to_agent)
+    except Exception as e:
+        return Failure(
+            EnrichmentError("tree_build", str(e)),
+            partial_result={"uuid_index": uuid_index}  # Partial work
+        )
+
+    # ... continue phases ...
+
+    return Success(enriched_data, warnings=collected_warnings)
+```
+
+### 16.5 Caller Handling
+
+```python
+result = build_timeline_tree(transcript, trace, context, paths)
+
+if result.is_success():
+    enriched_data = result.value
+    if result.warnings:
+        logger.warning(f"Enrichment completed with warnings: {result.warnings}")
+else:
+    error = result.error
+    logger.error(f"Enrichment failed at {error.phase}: {error.message}")
+    # Use partial_result if available
+    if result.partial_result:
+        # Save what we can
+        pass
+```
+
+---
+
+## 17. Log Analysis & Warning Detection
+
+### 17.1 Design Principles
+
+1. **Default fail on warnings**: Any warning in logs = test failure
+2. **Explicit override only**: `allow_warnings: true` requires user approval
+3. **Full reporting**: Complete all reporting before failing
+4. **Clear documentation**: Guidelines document override approval process
+
+### 17.2 Log Analysis Result
+
+```python
+@dataclass
+class LogEntry:
+    """Parsed log entry."""
+    level: str        # WARNING, ERROR
+    message: str
+    timestamp: str
+    logger_name: str
+
+@dataclass
+class LogAnalysisResult:
+    """Result of analyzing logs for issues."""
+    warnings: list[LogEntry]
+    errors: list[LogEntry]
+
+    @property
+    def has_issues(self) -> bool:
+        return bool(self.warnings or self.errors)
+
+    @property
+    def issue_count(self) -> int:
+        return len(self.warnings) + len(self.errors)
+```
+
+### 17.3 Automatic Failure Expectation
+
+```python
+class NoWarningsExpectation(Expectation):
+    """Implicit expectation: logs must be clean."""
+
+    def __init__(self, allow_warnings: bool = False):
+        self.allow_warnings = allow_warnings
+
+    def evaluate(self, data: CollectedData) -> ExpectationResult:
+        if not data.log_analysis:
+            return ExpectationResult(passed=True)
+
+        if data.log_analysis.has_issues and not self.allow_warnings:
+            return ExpectationResult(
+                passed=False,
+                reason=f"Found {data.log_analysis.issue_count} log issues",
+                details={
+                    "warnings": [w.message for w in data.log_analysis.warnings],
+                    "errors": [e.message for e in data.log_analysis.errors]
+                }
+            )
+
+        return ExpectationResult(passed=True)
+```
+
+### 17.4 Test YAML Override
+
+```yaml
+# tests/test_edge_case.yaml
+test_id: edge-case-001
+execution:
+  prompt: "/command with known warning"
+  model: haiku
+
+# REQUIRES EXPLICIT USER APPROVAL - see guidelines
+allow_warnings: true
+
+expectations:
+  - type: output_contains
+    expected:
+      pattern: "expected output"
+```
+
+### 17.5 Guidelines Documentation
+
+The `plugin-test-creation-guidelines.md` must include:
+
+```markdown
+## Warning Override Policy
+
+By default, any WARNING or ERROR in logs causes test failure. This ensures
+silent failures are never masked.
+
+### Requesting Override
+
+To use `allow_warnings: true`:
+
+1. **Document the reason** in test YAML comments
+2. **Get explicit user approval** before merging
+3. **Create follow-up issue** to fix the underlying warning
+4. **Never use for production tests** - only for edge case testing
+
+### Example with Approval
+
+```yaml
+# APPROVED BY: @username on 2026-01-18
+# REASON: Testing deprecated API warning behavior
+# FOLLOW-UP: Issue #123 to update API usage
+allow_warnings: true
+```
+
+Overrides without documented approval will be rejected in code review.
+```
+
+### 17.6 HTML Report Display
+
+Warnings and errors appear in a dedicated section:
+
+```html
+<section class="log-analysis">
+  <h3>Log Analysis</h3>
+  <div class="log-warnings">
+    <span class="badge warning">2 Warnings</span>
+    <ul>
+      <li class="log-entry warning">Schema validation warning: extra field 'foo'</li>
+      <li class="log-entry warning">Deprecated API usage detected</li>
+    </ul>
+  </div>
+</section>
+```
+
+CSS styling:
+```css
+.log-entry.warning {
+  background: #fef3c7;
+  border-left: 3px solid #f59e0b;
+}
+.log-entry.error {
+  background: #fee2e2;
+  border-left: 3px solid #ef4444;
+}
+```
+
+---
+
+## 18. References
+
+### Implementation Files
+- **Enrichment Module**: `test-packages/harness/enrichment.py`
+- **Result Types**: `test-packages/harness/result.py` (Sprint 8)
+- **Log Analyzer**: `test-packages/harness/log_analyzer.py` (Sprint 9)
 - **Schema Definitions**: `test-packages/harness/schemas.py`
 - **Test Suite**: `test-packages/harness/tests/test_enrichment.py`
+
+### Documentation
 - **HTML Report Design**: `test-packages/docs/html-report-builder-design.md`
 - **Artifact Documentation**: `test-packages/docs/report-artifacts.md`
-- **Example Artifacts**: `test-packages/reports/sc-startup/` (transcript.jsonl, trace.jsonl, enriched.json)
+- **Test Guidelines**: `test-packages/docs/plugin-test-creation-guidelines.md`
+- **Implementation Plan**: `plans/2026-01-18-timeline-tree-implementation.md`
+
+### Example Artifacts
+- **Transcript**: `test-packages/reports/sc-startup/*-transcript.jsonl`
+- **Trace**: `test-packages/reports/sc-startup/*-trace.jsonl`
+- **Enriched**: `test-packages/reports/sc-startup/*-enriched.json`

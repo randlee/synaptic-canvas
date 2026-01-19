@@ -60,6 +60,7 @@ from .models import (
     ToolOutput,
     UserPromptSubmitEvent,
 )
+from .schemas import TokenUsage
 
 logger = logging.getLogger(__name__)
 
@@ -637,6 +638,53 @@ def extract_tool_names_from_transcript(
     for error in errors:
         if error.tool_use_id in tool_names:
             error.tool_name = tool_names[error.tool_use_id]
+
+
+def extract_token_usage(entries: list[dict[str, Any]]) -> TokenUsage:
+    """Extract and aggregate token usage from transcript entries.
+
+    Parses transcript entries for:
+    - message.usage fields (input_tokens, output_tokens, cache_creation_input_tokens,
+      cache_read_input_tokens) in assistant messages
+    - toolUseResult.totalTokens for subagent tokens
+
+    Args:
+        entries: List of transcript entries from Claude session
+
+    Returns:
+        TokenUsage object with aggregated token counts
+    """
+    input_tokens = 0
+    output_tokens = 0
+    cache_creation_tokens = 0
+    cache_read_tokens = 0
+    subagent_tokens = 0
+
+    for entry in entries:
+        # Extract from message.usage in assistant messages
+        message = entry.get("message", {})
+        if message:
+            usage = message.get("usage", {})
+            if usage:
+                input_tokens += usage.get("input_tokens", 0)
+                output_tokens += usage.get("output_tokens", 0)
+                cache_creation_tokens += usage.get("cache_creation_input_tokens", 0)
+                cache_read_tokens += usage.get("cache_read_input_tokens", 0)
+
+        # Extract from toolUseResult.totalTokens for subagent tokens
+        tool_use_result = entry.get("toolUseResult", {})
+        if tool_use_result:
+            total_tokens = tool_use_result.get("totalTokens", 0)
+            if total_tokens:
+                subagent_tokens += total_tokens
+
+    return TokenUsage(
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
+        cache_creation_tokens=cache_creation_tokens,
+        cache_read_tokens=cache_read_tokens,
+        subagent_tokens=subagent_tokens,
+    )
 
 
 # =============================================================================

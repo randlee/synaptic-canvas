@@ -89,6 +89,26 @@ class AgentSummary(BaseModel):
     tool_count: int = 0
 
 
+
+class TokenUsage(BaseModel):
+    """Token usage metrics aggregated from transcript entries."""
+
+    input_tokens: int = 0
+    output_tokens: int = 0
+    cache_creation_tokens: int = 0
+    cache_read_tokens: int = 0
+    subagent_tokens: int = 0
+
+    @property
+    def total_billable(self) -> int:
+        """Tokens likely billed (excludes cache reads)."""
+        return self.input_tokens + self.output_tokens + self.cache_creation_tokens
+
+    @property
+    def total_all(self) -> int:
+        """Total tokens including cache reads."""
+        return self.total_billable + self.cache_read_tokens + self.subagent_tokens
+
 class TreeStats(BaseModel):
     """Quick-access metrics for the timeline tree."""
 
@@ -96,6 +116,7 @@ class TreeStats(BaseModel):
     max_depth: int = 0
     agent_count: int = 0
     tool_call_count: int = 0
+    token_usage: Optional[TokenUsage] = None
 
 
 class TimelineTree(BaseModel):
@@ -103,6 +124,7 @@ class TimelineTree(BaseModel):
 
     root_uuid: str
     nodes: Dict[str, TreeNode]
+    stats: Optional[TreeStats] = None
 
 
 class EnrichedData(BaseModel):
