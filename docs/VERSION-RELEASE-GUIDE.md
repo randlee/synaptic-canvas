@@ -195,7 +195,7 @@ Before making any version changes, audit the current state using provided script
 
 ```bash
 # Show marketplace and all package versions
-./scripts/compare-versions.sh --by-package
+python3 scripts/compare-versions.py --by-package
 
 # Output:
 # === Synaptic Canvas Version Comparison ===
@@ -205,10 +205,10 @@ Before making any version changes, audit the current state using provided script
 # ...
 
 # Find only packages with mismatches
-./scripts/compare-versions.sh --mismatches
+python3 scripts/compare-versions.py --mismatches
 
 # Show detailed artifact versions
-./scripts/compare-versions.sh --verbose --by-package
+python3 scripts/compare-versions.py --verbose --by-package
 ```
 
 ### Review CHANGELOGs
@@ -536,7 +536,7 @@ Shows versions across packages side-by-side.
 
 **Basic view:**
 ```bash
-./scripts/compare-versions.sh --by-package
+python3 scripts/compare-versions.py --by-package
 ```
 
 **Output:**
@@ -555,7 +555,7 @@ All versions consistent!
 
 **Detailed view:**
 ```bash
-./scripts/compare-versions.sh --verbose --by-package
+python3 scripts/compare-versions.py --verbose --by-package
 ```
 
 **Output shows each artifact:**
@@ -570,7 +570,7 @@ Package: sc-delay-tasks (manifest: 0.4.0)
 
 **Find mismatches only:**
 ```bash
-./scripts/compare-versions.sh --mismatches
+python3 scripts/compare-versions.py --mismatches
 
 # Output only shows packages with version mismatches
 # If all consistent, shows "All versions consistent!"
@@ -578,7 +578,7 @@ Package: sc-delay-tasks (manifest: 0.4.0)
 
 **JSON output (for automation):**
 ```bash
-./scripts/compare-versions.sh --json
+python3 scripts/compare-versions.py --json
 
 # Output:
 # {
@@ -596,7 +596,7 @@ Package: sc-delay-tasks (manifest: 0.4.0)
 
 ```bash
 # Find the mismatch
-./scripts/compare-versions.sh --verbose
+python3 scripts/compare-versions.py --verbose
 
 # Example mismatch output:
 # Package: sc-delay-tasks (manifest: 0.5.0)
@@ -781,7 +781,7 @@ vim packages/sc-delay-tasks/CHANGELOG.md
 python3 scripts/sync-versions.py --package sc-delay-tasks --version 0.5.0
 
 # Step 4: Verify no cross-package impact
-./scripts/compare-versions.sh --verbose
+python3 scripts/compare-versions.py --verbose
 
 # Expected: sc-git-worktree still 0.4.0, sc-delay-tasks now 0.5.0
 
@@ -1503,7 +1503,7 @@ git push origin main --follow-tags
 
 ### Verification
 - [x] audit-versions.py passes
-- [x] compare-versions.sh shows consistency
+- [x] compare-versions.py shows consistency
 - [x] CHANGELOG.md updated
 - [x] All artifacts updated via sync-versions.py
 - [x] Local testing complete
@@ -1581,7 +1581,7 @@ git add packages/sc-delay-tasks/agents/
 git commit -m "fix: resolve timeout issue in delay-poll"
 
 # 6. Verify current state
-./scripts/compare-versions.sh --verbose
+python3 scripts/compare-versions.py --verbose
 
 # Output should show:
 # Package: sc-delay-tasks (manifest: 0.4.0)
@@ -1622,7 +1622,7 @@ Release new features and bug fixes for sc-delay-tasks.
 
 ## Verification
 - audit-versions.py: PASSED
-- compare-versions.sh: PASSED
+- compare-versions.py: PASSED
 - Manual testing: PASSED
 
 ## Compatibility
@@ -1660,7 +1660,7 @@ git commit -m "chore(registry): update sc-delay-tasks to v0.5.0"
 git push origin main
 
 # 17. Verify final state
-./scripts/compare-versions.sh
+python3 scripts/compare-versions.py
 
 # Expected output:
 # Package: sc-delay-tasks (manifest: 0.5.0)  ← updated!
@@ -1802,7 +1802,7 @@ python3 scripts/sync-versions.py --marketplace --version 1.0.0
 ./scripts/audit-versions.py
 
 # 8. Check detailed version comparison
-./scripts/compare-versions.sh --verbose
+python3 scripts/compare-versions.py --verbose
 
 # 9. Update version compatibility matrix
 vim docs/version-compatibility-matrix.md
@@ -1878,7 +1878,7 @@ Production release of Synaptic Canvas v1.0.0.
 
 ## Verification
 - [x] audit-versions.py: PASSED
-- [x] compare-versions.sh: PASSED
+- [x] compare-versions.py: PASSED
 - [x] Full regression testing: PASSED
 - [x] Production readiness checklist: PASSED
 
@@ -1923,7 +1923,7 @@ git branch -d release/v1.0.0
 git push origin --delete release/v1.0.0
 
 # 18. Verify final state
-./scripts/compare-versions.sh
+python3 scripts/compare-versions.py
 
 # Expected:
 # === Synaptic Canvas Version Comparison ===
@@ -2011,7 +2011,7 @@ python3 scripts/sync-versions.py --package sc-repomix-nuget --version 0.5.1
 
 # 6. Review what changed
 git status
-./scripts/compare-versions.sh --verbose
+python3 scripts/compare-versions.py --verbose
 
 # 7. Single comprehensive commit for all version changes
 git add packages/*/
@@ -2096,7 +2096,7 @@ git push origin main
 # Notify package managers
 
 # 16. Verify deployment
-./scripts/compare-versions.sh
+python3 scripts/compare-versions.py
 
 # Expected:
 # Package: sc-delay-tasks (manifest: 0.5.1)  ← patched
@@ -2135,7 +2135,7 @@ git push origin --delete hotfix/CVE-2025-XXXXX
 - ./scripts/audit-versions.py --verbose
 
 # Compare versions across packages
-- ./scripts/compare-versions.sh --by-package
+- python3 scripts/compare-versions.py --by-package
 
 # Validate YAML format
 - python3 -c "import yaml; yaml.safe_load(open('packages/*/manifest.yaml'))"
@@ -2253,7 +2253,7 @@ python3 scripts/generate-changelog.py --package sc-delay-tasks --version 0.5.0
 # Checklist
 
 - [ ] audit-versions.py passes locally
-- [ ] compare-versions.sh shows consistency
+- [ ] compare-versions.py shows consistency
 - [ ] CHANGELOG.md updated
 - [ ] version synced via sync-versions.py
 - [ ] CI/CD checks passing
@@ -2363,7 +2363,7 @@ git checkout feature/branch
 
 # 3. Re-run verification
 ./scripts/audit-versions.py
-./scripts/compare-versions.sh
+python3 scripts/compare-versions.py
 
 # 4. Retry the release process from the beginning
 ```
@@ -2629,7 +2629,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ./scripts/audit-versions.py
 
 # Compare versions across packages
-./scripts/compare-versions.sh --verbose
+python3 scripts/compare-versions.py --verbose
 
 # Bump single package
 python3 scripts/sync-versions.py --package sc-delay-tasks --version 0.5.0
@@ -2668,7 +2668,7 @@ Are there bug fixes?
 - [ ] CHANGELOG updated with release notes
 - [ ] Version numbers determined using SemVer guidelines
 - [ ] `./scripts/audit-versions.py` passes
-- [ ] `./scripts/compare-versions.sh` shows consistency
+- [ ] `python3 scripts/compare-versions.py` shows consistency
 
 **During Release:**
 - [ ] Create release branch

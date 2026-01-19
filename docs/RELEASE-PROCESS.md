@@ -686,12 +686,12 @@ fi
 # 2. Compare versions
 echo ""
 echo "2. Comparing versions by package..."
-./scripts/compare-versions.sh --by-package
+python3 scripts/compare-versions.py --by-package
 
 # 3. Check for version mismatches
 echo ""
 echo "3. Checking for version mismatches..."
-./scripts/compare-versions.sh --mismatches
+python3 scripts/compare-versions.py --mismatches
 if [ $? -ne 0 ]; then
   echo "⚠️  Version mismatches detected (review above)"
 fi
@@ -1653,8 +1653,8 @@ echo "Incident review created. Please complete action items."
 
 **Compare versions:**
 ```bash
-./scripts/compare-versions.sh --by-package
-./scripts/compare-versions.sh --mismatches
+python3 scripts/compare-versions.py --by-package
+python3 scripts/compare-versions.py --mismatches
 ```
 
 **Sync versions:**

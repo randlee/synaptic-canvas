@@ -32,7 +32,7 @@
 ./scripts/audit-versions.py
 
 # Compare versions across packages
-./scripts/compare-versions.sh
+python3 scripts/compare-versions.py
 
 # Validate registry integrity
 python3 docs/registries/nuget/validate-registry.py
@@ -306,15 +306,15 @@ Must be semantic version (SemVer):
 
 ---
 
-#### 3. `scripts/compare-versions.sh`
+#### 3. `scripts/compare-versions.py`
 
 **Purpose:** Compare version numbers across packages and display discrepancies
 
-**Location:** `/Users/randlee/Documents/github/synaptic-canvas/scripts/compare-versions.sh`
+**Location:** `/Users/randlee/Documents/github/synaptic-canvapython3 scripts/compare-versions.py`
 
 **Usage:**
 ```bash
-./scripts/compare-versions.sh [OPTIONS]
+python3 scripts/compare-versions.py [OPTIONS]
 
 Options:
   --by-package    Show versions grouped by package (default)
@@ -327,7 +327,7 @@ Options:
 
 **Basic comparison:**
 ```bash
-./scripts/compare-versions.sh
+python3 scripts/compare-versions.py
 
 # Output:
 === Synaptic Canvas Version Comparison ===
@@ -347,7 +347,7 @@ All versions consistent!
 
 **Show only mismatches:**
 ```bash
-./scripts/compare-versions.sh --mismatches
+python3 scripts/compare-versions.py --mismatches
 
 # Output:
 === Synaptic Canvas Version Comparison ===
@@ -361,7 +361,7 @@ Package: sc-delay-tasks (manifest: 0.4.0)
 
 **Verbose output (show all artifacts):**
 ```bash
-./scripts/compare-versions.sh --verbose
+python3 scripts/compare-versions.py --verbose
 
 # Output:
 === Synaptic Canvas Version Comparison ===
@@ -390,7 +390,7 @@ All versions consistent!
 
 **With version mismatches:**
 ```bash
-./scripts/compare-versions.sh --verbose
+python3 scripts/compare-versions.py --verbose
 
 # Output:
 === Synaptic Canvas Version Comparison ===
@@ -410,7 +410,7 @@ Version mismatches found
 
 **JSON output:**
 ```bash
-./scripts/compare-versions.sh --json
+python3 scripts/compare-versions.py --json
 
 # Output:
 {
@@ -1664,7 +1664,7 @@ sh scripts/audit-versions.py
 
 ### Audit Script JSON
 
-Currently, `audit-versions.py` does not output JSON. Consider using `compare-versions.sh --json` for structured output.
+Currently, `audit-versions.py` does not output JSON. Consider using `compare-versions.py --json` for structured output.
 
 **Feature request:** Add `--json` flag to `audit-versions.py`
 
@@ -1673,7 +1673,7 @@ Currently, `audit-versions.py` does not output JSON. Consider using `compare-ver
 ### Compare Versions JSON
 
 ```bash
-./scripts/compare-versions.sh --json
+python3 scripts/compare-versions.py --json
 ```
 
 **Output:**
@@ -2062,7 +2062,7 @@ jobs:
 
 **Pre-Commit Checklist:**
 - [ ] Run `./scripts/audit-versions.py`
-- [ ] Run `./scripts/compare-versions.sh`
+- [ ] Run `python3 scripts/compare-versions.py`
 - [ ] Check no uncommitted version changes
 
 **Pre-Release Checklist:**
@@ -2104,7 +2104,7 @@ jobs:
 | Exit Code | Meaning | Tools |
 |-----------|---------|-------|
 | 0 | Success | All |
-| 1 | Validation failure | audit-versions.py, compare-versions.sh, validate-registry.py |
+| 1 | Validation failure | audit-versions.py, compare-versions.py, validate-registry.py |
 | 2 | Critical error | audit-versions.py |
 
 ---

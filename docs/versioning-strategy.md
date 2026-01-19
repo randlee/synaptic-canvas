@@ -126,7 +126,7 @@ Version mismatches are detected by the version audit script:
 
 - [ ] `scripts/audit-versions.py` - Detect mismatches
 - [ ] `scripts/sync-versions.py` - Bulk version updates
-- [ ] `scripts/compare-versions.sh` - Version comparison tool
+- [ ] `scripts/compare-versions.py` - Version comparison tool
 
 ### CCS.4: CI/CD Integration
 
@@ -194,10 +194,10 @@ When releasing version 0.5.0 of `sc-delay-tasks`:
 ./scripts/audit-versions.py
 
 # Compare versions by package
-./scripts/compare-versions.sh --by-package
+python3 scripts/compare-versions.py --by-package
 
 # Show version mismatches
-./scripts/compare-versions.sh --mismatches
+python3 scripts/compare-versions.py --mismatches
 ```
 
 ---

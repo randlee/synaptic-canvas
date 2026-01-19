@@ -337,10 +337,10 @@ sc-repomix-nuget: 0.4.0
 sc-manage: 0.4.0
 ```
 
-**Method 2: Using compare-versions.sh**
+**Method 2: Using compare-versions.py**
 
 ```bash
-./scripts/compare-versions.sh
+python3 scripts/compare-versions.py
 ```
 
 **Output:**
@@ -360,7 +360,7 @@ All versions consistent!
 **Method 3: JSON output for scripting**
 
 ```bash
-./scripts/compare-versions.sh --json
+python3 scripts/compare-versions.py --json
 ```
 
 **Output:**
@@ -782,13 +782,13 @@ packages/sc-git-worktree/manifest.yaml:        version: 0.4.0
 
 ```bash
 # Quick check
-./scripts/compare-versions.sh
+python3 scripts/compare-versions.py
 
 # With details
-./scripts/compare-versions.sh --verbose
+python3 scripts/compare-versions.py --verbose
 
 # Only show problems
-./scripts/compare-versions.sh --mismatches
+python3 scripts/compare-versions.py --mismatches
 ```
 
 ---
@@ -975,7 +975,7 @@ chmod +x check-all-versions.sh
 **Check if any versions need synchronization:**
 
 ```bash
-./scripts/compare-versions.sh --mismatches
+python3 scripts/compare-versions.py --mismatches
 
 # If output is empty, all versions are synchronized
 # If output shows packages, those need synchronization
@@ -1330,7 +1330,7 @@ git checkout -b rollback-to-$commit
 git reset --hard $commit
 
 # Verify versions
-./scripts/compare-versions.sh
+python3 scripts/compare-versions.py
 
 # If satisfied, merge back to main
 git checkout main
@@ -1376,8 +1376,8 @@ jobs:
 
       - name: Compare versions
         run: |
-          chmod +x scripts/compare-versions.sh
-          ./scripts/compare-versions.sh --json
+          chmod +x scripts/compare-versions.py
+          python3 scripts/compare-versions.py --json
 
       - name: Validate registry
         run: |
@@ -1440,7 +1440,7 @@ crontab -e
 
 1. **Before making changes:**
    ```bash
-   ./scripts/compare-versions.sh
+   python3 scripts/compare-versions.py
    ```
 
 2. **When updating a package:**
@@ -1465,7 +1465,7 @@ crontab -e
    python3 docs/registries/nuget/validate-registry.py
 
    # Check all versions
-   ./scripts/compare-versions.sh --verbose
+   python3 scripts/compare-versions.py --verbose
    ```
 
 4. **After creating a release:**
@@ -1504,7 +1504,7 @@ crontab -e
 
 ```bash
 # Check all versions
-./scripts/compare-versions.sh
+python3 scripts/compare-versions.py
 
 # Run version audit
 ./scripts/audit-versions.py

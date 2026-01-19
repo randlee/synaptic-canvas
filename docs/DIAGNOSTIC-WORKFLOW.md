@@ -254,7 +254,7 @@ ls -l scripts/*.sh
 **Expected Output:**
 ```
 -rwxr-xr-x  1 user  staff  6045 Dec  2 09:22 scripts/audit-versions.py
--rwxr-xr-x  1 user  staff  5411 Dec  2 09:23 scripts/compare-versions.sh
+-rwxr-xr-x  1 user  staff  5411 Dec  2 09:23 scripts/compare-versions.py
 ```
 
 **✅ Success Criteria:** Scripts have execute permission (x flag)
@@ -476,7 +476,7 @@ Already up to date.
 
 **Command:**
 ```bash
-./scripts/compare-versions.sh --verbose
+python3 scripts/compare-versions.py --verbose
 ```
 
 **Expected Output:**
@@ -1002,7 +1002,7 @@ cat .claude/commands/delay.md | head -30
 
 **When to use:**
 - When audit-versions.py reports failures
-- When compare-versions.sh shows mismatches
+- When compare-versions.py shows mismatches
 - After updating package versions
 - When preparing for release
 
@@ -1019,7 +1019,7 @@ cat .claude/commands/delay.md | head -30
 
 **Command:**
 ```bash
-./scripts/compare-versions.sh --verbose --mismatches
+python3 scripts/compare-versions.py --verbose --mismatches
 ```
 
 **Example Output (with issues):**
@@ -1125,7 +1125,7 @@ Updated 3 file(s) in sc-delay-tasks
 
 **Command:**
 ```bash
-./scripts/compare-versions.sh --verbose
+python3 scripts/compare-versions.py --verbose
 ```
 
 **Expected Output:**
@@ -1812,7 +1812,7 @@ echo "=== Version Audit ===" >> audit-report.txt
 echo "" >> audit-report.txt
 
 echo "=== Version Comparison ===" >> audit-report.txt
-./scripts/compare-versions.sh --verbose >> audit-report.txt
+python3 scripts/compare-versions.py --verbose >> audit-report.txt
 echo "" >> audit-report.txt
 
 echo "=== Registry Validation ===" >> audit-report.txt

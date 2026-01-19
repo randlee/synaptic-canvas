@@ -350,7 +350,7 @@ Before committing, verify all versions are synchronized:
 ./scripts/audit-versions.py
 
 # Compare versions by package
-./scripts/compare-versions.sh --by-package
+python3 scripts/compare-versions.py --by-package
 
 # Update versions in bulk
 python3 scripts/sync-versions.py --package my-package --version 0.5.0

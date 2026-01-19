@@ -83,7 +83,7 @@ Each package in `packages/*/` maintains its own documentation:
 - [Versioning Strategy](./versioning-strategy.md) - Complete versioning policy
 - [Version Audit Script](../scripts/audit-versions.py) - Verify version consistency
 - [Version Sync Script](../scripts/sync-versions.py) - Update versions bulk
-- [Version Compare Tool](../scripts/compare-versions.sh) - Show versions by package
+- [Version Compare Tool](.python3 scripts/compare-versions.py) - Show versions by package
 
 ### Changelog Files
 
@@ -102,7 +102,7 @@ Located in `scripts/`:
 |--------|---------|-------|
 | `audit-versions.py` | Verify version consistency across all artifacts | `./scripts/audit-versions.py` |
 | `sync-versions.py` | Bulk update versions in packages | `python3 scripts/sync-versions.py --package NAME --version X.Y.Z` |
-| `compare-versions.sh` | Compare versions by package | `./scripts/compare-versions.sh --by-package` |
+| `compare-versions.py` | Compare versions by package | `python3 scripts/compare-versions.py --by-package` |
 
 ### Validation Scripts
 
@@ -132,7 +132,7 @@ synaptic-canvas/
 ├── scripts/                       # Utility scripts
 │   ├── audit-versions.py
 │   ├── sync-versions.py
-│   ├── compare-versions.sh
+│   ├── compare-versions.py
 │   └── ...
 ├── .claude/                       # Claude Code configuration
 │   ├── commands/                  # Global commands

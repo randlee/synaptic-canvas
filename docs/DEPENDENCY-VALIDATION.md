@@ -277,7 +277,7 @@ GNU bash, version 5.2.15(1)-release (or higher)
 
 **Used By:**
 - `scripts/audit-versions.py` - Version auditing
-- `scripts/compare-versions.sh` - Version comparison
+- `scripts/compare-versions.py` - Version comparison
 - Various package installation scripts
 
 **Validation Command:**
