@@ -202,7 +202,7 @@ def install_marketplace_package(
     Args:
         package: Package name to install
         registry: Specific registry to use. If None, auto-detects from available registries.
-        scope: Installation scope - "global" (~/.claude) or "local" (./.claude-local)
+        scope: Installation scope - "global" (~/.claude), "user" (~/.claude), or "local"/"project" (./.claude)
         force: Overwrite existing files if True
 
     Returns:
@@ -232,7 +232,7 @@ def install_marketplace_package(
     """
     try:
         # Validate scope
-        if scope not in ["global", "local"]:
+        if scope not in ["global", "local", "user", "project"]:
             return {
                 "status": "error",
                 "package": package,
@@ -240,7 +240,7 @@ def install_marketplace_package(
                 "scope": scope,
                 "installed_files": [],
                 "registry_updated": False,
-                "message": f"Invalid scope: {scope}. Must be 'global' or 'local'.",
+                "message": f"Invalid scope: {scope}. Must be 'global', 'user', 'local', or 'project'.",
                 "errors": [f"Invalid scope: {scope}"],
             }
 
@@ -261,8 +261,8 @@ def install_marketplace_package(
             }
 
         # Map scope to CLI flags
-        global_flag = scope == "global"
-        local_flag = scope == "local"
+        global_flag = scope in {"global", "user"}
+        local_flag = scope in {"local", "project"}
 
         # Execute installation
         result_code = cmd_install(
@@ -272,15 +272,17 @@ def install_marketplace_package(
             expand=True,
             global_flag=global_flag,
             local_flag=local_flag,
+            user_flag=scope == "user",
+            project_flag=scope == "project",
         )
 
         if result_code == 0:
             # Installation successful
             # Determine installation path
-            if scope == "global":
+            if scope in {"global", "user"}:
                 install_path = Path.home() / ".claude"
             else:
-                install_path = Path.cwd() / ".claude-local"
+                install_path = Path.cwd() / ".claude"
 
             # Get list of installed files (approximate - actual files from manifest)
             installed_files = []

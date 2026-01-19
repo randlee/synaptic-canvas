@@ -16,9 +16,10 @@ hooks:
 
 ## Inputs
 - `package`: required package name (e.g., sc-delay-tasks, sc-git-worktree)
-- `scope`: required `local` | `global` (ask if missing)
-- `sc_repo_path`: absolute path to the Synaptic Canvas repo. Default: `/Users/randlee/Documents/github/synaptic-canvas`.
-- `global_claude_dir`: absolute path to the global `.claude`. Default: `/Users/randlee/Documents/.claude`.
+- `scope`: required `local` | `project` | `global` | `user` (ask if missing)
+- `sc_repo_path`: absolute path to the Synaptic Canvas repo. Default: `SC_REPO_PATH` or repo root.
+- `global_claude_dir`: absolute path to the global `.claude`. Default: `~/.claude` (or `GLOBAL_CLAUDE_DIR`).
+- `user_claude_dir`: absolute path to the user `.claude`. Default: `~/.claude` (or `USER_CLAUDE_DIR`).
 
 ## Execution
 1. Run: `python3 scripts/sc_manage_install.py` with JSON stdin.

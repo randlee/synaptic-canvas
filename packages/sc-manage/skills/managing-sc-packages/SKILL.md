@@ -22,16 +22,18 @@ This skill delegates to specialized agents via the Task tool:
 ## Inputs / Flags
 
 - `--list` → call `sc-packages-list`.
-- `--install <package>` → require `--local` or `--global`; if missing, ask the user. If the package is local-only, force `--local`.
+- `--install <package>` → require `--local`/`--project` or `--global`/`--user`; if missing, ask the user. If the package is local-only, force `--local`.
 - `--uninstall <package>` → same scope logic as install.
 - `--docs <package>` (alias `--doc`) → call `sc-package-docs` to load and present the package README.
 
 ## Conventions
 
 - Local scope: current repository's `.claude` directory.
-- Global scope: global `.claude` directory.
+- Project scope: alias for local.
+- User scope: `~/.claude` unless `USER_CLAUDE_DIR` is set.
+- Global scope: `~/.claude` unless `GLOBAL_CLAUDE_DIR` is set.
 - The agents will detect the repo toplevel via `git rev-parse --show-toplevel`.
-- The agents call the Synaptic Canvas installer at `<SC_REPO_PATH>/tools/sc-install.py` (default injected as `/Users/randlee/Documents/github/synaptic-canvas`).
+- The agents call the Synaptic Canvas installer at `<SC_REPO_PATH>/tools/sc-install.py` (default resolved from `SC_REPO_PATH` or the repo root).
 
 ## Safety
 

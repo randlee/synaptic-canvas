@@ -16,7 +16,7 @@ hooks:
 
 ## Inputs
 - `package`: required package name (e.g., sc-delay-tasks, sc-git-worktree)
-- `sc_repo_path`: absolute path to the Synaptic Canvas repo. Default: `/Users/randlee/Documents/github/synaptic-canvas`.
+- `sc_repo_path`: absolute path to the Synaptic Canvas repo. Default: `SC_REPO_PATH` or repo root.
 
 ## Execution
 1. Run: `python3 scripts/sc_manage_docs.py` with JSON stdin.

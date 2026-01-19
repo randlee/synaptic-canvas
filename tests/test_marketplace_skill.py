@@ -551,7 +551,7 @@ class TestMarketplaceWorkflows:
         """Mock skill execution context."""
         return {
             "user_dir": Path.home() / ".claude",
-            "project_dir": Path.cwd() / ".claude-local",
+            "project_dir": Path.cwd() / ".claude",
         }
 
     def test_workflow_list_packages(self, mock_skill_context):

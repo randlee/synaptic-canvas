@@ -16,9 +16,10 @@ hooks:
 
 ## Inputs
 - `package`: required package name
-- `scope`: required `local` | `global`
-- `sc_repo_path`: absolute path to the Synaptic Canvas repo. Default: `/Users/randlee/Documents/github/synaptic-canvas`.
-- `global_claude_dir`: absolute path to the global `.claude`. Default: `/Users/randlee/Documents/.claude`.
+- `scope`: required `local` | `project` | `global` | `user`
+- `sc_repo_path`: absolute path to the Synaptic Canvas repo. Default: `SC_REPO_PATH` or repo root.
+- `global_claude_dir`: absolute path to the global `.claude`. Default: `~/.claude` (or `GLOBAL_CLAUDE_DIR`).
+- `user_claude_dir`: absolute path to the user `.claude`. Default: `~/.claude` (or `USER_CLAUDE_DIR`).
 
 ## Execution
 1. Run: `python3 scripts/sc_manage_uninstall.py` with JSON stdin.
@@ -32,7 +33,7 @@ hooks:
 ```json
 {
   "success": true,
-  "data": { "package": "sc-delay-tasks", "scope": "global", "dest": "/Users/me/Documents/.claude" },
+  "data": { "package": "sc-delay-tasks", "scope": "global", "dest": "/home/user/.claude" },
   "error": null
 }
 ```

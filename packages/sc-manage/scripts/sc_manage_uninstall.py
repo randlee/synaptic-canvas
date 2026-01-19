@@ -6,7 +6,9 @@ from pathlib import Path
 
 from sc_manage_common import (
     default_global_claude_dir,
+    default_user_claude_dir,
     default_sc_repo_path,
+    normalize_scope,
     parse_manifest,
     read_json_stdin,
     resolve_dest,
@@ -20,8 +22,11 @@ def main() -> int:
     scope = params.get("scope")
     sc_repo_path = Path(params.get("sc_repo_path", default_sc_repo_path()))
     global_claude_dir = Path(params.get("global_claude_dir", default_global_claude_dir()))
+    user_claude_dir = Path(params.get("user_claude_dir", default_user_claude_dir()))
 
-    if not package or scope not in {"local", "global"}:
+    scope = normalize_scope(scope) if isinstance(scope, str) else scope
+
+    if not package or scope not in {"local", "global", "user"}:
         print(
             json.dumps(
                 {
@@ -31,7 +36,7 @@ def main() -> int:
                         "code": "INPUT_INVALID",
                         "message": "Missing package or scope",
                         "recoverable": True,
-                        "suggested_action": "Provide package and scope (local|global)",
+                        "suggested_action": "Provide package and scope (local|project|global|user)",
                     },
                 }
             )
@@ -58,7 +63,7 @@ def main() -> int:
 
     manifest = parse_manifest(manifest_path)
     install_scope = (manifest.get("install") or {}).get("scope", "both")
-    if install_scope == "local-only" and scope == "global":
+    if install_scope == "local-only" and scope in {"global", "user"}:
         print(
             json.dumps(
                 {
@@ -75,7 +80,7 @@ def main() -> int:
         )
         return 1
 
-    dest, err = resolve_dest(scope, global_claude_dir)
+    dest, err = resolve_dest(scope, global_claude_dir, user_claude_dir)
     if dest is None:
         print(
             json.dumps(

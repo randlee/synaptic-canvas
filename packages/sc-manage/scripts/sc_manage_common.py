@@ -47,6 +47,15 @@ def default_global_claude_dir() -> Path:
         return Path(os.environ["GLOBAL_CLAUDE_DIR"]).expanduser()
     return Path.home() / ".claude"
 
+def default_user_claude_dir() -> Path:
+    if "USER_CLAUDE_DIR" in os.environ:
+        return Path(os.environ["USER_CLAUDE_DIR"]).expanduser()
+    return Path.home() / ".claude"
+
+
+def normalize_scope(scope: str) -> str:
+    return {"project": "local"}.get(scope, scope)
+
 
 def parse_manifest(path: Path) -> Dict[str, Any]:
     raw = path.read_text(encoding="utf-8")
@@ -101,7 +110,14 @@ def any_artifact_installed(dest: Path, artifacts: List[str]) -> bool:
     return False
 
 
-def resolve_dest(scope: str, global_claude_dir: Path) -> Tuple[Optional[Path], Optional[str]]:
+def resolve_dest(
+    scope: str,
+    global_claude_dir: Path,
+    user_claude_dir: Optional[Path] = None,
+) -> Tuple[Optional[Path], Optional[str]]:
+    scope = normalize_scope(scope)
+    if scope == "user":
+        return (user_claude_dir or global_claude_dir), None
     if scope == "global":
         return global_claude_dir, None
     repo_root = resolve_repo_root()

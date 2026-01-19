@@ -39,7 +39,7 @@ def temp_home(tmp_path, monkeypatch):
 
 @pytest.fixture
 def temp_cwd(tmp_path, monkeypatch):
-    """Mock working directory for ./.claude-local paths."""
+    """Mock working directory for ./.claude paths."""
     fake_cwd = tmp_path / "project"
     fake_cwd.mkdir()
     monkeypatch.chdir(fake_cwd)
@@ -106,20 +106,20 @@ class TestGlobalLocalFlags:
         assert str(temp_home / ".claude") in out
 
     def test_install_local_flag_creates_dir(self, temp_cwd, capsys):
-        """Test that --local creates ./.claude-local directory."""
+        """Test that --local creates ./.claude directory."""
         rc = sc_install.main(["install", "sc-delay-tasks", "--local"])
         assert rc == 0
-        assert (temp_cwd / ".claude-local").exists()
-        assert (temp_cwd / ".claude-local" / "agents").exists()
+        assert (temp_cwd / ".claude").exists()
+        assert (temp_cwd / ".claude" / "agents").exists()
 
     def test_install_local_flag_uses_project_local(self, temp_cwd, capsys):
-        """Test that --local installs to project .claude-local."""
+        """Test that --local installs to project .claude."""
         rc = sc_install.main(["install", "sc-delay-tasks", "--local"])
         assert rc == 0
-        assert (temp_cwd / ".claude-local" / "agents" / "sc-delay-once.md").exists()
+        assert (temp_cwd / ".claude" / "agents" / "sc-delay-once.md").exists()
 
         out = capsys.readouterr().out
-        assert ".claude-local" in out
+        assert ".claude" in out
 
     def test_install_dest_backward_compatible(self, temp_home, tmp_path, capsys):
         """Test that --dest flag still works (backward compatibility)."""
@@ -181,7 +181,7 @@ class TestGlobalLocalFlags:
         assert rc == 0
 
         # Should be in cwd
-        local_path = Path.cwd() / ".claude-local"
+        local_path = Path.cwd() / ".claude"
         assert local_path.exists()
         assert (local_path / "agents" / "sc-delay-once.md").exists()
 
@@ -586,7 +586,7 @@ class TestInstallWithRegistries:
         rc = sc_install.main(["install", "sc-delay-tasks", "--local"])
         assert rc == 0
 
-        base = temp_cwd / ".claude-local"
+        base = temp_cwd / ".claude"
         assert base.exists()
         assert (base / "agents").exists()
         assert (base / "scripts").exists()
@@ -605,7 +605,7 @@ class TestInstallWithRegistries:
         rc = sc_install.main(["install", "sc-delay-tasks", "--local"])
         assert rc == 0
 
-        base = temp_cwd / ".claude-local"
+        base = temp_cwd / ".claude"
         assert (base / "agents" / "sc-delay-once.md").exists()
         assert (base / "scripts" / "sc-delay-run.py").exists()
 
@@ -636,7 +636,7 @@ class TestInstallWithRegistries:
         assert rc == 0
 
         # Modify file
-        agent_file = temp_cwd / ".claude-local" / "agents" / "sc-delay-once.md"
+        agent_file = temp_cwd / ".claude" / "agents" / "sc-delay-once.md"
         agent_file.write_text("modified", encoding="utf-8")
 
         # Install without --force (should skip)
@@ -662,7 +662,7 @@ class TestInstallWithRegistries:
         rc = sc_install.main(["install", "sc-delay-tasks", "--local"])
         assert rc == 0
 
-        script = temp_cwd / ".claude-local" / "scripts" / "sc-delay-run.py"
+        script = temp_cwd / ".claude" / "scripts" / "sc-delay-run.py"
         assert os.access(script, os.X_OK)
 
     def test_install_global_expands_repo_name_token(self, temp_home, git_repo):
@@ -685,7 +685,7 @@ class TestInstallWithRegistries:
         rc = sc_install.main(["install", "sc-git-worktree", "--local"])
         assert rc == 0
 
-        cmd_file = git_repo / ".claude-local" / "commands" / "sc-git-worktree.md"
+        cmd_file = git_repo / ".claude" / "commands" / "sc-git-worktree.md"
         content = cmd_file.read_text(encoding="utf-8")
         assert "{{REPO_NAME}}" not in content
         assert "repo-worktrees" in content
@@ -706,7 +706,7 @@ class TestInstallWithRegistries:
         rc = sc_install.main(["install", "sc-delay-tasks", "--local"])
         assert rc == 0
 
-        registry = temp_cwd / ".claude-local" / "agents" / "registry.yaml"
+        registry = temp_cwd / ".claude" / "agents" / "registry.yaml"
         assert registry.exists()
 
         content = registry.read_text(encoding="utf-8")

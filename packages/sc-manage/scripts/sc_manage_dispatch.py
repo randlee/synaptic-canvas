@@ -27,7 +27,15 @@ def main() -> int:
                 return tokens[idx + 1]
         return None
 
-    scope = "local" if "--local" in tokens else "global" if "--global" in tokens else None
+    scope = (
+        "local"
+        if "--local" in tokens or "--project" in tokens
+        else "user"
+        if "--user" in tokens
+        else "global"
+        if "--global" in tokens
+        else None
+    )
 
     script_dir = Path(__file__).resolve().parent
     python = sys.executable or "python3"
@@ -40,14 +48,14 @@ def main() -> int:
     if wants_install:
         package = _get_flag_value("--install")
         if not package or not scope:
-            print("Install requires --install <package> and --local|--global")
+            print("Install requires --install <package> and --local|--project|--global|--user")
             return 0
         return _run("sc_manage_install.py", {"package": package, "scope": scope})
 
     if wants_uninstall:
         package = _get_flag_value("--uninstall")
         if not package or not scope:
-            print("Uninstall requires --uninstall <package> and --local|--global")
+            print("Uninstall requires --uninstall <package> and --local|--project|--global|--user")
             return 0
         return _run("sc_manage_uninstall.py", {"package": package, "scope": scope})
 

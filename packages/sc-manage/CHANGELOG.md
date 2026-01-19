@@ -102,7 +102,7 @@ Beta release - initial v0.x publication. Recommended for global installation.
 ### Installation
 ```bash
 # Global installation (recommended)
-python3 tools/sc-install.py install sc-manage --dest /Users/<you>/Documents/.claude
+python3 tools/sc-install.py install sc-manage --dest ~/.claude
 
 # Local (repo-specific) installation
 python3 tools/sc-install.py install sc-manage --dest /path/to/your-repo/.claude

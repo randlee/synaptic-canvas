@@ -24,8 +24,8 @@ if "sc_manage_install.py" in command or "sc_manage_uninstall.py" in command:
     if not isinstance(data.get("package"), str):
         print("Missing 'package' string", file=sys.stderr)
         sys.exit(2)
-    if data.get("scope") not in {"local", "global"}:
-        print("Missing or invalid 'scope' (local|global)", file=sys.stderr)
+    if data.get("scope") not in {"local", "project", "global", "user"}:
+        print("Missing or invalid 'scope' (local|project|global|user)", file=sys.stderr)
         sys.exit(2)
 
 if "sc_manage_docs.py" in command:
