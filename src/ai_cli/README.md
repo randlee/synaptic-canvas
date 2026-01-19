@@ -99,3 +99,18 @@ Errors and schema validation failures are logged to:
 
 Task start/end events are also logged with `agentId`, `runner`, `model`, and parameters.
 Logs include `prompt_preview` and `duration_ms`.
+
+## Hook emulation
+
+If `subagent_type` refers to a local agent (e.g., `.claude/agents/<name>.md`),
+`ai_cli` will parse frontmatter `hooks: PreToolUse` and run `type: command` hooks
+before executing the agent. This emulates Claude's input validation hooks for Codex.
+
+Resolution order for agent files:
+1. If `subagent_type` is a path and exists, use it directly.
+2. Search upward from `cwd` for `.claude/agents/<name>.md`.
+3. Fall back to `~/.claude/agents/<name>.md`.
+
+If no agent file is found:
+- `codex`: fail with an error
+- `claude`: skip hooks (assumes built-in agent)

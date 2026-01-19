@@ -121,3 +121,73 @@ def test_run_task_logs_error(monkeypatch: pytest.MonkeyPatch) -> None:
     events = [c.get("event") for c in calls]
     assert "task_start" in events
     assert "task_end" in events
+
+
+def test_resolve_agent_path_prefers_cwd(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    agent_dir = tmp_path / ".claude" / "agents"
+    agent_dir.mkdir(parents=True)
+    agent_file = agent_dir / "agent-a.md"
+    agent_file.write_text("---\nname: agent-a\n---\n", encoding="utf-8")
+    monkeypatch.chdir(tmp_path)
+    assert task_runner.resolve_agent_path("agent-a", "claude") == agent_file.resolve()
+
+
+def test_resolve_agent_path_parent(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    parent = tmp_path / "parent"
+    child = parent / "child"
+    agent_dir = parent / ".claude" / "agents"
+    agent_dir.mkdir(parents=True)
+    agent_file = agent_dir / "agent-b.md"
+    agent_file.write_text("---\nname: agent-b\n---\n", encoding="utf-8")
+    child.mkdir()
+    monkeypatch.chdir(child)
+    assert task_runner.resolve_agent_path("agent-b", "claude") == agent_file.resolve()
+
+
+def test_resolve_agent_path_missing_codex(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.chdir(Path.cwd())
+    with pytest.raises(FileNotFoundError):
+        task_runner.resolve_agent_path("no-such-agent", "codex")
+
+
+def test_run_pretool_hooks_success(tmp_path: Path) -> None:
+    agent_file = tmp_path / "agent.md"
+    agent_file.write_text(
+        "---\n"
+        "hooks:\n"
+        "  PreToolUse:\n"
+        "    - matcher: \"Bash\"\n"
+        "      hooks:\n"
+        "        - type: command\n"
+        "          command: \"python3 -c 'import json,sys; json.load(sys.stdin); sys.exit(0)'\"\n"
+        "---\n",
+        encoding="utf-8",
+    )
+    payload = task_runner.TaskToolInput(
+        description="Test",
+        prompt="ok",
+        subagent_type=str(agent_file),
+    )
+    task_runner.run_pretool_hooks(agent_file, payload)
+
+
+def test_run_pretool_hooks_failure(tmp_path: Path) -> None:
+    agent_file = tmp_path / "agent.md"
+    agent_file.write_text(
+        "---\n"
+        "hooks:\n"
+        "  PreToolUse:\n"
+        "    - matcher: \"Bash\"\n"
+        "      hooks:\n"
+        "        - type: command\n"
+        "          command: \"python3 -c 'import sys; sys.exit(2)'\"\n"
+        "---\n",
+        encoding="utf-8",
+    )
+    payload = task_runner.TaskToolInput(
+        description="Test",
+        prompt="fail",
+        subagent_type=str(agent_file),
+    )
+    with pytest.raises(RuntimeError):
+        task_runner.run_pretool_hooks(agent_file, payload)

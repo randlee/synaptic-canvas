@@ -20,6 +20,8 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal, Optional
 
+import yaml
+
 from ai_cli.logging import write_log
 from ai_cli.task_tool import TaskToolInput, TaskToolOutputBackground, TaskToolOutputForeground
 
@@ -160,6 +162,72 @@ def _default_output_dir(runner: RunnerType) -> Path:
     return Path.cwd() / ".sc" / "sessions"
 
 
+def resolve_agent_path(subagent_type: str, runner: RunnerType) -> Optional[Path]:
+    candidate = Path(subagent_type).expanduser()
+    if candidate.is_file():
+        return candidate.resolve()
+    name = Path(subagent_type).name
+    if not name.endswith(".md"):
+        name = f"{name}.md"
+    current = Path.cwd().resolve()
+    for parent in [current, *current.parents]:
+        path = parent / ".claude" / "agents" / name
+        if path.is_file():
+            return path.resolve()
+    home_path = Path.home() / ".claude" / "agents" / name
+    if home_path.is_file():
+        return home_path.resolve()
+    if runner == "codex":
+        raise FileNotFoundError(f"Agent not found for '{subagent_type}'")
+    return None
+
+
+def _extract_frontmatter(text: str) -> str:
+    if not text.startswith("---"):
+        return ""
+    lines = text.splitlines()
+    for idx in range(1, len(lines)):
+        if lines[idx].strip() == "---":
+            return "\n".join(lines[1:idx])
+    return ""
+
+
+def run_pretool_hooks(agent_path: Optional[Path], payload: TaskToolInput) -> None:
+    if agent_path is None:
+        return
+    text = agent_path.read_text(encoding="utf-8")
+    fm_text = _extract_frontmatter(text)
+    if not fm_text:
+        return
+    meta = yaml.safe_load(fm_text) or {}
+    hooks = (meta.get("hooks") or {}).get("PreToolUse") or []
+    if not hooks:
+        return
+    hook_payload = {
+        "event": "PreToolUse",
+        "tool": "Bash",
+        "tool_input": {"command": payload.model_dump_json()},
+        "cwd": str(Path.cwd()),
+    }
+    for entry in hooks:
+        for hook in entry.get("hooks") or []:
+            if hook.get("type") != "command":
+                continue
+            command = hook.get("command")
+            if not command:
+                continue
+            res = subprocess.run(
+                command,
+                shell=True,
+                text=True,
+                input=json.dumps(hook_payload),
+                capture_output=True,
+            )
+            if res.returncode != 0:
+                msg = res.stderr.strip() or res.stdout.strip() or "PreToolUse hook failed"
+                raise RuntimeError(msg)
+
+
 def run_background(payload: TaskToolInput, runner: RunnerType, model: str, output_dir: Path) -> TaskToolOutputBackground:
     _check_runner_available(runner)
     agent_id = str(uuid.uuid4())
@@ -170,6 +238,22 @@ def run_background(payload: TaskToolInput, runner: RunnerType, model: str, outpu
     user_entry = _jsonl_entry(agent_id, "user", payload.prompt, None)
     output_file.write_text(json.dumps(user_entry) + "\n", encoding="utf-8")
     payload_file.write_text(payload.model_dump_json(), encoding="utf-8")
+    try:
+        agent_path = resolve_agent_path(payload.subagent_type, runner)
+        run_pretool_hooks(agent_path, payload)
+    except Exception as exc:
+        write_log(
+            {
+                "component": "ai_cli",
+                "event": "hook_failure",
+                "mode": "background",
+                "runner": runner,
+                "model": model,
+                "agentId": agent_id,
+                "error": str(exc),
+            }
+        )
+        raise
     write_log(
         {
             "component": "ai_cli",
@@ -216,6 +300,8 @@ def run_background_child_with_payload(
 ) -> None:
     start = time.monotonic()
     try:
+        agent_path = resolve_agent_path(payload.subagent_type, runner)
+        run_pretool_hooks(agent_path, payload)
         output = run_sync(runner, model, build_prompt(payload))
         assistant_entry = _jsonl_entry(agent_id, "assistant", output, None)
         write_log(
@@ -276,6 +362,8 @@ def run_task(
     )
     start = time.monotonic()
     try:
+        agent_path = resolve_agent_path(payload.subagent_type, runner)
+        run_pretool_hooks(agent_path, payload)
         output = run_sync(runner, model, build_prompt(payload))
         write_log(
             {
