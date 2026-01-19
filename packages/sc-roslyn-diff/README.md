@@ -27,8 +27,11 @@ Options:
 - `--files` comma-delimited list of two file paths
 - `--folders` comma-delimited list of two folder paths
 - `--html` generate HTML report and open it if differences are found
-- `--roslyn` prefer semantic diff (default behavior; auto fallback for non-.NET)
-- `--line` force line-by-line diff
+- `--mode` diff mode: `auto` (default), `roslyn`, `line`
+- `--ignore-whitespace` ignore whitespace-only changes
+- `--context` number of context lines for line diffs (default 3)
+- `--text` write plain text diff to `.sc/roslyn-diff/temp/diff-#.txt` (or path if provided)
+- `--git` write unified diff patch to `.sc/roslyn-diff/temp/diff-#.patch` (or path if provided)
 - `--allow-large` allow large batches above the default cap
 - `--files-per-agent` split batches across agents (default 10)
 
@@ -61,6 +64,7 @@ HTML reports are written under:
 ## Requirements
 
 - `dotnet` 10+
+- `roslyn-diff` 0.7.0 (`dotnet tool install -g roslyn-diff --version 0.7.0`)
 - `git` 2.20+
 - `python` 3.10+
 - `az` CLI for Azure PR diffs (optional)
@@ -84,8 +88,13 @@ Agents always return fenced JSON using a discriminated union:
         "mode": "auto",
         "html_path": "./diffs/Old__New.html",
         "roslyn": {
-          "$schema": "roslyn-diff-output-v1",
+          "$schema": "roslyn-diff-output-v2",
           "summary": { "totalChanges": 3 }
+        },
+        "output_paths": {
+          "html": ["/abs/path/to/.sc/roslyn-diff/output/Old__New.html"],
+          "text": [],
+          "git": []
         },
         "warnings": []
       }

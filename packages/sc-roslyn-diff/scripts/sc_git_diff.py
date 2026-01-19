@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 from roslyn_diff_runner import (
+    AUTO_OUTPUT,
     DiffPair,
     aggregate_counts,
     ensure_roslyn_diff,
@@ -169,10 +170,22 @@ def main() -> int:
     base_ref = params.get("base_ref")
     head_ref = params.get("head_ref")
     html = bool(params.get("html", False))
-    mode = "line" if params.get("mode") == "line" else "auto"
+    mode = str(params.get("mode") or "auto").lower()
+    if mode not in {"auto", "line", "roslyn"}:
+        mode = "auto"
+    ignore_whitespace = bool(params.get("ignore_whitespace", False))
+    context_lines = params.get("context_lines")
+    if context_lines is not None:
+        try:
+            context_lines = int(context_lines)
+        except (TypeError, ValueError):
+            write_json(_error("diff.invalid_input", "context_lines must be an integer", False, "Fix context_lines"))
+            return 1
     allow_large = bool(params.get("allow_large", False))
     files_per_agent = int(params.get("files_per_agent", 10))
     max_pairs = int(params.get("max_pairs", 100))
+    text_output = params.get("text_output")
+    git_output = params.get("git_output")
 
     repo_root = resolve_repo_root(params.get("repo_root"))
 
@@ -261,8 +274,32 @@ def main() -> int:
         pairs.append(DiffPair(old_path=old_temp, new_path=new_temp, rel_path=path, kind="git", warnings=warnings))
 
     output_dir = repo_root / ".sc" / "roslyn-diff" / "output"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    if text_output is True:
+        text_output = AUTO_OUTPUT
+    elif isinstance(text_output, str) and text_output.strip():
+        text_output = Path(text_output)
+    else:
+        text_output = None
+    if git_output is True:
+        git_output = AUTO_OUTPUT
+    elif isinstance(git_output, str) and git_output.strip():
+        git_output = Path(git_output)
+    else:
+        git_output = None
     label_prefix = f"{base_ref.replace('/', '_')}__{head_ref.replace('/', '_')}"
-    results = process_pairs(pairs, mode, html, output_dir, label_prefix, files_per_agent)
+    results = process_pairs(
+        pairs,
+        mode,
+        html,
+        output_dir,
+        label_prefix,
+        files_per_agent,
+        ignore_whitespace,
+        context_lines,
+        text_output,
+        git_output,
+    )
 
     identical_count, diff_count, errors_count = aggregate_counts(results)
 

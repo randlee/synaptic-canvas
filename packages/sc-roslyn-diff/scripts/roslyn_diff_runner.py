@@ -11,7 +11,9 @@ import tempfile
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union
+
+AUTO_OUTPUT = "__auto__"
 
 
 @dataclass
@@ -34,14 +36,20 @@ def write_json(payload: Dict[str, Any]) -> None:
     sys.stdout.write(json.dumps(payload))
 
 
-def run_command(cmd: Sequence[str], cwd: Optional[Path] = None) -> Tuple[int, str, str]:
+def run_command(
+    cmd: Sequence[str],
+    cwd: Optional[Path] = None,
+    capture_output: bool = True,
+) -> Tuple[int, str, str]:
     proc = subprocess.run(
         list(cmd),
         cwd=str(cwd) if cwd else None,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        stdout=subprocess.PIPE if capture_output else subprocess.DEVNULL,
+        stderr=subprocess.PIPE if capture_output else subprocess.DEVNULL,
         text=True,
     )
+    if not capture_output:
+        return proc.returncode, "", ""
     return proc.returncode, proc.stdout, proc.stderr
 
 
@@ -56,10 +64,10 @@ def resolve_repo_root(repo_root: Optional[str] = None) -> Path:
 
 def ensure_roslyn_diff() -> None:
     if shutil.which("roslyn-diff"):
-        code, _, _ = run_command(["dotnet", "tool", "update", "-g", "roslyn-diff"])
+        code, _, _ = run_command(["dotnet", "tool", "update", "-g", "roslyn-diff"], capture_output=False)
         if code == 0:
             return
-    code, _, _ = run_command(["dotnet", "tool", "install", "-g", "roslyn-diff"])
+    code, _, _ = run_command(["dotnet", "tool", "install", "-g", "roslyn-diff"], capture_output=False)
     if code != 0 and not shutil.which("roslyn-diff"):
         raise RuntimeError("roslyn-diff tool install failed")
 
@@ -145,6 +153,10 @@ def run_roslyn_diff(
     html: bool,
     output_dir: Path,
     label: str,
+    ignore_whitespace: bool,
+    context_lines: Optional[int],
+    text_output: Optional[Path],
+    git_output: Optional[Path],
 ) -> Dict[str, Any]:
     output_dir.mkdir(parents=True, exist_ok=True)
     fd, json_name = tempfile.mkstemp(suffix=".json")
@@ -153,11 +165,19 @@ def run_roslyn_diff(
     html_path: Optional[Path] = None
 
     cmd = ["roslyn-diff", "diff", str(old_path), str(new_path), "--json", str(json_file), "--quiet", "--no-color"]
-    if mode == "line":
-        cmd += ["--mode", "line"]
+    if mode in {"line", "roslyn"}:
+        cmd += ["--mode", mode]
+    if ignore_whitespace:
+        cmd += ["--ignore-whitespace"]
+    if context_lines is not None:
+        cmd += ["--context", str(context_lines)]
     if html:
         html_path = output_dir / f"{sanitize_filename(label)}.html"
         cmd += ["--html", str(html_path)]
+    if text_output:
+        cmd += ["--text", str(text_output)]
+    if git_output:
+        cmd += ["--git", str(git_output)]
 
     code, _, stderr = run_command(cmd)
 
@@ -174,8 +194,15 @@ def run_roslyn_diff(
 
     result: Dict[str, Any] = {
         "is_identical": code == 0,
-        "mode": "line" if mode == "line" else "auto",
-        "html_path": str(html_path) if html_path else None,
+        "mode": mode,
+        "html_path": str(html_path.resolve()) if html_path else None,
+        "text_path": str(text_output.resolve()) if text_output else None,
+        "git_path": str(git_output.resolve()) if git_output else None,
+        "output_paths": {
+            "html": [str(html_path.resolve())] if html_path else [],
+            "text": [str(text_output.resolve())] if text_output else [],
+            "git": [str(git_output.resolve())] if git_output else [],
+        },
         "roslyn": roslyn_payload,
         "warnings": [],
     }
@@ -207,19 +234,50 @@ def process_pairs(
     output_dir: Path,
     label_prefix: str,
     files_per_agent: int,
+    ignore_whitespace: bool,
+    context_lines: Optional[int],
+    text_output: Union[Path, str, None],
+    git_output: Union[Path, str, None],
 ) -> List[Dict[str, Any]]:
     results: List[Dict[str, Any]] = []
+    temp_dir: Optional[Path] = None
 
+    counter = 0
     for batch in chunked(pairs, max(1, files_per_agent)):
         max_workers = min(4, len(batch)) or 1
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             futures = []
             for pair in batch:
+                counter += 1
                 label = label_prefix
                 if pair.rel_path:
                     label = f"{label_prefix}__{pair.rel_path}"
+                text_path = text_output
+                git_path = git_output
+                if text_output == AUTO_OUTPUT:
+                    if temp_dir is None:
+                        temp_dir = output_dir / "temp"
+                        temp_dir.mkdir(parents=True, exist_ok=True)
+                    text_path = temp_dir / f"diff-{counter}.txt"
+                if git_output == AUTO_OUTPUT:
+                    if temp_dir is None:
+                        temp_dir = output_dir / "temp"
+                        temp_dir.mkdir(parents=True, exist_ok=True)
+                    git_path = temp_dir / f"diff-{counter}.patch"
                 futures.append(
-                    executor.submit(run_roslyn_diff, pair.old_path, pair.new_path, mode, html, output_dir, label)
+                    executor.submit(
+                        run_roslyn_diff,
+                        pair.old_path,
+                        pair.new_path,
+                        mode,
+                        html,
+                        output_dir,
+                        label,
+                        ignore_whitespace,
+                        context_lines,
+                        text_path if isinstance(text_path, Path) else None,
+                        git_path if isinstance(git_path, Path) else None,
+                    )
                 )
             for pair, future in zip(batch, futures):
                 entry = future.result()

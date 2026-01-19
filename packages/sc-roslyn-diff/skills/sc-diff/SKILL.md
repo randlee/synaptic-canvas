@@ -28,7 +28,11 @@ Invoke agents via Agent Runner using `.claude/agents/registry.yaml`.
 - `files`: string (comma-delimited list of 2 file paths)
 - `folders`: string (comma-delimited list of 2 folder paths)
 - `html`: boolean (default false)
-- `mode`: `auto` (default), `line`
+- `mode`: `auto` (default), `roslyn`, `line`
+- `ignore_whitespace`: boolean (default false)
+- `context_lines`: number (optional, default 3)
+- `text_output`: string|bool (optional; true writes `.sc/roslyn-diff/temp/diff-#.txt`)
+- `git_output`: string|bool (optional; true writes `.sc/roslyn-diff/temp/diff-#.patch`)
 - `allow_large`: boolean (default false)
 - `files_per_agent`: number (default 10)
 - `max_pairs`: number (default 100)
@@ -48,4 +52,3 @@ Invoke agents via Agent Runner using `.claude/agents/registry.yaml`.
 ## Output Contract
 - Always return fenced JSON with a discriminated union: `success: true|false`.
 - `success: true` includes aggregated counts and per-pair roslyn-diff JSON outputs.
-

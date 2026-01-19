@@ -16,7 +16,7 @@ tags:
 # Files to install (relative to package root)
 artifacts:
   commands:
-    - commands/sc-delay.md
+    - commands/delay.md
   skills:
     - skills/sc-delaying-tasks/SKILL.md
   agents:

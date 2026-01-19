@@ -57,9 +57,11 @@ Kick off the Synaptic Canvas project startup routine. Reads repo-specific config
 11) Output a concise status report:
    - Prompt summary/role
    - Checklist sync summary (updated items, remaining gaps)
+   - If checklist sync failed, include the error message verbatim.
    - PR findings (table) if requested
    - Worktree scan/cleanup table if configured
    - CI pull result if `--pull`
+   - If checklist path validation fails (`VALIDATION.INVALID_PATH`), call it out as a warning/issue in the report (include the word "warning" or "issue").
    - Recommended next steps
 
 ## Agents & Delegation

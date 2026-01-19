@@ -8,7 +8,7 @@
   "license": "MIT",
   "keywords": ["delay", "polling", "scheduler", "ci", "workflow", "agents"],
   "commands": [
-    "./commands/sc-delay.md"
+    "./commands/delay.md"
   ],
   "agents": [
     "./agents/sc-delay-once.md",
