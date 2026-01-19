@@ -111,8 +111,8 @@ You just created a new project repository and want to install Synaptic Canvas pa
 **Tips and Best Practices:**
 - Use `--list` first to see available packages
 - Check package descriptions to understand purpose
-- Use `--local` for repo-specific packages (sc-git-worktree, sc-repomix-nuget)
-- Use `--global` for general-purpose packages (sc-delay-tasks, sc-manage)
+- Use `--local`/`--project` for repo-specific packages (sc-git-worktree, sc-repomix-nuget)
+- Use `--global`/`--user` for general-purpose packages (sc-delay-tasks, sc-manage)
 - Document installed packages in your project README
 - Add `.claude/` to git (or `.claude-packages/` in `.gitignore` if using only scripts)
 

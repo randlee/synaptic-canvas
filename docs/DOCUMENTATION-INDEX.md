@@ -163,7 +163,7 @@ The project uses three synchronized version layers:
 
 **Installing a package:**
 ```bash
-python3 tools/sc-install.py install sc-delay-tasks --dest /path/to/.claude
+python3 tools/sc-install.py install sc-delay-tasks --local
 ```
 
 **Checking version consistency:**
