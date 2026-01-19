@@ -8,13 +8,14 @@ Key phases:
 1. Index transcript entries by UUID
 2. Build parent-child relationships from parentUuid field
 3. Enrich with trace data (agent attribution via tool_use_id)
-4. Compute depths and tree statistics
+4. Compute depths, sequence numbers, timestamps, and tree statistics
 
 The output is an EnrichedData structure that references transcript entries by UUID
 rather than duplicating content, following the design principle of "preserve native
 + augment".
 """
 
+from datetime import datetime
 from typing import List, Dict, Tuple, Optional, Any
 
 from .collector import extract_token_usage
@@ -117,7 +118,10 @@ def build_timeline_tree(
     root_node = TreeNode(
         parent_uuid=None,
         depth=0,
+        seq=0,  # Root is always first in sequence
         node_type=TimelineNodeType.ROOT,
+        timestamp=None,
+        elapsed_ms=0,  # Root is at time zero
         agent_id=None,
         agent_type=None,
         tool_name=None,
@@ -152,6 +156,9 @@ def build_timeline_tree(
             ),
             partial_result=partial_result,
         )
+
+    # Phase 4 (continued): Compute sequence numbers and elapsed_ms
+    _compute_seq_and_elapsed(nodes, root_uuid, by_uuid)
 
     # Phase 3 (continued): Check for missing agent correlations
     tool_calls_without_agent = 0
@@ -205,6 +212,14 @@ def _create_tree_node(entry: dict, agent_map: Dict[str, Tuple[str, str]]) -> Tre
     agent_id = None
     agent_type = None
 
+    # Extract timestamp from entry
+    timestamp = entry.get("timestamp")
+
+    # Check if this is a sidechain entry (subagent invocation)
+    is_sidechain = entry.get("isSidechain", False)
+    if is_sidechain:
+        node_type = TimelineNodeType.SIDECHAIN
+
     # Extract tool name from message content if this is a tool call
     if node_type == TimelineNodeType.TOOL_CALL:
         message = entry.get("message", {})
@@ -223,7 +238,10 @@ def _create_tree_node(entry: dict, agent_map: Dict[str, Tuple[str, str]]) -> Tre
     return TreeNode(
         parent_uuid=None,  # Will be set in second pass
         depth=0,  # Will be computed in phase 4
+        seq=0,  # Will be computed in phase 4
         node_type=node_type,
+        timestamp=timestamp,
+        elapsed_ms=None,  # Will be computed in phase 4
         agent_id=agent_id,
         agent_type=agent_type,
         tool_name=tool_name,
@@ -352,22 +370,137 @@ def _build_tool_to_agent_map(trace_events: List[dict]) -> Dict[str, Tuple[str, s
     return tool_to_agent
 
 
-def _compute_depths(nodes: Dict[str, TreeNode], node_uuid: str, depth: int) -> None:
-    """Recursively compute depth for all nodes in the tree.
+def _compute_depths(nodes: Dict[str, TreeNode], root_uuid: str, initial_depth: int) -> None:
+    """Iteratively compute depth for all nodes in the tree.
+
+    Uses an explicit stack to avoid stack overflow on deep trees.
+    This replaces the previous recursive implementation which could fail
+    on trees deeper than Python's recursion limit (~1000).
 
     Args:
         nodes: Dict mapping UUID to TreeNode
-        node_uuid: Current node UUID to process
-        depth: Depth value to assign to current node
+        root_uuid: UUID of the root node to start from
+        initial_depth: Depth value to assign to root node
     """
-    if node_uuid not in nodes:
-        return
+    stack = [(root_uuid, initial_depth)]
+    while stack:
+        uuid, depth = stack.pop()
+        if uuid not in nodes:
+            continue
 
-    node = nodes[node_uuid]
-    node.depth = depth
+        node = nodes[uuid]
+        node.depth = depth
 
-    for child_uuid in node.children:
-        _compute_depths(nodes, child_uuid, depth + 1)
+        for child_uuid in node.children:
+            stack.append((child_uuid, depth + 1))
+
+
+def _compute_seq_and_elapsed(
+    nodes: Dict[str, TreeNode], root_uuid: str, by_uuid: Dict[str, dict]
+) -> None:
+    """Compute depth-first sequence numbers and elapsed_ms for all nodes.
+
+    Uses depth-first traversal to assign sequence numbers (seq) to nodes,
+    which provides a consistent ordering for timeline display.
+
+    Also computes elapsed_ms relative to the first timestamp found in the tree.
+
+    Args:
+        nodes: Dict mapping UUID to TreeNode
+        root_uuid: UUID of the root node to start from
+        by_uuid: Dict mapping UUID to original transcript entry (for timestamp lookup)
+    """
+    # Find the earliest timestamp to use as the base
+    base_timestamp: Optional[datetime] = None
+    for uuid, entry in by_uuid.items():
+        ts_str = entry.get("timestamp")
+        if ts_str:
+            try:
+                ts = _parse_timestamp(ts_str)
+                if ts and (base_timestamp is None or ts < base_timestamp):
+                    base_timestamp = ts
+            except (ValueError, TypeError):
+                pass
+
+    # Depth-first traversal to assign seq numbers
+    seq_counter = 0
+    # Use a list as a stack: (uuid, visited_children)
+    # We need to visit children in order, so we'll use a different approach
+    # to ensure proper depth-first ordering
+    stack: List[str] = [root_uuid]
+    visited: set = set()
+
+    while stack:
+        uuid = stack[-1]
+
+        if uuid in visited:
+            # Already processed this node's children
+            stack.pop()
+            continue
+
+        if uuid not in nodes:
+            stack.pop()
+            continue
+
+        node = nodes[uuid]
+
+        # Assign sequence number
+        node.seq = seq_counter
+        seq_counter += 1
+        visited.add(uuid)
+
+        # Compute elapsed_ms if we have a base timestamp
+        if base_timestamp and node.timestamp:
+            try:
+                node_ts = _parse_timestamp(node.timestamp)
+                if node_ts:
+                    elapsed = node_ts - base_timestamp
+                    node.elapsed_ms = int(elapsed.total_seconds() * 1000)
+            except (ValueError, TypeError):
+                pass
+
+        # Add children to stack in reverse order so they're processed in order
+        # (first child will be on top of stack)
+        for child_uuid in reversed(node.children):
+            if child_uuid not in visited:
+                stack.append(child_uuid)
+
+
+def _parse_timestamp(ts_str: str) -> Optional[datetime]:
+    """Parse an ISO timestamp string into a datetime object.
+
+    Handles various ISO formats including those with and without microseconds,
+    and with 'Z' or timezone offsets.
+
+    Args:
+        ts_str: ISO format timestamp string
+
+    Returns:
+        datetime object or None if parsing fails
+    """
+    if not ts_str:
+        return None
+
+    # Try various ISO formats
+    formats = [
+        "%Y-%m-%dT%H:%M:%S.%fZ",  # With microseconds and Z
+        "%Y-%m-%dT%H:%M:%SZ",  # Without microseconds, with Z
+        "%Y-%m-%dT%H:%M:%S.%f",  # With microseconds, no Z
+        "%Y-%m-%dT%H:%M:%S",  # Without microseconds or Z
+    ]
+
+    # Handle timezone offset (e.g., +00:00)
+    ts_str_clean = ts_str
+    if ts_str.endswith("+00:00") or ts_str.endswith("-00:00"):
+        ts_str_clean = ts_str[:-6] + "Z"
+
+    for fmt in formats:
+        try:
+            return datetime.strptime(ts_str_clean, fmt)
+        except ValueError:
+            continue
+
+    return None
 
 
 def _build_agent_summaries(

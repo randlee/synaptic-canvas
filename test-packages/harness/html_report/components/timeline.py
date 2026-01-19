@@ -5,8 +5,43 @@ Builds the collapsible timeline showing the chronological sequence of
 prompts, tool calls, and responses during test execution.
 """
 
+from dataclasses import dataclass, field
+from typing import List, Optional
+
 from ..models import TimelineDisplayModel, TimelineItemDisplayModel, TimelineEntryType
 from .base import BaseBuilder, CopyButtonBuilder
+
+
+@dataclass
+class SubagentGroup:
+    """Represents a group of timeline items belonging to one subagent."""
+
+    agent_id: str
+    agent_type: str
+    items: List[TimelineItemDisplayModel] = field(default_factory=list)
+
+    @property
+    def tool_call_count(self) -> int:
+        """Count of tool calls in this subagent group."""
+        return sum(
+            1 for item in self.items
+            if item.entry_type == TimelineEntryType.TOOL_CALL
+        )
+
+    @property
+    def duration_ms(self) -> int:
+        """Total duration in milliseconds (max elapsed - min elapsed)."""
+        if not self.items:
+            return 0
+        return max(item.elapsed_ms for item in self.items) - min(item.elapsed_ms for item in self.items)
+
+    @property
+    def formatted_duration(self) -> str:
+        """Format duration for display."""
+        ms = self.duration_ms
+        if ms < 1000:
+            return f"+{ms}ms"
+        return f"+{ms / 1000:.1f}s"
 
 
 class TimelineBuilder(BaseBuilder[TimelineDisplayModel]):
@@ -18,6 +53,7 @@ class TimelineBuilder(BaseBuilder[TimelineDisplayModel]):
     - Colored dots for each entry type (prompt, tool_call, response)
     - Elapsed time and sequence numbers
     - Content previews with copy buttons
+    - Collapsible subagent sections grouping tool calls by agent
     """
 
     def build(self, data: TimelineDisplayModel) -> str:
@@ -38,10 +74,8 @@ class TimelineBuilder(BaseBuilder[TimelineDisplayModel]):
             stop_propagation=True
         )
 
-        # Build timeline items
-        items_html = []
-        for entry in data.entries:
-            items_html.append(self._build_timeline_item(entry))
+        # Build timeline items with subagent grouping
+        items_html = self._build_timeline_with_subagent_groups(data.entries)
 
         return f'''<details>
   <summary>
@@ -50,8 +84,121 @@ class TimelineBuilder(BaseBuilder[TimelineDisplayModel]):
   </summary>
   <div class="content">
     <div class="timeline" id="{data.timeline_id}">
-      {"".join(items_html)}
+      {items_html}
     </div>
+  </div>
+</details>'''
+
+    def _build_timeline_with_subagent_groups(
+        self,
+        entries: List[TimelineItemDisplayModel]
+    ) -> str:
+        """Build timeline HTML with subagent items wrapped in collapsible sections.
+
+        Detects subagent boundaries from agent_id transitions and wraps
+        subagent tool calls in <details class="subagent-section"> elements.
+
+        Args:
+            entries: List of timeline items to render
+
+        Returns:
+            HTML string with subagent groupings
+        """
+        if not entries:
+            return ""
+
+        # Calculate total items for smart collapse decision
+        total_items = len(entries)
+
+        # Group consecutive items by agent_id
+        html_parts: List[str] = []
+        current_group: Optional[SubagentGroup] = None
+        non_agent_items: List[TimelineItemDisplayModel] = []
+
+        for entry in entries:
+            if entry.agent_id:
+                # This item belongs to a subagent
+                if current_group and current_group.agent_id == entry.agent_id:
+                    # Continue current group
+                    current_group.items.append(entry)
+                else:
+                    # Flush any non-agent items first
+                    if non_agent_items:
+                        for item in non_agent_items:
+                            html_parts.append(self._build_timeline_item(item))
+                        non_agent_items = []
+
+                    # Flush previous group if different agent
+                    if current_group:
+                        html_parts.append(
+                            self._build_subagent_section(current_group, total_items)
+                        )
+
+                    # Start new group
+                    current_group = SubagentGroup(
+                        agent_id=entry.agent_id,
+                        agent_type=entry.agent_type or "Subagent",
+                        items=[entry]
+                    )
+            else:
+                # This item does not belong to a subagent
+                # Flush current group if any
+                if current_group:
+                    html_parts.append(
+                        self._build_subagent_section(current_group, total_items)
+                    )
+                    current_group = None
+
+                non_agent_items.append(entry)
+
+        # Flush remaining items
+        if non_agent_items:
+            for item in non_agent_items:
+                html_parts.append(self._build_timeline_item(item))
+
+        if current_group:
+            html_parts.append(
+                self._build_subagent_section(current_group, total_items)
+            )
+
+        return "".join(html_parts)
+
+    def _build_subagent_section(
+        self,
+        group: SubagentGroup,
+        total_timeline_items: int
+    ) -> str:
+        """Build a collapsible subagent section.
+
+        Args:
+            group: SubagentGroup containing items for this subagent
+            total_timeline_items: Total items in timeline for smart collapse decision
+
+        Returns:
+            HTML string with <details class="subagent-section"> wrapper
+        """
+        # Smart collapse: expand if subagent has >66% of activity
+        expand_threshold = 0.66
+        should_expand = (len(group.items) / total_timeline_items) > expand_threshold if total_timeline_items > 0 else False
+        open_attr = "open" if should_expand else ""
+
+        # Build items HTML
+        items_html = []
+        for item in group.items:
+            items_html.append(self._build_timeline_item(item))
+
+        # Tool count text
+        tool_count = group.tool_call_count
+        tool_text = f"{tool_count} tool call{'s' if tool_count != 1 else ''}"
+
+        return f'''<details class="subagent-section" data-agent-id="{self.escape(group.agent_id)}" {open_attr}>
+  <summary>
+    <span class="agent-badge">{self.escape(group.agent_type)}</span>
+    <span class="tool-count">{tool_text}</span>
+    <span class="subagent-duration">{group.formatted_duration}</span>
+  </summary>
+  <div class="subagent-timeline">
+    {"".join(items_html)}
   </div>
 </details>'''
 

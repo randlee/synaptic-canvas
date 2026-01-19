@@ -330,6 +330,379 @@ class TestTimelineBuilder:
         assert "$ ls -la" in html
         assert "file1.txt" in html
 
+    def test_timeline_generates_subagent_sections(self):
+        """Verify <details class="subagent-section"> wrappers are generated.
+
+        When timeline entries have agent_id set (indicating subagent activity),
+        they should be wrapped in collapsible <details class="subagent-section">
+        elements for better organization and readability.
+        """
+        builder = TimelineBuilder()
+        data = TimelineDisplayModel(
+            timeline_id="timeline-subagent",
+            entries=[
+                # Main agent prompt
+                TimelineItemDisplayModel(
+                    seq=1,
+                    entry_type=TimelineEntryType.PROMPT,
+                    elapsed_ms=0,
+                    content="Initial prompt"
+                ),
+                # Subagent tool calls (should be wrapped)
+                TimelineItemDisplayModel(
+                    seq=2,
+                    entry_type=TimelineEntryType.TOOL_CALL,
+                    tool_name="Read",
+                    agent_id="agent-123",
+                    agent_type="Explore",
+                    elapsed_ms=100,
+                    depth=1,
+                    command="read file.py"
+                ),
+                TimelineItemDisplayModel(
+                    seq=3,
+                    entry_type=TimelineEntryType.TOOL_CALL,
+                    tool_name="Grep",
+                    agent_id="agent-123",
+                    agent_type="Explore",
+                    elapsed_ms=200,
+                    depth=1,
+                    command="grep pattern"
+                ),
+                # Main agent response
+                TimelineItemDisplayModel(
+                    seq=4,
+                    entry_type=TimelineEntryType.RESPONSE,
+                    elapsed_ms=300,
+                    content="Response"
+                ),
+            ],
+            tool_call_count=2
+        )
+        html = builder.build(data)
+
+        # Subagent entries should be wrapped in a details element
+        assert '<details class="subagent-section"' in html
+        assert 'data-agent-id="agent-123"' in html
+
+    def test_subagent_section_contains_agent_badge(self):
+        """Verify summary contains agent type badge.
+
+        The <summary> element of a subagent section should contain:
+        - Agent type badge (e.g., "Explore")
+        - Styled with class="agent-badge"
+        """
+        builder = TimelineBuilder()
+        data = TimelineDisplayModel(
+            timeline_id="timeline-badge",
+            entries=[
+                TimelineItemDisplayModel(
+                    seq=1,
+                    entry_type=TimelineEntryType.TOOL_CALL,
+                    tool_name="Read",
+                    agent_id="agent-456",
+                    agent_type="CodeReview",
+                    elapsed_ms=100,
+                    depth=1
+                ),
+            ],
+            tool_call_count=1
+        )
+        html = builder.build(data)
+
+        # Summary should contain agent badge with the agent type
+        assert '<span class="agent-badge">' in html
+        assert "CodeReview" in html
+
+    def test_subagent_section_tool_count(self):
+        """Verify tool count is accurate in summary.
+
+        The summary should display the count of tool calls within
+        that subagent section (e.g., "3 tool calls").
+        """
+        builder = TimelineBuilder()
+        data = TimelineDisplayModel(
+            timeline_id="timeline-count",
+            entries=[
+                TimelineItemDisplayModel(
+                    seq=1,
+                    entry_type=TimelineEntryType.TOOL_CALL,
+                    tool_name="Read",
+                    agent_id="agent-789",
+                    agent_type="Explore",
+                    elapsed_ms=100,
+                    depth=1
+                ),
+                TimelineItemDisplayModel(
+                    seq=2,
+                    entry_type=TimelineEntryType.TOOL_CALL,
+                    tool_name="Grep",
+                    agent_id="agent-789",
+                    agent_type="Explore",
+                    elapsed_ms=200,
+                    depth=1
+                ),
+                TimelineItemDisplayModel(
+                    seq=3,
+                    entry_type=TimelineEntryType.TOOL_CALL,
+                    tool_name="Bash",
+                    agent_id="agent-789",
+                    agent_type="Explore",
+                    elapsed_ms=300,
+                    depth=1
+                ),
+            ],
+            tool_call_count=3
+        )
+        html = builder.build(data)
+
+        # Summary should show accurate tool count for this subagent
+        assert '<span class="tool-count">' in html
+        assert "3 tool call" in html
+
+    def test_smart_collapse_expands_dominant_agent(self):
+        """Agent with >66% of tools should be expanded by default.
+
+        When a subagent accounts for more than 66% of the total tool calls,
+        its section should have the 'open' attribute to be expanded by default.
+        This helps users see the most significant activity immediately.
+        """
+        builder = TimelineBuilder()
+        # 8 out of 10 tool calls (80%) belong to the subagent - should be expanded
+        entries = [
+            TimelineItemDisplayModel(
+                seq=1,
+                entry_type=TimelineEntryType.PROMPT,
+                elapsed_ms=0,
+                content="Start"
+            ),
+        ]
+        # Add 8 subagent tool calls
+        for i in range(8):
+            entries.append(TimelineItemDisplayModel(
+                seq=i + 2,
+                entry_type=TimelineEntryType.TOOL_CALL,
+                tool_name="Tool",
+                agent_id="dominant-agent",
+                agent_type="Worker",
+                elapsed_ms=(i + 1) * 100,
+                depth=1
+            ))
+        # Add 2 main agent tool calls
+        for i in range(2):
+            entries.append(TimelineItemDisplayModel(
+                seq=i + 10,
+                entry_type=TimelineEntryType.TOOL_CALL,
+                tool_name="MainTool",
+                elapsed_ms=(i + 10) * 100,
+                depth=0
+            ))
+
+        data = TimelineDisplayModel(
+            timeline_id="timeline-expand",
+            entries=entries,
+            tool_call_count=10
+        )
+        html = builder.build(data)
+
+        # Dominant agent section should have 'open' attribute
+        # The section with >66% of tools should be expanded by default
+        assert '<details class="subagent-section"' in html
+        assert 'data-agent-id="dominant-agent"' in html
+        # Check for 'open' attribute on the dominant section
+        # The subagent-section with dominant-agent should have open
+        import re
+        dominant_section = re.search(
+            r'<details class="subagent-section"[^>]*data-agent-id="dominant-agent"[^>]*>',
+            html
+        )
+        assert dominant_section is not None, "Dominant agent section not found"
+        assert 'open' in dominant_section.group(0), \
+            "Dominant agent section (>66% activity) should be expanded by default"
+
+    def test_smart_collapse_collapses_minor_agents(self):
+        """Agents with <66% of tools should be collapsed.
+
+        When a subagent accounts for less than 66% of the total tool calls,
+        its section should be collapsed by default to reduce visual noise.
+        """
+        builder = TimelineBuilder()
+        # 2 out of 10 tool calls (20%) belong to the subagent - should be collapsed
+        entries = [
+            TimelineItemDisplayModel(
+                seq=1,
+                entry_type=TimelineEntryType.PROMPT,
+                elapsed_ms=0,
+                content="Start"
+            ),
+        ]
+        # Add 2 subagent tool calls (minor activity)
+        for i in range(2):
+            entries.append(TimelineItemDisplayModel(
+                seq=i + 2,
+                entry_type=TimelineEntryType.TOOL_CALL,
+                tool_name="MinorTool",
+                agent_id="minor-agent",
+                agent_type="Helper",
+                elapsed_ms=(i + 1) * 100,
+                depth=1
+            ))
+        # Add 8 main agent tool calls (majority)
+        for i in range(8):
+            entries.append(TimelineItemDisplayModel(
+                seq=i + 4,
+                entry_type=TimelineEntryType.TOOL_CALL,
+                tool_name="MainTool",
+                elapsed_ms=(i + 4) * 100,
+                depth=0
+            ))
+
+        data = TimelineDisplayModel(
+            timeline_id="timeline-collapse",
+            entries=entries,
+            tool_call_count=10
+        )
+        html = builder.build(data)
+
+        # Minor agent section should NOT have 'open' attribute
+        assert '<details class="subagent-section"' in html
+        assert 'data-agent-id="minor-agent"' in html
+        # Check that the minor agent section does NOT have 'open'
+        import re
+        minor_section = re.search(
+            r'<details class="subagent-section"[^>]*data-agent-id="minor-agent"[^>]*>',
+            html
+        )
+        assert minor_section is not None, "Minor agent section not found"
+        assert 'open' not in minor_section.group(0), \
+            "Minor agent section (<66% activity) should be collapsed by default"
+
+    def test_timeline_with_multiple_subagents(self):
+        """Test timeline with multiple different subagents.
+
+        Each distinct subagent (by agent_id) should get its own
+        collapsible section, maintaining separation of concerns.
+        """
+        builder = TimelineBuilder()
+        data = TimelineDisplayModel(
+            timeline_id="timeline-multi",
+            entries=[
+                # First subagent's activity
+                TimelineItemDisplayModel(
+                    seq=1,
+                    entry_type=TimelineEntryType.TOOL_CALL,
+                    tool_name="Read",
+                    agent_id="explore-agent",
+                    agent_type="Explore",
+                    elapsed_ms=100,
+                    depth=1
+                ),
+                TimelineItemDisplayModel(
+                    seq=2,
+                    entry_type=TimelineEntryType.TOOL_CALL,
+                    tool_name="Grep",
+                    agent_id="explore-agent",
+                    agent_type="Explore",
+                    elapsed_ms=200,
+                    depth=1
+                ),
+                # Second subagent's activity
+                TimelineItemDisplayModel(
+                    seq=3,
+                    entry_type=TimelineEntryType.TOOL_CALL,
+                    tool_name="Edit",
+                    agent_id="edit-agent",
+                    agent_type="CodeEdit",
+                    elapsed_ms=300,
+                    depth=1
+                ),
+            ],
+            tool_call_count=3
+        )
+        html = builder.build(data)
+
+        # Should have two separate subagent sections
+        assert 'data-agent-id="explore-agent"' in html
+        assert 'data-agent-id="edit-agent"' in html
+        # Both agent types should appear in badges
+        assert "Explore" in html
+        assert "CodeEdit" in html
+
+    def test_timeline_no_subagent_sections_without_agents(self):
+        """Test that no subagent sections are created for main agent only.
+
+        When all entries belong to the main agent (no agent_id set),
+        no subagent-section wrappers should be generated.
+        """
+        builder = TimelineBuilder()
+        data = TimelineDisplayModel(
+            timeline_id="timeline-main-only",
+            entries=[
+                TimelineItemDisplayModel(
+                    seq=1,
+                    entry_type=TimelineEntryType.PROMPT,
+                    elapsed_ms=0,
+                    content="Hello"
+                ),
+                TimelineItemDisplayModel(
+                    seq=2,
+                    entry_type=TimelineEntryType.TOOL_CALL,
+                    tool_name="Bash",
+                    elapsed_ms=100,
+                    command="echo hello"
+                ),
+                TimelineItemDisplayModel(
+                    seq=3,
+                    entry_type=TimelineEntryType.RESPONSE,
+                    elapsed_ms=200,
+                    content="Done"
+                ),
+            ],
+            tool_call_count=1
+        )
+        html = builder.build(data)
+
+        # No subagent sections should be present
+        assert 'class="subagent-section"' not in html
+
+    def test_subagent_section_duration_display(self):
+        """Test that subagent section summary shows duration.
+
+        The summary should include the total duration of the subagent's
+        activity (difference between first and last tool call elapsed_ms).
+        """
+        builder = TimelineBuilder()
+        data = TimelineDisplayModel(
+            timeline_id="timeline-duration",
+            entries=[
+                TimelineItemDisplayModel(
+                    seq=1,
+                    entry_type=TimelineEntryType.TOOL_CALL,
+                    tool_name="Read",
+                    agent_id="timed-agent",
+                    agent_type="Explore",
+                    elapsed_ms=1000,  # Start at 1s
+                    depth=1
+                ),
+                TimelineItemDisplayModel(
+                    seq=2,
+                    entry_type=TimelineEntryType.TOOL_CALL,
+                    tool_name="Grep",
+                    agent_id="timed-agent",
+                    agent_type="Explore",
+                    elapsed_ms=3500,  # End at 3.5s -> 2.5s duration
+                    depth=1
+                ),
+            ],
+            tool_call_count=2
+        )
+        html = builder.build(data)
+
+        # Summary should show duration
+        assert '<span class="subagent-duration">' in html
+        # Duration should be approximately 2.5s (3500 - 1000)
+        assert "+2.5s" in html or "+2500ms" in html
+
 
 class TestReproduceBuilder:
     """Tests for ReproduceBuilder component."""

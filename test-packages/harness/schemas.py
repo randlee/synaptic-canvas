@@ -12,7 +12,7 @@ upgrades gracefully. Runtime uses best-effort parsing; test suite validates
 schema compliance.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, computed_field
 from typing import Optional, List, Dict, Any
 from enum import Enum
 
@@ -66,6 +66,7 @@ class TimelineNodeType(str, Enum):
     TOOL_RESULT = "tool_result"
     SUBAGENT_START = "subagent_start"
     SUBAGENT_STOP = "subagent_stop"
+    SIDECHAIN = "sidechain"  # For subagent/Task tool invocations
 
 
 class TreeNode(BaseModel):
@@ -73,7 +74,10 @@ class TreeNode(BaseModel):
 
     parent_uuid: Optional[str] = None
     depth: int = 0
+    seq: int = 0  # Depth-first sequence number for ordering
     node_type: TimelineNodeType
+    timestamp: Optional[str] = None  # ISO timestamp from transcript entry
+    elapsed_ms: Optional[int] = None  # Milliseconds from session start
     agent_id: Optional[str] = None
     agent_type: Optional[str] = None
     tool_name: Optional[str] = None
@@ -99,11 +103,13 @@ class TokenUsage(BaseModel):
     cache_read_tokens: int = 0
     subagent_tokens: int = 0
 
+    @computed_field
     @property
     def total_billable(self) -> int:
         """Tokens likely billed (excludes cache reads)."""
         return self.input_tokens + self.output_tokens + self.cache_creation_tokens
 
+    @computed_field
     @property
     def total_all(self) -> int:
         """Total tokens including cache reads."""

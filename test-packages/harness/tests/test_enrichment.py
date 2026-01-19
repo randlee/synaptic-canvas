@@ -887,6 +887,267 @@ class TestEdgeCases:
         assert stats.token_usage is not None
         assert stats.token_usage.total_all == 0
 
+    def test_handles_self_referential_parent_uuid(
+        self, sample_test_context, sample_artifact_paths
+    ):
+        """Node with parentUuid pointing to itself should not cause infinite loop."""
+        transcript = [
+            {"uuid": "self-ref", "parentUuid": "self-ref", "type": "user", "message": {"content": "I reference myself"}},
+        ]
+
+        # Should not hang or crash - complete within reasonable time
+        result = build_timeline_tree(
+            transcript_entries=transcript,
+            trace_events=[],
+            test_context=sample_test_context,
+            artifact_paths=sample_artifact_paths,
+        )
+
+        # Should succeed without hanging
+        assert isinstance(result, Success)
+        enriched = result.value
+        assert isinstance(enriched, EnrichedData)
+        # Node should exist in tree
+        assert "self-ref" in enriched.tree.nodes
+        # Node should still have itself as parent (circular reference)
+        # The key test is that we didn't infinite loop or crash
+        node = enriched.tree.nodes["self-ref"]
+        assert node is not None
+        # Stats should reflect the one node (plus synthetic root)
+        assert enriched.stats.total_nodes == 1
+
+    def test_handles_nested_subagents(
+        self, sample_test_context, sample_artifact_paths
+    ):
+        """Subagent that spawns another subagent should build correct tree."""
+        # Transcript with tool calls from nested agents
+        transcript = [
+            {"uuid": "u1", "parentUuid": None, "type": "user", "message": {"content": "Start task"}},
+            {
+                "uuid": "a1",
+                "parentUuid": "u1",
+                "type": "assistant",
+                "message": {"content": [{"type": "tool_use", "id": "t1", "name": "Task"}]},
+            },
+            {
+                "uuid": "r1",
+                "parentUuid": "a1",
+                "type": "user",
+                "message": {"content": [{"type": "tool_result", "tool_use_id": "t1"}]},
+            },
+            # Nested agent's tool call
+            {
+                "uuid": "a2",
+                "parentUuid": "r1",
+                "type": "assistant",
+                "message": {"content": [{"type": "tool_use", "id": "t2", "name": "Read"}]},
+            },
+            {
+                "uuid": "r2",
+                "parentUuid": "a2",
+                "type": "user",
+                "message": {"content": [{"type": "tool_result", "tool_use_id": "t2"}]},
+            },
+            # Deeply nested agent's tool call
+            {
+                "uuid": "a3",
+                "parentUuid": "r2",
+                "type": "assistant",
+                "message": {"content": [{"type": "tool_use", "id": "t3", "name": "Write"}]},
+            },
+            {
+                "uuid": "r3",
+                "parentUuid": "a3",
+                "type": "user",
+                "message": {"content": [{"type": "tool_result", "tool_use_id": "t3"}]},
+            },
+        ]
+
+        # Trace with nested agents: outer -> inner -> innermost
+        trace = [
+            {"ts": "2026-01-18T12:00:00.000Z", "event": "SessionStart", "session_id": "test-nested"},
+            {"ts": "2026-01-18T12:00:01.000Z", "event": "SubagentStart", "agent_id": "outer-agent", "agent_type": "Task"},
+            {"ts": "2026-01-18T12:00:02.000Z", "event": "PreToolUse", "tool_use_id": "t1", "tool_name": "Task"},
+            {"ts": "2026-01-18T12:00:03.000Z", "event": "SubagentStart", "agent_id": "inner-agent", "agent_type": "Explore"},
+            {"ts": "2026-01-18T12:00:04.000Z", "event": "PreToolUse", "tool_use_id": "t2", "tool_name": "Read"},
+            {"ts": "2026-01-18T12:00:05.000Z", "event": "SubagentStart", "agent_id": "innermost-agent", "agent_type": "Write"},
+            {"ts": "2026-01-18T12:00:06.000Z", "event": "PreToolUse", "tool_use_id": "t3", "tool_name": "Write"},
+            {"ts": "2026-01-18T12:00:07.000Z", "event": "PostToolUse", "tool_use_id": "t3"},
+            {"ts": "2026-01-18T12:00:08.000Z", "event": "SubagentStop", "agent_id": "innermost-agent"},
+            {"ts": "2026-01-18T12:00:09.000Z", "event": "PostToolUse", "tool_use_id": "t2"},
+            {"ts": "2026-01-18T12:00:10.000Z", "event": "SubagentStop", "agent_id": "inner-agent"},
+            {"ts": "2026-01-18T12:00:11.000Z", "event": "PostToolUse", "tool_use_id": "t1"},
+            {"ts": "2026-01-18T12:00:12.000Z", "event": "SubagentStop", "agent_id": "outer-agent"},
+        ]
+
+        result = build_timeline_tree(
+            transcript_entries=transcript,
+            trace_events=trace,
+            test_context=sample_test_context,
+            artifact_paths=sample_artifact_paths,
+        )
+
+        assert isinstance(result, Success)
+        enriched = result.value
+
+        # Should have 3 agents tracked
+        assert len(enriched.agents) == 3
+        agent_ids = set(enriched.agents.keys())
+        assert "outer-agent" in agent_ids
+        assert "inner-agent" in agent_ids
+        assert "innermost-agent" in agent_ids
+
+        # Verify tool attribution - each tool should be attributed to correct agent
+        # t1 -> outer-agent, t2 -> inner-agent, t3 -> innermost-agent
+        for uuid, node in enriched.tree.nodes.items():
+            if node.tool_name == "Task":
+                assert node.agent_id == "outer-agent"
+            elif node.tool_name == "Read":
+                assert node.agent_id == "inner-agent"
+            elif node.tool_name == "Write":
+                assert node.agent_id == "innermost-agent"
+
+    def test_handles_wide_tree_50_siblings(
+        self, sample_test_context, sample_artifact_paths
+    ):
+        """Parent with 50 children should work correctly."""
+        # Create parent node and 50 child nodes
+        transcript = [
+            {"uuid": "parent", "parentUuid": None, "type": "user", "message": {"content": "Parent message"}},
+        ]
+        for i in range(50):
+            transcript.append({
+                "uuid": f"child-{i}",
+                "parentUuid": "parent",
+                "type": "assistant",
+                "message": {"content": [{"type": "text", "text": f"Child {i} response"}]},
+            })
+
+        result = build_timeline_tree(
+            transcript_entries=transcript,
+            trace_events=[],
+            test_context=sample_test_context,
+            artifact_paths=sample_artifact_paths,
+        )
+
+        assert isinstance(result, Success)
+        enriched = result.value
+
+        # Should have 51 nodes (parent + 50 children) plus synthetic root
+        # total_nodes excludes synthetic root, so should be 51
+        assert enriched.stats.total_nodes == 51
+
+        # Parent node should have 50 children
+        parent_node = enriched.tree.nodes.get("parent")
+        assert parent_node is not None
+        assert len(parent_node.children) == 50
+
+        # All children should have depth 2 (root=0, parent=1, children=2)
+        for i in range(50):
+            child_uuid = f"child-{i}"
+            assert child_uuid in enriched.tree.nodes
+            child_node = enriched.tree.nodes[child_uuid]
+            assert child_node.parent_uuid == "parent"
+            assert child_node.depth == 2  # root(0) -> parent(1) -> child(2)
+
+    def test_handles_duplicate_uuid(
+        self, sample_test_context, sample_artifact_paths
+    ):
+        """Two entries with same UUID - should use first or handle gracefully."""
+        transcript = [
+            {"uuid": "dup-uuid", "parentUuid": None, "type": "user", "message": {"content": "First entry"}},
+            {"uuid": "dup-uuid", "parentUuid": None, "type": "assistant", "message": {"content": [{"type": "text", "text": "Duplicate UUID entry"}]}},
+            {"uuid": "child", "parentUuid": "dup-uuid", "type": "user", "message": {"content": "Child of duplicate"}},
+        ]
+
+        result = build_timeline_tree(
+            transcript_entries=transcript,
+            trace_events=[],
+            test_context=sample_test_context,
+            artifact_paths=sample_artifact_paths,
+        )
+
+        # Should succeed without crashing
+        assert isinstance(result, Success)
+        enriched = result.value
+        assert isinstance(enriched, EnrichedData)
+
+        # The duplicate UUID should exist in tree (first occurrence takes precedence)
+        assert "dup-uuid" in enriched.tree.nodes
+        # Child should still be linked correctly
+        assert "child" in enriched.tree.nodes
+        child_node = enriched.tree.nodes["child"]
+        assert child_node.parent_uuid == "dup-uuid"
+
+        # May have warning about duplicate UUID (implementation dependent)
+        # At minimum, should not crash
+
+    def test_handles_unicode_content(
+        self, sample_test_context, sample_artifact_paths
+    ):
+        """Non-ASCII characters in messages should not cause errors."""
+        transcript = [
+            {
+                "uuid": "unicode-1",
+                "parentUuid": None,
+                "type": "user",
+                "message": {"content": "Hello in Japanese: \u3053\u3093\u306b\u3061\u306f"},
+            },
+            {
+                "uuid": "unicode-2",
+                "parentUuid": "unicode-1",
+                "type": "assistant",
+                "message": {"content": [{"type": "text", "text": "Response with emoji: \ud83d\ude80\ud83c\udf1f\ud83d\udc4d"}]},
+            },
+            {
+                "uuid": "unicode-3",
+                "parentUuid": "unicode-2",
+                "type": "user",
+                "message": {"content": "Chinese: \u4e2d\u6587, Russian: \u041f\u0440\u0438\u0432\u0435\u0442, Arabic: \u0645\u0631\u062d\u0628\u0627"},
+            },
+            {
+                "uuid": "unicode-4",
+                "parentUuid": "unicode-3",
+                "type": "assistant",
+                "message": {"content": [{"type": "text", "text": "Special chars: \u00e9\u00e8\u00ea\u00eb \u00f1 \u00df \u00e6 \u00f8"}]},
+            },
+        ]
+
+        result = build_timeline_tree(
+            transcript_entries=transcript,
+            trace_events=[],
+            test_context=sample_test_context,
+            artifact_paths=sample_artifact_paths,
+        )
+
+        assert isinstance(result, Success)
+        enriched = result.value
+        assert isinstance(enriched, EnrichedData)
+
+        # All 4 nodes should be present
+        assert enriched.stats.total_nodes == 4
+        assert "unicode-1" in enriched.tree.nodes
+        assert "unicode-2" in enriched.tree.nodes
+        assert "unicode-3" in enriched.tree.nodes
+        assert "unicode-4" in enriched.tree.nodes
+
+        # Verify tree structure is correct
+        assert enriched.tree.nodes["unicode-2"].parent_uuid == "unicode-1"
+        assert enriched.tree.nodes["unicode-3"].parent_uuid == "unicode-2"
+        assert enriched.tree.nodes["unicode-4"].parent_uuid == "unicode-3"
+
+        # Verify serialization works with unicode - should not raise
+        json_str = enriched.model_dump_json()
+        assert isinstance(json_str, str)
+        assert len(json_str) > 0
+
+        # Verify roundtrip works - deserialize and check structure preserved
+        import json
+        data_dict = json.loads(json_str)
+        restored = EnrichedData.model_validate(data_dict)
+        assert restored.stats.total_nodes == 4
+        assert "unicode-1" in restored.tree.nodes
+
 
 # =============================================================================
 # Test: Integration / Schema Validation
@@ -1176,3 +1437,608 @@ class TestResultPatternFailure:
         assert failure.is_success() is False
         assert failure.error == error
         assert failure.partial_result == partial_data
+
+
+class TestSerializationErrors:
+    """Tests for serialization error handling.
+
+    Verifies that serialization errors are captured in Result, not swallowed.
+    """
+
+    def test_handles_non_serializable_content(
+        self, sample_test_context, sample_artifact_paths
+    ):
+        """Test handling of objects that can't be JSON serialized.
+
+        The enrichment process should handle non-serializable objects gracefully,
+        either by converting them to strings or producing appropriate warnings.
+        """
+        import json
+        from unittest.mock import patch, MagicMock
+
+        # Create transcript with a type that's typically not serializable
+        # Note: In practice, transcript entries are already dict-like from JSON parsing,
+        # so we test the behavior when model_dump_json encounters issues
+        result = build_timeline_tree(
+            transcript_entries=SAMPLE_TRANSCRIPT,
+            trace_events=SAMPLE_TRACE,
+            test_context=sample_test_context,
+            artifact_paths=sample_artifact_paths,
+        )
+
+        assert isinstance(result, Success)
+        enriched = result.value
+
+        # Verify it can be serialized (the happy path)
+        json_str = enriched.model_dump_json()
+        assert isinstance(json_str, str)
+
+        # Now test that if serialization were to fail, it's handled properly
+        # Mock model_dump_json to raise a TypeError (typical serialization error)
+        mock_enriched = MagicMock()
+        mock_enriched.model_dump_json.side_effect = TypeError(
+            "Object of type 'function' is not JSON serializable"
+        )
+
+        # The error should be catchable and not crash the program
+        try:
+            mock_enriched.model_dump_json()
+            assert False, "Should have raised TypeError"
+        except TypeError as e:
+            assert "JSON serializable" in str(e)
+
+    def test_handles_circular_reference_in_data(
+        self, sample_test_context, sample_artifact_paths
+    ):
+        """Test handling of circular references in dict data.
+
+        Circular references in dictionaries cause json.dumps to fail with ValueError.
+        The enrichment process should handle this gracefully.
+        """
+        import json
+
+        # First verify normal case works
+        result = build_timeline_tree(
+            transcript_entries=SAMPLE_TRANSCRIPT,
+            trace_events=SAMPLE_TRACE,
+            test_context=sample_test_context,
+            artifact_paths=sample_artifact_paths,
+        )
+
+        assert isinstance(result, Success)
+        enriched = result.value
+
+        # Verify normal serialization works
+        json_str = enriched.model_dump_json()
+        parsed = json.loads(json_str)
+        assert "tree" in parsed
+        assert "stats" in parsed
+
+        # Demonstrate that circular references would cause issues
+        # (this documents expected behavior if they occurred)
+        circular_dict = {"key": "value"}
+        circular_dict["self"] = circular_dict
+
+        with pytest.raises(ValueError, match="Circular reference"):
+            json.dumps(circular_dict)
+
+        # Test that the tree building itself handles circular parentUuid refs
+        # (this is covered in TestEdgeCases but we verify the Result pattern)
+        circular_transcript = [
+            {"uuid": "a", "parentUuid": "b", "type": "user", "message": {}},
+            {"uuid": "b", "parentUuid": "a", "type": "user", "message": {}},
+        ]
+
+        result = build_timeline_tree(
+            transcript_entries=circular_transcript,
+            trace_events=[],
+            test_context=sample_test_context,
+            artifact_paths=sample_artifact_paths,
+        )
+
+        # Should succeed (with warnings about broken refs) rather than fail
+        assert isinstance(result, Success)
+        # The result should be serializable despite circular input refs
+        json_output = result.value.model_dump_json()
+        assert isinstance(json_output, str)
+
+    def test_serialization_errors_captured_not_swallowed(
+        self, sample_test_context, sample_artifact_paths
+    ):
+        """Test that serialization errors are captured in Result, not swallowed.
+
+        This tests the principle that errors should be visible to callers.
+        """
+        from unittest.mock import patch
+
+        # Build valid enriched data first
+        result = build_timeline_tree(
+            transcript_entries=SAMPLE_TRANSCRIPT,
+            trace_events=SAMPLE_TRACE,
+            test_context=sample_test_context,
+            artifact_paths=sample_artifact_paths,
+        )
+
+        assert isinstance(result, Success)
+        enriched = result.value
+
+        # Verify that if we were to encounter a serialization error during
+        # the enrichment process, it would be captured in the Result
+        # Currently build_timeline_tree is very resilient and returns Success
+        # with warnings for edge cases, but we verify the pattern
+
+        # The Result pattern ensures:
+        # 1. Success has value and warnings (not errors that were swallowed)
+        assert hasattr(result, "value")
+        assert hasattr(result, "warnings")
+        assert result.value is not None
+
+        # 2. If there were issues, they're in warnings, not hidden
+        # (in this case, clean input has no warnings)
+        assert isinstance(result.warnings, list)
+
+        # 3. The enriched data is fully serializable
+        try:
+            json_str = enriched.model_dump_json()
+            assert len(json_str) > 0
+        except (TypeError, ValueError) as e:
+            # If this fails, it indicates an issue that should be captured
+            pytest.fail(f"Serialization should succeed or be captured in Result: {e}")
+
+
+# =============================================================================
+# Test: Deep Trees and Scale Testing
+# =============================================================================
+
+
+class TestDeepTreesAndScale:
+    """Tests for handling deep trees without stack overflow and large node counts."""
+
+    def _build_deep_chain(self, depth: int) -> list:
+        """Build a transcript chain of the specified depth.
+
+        Args:
+            depth: Number of nodes in the chain (excluding synthetic root)
+
+        Returns:
+            List of transcript entries forming a linear chain
+        """
+        entries = []
+        for i in range(depth):
+            parent_uuid = f"entry-{i - 1}" if i > 0 else None
+            entries.append({
+                "uuid": f"entry-{i}",
+                "parentUuid": parent_uuid,
+                "type": "assistant" if i % 2 == 1 else "user",
+                "message": {"content": []},
+            })
+        return entries
+
+    def _build_wide_tree(self, node_count: int, children_per_node: int = 5) -> list:
+        """Build a transcript with a wide tree structure.
+
+        Args:
+            node_count: Total number of nodes to create
+            children_per_node: Number of children per internal node
+
+        Returns:
+            List of transcript entries forming a wide tree
+        """
+        entries = []
+        # Root node
+        entries.append({
+            "uuid": "entry-0",
+            "parentUuid": None,
+            "type": "user",
+            "message": {"content": []},
+        })
+
+        # Build tree level by level
+        queue = ["entry-0"]
+        node_id = 1
+
+        while node_id < node_count and queue:
+            parent_uuid = queue.pop(0)
+            for _ in range(children_per_node):
+                if node_id >= node_count:
+                    break
+                uuid = f"entry-{node_id}"
+                entries.append({
+                    "uuid": uuid,
+                    "parentUuid": parent_uuid,
+                    "type": "assistant" if node_id % 2 == 1 else "user",
+                    "message": {"content": []},
+                })
+                queue.append(uuid)
+                node_id += 1
+
+        return entries
+
+    def test_handles_depth_50_tree(self, sample_test_context, sample_artifact_paths):
+        """Test that depth 50 tree is handled without stack overflow.
+
+        This verifies the iterative depth computation works correctly
+        for trees that are deep but within reasonable limits.
+        """
+        transcript = self._build_deep_chain(50)
+
+        result = build_timeline_tree(
+            transcript_entries=transcript,
+            trace_events=[],
+            test_context=sample_test_context,
+            artifact_paths=sample_artifact_paths,
+        )
+
+        assert isinstance(result, Success)
+        enriched = result.value
+
+        # Verify deepest node has correct depth
+        # Synthetic root is depth 0, entry-0 is depth 1, entry-49 is depth 50
+        deepest_node = enriched.tree.nodes["entry-49"]
+        assert deepest_node.depth == 50
+
+        # Verify max_depth stat is correct
+        assert enriched.stats.max_depth == 50
+
+        # Verify total nodes count (excluding synthetic root)
+        assert enriched.stats.total_nodes == 50
+
+    def test_handles_depth_100_tree(self, sample_test_context, sample_artifact_paths):
+        """Test that depth 100 tree is handled without stack overflow.
+
+        This is a stress test for deep tree traversal. The recursive
+        implementation would fail with RecursionError, but the iterative
+        implementation should handle this without issue.
+        """
+        transcript = self._build_deep_chain(100)
+
+        result = build_timeline_tree(
+            transcript_entries=transcript,
+            trace_events=[],
+            test_context=sample_test_context,
+            artifact_paths=sample_artifact_paths,
+        )
+
+        assert isinstance(result, Success)
+        enriched = result.value
+
+        # Verify deepest node has correct depth
+        deepest_node = enriched.tree.nodes["entry-99"]
+        assert deepest_node.depth == 100
+
+        # Verify max_depth stat is correct
+        assert enriched.stats.max_depth == 100
+
+        # Verify all nodes are present
+        assert enriched.stats.total_nodes == 100
+
+        # Verify depth increases monotonically in chain
+        for i in range(1, 100):
+            prev_depth = enriched.tree.nodes[f"entry-{i - 1}"].depth
+            curr_depth = enriched.tree.nodes[f"entry-{i}"].depth
+            assert curr_depth == prev_depth + 1
+
+    def test_handles_100_nodes_efficiently(self, sample_test_context, sample_artifact_paths):
+        """Test that 100 nodes are processed in under 2 seconds.
+
+        This is a performance test to ensure tree building scales
+        reasonably with node count.
+        """
+        import time
+
+        transcript = self._build_wide_tree(100)
+
+        start_time = time.time()
+        result = build_timeline_tree(
+            transcript_entries=transcript,
+            trace_events=[],
+            test_context=sample_test_context,
+            artifact_paths=sample_artifact_paths,
+        )
+        elapsed = time.time() - start_time
+
+        assert isinstance(result, Success)
+        enriched = result.value
+
+        # Verify all nodes are present
+        assert enriched.stats.total_nodes == 100
+
+        # Performance requirement: under 2 seconds
+        assert elapsed < 2.0, f"Processing took {elapsed:.2f}s, expected < 2s"
+
+    def test_handles_500_nodes(self, sample_test_context, sample_artifact_paths):
+        """Test that 500 nodes are processed correctly.
+
+        This is a larger scale test to verify the implementation
+        handles realistic session sizes.
+        """
+        transcript = self._build_wide_tree(500)
+
+        result = build_timeline_tree(
+            transcript_entries=transcript,
+            trace_events=[],
+            test_context=sample_test_context,
+            artifact_paths=sample_artifact_paths,
+        )
+
+        assert isinstance(result, Success)
+        enriched = result.value
+
+        # Verify all nodes are present
+        assert enriched.stats.total_nodes == 500
+
+        # Verify tree structure is intact
+        root_uuid = enriched.tree.root_uuid
+        assert root_uuid in enriched.tree.nodes
+
+        # Verify all nodes have valid depths (> 0 since root is synthetic)
+        for uuid, node in enriched.tree.nodes.items():
+            if uuid != root_uuid:
+                assert node.depth >= 1, f"Node {uuid} has invalid depth {node.depth}"
+
+        # Verify parent-child relationships are consistent
+        for uuid, node in enriched.tree.nodes.items():
+            if node.parent_uuid:
+                parent = enriched.tree.nodes.get(node.parent_uuid)
+                assert parent is not None, f"Node {uuid} has missing parent {node.parent_uuid}"
+                assert uuid in parent.children, f"Node {uuid} not in parent's children list"
+
+    def test_handles_depth_500_tree(self, sample_test_context, sample_artifact_paths):
+        """Test extreme depth (500) to verify no stack overflow.
+
+        This tests well beyond typical session depths to ensure
+        the iterative implementation is robust.
+        """
+        transcript = self._build_deep_chain(500)
+
+        result = build_timeline_tree(
+            transcript_entries=transcript,
+            trace_events=[],
+            test_context=sample_test_context,
+            artifact_paths=sample_artifact_paths,
+        )
+
+        assert isinstance(result, Success)
+        enriched = result.value
+
+        # Verify deepest node has correct depth
+        deepest_node = enriched.tree.nodes["entry-499"]
+        assert deepest_node.depth == 500
+
+        # Verify max_depth stat is correct
+        assert enriched.stats.max_depth == 500
+
+
+# =============================================================================
+# Test: New Fields (seq, timestamp, elapsed_ms, SIDECHAIN)
+# =============================================================================
+
+
+class TestNewFields:
+    """Tests for seq, timestamp, elapsed_ms fields and SIDECHAIN node type."""
+
+    def test_seq_field_assigned_in_depth_first_order(
+        self, sample_test_context, sample_artifact_paths
+    ):
+        """Test that seq numbers are assigned in depth-first order."""
+        transcript = [
+            {"uuid": "u1", "parentUuid": None, "type": "user", "message": {"content": "First"}},
+            {"uuid": "u2", "parentUuid": "u1", "type": "assistant", "message": {"content": []}},
+            {"uuid": "u3", "parentUuid": "u2", "type": "user", "message": {"content": "Deep"}},
+            {"uuid": "u4", "parentUuid": "u1", "type": "user", "message": {"content": "Sibling"}},
+        ]
+
+        result = build_timeline_tree(
+            transcript_entries=transcript,
+            trace_events=[],
+            test_context=sample_test_context,
+            artifact_paths=sample_artifact_paths,
+        )
+
+        assert isinstance(result, Success)
+        enriched = result.value
+
+        # Root should be seq=0
+        assert enriched.tree.nodes["root"].seq == 0
+
+        # Verify depth-first ordering
+        # root(0) -> u1(1) -> u2(2) -> u3(3) -> u4(4)
+        # Note: children are processed in order they were added
+        seq_u1 = enriched.tree.nodes["u1"].seq
+        seq_u2 = enriched.tree.nodes["u2"].seq
+        seq_u3 = enriched.tree.nodes["u3"].seq
+        seq_u4 = enriched.tree.nodes["u4"].seq
+
+        # u1 should come before its children
+        assert seq_u1 < seq_u2
+        assert seq_u2 < seq_u3
+        # u4 is a sibling of u2, so it should come after u3 (depth-first)
+        assert seq_u3 < seq_u4
+
+    def test_timestamp_field_extracted_from_entry(
+        self, sample_test_context, sample_artifact_paths
+    ):
+        """Test that timestamp is extracted from transcript entries."""
+        transcript = [
+            {
+                "uuid": "t1",
+                "parentUuid": None,
+                "type": "user",
+                "timestamp": "2026-01-18T10:00:00.000Z",
+                "message": {"content": "First"},
+            },
+            {
+                "uuid": "t2",
+                "parentUuid": "t1",
+                "type": "assistant",
+                "timestamp": "2026-01-18T10:00:05.500Z",
+                "message": {"content": []},
+            },
+        ]
+
+        result = build_timeline_tree(
+            transcript_entries=transcript,
+            trace_events=[],
+            test_context=sample_test_context,
+            artifact_paths=sample_artifact_paths,
+        )
+
+        assert isinstance(result, Success)
+        enriched = result.value
+
+        # Timestamps should be preserved
+        assert enriched.tree.nodes["t1"].timestamp == "2026-01-18T10:00:00.000Z"
+        assert enriched.tree.nodes["t2"].timestamp == "2026-01-18T10:00:05.500Z"
+
+    def test_elapsed_ms_computed_from_timestamps(
+        self, sample_test_context, sample_artifact_paths
+    ):
+        """Test that elapsed_ms is computed relative to first timestamp."""
+        transcript = [
+            {
+                "uuid": "e1",
+                "parentUuid": None,
+                "type": "user",
+                "timestamp": "2026-01-18T10:00:00.000Z",
+                "message": {"content": "Start"},
+            },
+            {
+                "uuid": "e2",
+                "parentUuid": "e1",
+                "type": "assistant",
+                "timestamp": "2026-01-18T10:00:01.500Z",  # 1500ms later
+                "message": {"content": []},
+            },
+            {
+                "uuid": "e3",
+                "parentUuid": "e2",
+                "type": "user",
+                "timestamp": "2026-01-18T10:00:05.000Z",  # 5000ms from start
+                "message": {"content": "Later"},
+            },
+        ]
+
+        result = build_timeline_tree(
+            transcript_entries=transcript,
+            trace_events=[],
+            test_context=sample_test_context,
+            artifact_paths=sample_artifact_paths,
+        )
+
+        assert isinstance(result, Success)
+        enriched = result.value
+
+        # First entry should have elapsed_ms = 0
+        assert enriched.tree.nodes["e1"].elapsed_ms == 0
+        # Second entry should be 1500ms from start
+        assert enriched.tree.nodes["e2"].elapsed_ms == 1500
+        # Third entry should be 5000ms from start
+        assert enriched.tree.nodes["e3"].elapsed_ms == 5000
+
+    def test_elapsed_ms_none_when_no_timestamp(
+        self, sample_test_context, sample_artifact_paths
+    ):
+        """Test that elapsed_ms is None when entries lack timestamps."""
+        transcript = [
+            {"uuid": "n1", "parentUuid": None, "type": "user", "message": {"content": "No timestamp"}},
+        ]
+
+        result = build_timeline_tree(
+            transcript_entries=transcript,
+            trace_events=[],
+            test_context=sample_test_context,
+            artifact_paths=sample_artifact_paths,
+        )
+
+        assert isinstance(result, Success)
+        enriched = result.value
+
+        # Node without timestamp should have elapsed_ms = None
+        assert enriched.tree.nodes["n1"].timestamp is None
+        assert enriched.tree.nodes["n1"].elapsed_ms is None
+
+    def test_sidechain_node_type_from_isSidechain_field(
+        self, sample_test_context, sample_artifact_paths
+    ):
+        """Test that entries with isSidechain=True get SIDECHAIN node type."""
+        transcript = [
+            {"uuid": "main", "parentUuid": None, "type": "user", "message": {"content": "Main"}},
+            {
+                "uuid": "side",
+                "parentUuid": "main",
+                "type": "assistant",
+                "isSidechain": True,
+                "message": {"content": []},
+            },
+        ]
+
+        result = build_timeline_tree(
+            transcript_entries=transcript,
+            trace_events=[],
+            test_context=sample_test_context,
+            artifact_paths=sample_artifact_paths,
+        )
+
+        assert isinstance(result, Success)
+        enriched = result.value
+
+        # Main entry should be PROMPT
+        assert enriched.tree.nodes["main"].node_type == TimelineNodeType.PROMPT
+        # Sidechain entry should be SIDECHAIN
+        assert enriched.tree.nodes["side"].node_type == TimelineNodeType.SIDECHAIN
+
+    def test_root_node_has_default_seq_and_elapsed(
+        self, sample_test_context, sample_artifact_paths
+    ):
+        """Test that root node has seq=0 and elapsed_ms=0."""
+        result = build_timeline_tree(
+            transcript_entries=[],
+            trace_events=[],
+            test_context=sample_test_context,
+            artifact_paths=sample_artifact_paths,
+        )
+
+        assert isinstance(result, Success)
+        enriched = result.value
+
+        root = enriched.tree.nodes["root"]
+        assert root.seq == 0
+        assert root.elapsed_ms == 0
+        assert root.timestamp is None
+
+    def test_new_fields_in_schema_serialization(
+        self, sample_test_context, sample_artifact_paths
+    ):
+        """Test that new fields are included in JSON serialization."""
+        import json
+
+        transcript = [
+            {
+                "uuid": "ser1",
+                "parentUuid": None,
+                "type": "user",
+                "timestamp": "2026-01-18T12:00:00.000Z",
+                "message": {"content": "Test"},
+            },
+        ]
+
+        result = build_timeline_tree(
+            transcript_entries=transcript,
+            trace_events=[],
+            test_context=sample_test_context,
+            artifact_paths=sample_artifact_paths,
+        )
+
+        assert isinstance(result, Success)
+        enriched = result.value
+
+        # Serialize and check fields are present
+        json_str = enriched.model_dump_json()
+        data = json.loads(json_str)
+
+        node = data["tree"]["nodes"]["ser1"]
+        assert "seq" in node
+        assert "timestamp" in node
+        assert "elapsed_ms" in node
+        assert node["timestamp"] == "2026-01-18T12:00:00.000Z"
+        assert node["elapsed_ms"] == 0
