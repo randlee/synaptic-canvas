@@ -7,6 +7,10 @@ from pathlib import Path
 
 import pytest
 
+# Add test-packages/harness to path for Result imports
+sys.path.insert(0, str(Path(__file__).parent.parent.parent / "test-packages" / "harness"))
+from result import Success, Failure
+
 # Add scripts directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "scripts"))
 
@@ -88,14 +92,16 @@ def test_load_json_success(temp_dir):
         json.dump(data, f)
 
     result = load_json(json_file)
-    assert result == data
+    assert isinstance(result, Success)
+    assert result.value == data
 
 
 def test_load_json_missing(temp_dir):
     """Test loading non-existent file."""
     json_file = temp_dir / "missing.json"
     result = load_json(json_file)
-    assert result is None
+    assert isinstance(result, Failure)
+    assert "not found" in result.error.message
 
 
 def test_load_json_invalid(temp_dir):
@@ -105,7 +111,8 @@ def test_load_json_invalid(temp_dir):
         f.write("not valid json {{{")
 
     result = load_json(json_file)
-    assert result is None
+    assert isinstance(result, Failure)
+    assert "JSON" in result.error.message or "Error loading" in result.error.message
 
 
 def test_find_package_found():
@@ -144,14 +151,15 @@ def test_sync_marketplace_update_version(temp_dir, sample_registry, sample_marke
     with open(marketplace_path, "w") as f:
         json.dump(sample_marketplace, f)
 
-    success = sync_marketplace(registry_path, marketplace_path, dry_run=False)
-    assert success is True
+    result = sync_marketplace(registry_path, marketplace_path, dry_run=False)
+    assert isinstance(result, Success)
+    assert result.value is True
 
     with open(marketplace_path) as f:
-        result = json.load(f)
+        data = json.load(f)
 
     # Check version was updated
-    pkg1 = find_package(result["plugins"], "sc-pkg1")
+    pkg1 = find_package(data["plugins"], "sc-pkg1")
     assert pkg1["version"] == "0.7.0"
 
 
@@ -165,17 +173,18 @@ def test_sync_marketplace_add_missing_package(temp_dir, sample_registry, sample_
     with open(marketplace_path, "w") as f:
         json.dump(sample_marketplace, f)
 
-    success = sync_marketplace(registry_path, marketplace_path, dry_run=False)
-    assert success is True
+    result = sync_marketplace(registry_path, marketplace_path, dry_run=False)
+    assert isinstance(result, Success)
+    assert result.value is True
 
     with open(marketplace_path) as f:
-        result = json.load(f)
+        data = json.load(f)
 
     # Check sc-pkg2 was added
-    pkg2 = find_package(result["plugins"], "sc-pkg2")
+    pkg2 = find_package(data["plugins"], "sc-pkg2")
     assert pkg2 is not None
     assert pkg2["version"] == "0.7.0"
-    assert len(result["plugins"]) == 2
+    assert len(data["plugins"]) == 2
 
 
 def test_sync_marketplace_dry_run(temp_dir, sample_registry, sample_marketplace):
@@ -189,14 +198,15 @@ def test_sync_marketplace_dry_run(temp_dir, sample_registry, sample_marketplace)
         json.dump(sample_marketplace, f)
 
     # Run dry-run
-    success = sync_marketplace(registry_path, marketplace_path, dry_run=True)
-    assert success is True
+    result = sync_marketplace(registry_path, marketplace_path, dry_run=True)
+    assert isinstance(result, Success)
+    assert result.value is True
 
     # Read file - should be unchanged
     with open(marketplace_path) as f:
-        result = json.load(f)
+        data = json.load(f)
 
-    pkg1 = find_package(result["plugins"], "sc-pkg1")
+    pkg1 = find_package(data["plugins"], "sc-pkg1")
     assert pkg1["version"] == "0.6.0"  # Should not be updated
 
 
@@ -242,8 +252,9 @@ def test_sync_marketplace_no_changes_needed(temp_dir):
     with open(marketplace_path, "w") as f:
         json.dump(marketplace, f)
 
-    success = sync_marketplace(registry_path, marketplace_path, dry_run=False)
-    assert success is True
+    result = sync_marketplace(registry_path, marketplace_path, dry_run=False)
+    assert isinstance(result, Success)
+    assert result.value is True
 
 
 def test_sync_marketplace_update_description(temp_dir, sample_registry, sample_marketplace):
@@ -259,13 +270,14 @@ def test_sync_marketplace_update_description(temp_dir, sample_registry, sample_m
     with open(marketplace_path, "w") as f:
         json.dump(sample_marketplace, f)
 
-    success = sync_marketplace(registry_path, marketplace_path, dry_run=False)
-    assert success is True
+    result = sync_marketplace(registry_path, marketplace_path, dry_run=False)
+    assert isinstance(result, Success)
+    assert result.value is True
 
     with open(marketplace_path) as f:
-        result = json.load(f)
+        data = json.load(f)
 
-    pkg1 = find_package(result["plugins"], "sc-pkg1")
+    pkg1 = find_package(data["plugins"], "sc-pkg1")
     assert pkg1["description"] == "New description"
 
 
@@ -277,8 +289,9 @@ def test_sync_marketplace_missing_registry(temp_dir, sample_marketplace):
     with open(marketplace_path, "w") as f:
         json.dump(sample_marketplace, f)
 
-    success = sync_marketplace(registry_path, marketplace_path, dry_run=False)
-    assert success is False
+    result = sync_marketplace(registry_path, marketplace_path, dry_run=False)
+    assert isinstance(result, Failure)
+    assert "not found" in result.error.message
 
 
 def test_sync_marketplace_missing_marketplace(temp_dir, sample_registry):
@@ -289,8 +302,9 @@ def test_sync_marketplace_missing_marketplace(temp_dir, sample_registry):
     with open(registry_path, "w") as f:
         json.dump(sample_registry, f)
 
-    success = sync_marketplace(registry_path, marketplace_path, dry_run=False)
-    assert success is False
+    result = sync_marketplace(registry_path, marketplace_path, dry_run=False)
+    assert isinstance(result, Failure)
+    assert "not found" in result.error.message
 
 
 def test_sync_marketplace_empty_registry(temp_dir):
@@ -321,5 +335,6 @@ def test_sync_marketplace_empty_registry(temp_dir):
         json.dump(marketplace, f)
 
     # Should still succeed but warn about orphaned package
-    success = sync_marketplace(registry_path, marketplace_path, dry_run=False)
-    assert success is True
+    result = sync_marketplace(registry_path, marketplace_path, dry_run=False)
+    assert isinstance(result, Success)
+    assert result.value is True

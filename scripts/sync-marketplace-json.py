@@ -15,11 +15,24 @@ Usage:
 import argparse
 import json
 import sys
+from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
+
+# Add test-packages/harness to path for Result imports
+sys.path.insert(0, str(Path(__file__).parent.parent / "test-packages" / "harness"))
+from result import Failure, Result, Success
+
+
+@dataclass
+class SyncError:
+    """Error during sync operations."""
+    message: str
+    file_path: str = ""
+    details: dict = field(default_factory=dict)
 
 
 class PackageEntry(BaseModel):
@@ -34,8 +47,9 @@ class PackageEntry(BaseModel):
     keywords: list[str] = Field(default_factory=list)
     category: str
 
-    @validator("version")
-    def validate_semver(cls, v):
+    @field_validator("version")
+    @classmethod
+    def validate_semver(cls, v: str) -> str:
         """Validate semantic version format."""
         parts = v.split(".")
         if len(parts) != 3:
@@ -55,18 +69,35 @@ class MarketplaceSchema(BaseModel):
     plugins: list[dict[str, Any]] = Field(default_factory=list)
 
 
-def load_json(path: Path) -> Optional[dict[str, Any]]:
+def load_json(path: Path) -> Result[dict[str, Any], SyncError]:
     """Load JSON file."""
     if not path.exists():
-        print(f"File not found: {path}", file=sys.stderr)
-        return None
+        return Failure(
+            error=SyncError(
+                message=f"File not found: {path}",
+                file_path=str(path),
+            )
+        )
 
     try:
         with open(path) as f:
-            return json.load(f)
+            data = json.load(f)
+        return Success(value=data)
+    except json.JSONDecodeError as e:
+        return Failure(
+            error=SyncError(
+                message=f"Invalid JSON syntax: {e}",
+                file_path=str(path),
+                details={"json_error": str(e)}
+            )
+        )
     except Exception as e:
-        print(f"Error loading {path}: {e}", file=sys.stderr)
-        return None
+        return Failure(
+            error=SyncError(
+                message=f"Error loading {path}: {e}",
+                file_path=str(path),
+            )
+        )
 
 
 def find_package(packages: list[dict[str, Any]], name: str) -> Optional[dict[str, Any]]:
@@ -81,16 +112,19 @@ def sync_marketplace(
     registry_path: Path,
     marketplace_path: Path,
     dry_run: bool = False,
-) -> bool:
+) -> Result[bool, SyncError]:
     """Synchronize marketplace.json with registry.json."""
     # Load both files
-    registry = load_json(registry_path)
-    if not registry:
-        return False
+    registry_result = load_json(registry_path)
+    if isinstance(registry_result, Failure):
+        return registry_result
 
-    marketplace = load_json(marketplace_path)
-    if not marketplace:
-        return False
+    marketplace_result = load_json(marketplace_path)
+    if isinstance(marketplace_result, Failure):
+        return marketplace_result
+
+    registry = registry_result.value
+    marketplace = marketplace_result.value
 
     registry_packages = registry.get("packages", [])
     marketplace_plugins = marketplace.get("plugins", [])
@@ -154,20 +188,24 @@ def sync_marketplace(
             print(json.dumps(marketplace, indent=2))
         else:
             print("[DRY RUN] No changes needed")
-        return True
+        return Success(value=True)
 
     if changes_made:
         try:
             with open(marketplace_path, "w") as f:
                 json.dump(marketplace, f, indent=2)
             print(f"\nMarketplace synchronized: {marketplace_path}")
-            return True
+            return Success(value=True)
         except Exception as e:
-            print(f"Error writing marketplace: {e}", file=sys.stderr)
-            return False
+            return Failure(
+                error=SyncError(
+                    message=f"Error writing marketplace: {e}",
+                    file_path=str(marketplace_path),
+                )
+            )
     else:
         print("Marketplace already synchronized")
-        return True
+        return Success(value=True)
 
 
 def main() -> int:
@@ -205,13 +243,19 @@ Examples:
 
     args = parser.parse_args()
 
-    success = sync_marketplace(
+    result = sync_marketplace(
         registry_path=args.registry,
         marketplace_path=args.marketplace,
         dry_run=args.dry_run,
     )
 
-    return 0 if success else 1
+    if isinstance(result, Success):
+        return 0
+    else:
+        print(f"Error: {result.error.message}", file=sys.stderr)
+        if result.error.file_path:
+            print(f"File: {result.error.file_path}", file=sys.stderr)
+        return 1
 
 
 if __name__ == "__main__":

@@ -13,12 +13,25 @@ Usage:
 import argparse
 import json
 import sys
+from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional
 
 import yaml
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
+
+# Add test-packages/harness to path for Result imports
+sys.path.insert(0, str(Path(__file__).parent.parent / "test-packages" / "harness"))
+from result import Failure, Result, Success
+
+
+@dataclass
+class RegistryError:
+    """Error during registry operations."""
+    message: str
+    file_path: str = ""
+    details: dict = field(default_factory=dict)
 
 
 class PackageMetadata(BaseModel):
@@ -33,8 +46,9 @@ class PackageMetadata(BaseModel):
     category: str
     lastUpdated: Optional[str] = None
 
-    @validator("version")
-    def validate_semver(cls, v):
+    @field_validator("version")
+    @classmethod
+    def validate_semver(cls, v: str) -> str:
         """Validate semantic version format."""
         parts = v.split(".")
         if len(parts) != 3:
@@ -58,32 +72,67 @@ class RegistrySchema(BaseModel):
     lastUpdated: str
 
 
-def load_manifest(package_dir: Path) -> Optional[dict[str, Any]]:
+def load_manifest(package_dir: Path) -> Result[dict[str, Any], RegistryError]:
     """Load and validate manifest.yaml file."""
     manifest_path = package_dir / "manifest.yaml"
     if not manifest_path.exists():
-        return None
+        return Failure(
+            error=RegistryError(
+                message="manifest.yaml not found",
+                file_path=str(manifest_path),
+            )
+        )
 
     try:
         with open(manifest_path) as f:
-            return yaml.safe_load(f)
+            data = yaml.safe_load(f)
+        return Success(value=data)
+    except yaml.YAMLError as e:
+        return Failure(
+            error=RegistryError(
+                message=f"Invalid YAML syntax: {e}",
+                file_path=str(manifest_path),
+                details={"yaml_error": str(e)}
+            )
+        )
     except Exception as e:
-        print(f"Error loading {manifest_path}: {e}", file=sys.stderr)
-        return None
+        return Failure(
+            error=RegistryError(
+                message=f"Failed to load manifest: {e}",
+                file_path=str(manifest_path),
+            )
+        )
 
 
-def load_registry(registry_path: Path) -> Optional[dict[str, Any]]:
+def load_registry(registry_path: Path) -> Result[dict[str, Any], RegistryError]:
     """Load registry.json file."""
     if not registry_path.exists():
-        print(f"Registry file not found: {registry_path}", file=sys.stderr)
-        return None
+        return Failure(
+            error=RegistryError(
+                message="Registry file not found",
+                file_path=str(registry_path),
+            )
+        )
 
     try:
         with open(registry_path) as f:
-            return json.load(f)
+            data = json.load(f)
+        return Success(value=data)
+    except json.JSONDecodeError as e:
+        return Failure(
+            error=RegistryError(
+                message=f"Invalid JSON syntax: {e}",
+                file_path=str(registry_path),
+                details={"json_error": str(e)}
+            )
+        )
     except Exception as e:
-        print(f"Error loading registry: {e}", file=sys.stderr)
-        return None
+        return Failure(
+            error=RegistryError(
+                message=f"Failed to load registry: {e}",
+                file_path=str(registry_path),
+            )
+        )
 
 
 def find_packages(packages_dir: Path) -> list[Path]:
@@ -143,29 +192,36 @@ def update_registry(
     registry_path: Path,
     package_name: Optional[str] = None,
     dry_run: bool = False,
-) -> bool:
+) -> Result[bool, RegistryError]:
     """Update registry.json with package information."""
     # Load current registry
-    registry = load_registry(registry_path)
-    if not registry:
-        return False
+    registry_result = load_registry(registry_path)
+    if isinstance(registry_result, Failure):
+        return registry_result
+
+    registry = registry_result.value
 
     # Find packages to update
     if package_name:
         package_dirs = [packages_dir / package_name]
         if not package_dirs[0].exists():
-            print(f"Package not found: {package_name}", file=sys.stderr)
-            return False
+            return Failure(
+                error=RegistryError(
+                    message=f"Package not found: {package_name}",
+                    file_path=str(package_dirs[0]),
+                )
+            )
     else:
         package_dirs = find_packages(packages_dir)
 
     # Update package information
     for package_dir in package_dirs:
-        manifest = load_manifest(package_dir)
-        if not manifest:
+        manifest_result = load_manifest(package_dir)
+        if isinstance(manifest_result, Failure):
             print(f"No manifest.yaml found in {package_dir.name}, skipping", file=sys.stderr)
             continue
 
+        manifest = manifest_result.value
         pkg_info = extract_package_info(manifest, package_dir)
         pkg_name = pkg_info["name"]
 
@@ -191,17 +247,21 @@ def update_registry(
     if dry_run:
         print("\n[DRY RUN] Would write to registry.json:")
         print(json.dumps(registry, indent=2))
-        return True
+        return Success(value=True)
 
     # Write updated registry
     try:
         with open(registry_path, "w") as f:
             json.dump(registry, f, indent=2)
         print(f"\nRegistry updated: {registry_path}")
-        return True
+        return Success(value=True)
     except Exception as e:
-        print(f"Error writing registry: {e}", file=sys.stderr)
-        return False
+        return Failure(
+            error=RegistryError(
+                message=f"Error writing registry: {e}",
+                file_path=str(registry_path),
+            )
+        )
 
 
 def main() -> int:
@@ -256,14 +316,20 @@ Examples:
         parser.print_help()
         return 1
 
-    success = update_registry(
+    result = update_registry(
         packages_dir=args.packages_dir,
         registry_path=args.registry,
         package_name=args.package,
         dry_run=args.dry_run,
     )
 
-    return 0 if success else 1
+    if isinstance(result, Success):
+        return 0
+    else:
+        print(f"Error: {result.error.message}", file=sys.stderr)
+        if result.error.file_path:
+            print(f"File: {result.error.file_path}", file=sys.stderr)
+        return 1
 
 
 if __name__ == "__main__":

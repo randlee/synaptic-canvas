@@ -9,6 +9,10 @@ from datetime import datetime
 import pytest
 import yaml
 
+# Add test-packages/harness to path for Result imports
+sys.path.insert(0, str(Path(__file__).parent.parent.parent / "test-packages" / "harness"))
+from result import Success, Failure
+
 # Add scripts directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "scripts"))
 
@@ -81,15 +85,16 @@ def test_load_manifest_success(temp_dir, sample_manifest):
         yaml.dump(sample_manifest, f)
 
     result = load_manifest(temp_dir)
-    assert result is not None
-    assert result["name"] == "sc-test-package"
-    assert result["version"] == "0.7.0"
+    assert isinstance(result, Success)
+    assert result.value["name"] == "sc-test-package"
+    assert result.value["version"] == "0.7.0"
 
 
 def test_load_manifest_missing(temp_dir):
     """Test loading when manifest doesn't exist."""
     result = load_manifest(temp_dir)
-    assert result is None
+    assert isinstance(result, Failure)
+    assert "not found" in result.error.message
 
 
 def test_load_manifest_invalid_yaml(temp_dir):
@@ -99,7 +104,8 @@ def test_load_manifest_invalid_yaml(temp_dir):
         f.write("invalid: yaml: content: :")
 
     result = load_manifest(temp_dir)
-    assert result is None
+    assert isinstance(result, Failure)
+    assert "YAML" in result.error.message or "manifest" in result.error.message
 
 
 def test_load_registry_success(temp_dir, sample_registry):
@@ -109,15 +115,16 @@ def test_load_registry_success(temp_dir, sample_registry):
         json.dump(sample_registry, f)
 
     result = load_registry(registry_path)
-    assert result is not None
-    assert result["name"] == "synaptic-canvas"
+    assert isinstance(result, Success)
+    assert result.value["name"] == "synaptic-canvas"
 
 
 def test_load_registry_missing(temp_dir):
     """Test loading when registry doesn't exist."""
     registry_path = temp_dir / "registry.json"
     result = load_registry(registry_path)
-    assert result is None
+    assert isinstance(result, Failure)
+    assert "not found" in result.error.message
 
 
 def test_load_registry_invalid_json(temp_dir):
@@ -127,7 +134,8 @@ def test_load_registry_invalid_json(temp_dir):
         f.write("not valid json {{{")
 
     result = load_registry(registry_path)
-    assert result is None
+    assert isinstance(result, Failure)
+    assert "JSON" in result.error.message or "registry" in result.error.message
 
 
 def test_extract_package_info(sample_manifest, temp_dir):
@@ -227,8 +235,9 @@ def test_update_registry_new_package(temp_dir, sample_manifest, sample_registry)
     with open(registry_path, "w") as f:
         json.dump(sample_registry, f)
 
-    success = update_registry(packages_dir, registry_path, dry_run=False)
-    assert success is True
+    result = update_registry(packages_dir, registry_path, dry_run=False)
+    assert isinstance(result, Success)
+    assert result.value is True
 
     with open(registry_path) as f:
         updated = json.load(f)
@@ -262,8 +271,9 @@ def test_update_registry_existing_package(temp_dir, sample_manifest, sample_regi
     with open(registry_path, "w") as f:
         json.dump(sample_registry, f)
 
-    success = update_registry(packages_dir, registry_path, dry_run=False)
-    assert success is True
+    result = update_registry(packages_dir, registry_path, dry_run=False)
+    assert isinstance(result, Success)
+    assert result.value is True
 
     with open(registry_path) as f:
         updated = json.load(f)
@@ -288,8 +298,9 @@ def test_update_registry_dry_run(temp_dir, sample_manifest, sample_registry):
 
     original_content = sample_registry.copy()
 
-    success = update_registry(packages_dir, registry_path, dry_run=True)
-    assert success is True
+    result = update_registry(packages_dir, registry_path, dry_run=True)
+    assert isinstance(result, Success)
+    assert result.value is True
 
     with open(registry_path) as f:
         after = json.load(f)
@@ -310,9 +321,10 @@ def test_update_registry_missing_manifest(temp_dir, sample_registry):
     with open(registry_path, "w") as f:
         json.dump(sample_registry, f)
 
-    success = update_registry(packages_dir, registry_path, dry_run=False)
+    result = update_registry(packages_dir, registry_path, dry_run=False)
     # Should still succeed (with warning), just skip the package
-    assert success is True
+    assert isinstance(result, Success)
+    assert result.value is True
 
     with open(registry_path) as f:
         updated = json.load(f)
@@ -340,10 +352,11 @@ def test_update_registry_specific_package(temp_dir, sample_manifest, sample_regi
         json.dump(sample_registry, f)
 
     # Update only package 1
-    success = update_registry(
+    result = update_registry(
         packages_dir, registry_path, package_name="sc-test-package-1", dry_run=False
     )
-    assert success is True
+    assert isinstance(result, Success)
+    assert result.value is True
 
     with open(registry_path) as f:
         updated = json.load(f)
@@ -361,10 +374,11 @@ def test_update_registry_nonexistent_package(temp_dir, sample_registry):
     with open(registry_path, "w") as f:
         json.dump(sample_registry, f)
 
-    success = update_registry(
+    result = update_registry(
         packages_dir,
         registry_path,
         package_name="sc-nonexistent",
         dry_run=False,
     )
-    assert success is False
+    assert isinstance(result, Failure)
+    assert "not found" in result.error.message
