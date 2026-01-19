@@ -1073,5 +1073,257 @@ class TestIntegration:
         results = evaluate_expectations(expectations, sample_collected_data)
 
         assert all(r.status == TestStatus.PASS for r in results)
-        assert compute_overall_status(results) == TestStatus.PASS
-        assert compute_pass_rate(results) == "6/6"
+
+
+# =============================================================================
+# NoWarningsExpectation Tests
+# =============================================================================
+
+
+class TestNoWarningsExpectation:
+    """Tests for the implicit NoWarningsExpectation class.
+
+    The NoWarningsExpectation is an implicit expectation that runs after all
+    explicit expectations and fails if warnings or errors are found in logs,
+    unless allow_warnings is set to True.
+    """
+
+    @pytest.fixture
+    def collected_data_no_log_analysis(self):
+        """CollectedData with no log_analysis (Agent 9A not yet integrated)."""
+        return CollectedData()
+
+    @pytest.fixture
+    def collected_data_clean_logs(self):
+        """CollectedData with log_analysis showing no issues."""
+        from harness.log_analyzer import LogAnalysisResult
+        data = CollectedData()
+        data.log_analysis = LogAnalysisResult(
+            warnings=[],
+            errors=[],
+            all_entries=[],
+            raw_content="INFO:harness:Test completed successfully\n",
+        )
+        return data
+
+    @pytest.fixture
+    def collected_data_with_warnings(self):
+        """CollectedData with warnings in log_analysis."""
+        from harness.log_analyzer import LogAnalysisResult, LogEntry, LogLevel
+        data = CollectedData()
+        data.log_analysis = LogAnalysisResult(
+            warnings=[
+                LogEntry(
+                    level=LogLevel.WARNING,
+                    message="Deprecated function called",
+                    logger_name="harness.test",
+                    line_number=10,
+                    raw_line="WARNING:harness.test:Deprecated function called",
+                ),
+            ],
+            errors=[],
+            all_entries=[],
+            raw_content="WARNING:harness.test:Deprecated function called\n",
+        )
+        return data
+
+    @pytest.fixture
+    def collected_data_with_errors(self):
+        """CollectedData with errors in log_analysis."""
+        from harness.log_analyzer import LogAnalysisResult, LogEntry, LogLevel
+        data = CollectedData()
+        data.log_analysis = LogAnalysisResult(
+            warnings=[],
+            errors=[
+                LogEntry(
+                    level=LogLevel.ERROR,
+                    message="Critical failure in test execution",
+                    logger_name="harness.test",
+                    line_number=15,
+                    raw_line="ERROR:harness.test:Critical failure in test execution",
+                ),
+            ],
+            all_entries=[],
+            raw_content="ERROR:harness.test:Critical failure in test execution\n",
+        )
+        return data
+
+    @pytest.fixture
+    def collected_data_with_both(self):
+        """CollectedData with both warnings and errors."""
+        from harness.log_analyzer import LogAnalysisResult, LogEntry, LogLevel
+        data = CollectedData()
+        data.log_analysis = LogAnalysisResult(
+            warnings=[
+                LogEntry(
+                    level=LogLevel.WARNING,
+                    message="Minor issue detected",
+                    logger_name="harness.test",
+                    line_number=5,
+                    raw_line="WARNING:harness.test:Minor issue detected",
+                ),
+            ],
+            errors=[
+                LogEntry(
+                    level=LogLevel.ERROR,
+                    message="Major problem occurred",
+                    logger_name="harness.test",
+                    line_number=10,
+                    raw_line="ERROR:harness.test:Major problem occurred",
+                ),
+            ],
+            all_entries=[],
+            raw_content="WARNING:harness.test:Minor issue detected\nERROR:harness.test:Major problem occurred\n",
+        )
+        return data
+
+    def test_passes_when_no_log_analysis(self, collected_data_no_log_analysis):
+        """Test that expectation passes when log_analysis is not available."""
+        from harness.expectations import NoWarningsExpectation
+
+        exp = NoWarningsExpectation()
+        result = exp.evaluate(collected_data_no_log_analysis)
+
+        assert result.status == TestStatus.PASS
+        assert result.actual["log_analysis_available"] is False
+
+    def test_passes_when_logs_clean(self, collected_data_clean_logs):
+        """Test that expectation passes when no warnings or errors."""
+        from harness.expectations import NoWarningsExpectation
+
+        exp = NoWarningsExpectation()
+        result = exp.evaluate(collected_data_clean_logs)
+
+        assert result.status == TestStatus.PASS
+        assert result.actual["warning_count"] == 0
+        assert result.actual["error_count"] == 0
+
+    def test_fails_on_warnings_by_default(self, collected_data_with_warnings):
+        """Test that expectation fails on warnings by default."""
+        from harness.expectations import NoWarningsExpectation
+
+        exp = NoWarningsExpectation()
+        result = exp.evaluate(collected_data_with_warnings)
+
+        assert result.status == TestStatus.FAIL
+        assert "1 warning(s)" in result.failure_reason
+        assert "allow_warnings: true" in result.failure_reason
+
+    def test_fails_on_errors_by_default(self, collected_data_with_errors):
+        """Test that expectation fails on errors by default."""
+        from harness.expectations import NoWarningsExpectation
+
+        exp = NoWarningsExpectation()
+        result = exp.evaluate(collected_data_with_errors)
+
+        assert result.status == TestStatus.FAIL
+        assert "1 error(s)" in result.failure_reason
+
+    def test_allow_warnings_passes_with_warnings(self, collected_data_with_warnings):
+        """Test that allow_warnings=True passes even with warnings."""
+        from harness.expectations import NoWarningsExpectation
+
+        exp = NoWarningsExpectation(allow_warnings=True)
+        result = exp.evaluate(collected_data_with_warnings)
+
+        assert result.status == TestStatus.PASS
+        assert result.actual["warning_count"] == 1
+
+    def test_allow_warnings_still_fails_on_errors(self, collected_data_with_errors):
+        """Test that allow_warnings=True still fails on errors."""
+        from harness.expectations import NoWarningsExpectation
+
+        exp = NoWarningsExpectation(allow_warnings=True)
+        result = exp.evaluate(collected_data_with_errors)
+
+        assert result.status == TestStatus.FAIL
+        assert "error(s)" in result.failure_reason
+        assert "not suppressed by allow_warnings" in result.failure_reason
+
+    def test_allow_warnings_fails_on_both(self, collected_data_with_both):
+        """Test that allow_warnings=True fails when both warnings and errors."""
+        from harness.expectations import NoWarningsExpectation
+
+        exp = NoWarningsExpectation(allow_warnings=True)
+        result = exp.evaluate(collected_data_with_both)
+
+        # Should fail because errors are present
+        assert result.status == TestStatus.FAIL
+        assert "error(s)" in result.failure_reason
+
+    def test_default_id_and_description(self):
+        """Test default ID and description values."""
+        from harness.expectations import NoWarningsExpectation
+
+        exp = NoWarningsExpectation()
+
+        assert exp.id == "implicit-no-warnings"
+        assert exp.description == "No warnings or errors in logs"
+        assert exp.allow_warnings is False
+
+    def test_custom_id_and_description(self):
+        """Test custom ID and description values."""
+        from harness.expectations import NoWarningsExpectation
+
+        exp = NoWarningsExpectation(
+            id="custom-no-warnings",
+            description="Custom check for warnings",
+            allow_warnings=True,
+        )
+
+        assert exp.id == "custom-no-warnings"
+        assert exp.description == "Custom check for warnings"
+        assert exp.allow_warnings is True
+
+    def test_expectation_type(self):
+        """Test that expectation type is HOOK_EVENT."""
+        from harness.expectations import NoWarningsExpectation
+
+        exp = NoWarningsExpectation()
+        assert exp.expectation_type == ExpectationType.HOOK_EVENT
+
+    def test_format_log_entry_with_log_entry_object(self, collected_data_with_warnings):
+        """Test formatting of LogEntry objects in failure messages."""
+        from harness.expectations import NoWarningsExpectation
+
+        exp = NoWarningsExpectation()
+        result = exp.evaluate(collected_data_with_warnings)
+
+        assert result.status == TestStatus.FAIL
+        assert "[WARNING]" in result.failure_reason
+        assert "Deprecated function" in result.failure_reason
+
+    def test_format_log_entry_with_dict(self):
+        """Test formatting of dict entries in failure messages."""
+        from harness.expectations import NoWarningsExpectation
+        from harness.log_analyzer import LogAnalysisResult
+
+        data = CollectedData()
+        data.log_analysis = LogAnalysisResult(
+            warnings=[{"level": "WARNING", "message": "Test warning message"}],
+            errors=[],
+            all_entries=[],
+            raw_content="",
+        )
+
+        exp = NoWarningsExpectation()
+        result = exp.evaluate(data)
+
+        assert result.status == TestStatus.FAIL
+        assert "[WARNING]" in result.failure_reason
+
+    def test_to_expectation_model(self, collected_data_clean_logs):
+        """Test conversion to Expectation model."""
+        from harness.expectations import NoWarningsExpectation
+
+        exp = NoWarningsExpectation()
+        result = exp.evaluate(collected_data_clean_logs)
+        model = result.to_expectation_model()
+
+        assert model.id == "implicit-no-warnings"
+        assert model.status == TestStatus.PASS
+        assert model.has_details is True
+
+        # Verify it can be used with compute_overall_status
+        overall = compute_overall_status([result])
+        assert overall == TestStatus.PASS

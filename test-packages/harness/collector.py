@@ -60,6 +60,7 @@ from .models import (
     ToolOutput,
     UserPromptSubmitEvent,
 )
+from .log_analyzer import LogAnalysisResult, analyze_logs
 from .schemas import TokenUsage
 
 logger = logging.getLogger(__name__)
@@ -180,6 +181,9 @@ class CollectedData:
     claude_cli_stdout: str = ""
     claude_cli_stderr: str = ""
 
+    # Log analysis results (warnings/errors from logs)
+    log_analysis: LogAnalysisResult | None = None
+
     @property
     def duration_ms(self) -> int | None:
         """Compute session duration in milliseconds."""
@@ -198,7 +202,14 @@ class CollectedData:
     @property
     def has_errors(self) -> bool:
         """Check if any errors were captured."""
-        return len(self.errors) > 0 or any(tc.is_error for tc in self.tool_calls)
+        has_tool_errors = len(self.errors) > 0 or any(tc.is_error for tc in self.tool_calls)
+        has_log_errors = self.log_analysis is not None and self.log_analysis.has_errors
+        return has_tool_errors or has_log_errors
+
+    @property
+    def has_log_issues(self) -> bool:
+        """Check if any warnings or errors were found in logs."""
+        return self.log_analysis is not None and self.log_analysis.has_issues
 
 
 # =============================================================================
@@ -789,6 +800,15 @@ class DataCollector:
 
             # Extract Claude responses
             data.claude_responses = extract_claude_responses(transcript_entries)
+
+        # Analyze logs from CLI output for warnings/errors
+        if data.claude_cli_stdout or data.claude_cli_stderr:
+            combined_output = ""
+            if data.claude_cli_stdout:
+                combined_output += data.claude_cli_stdout
+            if data.claude_cli_stderr:
+                combined_output += "\n" + data.claude_cli_stderr
+            data.log_analysis = analyze_logs(combined_output)
 
         logger.info(
             f"Collected data: {len(data.tool_calls)} tool calls, "

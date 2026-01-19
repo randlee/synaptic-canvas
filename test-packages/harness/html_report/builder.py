@@ -31,6 +31,8 @@ from .models import (
     TestCaseDisplayModel,
     PluginVerificationDisplayModel,
     PluginInstallResultDisplayModel,
+    LogIssuesDisplayModel,
+    LogIssueDisplayModel,
 )
 from .components import (
     HeaderBuilder,
@@ -324,6 +326,9 @@ class HTMLReportBuilder:
             is_embedded=False,
         )
 
+        # Build log issues data
+        log_issues = self._transform_log_issues(test, index)
+
         return TestCaseDisplayModel(
             test_index=index,
             test_id=test.test_id,
@@ -337,6 +342,7 @@ class HTMLReportBuilder:
             timeline=timeline,
             response=response,
             debug=debug,
+            log_issues=log_issues,
             assessment=assessment,
         )
 
@@ -379,6 +385,60 @@ class HTMLReportBuilder:
             expected_plugins=pv.expected_plugins,
             install_results=install_results,
             has_plugins=len(pv.expected_plugins) > 0,
+        )
+
+    def _transform_log_issues(
+        self,
+        test: "TestResult",
+        index: int
+    ) -> LogIssuesDisplayModel | None:
+        """Transform log analysis data to display model.
+
+        Args:
+            test: TestResult containing log analysis data
+            index: 1-based test index
+
+        Returns:
+            LogIssuesDisplayModel with warnings/errors, or None if no analysis data
+        """
+        # Check if log analysis data exists
+        if not test.log_analysis:
+            # Return empty model to show "no issues" section
+            return LogIssuesDisplayModel(
+                test_index=index,
+                issues=[],
+                allow_warnings=getattr(test, 'allow_warnings', False),
+            )
+
+        log_analysis = test.log_analysis
+
+        # Transform log entries to display models
+        issues = []
+
+        # Add warnings
+        for entry in log_analysis.warnings:
+            issues.append(LogIssueDisplayModel(
+                level="warning",
+                message=entry.message,
+                source=entry.logger_name if entry.logger_name else None,
+                line_number=entry.line_number if entry.line_number > 0 else None,
+                timestamp=entry.timestamp.strftime("%H:%M:%S.%f")[:-3] if entry.timestamp else None,
+            ))
+
+        # Add errors
+        for entry in log_analysis.errors:
+            issues.append(LogIssueDisplayModel(
+                level="error",
+                message=entry.message,
+                source=entry.logger_name if entry.logger_name else None,
+                line_number=entry.line_number if entry.line_number > 0 else None,
+                timestamp=entry.timestamp.strftime("%H:%M:%S.%f")[:-3] if entry.timestamp else None,
+            ))
+
+        return LogIssuesDisplayModel(
+            test_index=index,
+            issues=issues,
+            allow_warnings=getattr(test, 'allow_warnings', False),
         )
 
     def _transform_expectation(self, exp: "Expectation") -> ExpectationDisplayModel:

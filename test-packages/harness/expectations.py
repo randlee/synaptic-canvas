@@ -829,3 +829,210 @@ def compute_pass_rate(results: list[ExpectationResult]) -> str:
 
     passed = sum(1 for r in results if r.status == TestStatus.PASS)
     return f"{passed}/{len(results)}"
+
+
+# =============================================================================
+# Implicit Expectations (Auto-generated)
+# =============================================================================
+
+
+class NoWarningsExpectation(ExpectationEvaluator):
+    """Implicit expectation that no warnings or errors appear in logs.
+
+    This expectation runs AFTER all explicit expectations and fails the test
+    if any warnings or errors are detected in the log output, unless
+    `allow_warnings: true` is set in the test YAML.
+
+    The purpose is to prevent silent failures where a test appears to pass
+    but actually contains concerning log entries that indicate problems.
+
+    IMPORTANT: The `allow_warnings` flag should only be used with explicit
+    user approval. Suppressing warnings is strongly discouraged for production
+    tests and should only be used when:
+    - The warning is a known false positive
+    - The warning is being actively investigated in a separate issue
+    - The test is specifically designed to trigger warnings (e.g., error path testing)
+
+    Example YAML with override (requires user approval):
+        test_id: sc-startup-error-handling
+        test_name: Test error handling path
+        allow_warnings: true  # APPROVED: This test intentionally triggers warnings
+        execution:
+          prompt: "Run /sc-startup with invalid config"
+
+    Example:
+        # Default: fail on warnings
+        exp = NoWarningsExpectation(
+            id="implicit-no-warnings",
+            description="No warnings or errors in logs",
+        )
+
+        # Override: allow warnings (use sparingly!)
+        exp = NoWarningsExpectation(
+            id="implicit-no-warnings",
+            description="No warnings or errors in logs",
+            allow_warnings=True,
+        )
+    """
+
+    def __init__(
+        self,
+        id: str = "implicit-no-warnings",
+        description: str = "No warnings or errors in logs",
+        allow_warnings: bool = False,
+    ):
+        """Initialize the no-warnings expectation.
+
+        Args:
+            id: Unique expectation ID (default: 'implicit-no-warnings')
+            description: Human-readable description
+            allow_warnings: If True, warnings are allowed (test won't fail).
+                           This should only be used with explicit user approval.
+        """
+        super().__init__(id, description)
+        self.allow_warnings = allow_warnings
+
+    @property
+    def expectation_type(self) -> ExpectationType:
+        return ExpectationType.HOOK_EVENT  # Using HOOK_EVENT as closest match
+
+    def evaluate(self, data: CollectedData) -> ExpectationResult:
+        """Evaluate log analysis for warnings and errors.
+
+        This expectation checks the `log_analysis` attribute on CollectedData.
+        If log_analysis is not available (Agent 9A not yet implemented), the
+        expectation passes with a note that log analysis is not available.
+
+        Args:
+            data: CollectedData from a test session
+
+        Returns:
+            ExpectationResult indicating pass/fail based on log analysis
+        """
+        expected = {
+            "no_warnings": True,
+            "no_errors": True,
+            "allow_warnings": self.allow_warnings,
+        }
+
+        # Check if log_analysis is available
+        log_analysis = getattr(data, "log_analysis", None)
+
+        if log_analysis is None:
+            # Log analysis not available yet (Agent 9A pending)
+            # Pass the test but note that analysis is pending
+            return ExpectationResult(
+                id=self.id,
+                description=self.description,
+                type=self.expectation_type,
+                status=TestStatus.PASS,
+                expected=expected,
+                actual={"log_analysis_available": False},
+                matched_at=ExpectationMatch(
+                    sequence=1,  # Use 1 as minimum (model requires >= 1)
+                    timestamp=datetime.now(),
+                ),
+            )
+
+        # Check if there are issues
+        has_issues = getattr(log_analysis, "has_issues", False)
+        warnings = getattr(log_analysis, "warnings", [])
+        errors = getattr(log_analysis, "errors", [])
+
+        # Build actual values
+        actual = {
+            "warning_count": len(warnings),
+            "error_count": len(errors),
+            "has_issues": has_issues,
+        }
+
+        # If warnings are allowed, pass even if there are warnings
+        if self.allow_warnings:
+            if errors:
+                # Errors are never allowed, even with allow_warnings
+                return self._create_fail_result(
+                    expected=expected,
+                    failure_reason=(
+                        f"Found {len(errors)} error(s) in logs. "
+                        "Errors are not suppressed by allow_warnings. "
+                        f"First error: {self._format_log_entry(errors[0])}"
+                    ),
+                    actual=actual,
+                )
+            else:
+                # Warnings are allowed, pass even if present
+                return ExpectationResult(
+                    id=self.id,
+                    description=self.description,
+                    type=self.expectation_type,
+                    status=TestStatus.PASS,
+                    expected=expected,
+                    actual=actual,
+                    matched_at=ExpectationMatch(
+                        sequence=1,  # Use 1 as minimum (model requires >= 1)
+                        timestamp=datetime.now(),
+                    ),
+                )
+
+        # Default: fail on any warnings or errors
+        if has_issues:
+            # Build failure message
+            issues = []
+            if warnings:
+                issues.append(f"{len(warnings)} warning(s)")
+            if errors:
+                issues.append(f"{len(errors)} error(s)")
+
+            # Get first issue for detail
+            first_issue = None
+            if errors:
+                first_issue = self._format_log_entry(errors[0])
+            elif warnings:
+                first_issue = self._format_log_entry(warnings[0])
+
+            failure_reason = f"Found {', '.join(issues)} in logs."
+            if first_issue:
+                failure_reason += f" First issue: {first_issue}"
+            failure_reason += (
+                " Set 'allow_warnings: true' in test YAML to suppress "
+                "(requires user approval)."
+            )
+
+            return self._create_fail_result(
+                expected=expected,
+                failure_reason=failure_reason,
+                actual=actual,
+            )
+
+        # No issues found - pass
+        return self._create_pass_result(
+            expected=expected,
+            actual=actual,
+            sequence=1,  # Use 1 as minimum (model requires >= 1)
+            timestamp=datetime.now(),
+        )
+
+    def _format_log_entry(self, entry: Any) -> str:
+        """Format a log entry for display in failure message.
+
+        Args:
+            entry: LogEntry object or dict with log entry info
+
+        Returns:
+            Formatted string representation
+        """
+        if hasattr(entry, "message"):
+            # LogEntry object
+            level = getattr(entry, "level", "UNKNOWN")
+            # Handle enum values (LogLevel.WARNING -> "WARNING")
+            if hasattr(level, "value"):
+                level = level.value
+            message = entry.message
+            return f"[{level}] {message[:100]}..." if len(message) > 100 else f"[{level}] {message}"
+        elif isinstance(entry, dict):
+            level = entry.get("level", "UNKNOWN")
+            message = entry.get("message", str(entry))
+            return f"[{level}] {message[:100]}..." if len(message) > 100 else f"[{level}] {message}"
+        else:
+            msg = str(entry)
+            return msg[:100] + "..." if len(msg) > 100 else msg

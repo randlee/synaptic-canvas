@@ -213,6 +213,10 @@ class TestConfig:
         skip: Whether to skip this test
         skip_reason: Reason for skipping
         source_path: Path to the source YAML file
+        allow_warnings: If True, warnings in logs don't cause test failure.
+            This should only be used with explicit user approval.
+            IMPORTANT: Using this flag requires documenting the reason in
+            a comment and obtaining user approval. Errors are NEVER suppressed.
     """
     __test__ = False  # Prevent pytest collection
 
@@ -226,6 +230,7 @@ class TestConfig:
     skip: bool = False
     skip_reason: str = ""
     source_path: Path | None = None
+    allow_warnings: bool = False
 
     @classmethod
     def from_yaml(cls, yaml_path: Path) -> "TestConfig":
@@ -260,6 +265,7 @@ class TestConfig:
             skip=data.get("skip", False),
             skip_reason=data.get("skip_reason", ""),
             source_path=yaml_path,
+            allow_warnings=data.get("allow_warnings", False),
         )
 
     @property

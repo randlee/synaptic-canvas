@@ -258,6 +258,85 @@ pytest test-packages/fixtures/my-plugin/ -v --open-report
 
 ---
 
+## Log Warning Behavior
+
+### Default: Warnings Cause Test Failure
+
+By default, any warning or error in the test logs will cause the test to fail. This is intentional to ensure silent failures are caught immediately.
+
+```yaml
+# This test will FAIL if ANY warnings appear in logs
+test_id: my-plugin-001
+test_name: Basic invocation
+execution:
+  prompt: "/my-command --help"
+  model: haiku
+```
+
+**Why?** Silent failures are unacceptable. Warnings often indicate:
+- Deprecated API usage that will break in future versions
+- Configuration issues that cause subtle bugs
+- Resource leaks or performance problems
+- Security concerns
+
+### Overriding Warning Behavior (REQUIRES APPROVAL)
+
+The `allow_warnings: true` option can override this behavior, but it **requires explicit user approval** before merging.
+
+```yaml
+# REQUIRES EXPLICIT USER APPROVAL
+# This override MUST be documented and approved before merging
+test_id: deprecated-api-test-001
+test_name: Test deprecated API still works
+
+# APPROVAL REQUIRED - see documentation below
+allow_warnings: true
+
+execution:
+  prompt: "/deprecated-command"
+  model: haiku
+```
+
+### When Override is Appropriate
+
+| Scenario | Appropriate? | Notes |
+|----------|--------------|-------|
+| Testing deprecated API warning behavior | Yes | Document in comments |
+| Testing error handling paths | Yes | Explicitly expecting warnings |
+| Third-party library warnings | Maybe | Consider if fixable |
+| Production code | **NEVER** | Fix the warning instead |
+| Convenience/laziness | **NEVER** | Fix the warning instead |
+
+### Requesting Override Approval
+
+To use `allow_warnings: true`:
+
+1. **Document the reason** in test YAML comments explaining why warnings are expected
+2. **Get explicit user approval** before merging - tag reviewer in PR
+3. **Create follow-up issue** if the warning should eventually be fixed
+4. **Include approval metadata** in the test file
+
+**Example with proper documentation:**
+
+```yaml
+# APPROVED BY: @reviewer-username on 2026-01-18
+# REASON: Testing that deprecated API warning message is shown correctly
+# FOLLOW-UP: Issue #123 to migrate to new API by 2026-Q2
+allow_warnings: true
+
+test_id: deprecated-api-warning-test
+test_name: Verify deprecation warning shown
+description: Tests that using deprecated API shows proper warning message
+```
+
+### Overrides Without Approval Will Be Rejected
+
+- PRs with undocumented `allow_warnings: true` will be blocked
+- Reviewers should check for proper approval metadata
+- CI may automatically flag unapproved overrides
+
+---
+
 ## Related Documentation
 
 | Document | Location |

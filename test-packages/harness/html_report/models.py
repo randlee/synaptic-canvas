@@ -478,6 +478,84 @@ class DebugDisplayModel(BaseModel):
     has_side_effects: bool = False
 
 
+class LogIssueDisplayModel(BaseModel):
+    """Display model for a single log warning or error entry."""
+
+    level: str  # "warning" or "error"
+    message: str
+    source: str | None = None  # e.g., "pytest", "claude-cli", "hook"
+    line_number: int | None = None
+    timestamp: str | None = None
+
+    @computed_field
+    @property
+    def level_class(self) -> str:
+        """CSS class for the level indicator."""
+        return "log-warning" if self.level.lower() == "warning" else "log-error"
+
+    @computed_field
+    @property
+    def level_icon(self) -> str:
+        """HTML entity for level icon."""
+        # Warning triangle or X mark
+        return "&#9888;" if self.level.lower() == "warning" else "&#10060;"
+
+
+class LogIssuesDisplayModel(BaseModel):
+    """Display model for log warnings/errors section component."""
+
+    test_index: int
+    issues: list[LogIssueDisplayModel] = Field(default_factory=list)
+    allow_warnings: bool = False
+
+    @computed_field
+    @property
+    def warning_count(self) -> int:
+        """Count of warning-level issues."""
+        return sum(1 for i in self.issues if i.level.lower() == "warning")
+
+    @computed_field
+    @property
+    def error_count(self) -> int:
+        """Count of error-level issues."""
+        return sum(1 for i in self.issues if i.level.lower() == "error")
+
+    @computed_field
+    @property
+    def total_count(self) -> int:
+        """Total count of issues."""
+        return len(self.issues)
+
+    @computed_field
+    @property
+    def has_issues(self) -> bool:
+        """Whether there are any issues."""
+        return len(self.issues) > 0
+
+    @computed_field
+    @property
+    def summary_text(self) -> str:
+        """Summary text for the section header badge."""
+        if not self.issues:
+            return "No issues"
+        parts = []
+        if self.warning_count > 0:
+            parts.append(f"{self.warning_count} warning{'s' if self.warning_count != 1 else ''}")
+        if self.error_count > 0:
+            parts.append(f"{self.error_count} error{'s' if self.error_count != 1 else ''}")
+        return ", ".join(parts)
+
+    @computed_field
+    @property
+    def severity_class(self) -> str:
+        """CSS class based on highest severity."""
+        if self.error_count > 0:
+            return "log-severity-error"
+        if self.warning_count > 0:
+            return "log-severity-warning"
+        return "log-severity-clean"
+
+
 class AssessmentDisplayModel(BaseModel):
     """Display model for agent assessment section component."""
 
@@ -531,4 +609,5 @@ class TestCaseDisplayModel(BaseModel):
     timeline: TimelineDisplayModel
     response: ResponseDisplayModel
     debug: DebugDisplayModel
+    log_issues: LogIssuesDisplayModel | None = None
     assessment: AssessmentDisplayModel | None = None

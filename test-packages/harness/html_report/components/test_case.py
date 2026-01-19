@@ -20,6 +20,7 @@ from .reproduce import ReproduceBuilder
 from .debug import DebugBuilder
 from .assessment import AssessmentBuilder
 from .plugin_verification import PluginVerificationBuilder
+from .log_issues import LogIssuesBuilder
 
 
 class TestCaseBuilder(BaseBuilder[TestCaseDisplayModel]):
@@ -54,6 +55,7 @@ class TestCaseBuilder(BaseBuilder[TestCaseDisplayModel]):
         self.debug_builder = DebugBuilder(config)
         self.assessment_builder = AssessmentBuilder(config)
         self.plugin_verification_builder = PluginVerificationBuilder(config)
+        self.log_issues_builder = LogIssuesBuilder(config)
 
     def build(self, data: TestCaseDisplayModel) -> str:
         """Build complete test case HTML from display model.
@@ -83,6 +85,11 @@ class TestCaseBuilder(BaseBuilder[TestCaseDisplayModel]):
         response_html = self._build_response(data.response)
         debug_html = self.debug_builder.build(data.debug)
 
+        # Build log issues section if present (show even on pass for visibility)
+        log_issues_html = ""
+        if data.log_issues:
+            log_issues_html = self.log_issues_builder.build(data.log_issues)
+
         # Build assessment if present
         assessment_html = ""
         if data.assessment:
@@ -92,6 +99,8 @@ class TestCaseBuilder(BaseBuilder[TestCaseDisplayModel]):
 <p class="description">{self.escape(data.description)}</p>
 
 {status_banner_html}
+
+{log_issues_html}
 
 {metadata_html}
 

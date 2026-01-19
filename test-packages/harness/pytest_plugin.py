@@ -398,6 +398,25 @@ class YAMLTestItem(pytest.Item):
                     if expectation.status != TestStatus.PASS:
                         failures.append(expectation)
 
+                # Evaluate implicit NoWarningsExpectation AFTER all explicit expectations
+                # This ensures warnings/errors in logs cause test failure unless
+                # explicitly allowed via allow_warnings: true in test YAML
+                from .expectations import NoWarningsExpectation
+
+                no_warnings_exp = NoWarningsExpectation(
+                    id="implicit-no-warnings",
+                    description="No warnings or errors in logs",
+                    allow_warnings=self.test_config.allow_warnings,
+                )
+                no_warnings_result = no_warnings_exp.evaluate(self.collected_data)
+
+                # Always add to expectations list for reporting (even on pass)
+                # Convert ExpectationResult to Expectation model for consistency
+                self.evaluated_expectations.append(no_warnings_result.to_expectation_model())
+
+                if no_warnings_result.status != TestStatus.PASS:
+                    failures.append(no_warnings_result.to_expectation_model())
+
                 # Record duration
                 self.execution_duration_ms = (time.time() - start_time) * 1000
 
