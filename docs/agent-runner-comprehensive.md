@@ -33,7 +33,7 @@
 - ✅ **CLI Tool**: `tools/agent-runner.py` (validate, invoke commands)
 - ✅ **Library Module**: `src/agent_runner/runner.py` (importable Python API)
 - ✅ **Registry System**: `.claude/agents/registry.yaml` (21 agents registered)
-- ✅ **Validation**: `scripts/validate-agents.sh` (CI/pre-commit ready)
+- ✅ **Validation**: `scripts/validate-agents.py` (CI/pre-commit ready)
 - ✅ **Guidelines**: Normative in v0.5 architecture guidelines
 - ⚠️ **Adoption**: Limited (1 skill actively uses it; migration underway)
 
@@ -119,7 +119,7 @@ synaptic-canvas/
 ├── .claude/state/logs/
 │   └── agent-runner-*.json          # Audit records (gitignored)
 └── scripts/
-    └── validate-agents.sh           # CI validation (67 lines)
+    └── validate-agents.py           # CI validation (67 lines)
 ```
 
 ### Data Flow
@@ -217,7 +217,7 @@ skills:
 - **Future**: `^1.2.0`, `~1.2.0` (semver ranges)
 
 **Validation Timing:**
-- **CI/Pre-commit**: `scripts/validate-agents.sh` checks registry ↔ frontmatter
+- **CI/Pre-commit**: `scripts/validate-agents.py` checks registry ↔ frontmatter
 - **Runtime**: Agent Runner validates on every invocation
 
 ### 4. Timeout & Error Handling
@@ -365,7 +365,7 @@ Inputs:
 mkdir -p .claude/agents .claude/state/logs
 
 # Copy Agent Runner files
-cp -r src/agent_runner tools/agent-runner.py scripts/validate-agents.sh .
+cp -r src/agent_runner tools/agent-runner.py scripts/validate-agents.py .
 ```
 
 ### 2. Create Registry
@@ -404,7 +404,7 @@ Agent content here...
 
 ```bash
 # Validate registry ↔ frontmatter consistency
-bash scripts/validate-agents.sh
+python3 scripts/validate-agents.py
 
 # Test agent-runner CLI
 python3 tools/agent-runner.py validate --agent your-agent-name
@@ -416,7 +416,7 @@ Add to `.github/workflows/tests.yml`:
 
 ```yaml
 - name: Validate Agent Versions
-  run: bash scripts/validate-agents.sh
+  run: python3 scripts/validate-agents.py
 ```
 
 ---
@@ -613,7 +613,7 @@ skills:
 **`.github/workflows/tests.yml`:**
 ```yaml
 - name: Validate Agent Registry
-  run: bash scripts/validate-agents.sh
+  run: python3 scripts/validate-agents.py
 ```
 
 **What it checks:**
@@ -661,7 +661,7 @@ For each skill:
   - Specify version constraints (e.g., `"1.x"`)
 
 - [ ] **Test validation**
-  - Run `bash scripts/validate-agents.sh`
+  - Run `python3 scripts/validate-agents.py`
   - Fix any version mismatches
 
 - [ ] **Test invocation**
@@ -1048,7 +1048,7 @@ cat .claude/state/logs/agent-runner-*.json | jq .
 
 #### Run Full Validation
 ```bash
-bash scripts/validate-agents.sh
+python3 scripts/validate-agents.py
 ```
 
 ---
@@ -1112,7 +1112,7 @@ bash scripts/validate-agents.sh
 - **[Guidelines (v0.5)](./claude-code-skills-agents-guidelines-0.4.md)** - Architecture guidelines making Agent Runner normative
 - **[Agent Runner Quick Ref](./agent-runner.md)** - Original 111-line quick reference
 - **[Registry Schema](../.claude/agents/registry.yaml)** - Live registry with 21 agents
-- **[Validation Script](../scripts/validate-agents.sh)** - CI validation implementation
+- **[Validation Script](../scripts/validate-agents.py)** - CI validation implementation
 
 ---
 

@@ -865,13 +865,13 @@ def test_main_default_registry_path(temp_dir, monkeypatch, capsys):
 
     # Create registry at default location
     registry_path = temp_dir / ".claude" / "agents" / "registry.yaml"
-    # Use relative path from where registry is located
+    # Paths in registry are relative to current working directory (temp_dir)
     registry_data = {
-        "agents": {"test-agent": {"version": "1.0.0", "path": "test.md"}}
+        "agents": {"test-agent": {"version": "1.0.0", "path": ".claude/agents/test.md"}}
     }
     create_yaml_file(registry_path, registry_data)
 
-    # Create agent file in same directory as registry
+    # Create agent file
     agent_path = temp_dir / ".claude" / "agents" / "test.md"
     frontmatter = {
         "name": "test-agent",

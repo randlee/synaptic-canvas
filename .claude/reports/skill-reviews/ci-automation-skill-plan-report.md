@@ -722,7 +722,7 @@ ci_automation:
 ### Validation Testing
 - Verify registry.yaml alignment
 - Verify version frontmatter in all agents
-- Run scripts/validate-agents.sh
+- Run scripts/validate-agents.py
 ```
 
 ---

@@ -108,7 +108,7 @@ Located in `scripts/`:
 
 | Script | Purpose | Location |
 |--------|---------|----------|
-| `validate-agents.sh` | Validate agent frontmatter | `scripts/validate-agents.sh` |
+| `validate-agents.py` | Validate agent frontmatter | `scripts/validate-agents.py` |
 
 ---
 

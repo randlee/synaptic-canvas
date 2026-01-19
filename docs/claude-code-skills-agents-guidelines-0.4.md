@@ -649,7 +649,7 @@ Validation:
 
 ```bash
 #!/usr/bin/env bash
-# scripts/validate-agents.sh
+# scripts/validate-agents.py
 set -euo pipefail
 REG=".claude/agents/registry.yaml"
 
@@ -826,7 +826,7 @@ Guardrails:
 ├── state/                      # Optional: for file-based state
 │   └── .gitignore
 └── scripts/
-    └── validate-agents.sh      # Version validation script
+    └── validate-agents.py      # Version validation script
 ```
 
 ### Naming Conventions
