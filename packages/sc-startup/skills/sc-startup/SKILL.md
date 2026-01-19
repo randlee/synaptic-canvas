@@ -31,6 +31,8 @@ Thin orchestration for the `/sc-startup` command. Validates config, launches bac
 8. Read startup prompt + checklist (post-update). Aggregate task statuses in deterministic order; never abort on agent errors/timeouts.
 9. Emit concise report: prompt summary, checklist deltas, PR/worktree/CI outcomes, partial failures, and next steps.
 
+If `sc-checklist-status` reports `VALIDATION.INVALID_PATH` (path escape), explicitly flag it as a warning/issue in the final report (include the word "warning" or "issue").
+
 ## Config (`.claude/sc-startup.yaml`)
 - `startup-prompt` (string, required)
 - `check-list` (string, required)

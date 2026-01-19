@@ -32,11 +32,18 @@ Outcome: HTML report written per pair and opened in the default browser if diffe
 
 Outcome: The diff is split into multiple sub-agents, each handling up to 10 file pairs. The top-level agent aggregates counts and only returns non-identical diffs.
 
-## 5) PR diff (GitHub)
+## 5) Ignore whitespace and tune context
+
+```
+/sc-diff compare text with whitespace changes --files ./old.txt,./new.txt --mode line --ignore-whitespace --context 6
+```
+
+Outcome: Line diff ignores whitespace-only changes and uses 6 lines of context.
+
+## 6) PR diff (GitHub)
 
 Use the `sc-git-diff` agent to compare a PR by URL or number. It resolves base/head refs, collects changed files, and runs semantic diffs.
 
-## 6) PR diff (Azure DevOps)
+## 7) PR diff (Azure DevOps)
 
 `sc-git-diff` can use `az repos pr show` to resolve base/head refs. The resolved org/project/repo are cached in `.sc/roslyn-diff/settings.json`.
-

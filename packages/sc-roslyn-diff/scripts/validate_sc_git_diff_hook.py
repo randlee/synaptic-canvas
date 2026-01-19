@@ -35,4 +35,12 @@ if "max_pairs" in data and not isinstance(data["max_pairs"], int):
     print("'max_pairs' must be an int", file=sys.stderr)
     sys.exit(2)
 
+if "text_output" in data and not isinstance(data["text_output"], (str, bool)):
+    print("'text_output' must be a string path or true/false", file=sys.stderr)
+    sys.exit(2)
+
+if "git_output" in data and not isinstance(data["git_output"], (str, bool)):
+    print("'git_output' must be a string path or true/false", file=sys.stderr)
+    sys.exit(2)
+
 sys.exit(0)

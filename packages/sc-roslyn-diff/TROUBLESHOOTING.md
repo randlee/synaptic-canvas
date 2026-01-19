@@ -25,5 +25,4 @@
 ## Non-.NET file behavior
 
 - The default mode is `auto`, which falls back to line diffs for non-.NET files.
-- Use `--line` to force line diff for all files.
-
+- Use `--mode line` to force line diff for all files.

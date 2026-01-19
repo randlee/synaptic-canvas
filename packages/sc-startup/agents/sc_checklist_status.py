@@ -11,6 +11,8 @@ import re
 import subprocess
 import sys
 import tempfile
+import time
+from os import environ
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
@@ -29,6 +31,8 @@ class ChecklistParams(BaseModel):
 TODO_RE = re.compile(r"\b(TODO|FIXME|NOTE)\b[:\s-]*(.*)", re.IGNORECASE)
 MAX_FILE_BYTES = 512 * 1024
 MAX_FINDINGS = 40
+MAX_SCAN_FILES = 2000
+MAX_SCAN_SECONDS = 5
 
 
 def _error(code: str, message: str, recoverable: bool, suggested_action: str) -> Dict[str, Any]:
@@ -58,12 +62,51 @@ def _is_relative_to(path: Path, base: Path) -> bool:
 def _resolve_repo_relative(repo_root: Path, rel_path: str) -> Path:
     candidate = Path(rel_path)
     if candidate.is_absolute():
-        resolved = candidate.resolve()
-    else:
-        resolved = (repo_root / candidate).resolve()
-    if not _is_relative_to(resolved, repo_root):
-        raise ValueError("path escapes repo root")
-    return resolved
+        return candidate.resolve()
+    return (repo_root / candidate).resolve()
+
+
+def _load_settings_paths(repo_root: Path) -> List[Path]:
+    project_dir = environ.get("CLAUDE_PROJECT_DIR") or environ.get("CODEX_PROJECT_DIR") or str(repo_root)
+    codex_home = environ.get("CODEX_HOME")
+    paths = [
+        Path("~/.claude/settings.json").expanduser(),
+        Path(project_dir) / ".claude" / "settings.json",
+        Path("~/.codex/settings.json").expanduser(),
+        Path(project_dir) / ".codex" / "settings.json",
+    ]
+    if codex_home:
+        paths.append(Path(codex_home) / "settings.json")
+    return [p for p in paths if p.exists()]
+
+
+def _load_allowed_dirs(repo_root: Path) -> List[Path]:
+    allowed = {repo_root.resolve(), Path.cwd().resolve()}
+    project_dir = environ.get("CLAUDE_PROJECT_DIR") or environ.get("CODEX_PROJECT_DIR")
+    if project_dir:
+        allowed.add(Path(project_dir).expanduser().resolve())
+
+    for settings_path in _load_settings_paths(repo_root):
+        try:
+            data = json.loads(settings_path.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+        extra = data.get("permissions", {}).get("additionalDirectories", [])
+        if not isinstance(extra, list):
+            continue
+        for entry in extra:
+            if not isinstance(entry, str) or not entry.strip():
+                continue
+            allowed.add(Path(entry).expanduser().resolve())
+
+    return list(allowed)
+
+
+def _is_allowed_path(path: Path, allowed_dirs: List[Path]) -> bool:
+    for base in allowed_dirs:
+        if _is_relative_to(path, base):
+            return True
+    return False
 
 
 def _run_git(repo_root: Path, args: List[str], timeout: int = 10) -> Tuple[int, bytes, bytes]:
@@ -116,7 +159,10 @@ def _parse_checklist(lines: Iterable[str]) -> List[str]:
 
 def _scan_todos(repo_root: Path, files: List[Path]) -> List[str]:
     findings: List[str] = []
-    for path in files:
+    start = time.time()
+    for path in files[:MAX_SCAN_FILES]:
+        if time.time() - start >= MAX_SCAN_SECONDS:
+            break
         if len(findings) >= MAX_FINDINGS:
             break
         try:
@@ -165,10 +211,16 @@ def run(params: Dict[str, Any]) -> Dict[str, Any]:
     if not repo_root.is_dir():
         return _error("VALIDATION.INVALID_PATH", f"repo_root not found: {repo_root}", False, "Provide a valid repo_root")
 
-    try:
-        checklist_abs = _resolve_repo_relative(repo_root, parsed.checklist_path)
-    except ValueError:
-        return _error("VALIDATION.INVALID_PATH", "checklist_path escapes repo_root", False, "Use a repo-root-relative path")
+    checklist_abs = _resolve_repo_relative(repo_root, parsed.checklist_path)
+
+    allowed_dirs = _load_allowed_dirs(repo_root)
+    if not _is_allowed_path(checklist_abs, allowed_dirs):
+        return _error(
+            "VALIDATION.INVALID_PATH",
+            "Security warning: checklist_path is outside allowed directories",
+            False,
+            "Add the directory to permissions.additionalDirectories or use a repo-root-relative path",
+        )
 
     if not checklist_abs.is_file():
         return _error(

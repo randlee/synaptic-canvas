@@ -21,7 +21,11 @@ Invoked via Task tool or Agent Runner. Do not invoke directly.
 - `files`: string (comma-delimited list of 2 file paths)
 - `folders`: string (comma-delimited list of 2 folder paths)
 - `html`: boolean (default false)
-- `mode`: string (`auto` default, or `line`)
+- `mode`: string (`auto` default, `roslyn`, or `line`)
+- `ignore_whitespace`: boolean (default false)
+- `context_lines`: number (optional, default 3)
+- `text_output`: string|bool (optional; true writes `.sc/roslyn-diff/temp/diff-#.txt`)
+- `git_output`: string|bool (optional; true writes `.sc/roslyn-diff/temp/diff-#.patch`)
 - `allow_large`: boolean (default false)
 - `files_per_agent`: number (default 10)
 - `max_pairs`: number (default 100)
@@ -41,8 +45,10 @@ Invoked via Task tool or Agent Runner. Do not invoke directly.
 6) If `pair_count > files_per_agent`, split into batches and invoke sub-agents (same agent) via Task tool; aggregate results and counts.
 7) For each pair:
    - Run `roslyn-diff diff <old> <new> --json <json_path>`.
-   - If `html=true`, also pass `--html <html_path> --open`.
-   - Use `--mode auto` unless `mode=line`.
+   - If `html=true`, also pass `--html <html_path>` and open after a diff is found.
+   - Pass `--mode <mode>` when `mode` is not `auto`.
+   - Pass `--ignore-whitespace` and `--context <lines>` when set.
+   - If `text_output` or `git_output` are set, pass `--text <path>` or `--git <path>` (always write to disk, no stdout).
    - Read JSON output and attach to the result entry.
    - Set `is_identical` based on exit code (0 = identical, 1 = diff).
 
@@ -67,7 +73,14 @@ Return fenced JSON only.
         "is_identical": false,
         "mode": "auto",
         "html_path": "./diffs/Old__New.html",
-        "roslyn": { "$schema": "roslyn-diff-output-v1" },
+        "text_path": "./.sc/roslyn-diff/temp/diff-1.txt",
+        "git_path": "./.sc/roslyn-diff/temp/diff-1.patch",
+        "output_paths": {
+          "html": ["/abs/path/to/.sc/roslyn-diff/output/Old__New.html"],
+          "text": ["/abs/path/to/.sc/roslyn-diff/temp/diff-1.txt"],
+          "git": ["/abs/path/to/.sc/roslyn-diff/temp/diff-1.patch"]
+        },
+        "roslyn": { "$schema": "roslyn-diff-output-v2" },
         "warnings": []
       }
     ],

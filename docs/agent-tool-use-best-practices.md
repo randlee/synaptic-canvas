@@ -91,6 +91,67 @@ sys.exit(0)
 
 Exit code `2` blocks the tool and returns the error message to Claude.
 
+## Allowed Path Validation (Claude + Codex)
+
+When an agent needs to validate file paths, use the allowed directories from the runtime settings instead of assuming repo-root-only access.
+
+Key sources:
+- `cwd` (always allowed)
+- `$CLAUDE_PROJECT_DIR` (Claude project root)
+- `$CODEX_PROJECT_DIR` (Codex project root)
+- `~/.claude/settings.json`
+- `<project>/.claude/settings.json`
+- `~/.codex/settings.json`
+- `<project>/.codex/settings.json`
+- `$CODEX_HOME/settings.json` (if set)
+
+Example hook helper (stdlib only):
+
+```python
+#!/usr/bin/env python3
+import json
+import os
+import sys
+from pathlib import Path
+
+hook_input = json.load(sys.stdin)
+cwd = Path(hook_input.get("cwd") or os.getcwd()).resolve()
+project_dir = os.getenv("CLAUDE_PROJECT_DIR") or os.getenv("CODEX_PROJECT_DIR")
+codex_home = os.getenv("CODEX_HOME")
+
+allowed = {cwd}
+if project_dir:
+    allowed.add(Path(project_dir).expanduser().resolve())
+
+settings_paths = [
+    Path("~/.claude/settings.json").expanduser(),
+    Path(project_dir or "") / ".claude" / "settings.json",
+    Path("~/.codex/settings.json").expanduser(),
+    Path(project_dir or "") / ".codex" / "settings.json",
+]
+if codex_home:
+    settings_paths.append(Path(codex_home) / "settings.json")
+
+for path in settings_paths:
+    if not path.exists():
+        continue
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        continue
+    extra = data.get("permissions", {}).get("additionalDirectories", [])
+    if isinstance(extra, list):
+        for entry in extra:
+            if isinstance(entry, str) and entry.strip():
+                allowed.add(Path(entry).expanduser().resolve())
+
+def is_allowed(target: Path) -> bool:
+    target = target.resolve()
+    return any(target.is_relative_to(base) for base in allowed)
+```
+
+Use `is_allowed()` before reading/writing user-supplied paths and return a clear error if the path is outside the allowed set.
+
 ## Pydantic Validation (Recommended)
 
 Use pydantic for robust schema checks and clear error messages.

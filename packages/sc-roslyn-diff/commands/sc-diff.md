@@ -17,10 +17,28 @@ options:
     description: Compare two folders.
   - name: --html
     description: Generate and open HTML report if differences are found.
-  - name: --roslyn
-    description: Prefer semantic diff (default; auto fallback for non-.NET).
-  - name: --line
-    description: Force line-by-line diff.
+  - name: --mode
+    args:
+      - name: mode
+        description: Diff mode (auto, roslyn, line).
+    description: Choose diff mode (defaults to auto).
+  - name: --ignore-whitespace
+    description: Ignore whitespace-only changes.
+  - name: --context
+    args:
+      - name: lines
+        description: Line diff context count (default 3).
+    description: Set line diff context.
+  - name: --text
+    args:
+      - name: path
+        description: Optional text diff output path (defaults to .sc/roslyn-diff/temp/diff-#.txt).
+    description: Write a plain text diff to disk.
+  - name: --git
+    args:
+      - name: path
+        description: Optional git diff output path (defaults to .sc/roslyn-diff/temp/diff-#.patch).
+    description: Write a unified diff patch to disk.
   - name: --allow-large
     description: Allow batches above the default cap.
   - name: --files-per-agent

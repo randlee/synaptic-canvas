@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 from roslyn_diff_runner import (
+    AUTO_OUTPUT,
     DiffPair,
     aggregate_counts,
     build_pairs_for_folders,
@@ -37,11 +38,23 @@ def main() -> int:
     files = params.get("files")
     folders = params.get("folders")
     html = bool(params.get("html", False))
-    mode = "line" if params.get("mode") == "line" else "auto"
+    mode = str(params.get("mode") or "auto").lower()
+    if mode not in {"auto", "line", "roslyn"}:
+        mode = "auto"
+    ignore_whitespace = bool(params.get("ignore_whitespace", False))
+    context_lines = params.get("context_lines")
+    if context_lines is not None:
+        try:
+            context_lines = int(context_lines)
+        except (TypeError, ValueError):
+            write_json(_error("diff.invalid_input", "context_lines must be an integer", False, "Fix context_lines"))
+            return 1
     allow_large = bool(params.get("allow_large", False))
     files_per_agent = int(params.get("files_per_agent", 10))
     max_pairs = int(params.get("max_pairs", 100))
     repo_root = resolve_repo_root(params.get("repo_root"))
+    text_output = params.get("text_output")
+    git_output = params.get("git_output")
 
     if bool(files) == bool(folders):
         write_json(
@@ -126,8 +139,32 @@ def main() -> int:
         return 1
 
     output_dir = repo_root / ".sc" / "roslyn-diff" / "output"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    if text_output is True:
+        text_output = AUTO_OUTPUT
+    elif isinstance(text_output, str) and text_output.strip():
+        text_output = Path(text_output)
+    else:
+        text_output = None
+    if git_output is True:
+        git_output = AUTO_OUTPUT
+    elif isinstance(git_output, str) and git_output.strip():
+        git_output = Path(git_output)
+    else:
+        git_output = None
 
-    results = process_pairs(pairs, mode, html, output_dir, label_prefix, files_per_agent)
+    results = process_pairs(
+        pairs,
+        mode,
+        html,
+        output_dir,
+        label_prefix,
+        files_per_agent,
+        ignore_whitespace,
+        context_lines,
+        text_output,
+        git_output,
+    )
 
     for entry in results:
         entry["pair"]["old_path"] = normalize_display_path(Path(entry["pair"]["old_path"]), repo_root)
