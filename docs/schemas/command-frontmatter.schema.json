@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://synaptic-canvas.dev/schemas/command-frontmatter.schema.json",
+  "title": "Command Frontmatter Schema",
+  "description": "JSON Schema for Claude Code command frontmatter validation",
+  "type": "object",
+  "required": ["name", "version", "description"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*$",
+      "description": "Command name in kebab-case"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semantic version (X.Y.Z)"
+    },
+    "description": {
+      "type": "string",
+      "minLength": 10,
+      "description": "Brief description of the command"
+    },
+    "options": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "description"],
+        "properties": {
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "args": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": { "type": "string" },
+                "description": { "type": "string" }
+              }
+            }
+          }
+        }
+      },
+      "description": "Command-line options"
+    },
+    "allowed-tools": {
+      "type": "string",
+      "description": "Tools the command is allowed to use"
+    }
+  },
+  "additionalProperties": false
+}
