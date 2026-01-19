@@ -1,0 +1,307 @@
+"""
+Task Tool runner for Claude/Codex CLI.
+
+This is a lightweight, human-friendly wrapper that:
+- Validates Task Tool input payloads (pydantic)
+- Executes claude --print or codex exec
+- Returns Task Tool-compatible JSON output
+"""
+from __future__ import annotations
+
+import json
+import os
+import shutil
+import subprocess
+import sys
+import time
+import uuid
+from datetime import datetime, timezone
+from functools import lru_cache
+from pathlib import Path
+from typing import Literal, Optional
+
+from ai_cli.logging import write_log
+from ai_cli.task_tool import TaskToolInput, TaskToolOutputBackground, TaskToolOutputForeground
+
+RunnerType = Literal["claude", "codex"]
+
+_CODEX_MODEL_MAP = {
+    "codex": "gpt-5.2-codex",
+    "gpt-5.2-codex": "gpt-5.2-codex",
+    "codex-max": "gpt-5.1-codex-max",
+    "max": "gpt-5.1-codex-max",
+    "gpt-5.1-codex-max": "gpt-5.1-codex-max",
+    "codex-mini": "gpt-5.1-codex-mini",
+    "mini": "gpt-5.1-codex-mini",
+    "gpt-5.1-codex-mini": "gpt-5.1-codex-mini",
+    "gpt-5": "gpt-5.2",
+    "gpt-5.2": "gpt-5.2",
+    "gtp-5": "gpt-5.2",
+}
+
+_CLAUDE_MODELS = {"haiku", "sonnet", "opus"}
+
+
+@lru_cache(maxsize=None)
+def _check_runner_available(runner: RunnerType) -> str:
+    binary = "codex" if runner == "codex" else "claude"
+    if shutil.which(binary) is None:
+        raise FileNotFoundError(f"{binary} not found on PATH")
+    res = subprocess.run([binary, "--version"], text=True, capture_output=True)
+    if res.returncode != 0:
+        raise RuntimeError(res.stderr.strip() or f"{binary} --version failed")
+    return res.stdout.strip() or res.stderr.strip()
+
+
+def resolve_runner(preferred: Optional[str]) -> RunnerType:
+    if preferred in ("claude", "codex"):
+        _check_runner_available(preferred)
+        return preferred
+    try:
+        _check_runner_available("claude")
+        return "claude"
+    except Exception:
+        _check_runner_available("codex")
+        return "codex"
+
+
+def resolve_model(runner: RunnerType, model: Optional[str]) -> str:
+    if runner == "claude":
+        if model is None:
+            return "sonnet"
+        if model not in _CLAUDE_MODELS:
+            raise ValueError(f"Unsupported Claude model: {model}")
+        return model
+    if model is None:
+        return "gpt-5.2-codex"
+    resolved = _CODEX_MODEL_MAP.get(model)
+    if resolved is None:
+        raise ValueError(f"Unsupported Codex model: {model}")
+    return resolved
+
+
+def build_prompt(payload: TaskToolInput) -> str:
+    return "\n".join(
+        [
+            f"You are a specialized agent of type '{payload.subagent_type}'.",
+            f"Description: {payload.description}",
+            f"Task: {payload.prompt}",
+            "",
+            "Return your result as plain text.",
+        ]
+    )
+
+
+def _preview(text: str, limit: int = 200) -> str:
+    cleaned = " ".join(text.split())
+    if len(cleaned) <= limit:
+        return cleaned
+    return cleaned[: limit - 1] + "…"
+
+
+def run_sync(runner: RunnerType, model: str, prompt: str) -> str:
+    _check_runner_available(runner)
+    if runner == "codex":
+        cmd = ["codex", "exec", "--model", model, prompt]
+    else:
+        cmd = ["claude", "--model", model, "--print", prompt]
+    res = subprocess.run(cmd, text=True, capture_output=True)
+    if res.returncode != 0:
+        raise RuntimeError(res.stderr.strip() or f"{runner} exited with code {res.returncode}")
+    return res.stdout.strip()
+
+
+def _timestamp() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+def _git_branch() -> str:
+    try:
+        res = subprocess.run(
+            ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+            text=True,
+            capture_output=True,
+            check=True,
+        )
+        return res.stdout.strip()
+    except Exception:
+        return ""
+
+
+def _jsonl_entry(agent_id: str, role: str, content: str, parent_uuid: Optional[str]) -> dict:
+    entry_uuid = str(uuid.uuid4())
+    return {
+        "parentUuid": parent_uuid,
+        "isSidechain": False,
+        "userType": "user",
+        "cwd": os.getcwd(),
+        "sessionId": agent_id,
+        "version": "ai_cli-0.1",
+        "gitBranch": _git_branch(),
+        "agentId": agent_id,
+        "type": role,
+        "message": {"role": role, "content": content},
+        "uuid": entry_uuid,
+        "timestamp": _timestamp(),
+        "slug": "final" if role == "assistant" else "",
+        "requestId": entry_uuid if role == "assistant" else "",
+    }
+
+
+def _ensure_output_dir(path: Path) -> None:
+    path.mkdir(parents=True, exist_ok=True)
+
+
+def _default_output_dir(runner: RunnerType) -> Path:
+    if runner == "codex":
+        codex_home = os.environ.get("CODEX_HOME")
+        if codex_home:
+            return Path(codex_home) / "sessions"
+    return Path.cwd() / ".sc" / "sessions"
+
+
+def run_background(payload: TaskToolInput, runner: RunnerType, model: str, output_dir: Path) -> TaskToolOutputBackground:
+    _check_runner_available(runner)
+    agent_id = str(uuid.uuid4())
+    _ensure_output_dir(output_dir)
+    output_file = output_dir / f"{agent_id}.jsonl"
+    payload_file = output_dir / f"{agent_id}.input.json"
+
+    user_entry = _jsonl_entry(agent_id, "user", payload.prompt, None)
+    output_file.write_text(json.dumps(user_entry) + "\n", encoding="utf-8")
+    payload_file.write_text(payload.model_dump_json(), encoding="utf-8")
+    write_log(
+        {
+            "component": "ai_cli",
+            "event": "task_start",
+            "mode": "background",
+            "runner": runner,
+            "model": model,
+            "agentId": agent_id,
+            "output_file": str(output_file),
+            "prompt_preview": _preview(payload.prompt),
+            "params": payload.model_dump(),
+        }
+    )
+
+    cmd = [
+        sys.executable,
+        "-m",
+        "ai_cli.cli",
+        "run-child",
+        "--runner",
+        runner,
+        "--model",
+        model,
+        "--agent-id",
+        agent_id,
+        "--output-file",
+        str(output_file),
+        "--input-file",
+        str(payload_file),
+    ]
+    proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    if proc.poll() is not None:
+        raise RuntimeError("Failed to start background process")
+
+    return TaskToolOutputBackground(
+        output="Async agent launched successfully.",
+        agentId=agent_id,
+        output_file=str(output_file),
+    )
+
+
+def run_background_child_with_payload(
+    payload: TaskToolInput, runner: RunnerType, model: str, output_file: Path, agent_id: str
+) -> None:
+    start = time.monotonic()
+    try:
+        output = run_sync(runner, model, build_prompt(payload))
+        assistant_entry = _jsonl_entry(agent_id, "assistant", output, None)
+        write_log(
+            {
+                "component": "ai_cli",
+                "event": "task_end",
+                "mode": "background",
+                "runner": runner,
+                "model": model,
+                "agentId": agent_id,
+                "output_file": str(output_file),
+                "status": "success",
+                "duration_ms": int((time.monotonic() - start) * 1000),
+            }
+        )
+    except Exception as exc:
+        assistant_entry = _jsonl_entry(agent_id, "assistant", f"ERROR: {exc}", None)
+        assistant_entry["is_error"] = True
+        write_log(
+            {
+                "component": "ai_cli",
+                "event": "task_end",
+                "mode": "background",
+                "runner": runner,
+                "model": model,
+                "agentId": agent_id,
+                "output_file": str(output_file),
+                "status": "error",
+                "error": str(exc),
+                "duration_ms": int((time.monotonic() - start) * 1000),
+            }
+        )
+    with output_file.open("a", encoding="utf-8") as f:
+        f.write(json.dumps(assistant_entry) + "\n")
+
+
+def run_task(
+    payload: TaskToolInput,
+    runner: RunnerType,
+    model: str,
+    run_in_background: bool,
+    output_dir: Optional[Path] = None,
+) -> TaskToolOutputForeground | TaskToolOutputBackground:
+    if run_in_background:
+        return run_background(payload, runner, model, output_dir or _default_output_dir(runner))
+    agent_id = str(uuid.uuid4())
+    write_log(
+        {
+            "component": "ai_cli",
+            "event": "task_start",
+            "mode": "blocking",
+            "runner": runner,
+            "model": model,
+            "agentId": agent_id,
+            "prompt_preview": _preview(payload.prompt),
+            "params": payload.model_dump(),
+        }
+    )
+    start = time.monotonic()
+    try:
+        output = run_sync(runner, model, build_prompt(payload))
+        write_log(
+            {
+                "component": "ai_cli",
+                "event": "task_end",
+                "mode": "blocking",
+                "runner": runner,
+                "model": model,
+                "agentId": agent_id,
+                "status": "success",
+                "duration_ms": int((time.monotonic() - start) * 1000),
+            }
+        )
+        return TaskToolOutputForeground(output=output, agentId=agent_id)
+    except Exception as exc:
+        write_log(
+            {
+                "component": "ai_cli",
+                "event": "task_end",
+                "mode": "blocking",
+                "runner": runner,
+                "model": model,
+                "agentId": agent_id,
+                "status": "error",
+                "error": str(exc),
+                "duration_ms": int((time.monotonic() - start) * 1000),
+            }
+        )
+        raise

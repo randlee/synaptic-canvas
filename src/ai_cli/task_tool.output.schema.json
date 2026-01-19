@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["output", "agentId"],
+      "properties": {
+        "output": {
+          "type": "string",
+          "description": "The agent's completion message"
+        },
+        "agentId": {
+          "type": "string",
+          "description": "Unique identifier for the agent execution"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["output", "agentId", "output_file"],
+      "properties": {
+        "output": {
+          "type": "string",
+          "description": "Async agent launched successfully."
+        },
+        "agentId": {
+          "type": "string",
+          "description": "Unique identifier"
+        },
+        "output_file": {
+          "type": "string",
+          "description": "Path to JSONL file containing agent transcript"
+        }
+      }
+    }
+  ]
+}

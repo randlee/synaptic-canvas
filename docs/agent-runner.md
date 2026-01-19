@@ -14,6 +14,7 @@ It does not run the Task tool itself; it prepares the prompt and records an audi
 
 - `src/agent_runner/` — Python library module (`agent_runner.runner`)
 - `tools/agent-runner.py` — CLI wrapper
+- `tools/claude-agent-runner.py` — CLI runner for background-friendly agent execution (Claude or Codex)
 - `.claude/agents/registry.yaml` — source of truth for agents and (optionally) skill constraints
 - `scripts/validate-agents.sh` — CI/pre-commit validator for registry ↔ frontmatter
 
@@ -76,6 +77,26 @@ Then run the Task tool with the provided task_prompt and return the agent's fenc
 ```
 
 This keeps the skill readable while ensuring policy compliance and audit logs.
+
+## Background execution (Claude/Codex CLI)
+
+`tools/claude-agent-runner.py` validates JSON input with pydantic, loads the agent
+instructions, and runs the selected CLI runner:
+- `runner: "claude"` uses `claude --print`
+- `runner: "codex"` uses `codex exec`
+
+Example:
+
+```bash
+cat <<'JSON' | python3 tools/claude-agent-runner.py
+{
+  "agent": "sc-worktree-create",
+  "params": { "branch": "feature-x", "base": "main" },
+  "model": "haiku",
+  "runner": "claude"
+}
+JSON
+```
 
 ## Parallel guardrails
 
