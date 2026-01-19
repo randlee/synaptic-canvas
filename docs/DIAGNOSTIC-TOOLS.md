@@ -29,7 +29,7 @@
 
 ```bash
 # Quick system health check
-./scripts/audit-versions.sh
+./scripts/audit-versions.py
 
 # Compare versions across packages
 ./scripts/compare-versions.sh
@@ -62,7 +62,7 @@ git status
 git remote -v
 
 # 4. Run comprehensive version audit
-./scripts/audit-versions.sh --verbose
+./scripts/audit-versions.py --verbose
 
 # 5. Validate registry
 python3 docs/registries/nuget/validate-registry.py --verbose
@@ -74,15 +74,15 @@ python3 docs/registries/nuget/validate-registry.py --verbose
 
 ### Core Diagnostic Scripts
 
-#### 1. `scripts/audit-versions.sh`
+#### 1. `scripts/audit-versions.py`
 
 **Purpose:** Verify version consistency across packages and artifacts
 
-**Location:** `/Users/randlee/Documents/github/synaptic-canvas/scripts/audit-versions.sh`
+**Location:** `/Users/randlee/Documents/github/synaptic-canvas/scripts/audit-versions.py`
 
 **Usage:**
 ```bash
-./scripts/audit-versions.sh [OPTIONS]
+./scripts/audit-versions.py [OPTIONS]
 
 Options:
   --verbose        Show all checks (including passing checks)
@@ -100,7 +100,7 @@ Options:
 **Example Output (Success):**
 
 ```bash
-$ ./scripts/audit-versions.sh
+$ ./scripts/audit-versions.py
 
 === Synaptic Canvas Version Audit ===
 
@@ -123,7 +123,7 @@ All checks passed!
 **Example Output (With Errors):**
 
 ```bash
-$ ./scripts/audit-versions.sh
+$ ./scripts/audit-versions.py
 
 === Synaptic Canvas Version Audit ===
 
@@ -898,10 +898,10 @@ delay-run.py  generate.sh  validate-registry.sh
 **Check script execute permissions:**
 ```bash
 # Check audit script
-ls -l scripts/audit-versions.sh
+ls -l scripts/audit-versions.py
 
 # Expected output:
--rwxr-xr-x  1 user  staff  6045 Dec  2 09:22 scripts/audit-versions.sh
+-rwxr-xr-x  1 user  staff  6045 Dec  2 09:22 scripts/audit-versions.py
 #  ^^^  - Should have execute permission (x)
 ```
 
@@ -916,7 +916,7 @@ find scripts/ -name "*.sh" -type f ! -perm -u+x
 **Fix missing execute permissions:**
 ```bash
 # Add execute permission to specific script
-chmod +x scripts/audit-versions.sh
+chmod +x scripts/audit-versions.py
 
 # Add execute permission to all shell scripts
 find scripts/ -name "*.sh" -type f -exec chmod +x {} \;
@@ -1094,7 +1094,7 @@ worktree-create: 0.4.0
 **Verify artifact versions match package versions:**
 ```bash
 # Run comprehensive audit
-./scripts/audit-versions.sh
+./scripts/audit-versions.py
 
 # Or check manually for a specific package
 package_name="sc-delay-tasks"
@@ -1402,7 +1402,7 @@ cat .github/workflows/version-audit.yml
 **Test version audit locally (simulate CI):**
 ```bash
 # Run the same command that CI runs
-./scripts/audit-versions.sh
+./scripts/audit-versions.py
 
 # Check exit code
 if [ $? -eq 0 ]; then
@@ -1491,7 +1491,7 @@ du -sh packages/*
 **Measure audit script performance:**
 ```bash
 # Time the audit script
-time ./scripts/audit-versions.sh
+time ./scripts/audit-versions.py
 
 # Output:
 === Synaptic Canvas Version Audit ===
@@ -1653,7 +1653,7 @@ zsh 5.9 (x86_64-apple-darwin23.0.0)
 **Test POSIX compatibility:**
 ```bash
 # Run script with POSIX sh
-sh scripts/audit-versions.sh
+sh scripts/audit-versions.py
 
 # If it works, scripts are POSIX compatible
 ```
@@ -1664,9 +1664,9 @@ sh scripts/audit-versions.sh
 
 ### Audit Script JSON
 
-Currently, `audit-versions.sh` does not output JSON. Consider using `compare-versions.sh --json` for structured output.
+Currently, `audit-versions.py` does not output JSON. Consider using `compare-versions.sh --json` for structured output.
 
-**Feature request:** Add `--json` flag to `audit-versions.sh`
+**Feature request:** Add `--json` flag to `audit-versions.py`
 
 ---
 
@@ -1774,17 +1774,17 @@ python3 docs/registries/nuget/validate-registry.py --json
 
 **Problem:**
 ```bash
-$ ./scripts/audit-versions.sh
--bash: ./scripts/audit-versions.sh: Permission denied
+$ ./scripts/audit-versions.py
+-bash: ./scripts/audit-versions.py: Permission denied
 ```
 
 **Solution:**
 ```bash
 # Add execute permission
-chmod +x scripts/audit-versions.sh
+chmod +x scripts/audit-versions.py
 
 # Run again
-./scripts/audit-versions.sh
+./scripts/audit-versions.py
 ```
 
 ---
@@ -1843,7 +1843,7 @@ cd /path/to/synaptic-canvas
 
 **Problem:**
 ```bash
-$ ./scripts/audit-versions.sh
+$ ./scripts/audit-versions.py
 ✗ FAIL Command in sc-delay-tasks: Version mismatch: command=0.3.0, package=0.4.0
 ```
 
@@ -1853,7 +1853,7 @@ $ ./scripts/audit-versions.sh
 python3 scripts/sync-versions.py --package sc-delay-tasks --version 0.4.0
 
 # Verify fix
-./scripts/audit-versions.sh
+./scripts/audit-versions.py
 ```
 
 ---
@@ -2022,7 +2022,7 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: Check versions
-        run: ./scripts/audit-versions.sh
+        run: ./scripts/audit-versions.py
 
       - name: Check READMEs
         run: ./scripts/check-readmes.sh
@@ -2061,12 +2061,12 @@ jobs:
 ### Diagnostic Checklists
 
 **Pre-Commit Checklist:**
-- [ ] Run `./scripts/audit-versions.sh`
+- [ ] Run `./scripts/audit-versions.py`
 - [ ] Run `./scripts/compare-versions.sh`
 - [ ] Check no uncommitted version changes
 
 **Pre-Release Checklist:**
-- [ ] Run `./scripts/audit-versions.sh --verbose`
+- [ ] Run `./scripts/audit-versions.py --verbose`
 - [ ] Run `python3 docs/registries/nuget/validate-registry.py --verbose`
 - [ ] Verify all package versions match
 - [ ] Check all CHANGELOGs are updated
@@ -2104,8 +2104,8 @@ jobs:
 | Exit Code | Meaning | Tools |
 |-----------|---------|-------|
 | 0 | Success | All |
-| 1 | Validation failure | audit-versions.sh, compare-versions.sh, validate-registry.py |
-| 2 | Critical error | audit-versions.sh |
+| 1 | Validation failure | audit-versions.py, compare-versions.sh, validate-registry.py |
+| 2 | Critical error | audit-versions.py |
 
 ---
 

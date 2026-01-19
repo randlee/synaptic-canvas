@@ -81,7 +81,7 @@ Each package in `packages/*/` maintains its own documentation:
 ### Version Tracking
 
 - [Versioning Strategy](./versioning-strategy.md) - Complete versioning policy
-- [Version Audit Script](../scripts/audit-versions.sh) - Verify version consistency
+- [Version Audit Script](../scripts/audit-versions.py) - Verify version consistency
 - [Version Sync Script](../scripts/sync-versions.py) - Update versions bulk
 - [Version Compare Tool](../scripts/compare-versions.sh) - Show versions by package
 
@@ -100,7 +100,7 @@ Located in `scripts/`:
 
 | Script | Purpose | Usage |
 |--------|---------|-------|
-| `audit-versions.sh` | Verify version consistency across all artifacts | `./scripts/audit-versions.sh` |
+| `audit-versions.py` | Verify version consistency across all artifacts | `./scripts/audit-versions.py` |
 | `sync-versions.py` | Bulk update versions in packages | `python3 scripts/sync-versions.py --package NAME --version X.Y.Z` |
 | `compare-versions.sh` | Compare versions by package | `./scripts/compare-versions.sh --by-package` |
 
@@ -130,7 +130,7 @@ synaptic-canvas/
 │   ├── sc-manage/                 # Package 3
 │   └── sc-repomix-nuget/             # Package 4
 ├── scripts/                       # Utility scripts
-│   ├── audit-versions.sh
+│   ├── audit-versions.py
 │   ├── sync-versions.py
 │   ├── compare-versions.sh
 │   └── ...
@@ -168,7 +168,7 @@ python3 tools/sc-install.py install sc-delay-tasks --local
 
 **Checking version consistency:**
 ```bash
-./scripts/audit-versions.sh
+./scripts/audit-versions.py
 ```
 
 **Updating package version:**
@@ -203,7 +203,7 @@ pytest -q
 1. Update package version in `packages/*/manifest.yaml`
 2. Run `python3 scripts/sync-versions.py --package name --version X.Y.Z`
 3. Update `packages/*/CHANGELOG.md`
-4. Run `./scripts/audit-versions.sh` to verify
+4. Run `./scripts/audit-versions.py` to verify
 5. Commit with clear message
 6. Create git tag: `git tag v0.5.0`
 

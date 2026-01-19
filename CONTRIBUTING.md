@@ -347,7 +347,7 @@ Before committing, verify all versions are synchronized:
 
 ```bash
 # Audit all versions
-./scripts/audit-versions.sh
+./scripts/audit-versions.py
 
 # Compare versions by package
 ./scripts/compare-versions.sh --by-package
@@ -368,7 +368,7 @@ When ready to release a new version:
 3. **Update CHANGELOG.md** with release notes
 4. **Run audit** to verify consistency:
    ```bash
-   ./scripts/audit-versions.sh
+   ./scripts/audit-versions.py
    ```
 5. **Commit with clear message**:
    ```bash

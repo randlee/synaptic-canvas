@@ -167,7 +167,7 @@ Before making any version changes, audit the current state using provided script
 
 ```bash
 # Check all version consistency
-./scripts/audit-versions.sh
+./scripts/audit-versions.py
 
 # Expected output on success:
 # === Audit Results ===
@@ -182,7 +182,7 @@ Before making any version changes, audit the current state using provided script
 
 ```bash
 # See each check being performed
-./scripts/audit-versions.sh --verbose
+./scripts/audit-versions.py --verbose
 
 # Output shows:
 # ✓ Command: delay.md (v0.4.0)
@@ -473,7 +473,7 @@ grep "^version:" packages/sc-delay-tasks/commands/delay.md
 grep "^version:" packages/sc-git-worktree/manifest.yaml
 
 # Step 4: Run audit to confirm consistency
-./scripts/audit-versions.sh
+./scripts/audit-versions.py
 
 # Step 5: Review diff before committing
 git diff packages/sc-delay-tasks/manifest.yaml | head -20
@@ -489,12 +489,12 @@ Verifies that all artifacts have versions and they match their package versions.
 
 **Quick check:**
 ```bash
-./scripts/audit-versions.sh
+./scripts/audit-versions.py
 ```
 
 **Detailed check:**
 ```bash
-./scripts/audit-versions.sh --verbose
+./scripts/audit-versions.py --verbose
 ```
 
 **What it checks:**
@@ -716,7 +716,7 @@ python3 scripts/sync-versions.py --all --version 1.0.0
 python3 scripts/sync-versions.py --marketplace --version 1.0.0
 
 # Step 5: Verify everything is consistent
-./scripts/audit-versions.sh
+./scripts/audit-versions.py
 
 # Step 6: Commit and push
 git add -A
@@ -825,7 +825,7 @@ This release is backward compatible with existing installations."
 git checkout -b hotfix/sc-git-worktree-0.4.1
 vim packages/sc-git-worktree/CHANGELOG.md  # Add [0.4.1] entry
 python3 scripts/sync-versions.py --package sc-git-worktree --version 0.4.1
-./scripts/audit-versions.sh
+./scripts/audit-versions.py
 git add packages/sc-git-worktree/
 git commit -m "fix(release): sc-git-worktree v0.4.1 - Worktree cleanup fix"
 git push origin hotfix/sc-git-worktree-0.4.1
@@ -843,7 +843,7 @@ git push origin main v0.4.1-sc-git-worktree
 git checkout -b feature/sc-delay-tasks-0.5
 vim packages/sc-delay-tasks/CHANGELOG.md    # Add [0.5.0] entry
 python3 scripts/sync-versions.py --package sc-delay-tasks --version 0.5.0
-./scripts/audit-versions.sh
+./scripts/audit-versions.py
 git add packages/sc-delay-tasks/
 git commit -m "feat(release): sc-delay-tasks v0.5.0 - New agents and improvements"
 git push origin feature/sc-delay-tasks-0.5
@@ -923,7 +923,7 @@ python3 scripts/sync-versions.py --package sc-manage --version 0.5.1
 python3 scripts/sync-versions.py --package sc-repomix-nuget --version 0.5.1
 
 # Step 5: Verify all changes
-./scripts/audit-versions.sh
+./scripts/audit-versions.py
 
 # Step 6: Commit with clear security message
 git add -A
@@ -1009,7 +1009,7 @@ dependencies:
 
 ```bash
 # Check for unmet dependencies after installation
-./scripts/audit-versions.sh
+./scripts/audit-versions.py
 # Will detect if required packages are missing or outdated
 ```
 
@@ -1488,7 +1488,7 @@ git push origin main --follow-tags
 - [ ] All commits follow commit message conventions
 - [ ] CHANGELOG.md updated with release notes
 - [ ] Version synced via `sync-versions.py`
-- [ ] Audit passes: `./scripts/audit-versions.sh`
+- [ ] Audit passes: `./scripts/audit-versions.py`
 - [ ] All tests pass locally
 
 **PR description template:**
@@ -1502,7 +1502,7 @@ git push origin main --follow-tags
 - Fixed timeout issue in delay-poll
 
 ### Verification
-- [x] audit-versions.sh passes
+- [x] audit-versions.py passes
 - [x] compare-versions.sh shows consistency
 - [x] CHANGELOG.md updated
 - [x] All artifacts updated via sync-versions.py
@@ -1593,7 +1593,7 @@ git commit -m "fix: resolve timeout issue in delay-poll"
 python3 scripts/sync-versions.py --package sc-delay-tasks --version 0.5.0
 
 # 8. Verify sync worked
-./scripts/audit-versions.sh
+./scripts/audit-versions.py
 # Should show all sc-delay-tasks artifacts at 0.5.0
 
 # 9. Review what changed
@@ -1621,7 +1621,7 @@ Release new features and bug fixes for sc-delay-tasks.
 - Fixed memory leak in long-running delays
 
 ## Verification
-- audit-versions.sh: PASSED
+- audit-versions.py: PASSED
 - compare-versions.sh: PASSED
 - Manual testing: PASSED
 
@@ -1709,7 +1709,7 @@ git commit -m "fix: add configurable timeout to status check in cleanup"
 python3 scripts/sync-versions.py --package sc-git-worktree --version 0.4.1
 
 # 6. Verify
-./scripts/audit-versions.sh
+./scripts/audit-versions.py
 
 # 7. Commit version sync
 git add packages/sc-git-worktree/
@@ -1730,7 +1730,7 @@ Patch release with critical bug fixes.
 - Added configurable timeout to status check in cleanup
 
 ## Verification
-- audit-versions.sh: PASSED
+- audit-versions.py: PASSED
 - Tested on Windows and Linux: PASSED
 - Backward compatible: YES
 
@@ -1799,7 +1799,7 @@ python3 scripts/sync-versions.py --all --version 1.0.0
 python3 scripts/sync-versions.py --marketplace --version 1.0.0
 
 # 7. Verify all versions consistent
-./scripts/audit-versions.sh
+./scripts/audit-versions.py
 
 # 8. Check detailed version comparison
 ./scripts/compare-versions.sh --verbose
@@ -1877,7 +1877,7 @@ Production release of Synaptic Canvas v1.0.0.
 - Version synchronization
 
 ## Verification
-- [x] audit-versions.sh: PASSED
+- [x] audit-versions.py: PASSED
 - [x] compare-versions.sh: PASSED
 - [x] Full regression testing: PASSED
 - [x] Production readiness checklist: PASSED
@@ -2007,7 +2007,7 @@ python3 scripts/sync-versions.py --package sc-manage --version 0.5.1
 python3 scripts/sync-versions.py --package sc-repomix-nuget --version 0.5.1
 
 # 5. Verify all changes
-./scripts/audit-versions.sh
+./scripts/audit-versions.py
 
 # 6. Review what changed
 git status
@@ -2132,7 +2132,7 @@ git push origin --delete hotfix/CVE-2025-XXXXX
 
 ```yaml
 # Audit versions consistency
-- ./scripts/audit-versions.sh --verbose
+- ./scripts/audit-versions.py --verbose
 
 # Compare versions across packages
 - ./scripts/compare-versions.sh --by-package
@@ -2145,7 +2145,7 @@ git push origin --delete hotfix/CVE-2025-XXXXX
 ```
 
 **Success Criteria:**
-- [ ] `audit-versions.sh` exits with code 0 (all checks passed)
+- [ ] `audit-versions.py` exits with code 0 (all checks passed)
 - [ ] No version mismatches detected
 - [ ] All manifests valid YAML
 - [ ] All packages have CHANGELOG.md
@@ -2157,14 +2157,14 @@ If CI/CD fails:
 ```bash
 # CI fails because version mismatch detected
 # Fix locally first:
-./scripts/audit-versions.sh  # See which check failed
+./scripts/audit-versions.py  # See which check failed
 
 # Fix the issue
 vim packages/sc-delay-tasks/commands/delay.md
 # Change version to match manifest
 
 # Re-run audit
-./scripts/audit-versions.sh
+./scripts/audit-versions.py
 
 # Commit fix
 git add -A
@@ -2185,7 +2185,7 @@ Set up local git hooks to catch version issues before pushing:
 # Pre-commit hook: Verify versions are consistent
 
 echo "Running version audit..."
-./scripts/audit-versions.sh
+./scripts/audit-versions.py
 
 if [ $? -ne 0 ]; then
   echo "❌ Version audit failed. Fix issues before committing."
@@ -2206,7 +2206,7 @@ chmod +x .git/hooks/pre-commit
 mkdir -p .git/hooks
 cat > .git/hooks/pre-commit << 'EOF'
 #!/bin/bash
-./scripts/audit-versions.sh || exit 1
+./scripts/audit-versions.py || exit 1
 EOF
 chmod +x .git/hooks/pre-commit
 ```
@@ -2252,7 +2252,7 @@ python3 scripts/generate-changelog.py --package sc-delay-tasks --version 0.5.0
 ```markdown
 # Checklist
 
-- [ ] audit-versions.sh passes locally
+- [ ] audit-versions.py passes locally
 - [ ] compare-versions.sh shows consistency
 - [ ] CHANGELOG.md updated
 - [ ] version synced via sync-versions.py
@@ -2362,7 +2362,7 @@ git checkout feature/branch
 # Fix whatever caused the issue
 
 # 3. Re-run verification
-./scripts/audit-versions.sh
+./scripts/audit-versions.py
 ./scripts/compare-versions.sh
 
 # 4. Retry the release process from the beginning
@@ -2626,7 +2626,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ```bash
 # Audit versions before release
-./scripts/audit-versions.sh
+./scripts/audit-versions.py
 
 # Compare versions across packages
 ./scripts/compare-versions.sh --verbose
@@ -2641,7 +2641,7 @@ python3 scripts/sync-versions.py --marketplace --version 1.0.0
 python3 scripts/sync-versions.py --all --version 1.0.0 --commit
 
 # Verify everything
-./scripts/audit-versions.sh && echo "✅ Ready to release"
+./scripts/audit-versions.py && echo "✅ Ready to release"
 ```
 
 ### Version Bump Decision Tree
@@ -2667,7 +2667,7 @@ Are there bug fixes?
 - [ ] All tests pass
 - [ ] CHANGELOG updated with release notes
 - [ ] Version numbers determined using SemVer guidelines
-- [ ] `./scripts/audit-versions.sh` passes
+- [ ] `./scripts/audit-versions.py` passes
 - [ ] `./scripts/compare-versions.sh` shows consistency
 
 **During Release:**
@@ -2695,7 +2695,7 @@ For issues or questions about the version system:
 
 1. Check this guide and existing documentation
 2. Review existing releases in git history: `git log --oneline | grep -i release`
-3. Run audit scripts to diagnose issues: `./scripts/audit-versions.sh --verbose`
+3. Run audit scripts to diagnose issues: `./scripts/audit-versions.py --verbose`
 4. Check CI/CD logs for validation errors
 5. Contact project maintainers with specific issues
 

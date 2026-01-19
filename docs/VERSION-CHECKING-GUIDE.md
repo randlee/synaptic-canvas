@@ -636,10 +636,10 @@ done
 
 ### Comprehensive Artifact Version Check
 
-**Use audit-versions.sh for complete check:**
+**Use audit-versions.py for complete check:**
 
 ```bash
-./scripts/audit-versions.sh --verbose
+./scripts/audit-versions.py --verbose
 ```
 
 **Output (example with all checks):**
@@ -769,7 +769,7 @@ packages/sc-git-worktree/manifest.yaml:        version: 0.4.0
 
 ```bash
 # Check all rules
-./scripts/audit-versions.sh
+./scripts/audit-versions.py
 ```
 
 ---
@@ -799,13 +799,13 @@ packages/sc-git-worktree/manifest.yaml:        version: 0.4.0
 
 ```bash
 # Standard audit
-./scripts/audit-versions.sh
+./scripts/audit-versions.py
 
 # With verbose output
-./scripts/audit-versions.sh --verbose
+./scripts/audit-versions.py --verbose
 
 # With automatic fixes for warnings
-./scripts/audit-versions.sh --fix-warnings
+./scripts/audit-versions.py --fix-warnings
 ```
 
 ---
@@ -959,7 +959,7 @@ for pkg in packages/*/; do
 done
 
 echo ""
-echo "=== Use './scripts/audit-versions.sh' for complete check ==="
+echo "=== Use './scripts/audit-versions.py' for complete check ==="
 ```
 
 **Usage:**
@@ -1058,7 +1058,7 @@ echo ""
 
 # 2. Check all versions are consistent
 echo "Running version audit..."
-./scripts/audit-versions.sh
+./scripts/audit-versions.py
 echo ""
 
 # 3. Check registry is valid
@@ -1180,7 +1180,7 @@ grep "^version:" packages/sc-delay-tasks/commands/delay.md
 python3 scripts/sync-versions.py --package sc-delay-tasks --version 0.4.0
 
 # Verify fix
-./scripts/audit-versions.sh
+./scripts/audit-versions.py
 ```
 
 ---
@@ -1371,8 +1371,8 @@ jobs:
 
       - name: Run version audit
         run: |
-          chmod +x scripts/audit-versions.sh
-          ./scripts/audit-versions.sh
+          chmod +x scripts/audit-versions.py
+          ./scripts/audit-versions.py
 
       - name: Compare versions
         run: |
@@ -1398,7 +1398,7 @@ jobs:
 echo "Running pre-commit version checks..."
 
 # Run version audit
-./scripts/audit-versions.sh
+./scripts/audit-versions.py
 
 if [ $? -ne 0 ]; then
     echo ""
@@ -1429,7 +1429,7 @@ chmod +x .git/hooks/pre-commit
 crontab -e
 
 # Add line:
-0 9 * * * cd /path/to/synaptic-canvas && ./scripts/audit-versions.sh >> /var/log/version-audit.log 2>&1
+0 9 * * * cd /path/to/synaptic-canvas && ./scripts/audit-versions.py >> /var/log/version-audit.log 2>&1
 ```
 
 ---
@@ -1449,7 +1449,7 @@ crontab -e
    python3 scripts/sync-versions.py --package PACKAGE_NAME --version NEW_VERSION
 
    # Verify
-   ./scripts/audit-versions.sh
+   ./scripts/audit-versions.py
 
    # Commit
    git add packages/PACKAGE_NAME/
@@ -1459,7 +1459,7 @@ crontab -e
 3. **Before creating a release:**
    ```bash
    # Run full audit
-   ./scripts/audit-versions.sh --verbose
+   ./scripts/audit-versions.py --verbose
 
    # Validate registry
    python3 docs/registries/nuget/validate-registry.py
@@ -1507,7 +1507,7 @@ crontab -e
 ./scripts/compare-versions.sh
 
 # Run version audit
-./scripts/audit-versions.sh
+./scripts/audit-versions.py
 
 # Update package version
 python3 scripts/sync-versions.py --package NAME --version X.Y.Z
