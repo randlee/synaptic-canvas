@@ -31,6 +31,7 @@ from harness.collector import (
     parse_trace_file,
     parse_transcript,
 )
+from harness.log_analyzer import LogAnalysisResult, LogEntry, LogLevel
 from harness.models import TimelineEntryType
 
 
@@ -598,6 +599,36 @@ class TestCollectedData:
         """Test has_errors when no errors."""
         data = CollectedData()
         assert data.has_errors is False
+
+    def test_has_errors_from_log_analysis(self):
+        """Test has_errors when log analysis has errors."""
+        data = CollectedData(
+            log_analysis=LogAnalysisResult(
+                errors=[LogEntry(level=LogLevel.ERROR, message="Log error")]
+            )
+        )
+        assert data.has_errors is True
+
+    def test_has_log_issues_with_warnings(self):
+        """Test has_log_issues when log analysis has warnings."""
+        data = CollectedData(
+            log_analysis=LogAnalysisResult(
+                warnings=[LogEntry(level=LogLevel.WARNING, message="Log warning")]
+            )
+        )
+        assert data.has_log_issues is True
+        # Warnings alone don't set has_errors
+        assert data.has_errors is False
+
+    def test_has_log_issues_false_when_no_analysis(self):
+        """Test has_log_issues is False when no log analysis."""
+        data = CollectedData()
+        assert data.has_log_issues is False
+
+    def test_has_log_issues_false_when_empty_analysis(self):
+        """Test has_log_issues is False when log analysis is empty."""
+        data = CollectedData(log_analysis=LogAnalysisResult())
+        assert data.has_log_issues is False
 
 
 class TestDataCollector:

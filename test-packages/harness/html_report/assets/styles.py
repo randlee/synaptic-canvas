@@ -984,6 +984,192 @@ a.file-link.vscode .link-icon {
   color: #007acc;
 }"""
 
+# Log issues (warnings/errors) section styles
+CSS_LOG_ISSUES = """.log-issues-section {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+.log-issues-section > summary {
+  padding: 12px 16px;
+  cursor: pointer;
+  font-weight: 600;
+  background: var(--bg-subtle);
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.log-issues-section[open] > summary {
+  border-bottom: 1px solid var(--border);
+  border-radius: 8px 8px 0 0;
+}
+
+/* Severity-based section borders */
+.log-issues-section.log-severity-error {
+  border-color: var(--fail);
+  border-width: 2px;
+}
+.log-issues-section.log-severity-warning {
+  border-color: #d97706;
+  border-width: 2px;
+}
+.log-issues-section.log-severity-clean {
+  border-color: var(--border);
+}
+
+/* Summary badges */
+.log-badges {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+  margin-right: 12px;
+}
+.log-count-badge {
+  font-size: 0.8rem;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-weight: 600;
+}
+.log-error-badge {
+  background: var(--fail-bg);
+  color: var(--fail);
+}
+.log-warning-badge {
+  background: #fef3c7;
+  color: #b45309;
+}
+.log-clean-badge {
+  background: var(--pass-bg);
+  color: var(--pass);
+}
+
+/* Issue list */
+.log-issues-list {
+  padding: 8px 0;
+}
+
+/* Individual issue items */
+.log-issue-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  margin-bottom: 8px;
+  background: white;
+}
+.log-issue-item.log-warning {
+  border-left: 4px solid #d97706;
+  background: #fffbeb;
+}
+.log-issue-item.log-error {
+  border-left: 4px solid var(--fail);
+  background: #fef2f2;
+}
+
+/* Issue icon */
+.log-issue-icon {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+  width: 20px;
+  text-align: center;
+}
+.log-issue-item.log-warning .log-issue-icon {
+  color: #d97706;
+}
+.log-issue-item.log-error .log-issue-icon {
+  color: var(--fail);
+}
+
+/* Issue level label */
+.log-issue-level {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+.log-issue-item.log-warning .log-issue-level {
+  background: #fef3c7;
+  color: #b45309;
+}
+.log-issue-item.log-error .log-issue-level {
+  background: var(--fail-bg);
+  color: var(--fail);
+}
+
+/* Source badge */
+.log-source-badge {
+  font-size: 0.75rem;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: var(--bg-subtle);
+  color: var(--text-muted);
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+}
+
+/* Issue message */
+.log-issue-message {
+  flex: 1;
+  min-width: 200px;
+  font-size: 0.9rem;
+  word-break: break-word;
+}
+
+/* Issue metadata row */
+.log-issue-meta {
+  width: 100%;
+  display: flex;
+  gap: 16px;
+  margin-top: 4px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+.log-line-number {
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+}
+.log-timestamp {
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+}
+
+/* Override notice */
+.log-override-notice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  border-radius: 6px;
+  margin-bottom: 12px;
+  font-size: 0.85rem;
+  color: #92400e;
+}
+.log-override-icon {
+  font-size: 1rem;
+  color: #d97706;
+}
+.log-override-notice code {
+  background: rgba(217, 119, 6, 0.15);
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+  font-size: 0.8rem;
+}
+
+/* Clean message */
+.log-clean-message {
+  color: var(--text-muted);
+  font-style: italic;
+  margin: 0;
+  padding: 8px 0;
+}"""
+
 
 def get_all_css() -> str:
     """
@@ -1004,6 +1190,7 @@ def get_all_css() -> str:
         CSS_COPY_BUTTON,
         CSS_EXPECTATIONS,
         CSS_PLUGIN_VERIFICATION,
+        CSS_LOG_ISSUES,
         CSS_TIMELINE,
         CSS_TIMELINE_TREE,
         CSS_SECTIONS,

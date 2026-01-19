@@ -695,6 +695,7 @@ class TestNewSectionDetection:
             "response": {"claude_response"},
             "side_effects": {"side_effects"},
             "debug": {"debug", "artifacts"},
+            "log_analysis": {"log_analysis", "allow_warnings"},
         }
 
         # Flatten all mapped fields

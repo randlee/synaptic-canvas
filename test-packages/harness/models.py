@@ -39,6 +39,7 @@ from typing import Any, Optional
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from .schemas import TimelineTree, ArtifactPaths
+from .log_analyzer import LogAnalysisResult
 
 
 # =============================================================================
@@ -549,6 +550,13 @@ class TestResult(BaseModel):
     # Timeline tree architecture fields (Sprint 4)
     timeline_tree: Optional[TimelineTree] = None
     artifacts: Optional[ArtifactPaths] = None
+
+    # Log analysis (Sprint 9) - warnings/errors from test execution
+    log_analysis: Optional[LogAnalysisResult] = None
+    allow_warnings: bool = Field(
+        default=False,
+        description="If true, warnings in logs don't cause test failure"
+    )
 
     def compute_status(self) -> TestStatus:
         """Compute overall status from expectations.
