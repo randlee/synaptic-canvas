@@ -183,7 +183,12 @@ class ReportBuilder:
                 try:
                     with open(enriched_path) as f:
                         enriched_data = EnrichedData.model_validate(json.load(f))
-                    timeline_tree = enriched_data.tree
+                    # Build TimelineTree with stats included for token display
+                    timeline_tree = TimelineTree(
+                        root_uuid=enriched_data.tree.root_uuid,
+                        nodes=enriched_data.tree.nodes,
+                        stats=enriched_data.stats,
+                    )
                     artifacts = enriched_data.artifacts
                     logger.debug(f"Loaded enriched data from {enriched_path}")
                 except Exception as e:

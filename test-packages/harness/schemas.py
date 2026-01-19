@@ -124,6 +124,7 @@ class TimelineTree(BaseModel):
 
     root_uuid: str
     nodes: Dict[str, TreeNode]
+    stats: Optional[TreeStats] = None
 
 
 class EnrichedData(BaseModel):

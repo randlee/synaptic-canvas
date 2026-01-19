@@ -1421,6 +1421,8 @@ def _generate_fixture_report(
                     test_command=test_command,
                     setup_commands=setup_commands,
                     plugin_verification=plugin_verification,
+                    reports_dir=report_path,
+                    fixture_name=fixture_name,
                 )
             else:
                 # Create minimal result for tests without collected data
