@@ -81,9 +81,9 @@ def parse_pair_list(value: str) -> Tuple[str, str]:
 
 def normalize_display_path(path: Path, repo_root: Path) -> str:
     try:
-        return str(path.resolve().relative_to(repo_root))
+        return path.resolve().relative_to(repo_root).as_posix()
     except Exception:
-        return str(path.resolve())
+        return path.resolve().as_posix()
 
 
 def create_empty_temp(suffix: str = "") -> Path:
