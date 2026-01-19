@@ -16,7 +16,7 @@ Automated security scanning serves several critical functions:
 
 ## The Security Scanner
 
-The security scanner is implemented in `scripts/security-scan.sh` and performs six categories of checks:
+The security scanner is implemented in `scripts/security-scan.py` and performs six categories of checks:
 
 1. Secrets Detection
 2. Script Quality
@@ -29,16 +29,16 @@ The security scanner is implemented in `scripts/security-scan.sh` and performs s
 
 ```bash
 # Full security scan
-./scripts/security-scan.sh
+./scripts/security-scan.py
 
 # Quick scan (skip slow checks)
-./scripts/security-scan.sh --quick
+./scripts/security-scan.py --quick
 
 # JSON output for CI/CD
-./scripts/security-scan.sh --json
+./scripts/security-scan.py --json
 
 # Scan single package
-./scripts/security-scan.sh --package sc-delay-tasks
+./scripts/security-scan.py --package sc-delay-tasks
 ```
 
 ## Check Categories
@@ -482,13 +482,13 @@ Run before committing code:
 
 ```bash
 # Full scan
-./scripts/security-scan.sh
+./scripts/security-scan.py
 
 # Quick scan (faster, skips dependency audit)
-./scripts/security-scan.sh --quick
+./scripts/security-scan.py --quick
 
 # Scan specific package
-./scripts/security-scan.sh --package your-package
+./scripts/security-scan.py --package your-package
 ```
 
 ### Continuous Integration
@@ -507,7 +507,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Run security scan
-        run: ./scripts/security-scan.sh --json > scan-results.json
+        run: ./scripts/security-scan.py --json > scan-results.json
       - name: Check results
         run: |
           if [ $? -ne 0 ]; then
@@ -529,7 +529,7 @@ Run automatically on commit:
 # .git/hooks/pre-commit
 #!/bin/bash
 echo "Running security scan..."
-./scripts/security-scan.sh --quick
+./scripts/security-scan.py --quick
 if [ $? -ne 0 ]; then
     echo "Security scan failed. Commit aborted."
     exit 1
@@ -559,7 +559,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Run full security scan
-        run: ./scripts/security-scan.sh
+        run: ./scripts/security-scan.py
 ```
 
 ## Interpreting Results
@@ -650,10 +650,10 @@ apt-get install shellcheck  # Ubuntu
 brew install node  # macOS
 ```
 
-**Issue**: "Permission denied: ./scripts/security-scan.sh"
+**Issue**: "Permission denied: ./scripts/security-scan.py"
 ```bash
 # Make script executable
-chmod +x scripts/security-scan.sh
+chmod +x scripts/security-scan.py
 ```
 
 **Issue**: "Package not found: my-package"
@@ -662,7 +662,7 @@ chmod +x scripts/security-scan.sh
 ls packages/my-package
 
 # Check package name spelling
-./scripts/security-scan.sh --package sc-delay-tasks  # Correct name
+./scripts/security-scan.py --package sc-delay-tasks  # Correct name
 ```
 
 ### False Positives

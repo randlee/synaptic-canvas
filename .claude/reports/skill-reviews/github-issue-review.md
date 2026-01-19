@@ -641,7 +641,7 @@ github:
    - Documents all available options
 
 2. **Validation Script** (Recommended)
-   - Use guideline's `validate-agents.sh` script in CI
+   - Use guideline's `validate-agents.py` script in CI
    - Ensures future version changes are caught early
    - Prevents regression of fixed issues
 

@@ -308,7 +308,7 @@ done
 
 - [ ] **Version audit passes**
   ```bash
-  ./scripts/audit-versions.sh --verbose
+  ./scripts/audit-versions.py --verbose
   # Should exit with code 0 and report all checks passed
   ```
 
@@ -386,7 +386,7 @@ VERSION=$2
 echo "Testing $PACKAGE v$VERSION..."
 
 # 1. Version audit
-./scripts/audit-versions.sh --verbose || exit 1
+./scripts/audit-versions.py --verbose || exit 1
 
 # 2. Manifest validation
 python3 -c "import yaml; yaml.safe_load(open('packages/$PACKAGE/manifest.yaml'))" || exit 1
@@ -486,7 +486,7 @@ python3 scripts/sync-versions.py --package sc-delay-tasks --version 0.5.0
 
 ```bash
 # Run audit to verify all versions match
-./scripts/audit-versions.sh --verbose
+./scripts/audit-versions.py --verbose
 
 # Should output:
 # ✅ All checks passed (N checks)
@@ -677,7 +677,7 @@ echo "====== Pre-Release Validation ======"
 # 1. Version audit
 echo ""
 echo "1. Running version audit..."
-./scripts/audit-versions.sh --verbose
+./scripts/audit-versions.py --verbose
 if [ $? -ne 0 ]; then
   echo "❌ Version audit failed!"
   exit 1
@@ -686,12 +686,12 @@ fi
 # 2. Compare versions
 echo ""
 echo "2. Comparing versions by package..."
-./scripts/compare-versions.sh --by-package
+python3 scripts/compare-versions.py --by-package
 
 # 3. Check for version mismatches
 echo ""
 echo "3. Checking for version mismatches..."
-./scripts/compare-versions.sh --mismatches
+python3 scripts/compare-versions.py --mismatches
 if [ $? -ne 0 ]; then
   echo "⚠️  Version mismatches detected (review above)"
 fi
@@ -744,7 +744,7 @@ echo "====== Validation Complete ======"
 
 ```bash
 # Run validation and save results
-./scripts/audit-versions.sh --verbose > /tmp/release-validation.log 2>&1
+./scripts/audit-versions.py --verbose > /tmp/release-validation.log 2>&1
 
 # Check for failures
 if grep -q "check(s) failed" /tmp/release-validation.log; then
@@ -1023,7 +1023,7 @@ with open('docs/registries/nuget/registry.json') as f:
 
 5. **Validate all versions:**
    ```bash
-   ./scripts/audit-versions.sh --verbose
+   ./scripts/audit-versions.py --verbose
    ```
 
 6. **Commit:**
@@ -1075,7 +1075,7 @@ with open('docs/registries/nuget/registry.json') as f:
 
 4. **Validate:**
    ```bash
-   ./scripts/audit-versions.sh --verbose
+   ./scripts/audit-versions.py --verbose
    ```
 
 5. **Commit:**
@@ -1507,7 +1507,7 @@ vi packages/sc-delay-tasks/scripts/delay-run.py
 # Fix the memory leak
 
 # Test fix
-./scripts/audit-versions.sh
+./scripts/audit-versions.py
 python3 -m pytest tests/sc-delay-tasks/ -v
 
 # Update version to 0.5.1
@@ -1648,13 +1648,13 @@ echo "Incident review created. Please complete action items."
 
 **Audit versions:**
 ```bash
-./scripts/audit-versions.sh --verbose
+./scripts/audit-versions.py --verbose
 ```
 
 **Compare versions:**
 ```bash
-./scripts/compare-versions.sh --by-package
-./scripts/compare-versions.sh --mismatches
+python3 scripts/compare-versions.py --by-package
+python3 scripts/compare-versions.py --mismatches
 ```
 
 **Sync versions:**

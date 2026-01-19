@@ -1,0 +1,18 @@
+{
+  "name": "synaptic-canvas",
+  "version": "0.7.0",
+  "description": "A marketplace for Claude Code skills",
+  "author": {
+    "name": "randlee"
+  },
+  "packages": [],
+  "metadata": {
+    "totalPackages": 0,
+    "totalCommands": 0,
+    "totalSkills": 0,
+    "totalAgents": 0,
+    "totalScripts": 0
+  },
+  "generated": "2026-01-19T12:33:02.835641",
+  "lastUpdated": "2026-01-19T12:33:02.835646"
+}

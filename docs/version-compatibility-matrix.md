@@ -1414,7 +1414,7 @@ python3 tools/sc-install.py install sc-delay-tasks
 ### Tools
 
 - [sc-install.py](../tools/sc-install.py) - Installation and version management CLI
-- [Version Audit Script](../scripts/audit-versions.sh) - Version validation
+- [Version Audit Script](../scripts/audit-versions.py) - Version validation
 - [Registry Schema](../docs/registries/nuget/registry.json) - Registry format specification
 
 ### Support

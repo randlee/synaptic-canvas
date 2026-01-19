@@ -315,7 +315,7 @@ This keeps SKILL.md concise and loads references only when agents/skills need th
 **Rule**: v0.4 Section 8.6 - Version Management
 **Severity**: INFO
 
-**Recommendation**: Ensure `scripts/validate-agents.sh` uses the robust frontmatter-aware implementation from v0.4 guidelines (lines 641-669).
+**Recommendation**: Ensure `scripts/validate-agents.py` uses the robust frontmatter-aware implementation from v0.4 guidelines (lines 641-669).
 
 **Key Requirements**:
 - Extract frontmatter using awk
@@ -512,14 +512,14 @@ Default behavior: --yolo creates PR but does NOT push or merge.
    - [ ] `.claude/references/github-issue-checklists.md` (triage/fix steps)
 
 6. 🔍 **Implement Validation**
-   - [ ] Copy v0.4 validate-agents.sh to `scripts/`
+   - [ ] Copy v0.4 validate-agents.py to `scripts/`
    - [ ] Test validation with stub agents
    - [ ] Add to pre-commit hook or CI
 
 ### Testing Phase
 
 7. ✅ **Validate Implementation**
-   - [ ] Run `scripts/validate-agents.sh`
+   - [ ] Run `scripts/validate-agents.py`
    - [ ] Test Agent Runner invocation from SKILL
    - [ ] Verify fenced JSON parsing
    - [ ] Test error contract handling

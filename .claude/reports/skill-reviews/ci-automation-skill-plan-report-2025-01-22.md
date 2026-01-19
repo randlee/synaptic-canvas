@@ -387,7 +387,7 @@ None identified. The plan is architecturally sound.
    - **Location**: Plan-wide (affects implementation)
    - **Rule**: Registry alignment requirements
    - **Message**: Plan defines 7 agents but registry.yaml has no entries yet
-   - **Suggestion**: During implementation, add all 7 agents to `.claude/agents/registry.yaml` with version 0.1.0 and create corresponding skill dependency entry. Run `scripts/validate-agents.sh` before first execution.
+   - **Suggestion**: During implementation, add all 7 agents to `.claude/agents/registry.yaml` with version 0.1.0 and create corresponding skill dependency entry. Run `scripts/validate-agents.py` before first execution.
 
 ### Info (2)
 

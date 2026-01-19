@@ -57,7 +57,7 @@ Last Updated: 2025-01-22
 - Reports: default to `reports/skill-reviews/...` (fallback `.tmp/skill-reviews/`).
 
 ## Safety & Validation
-- Enforce version sync with `.claude/agents/registry.yaml`; validate via `scripts/validate-agents.sh`.
+- Enforce version sync with `.claude/agents/registry.yaml`; validate via `scripts/validate-agents.py`.
 - All command inputs validated before agent calls; dangerous operations require explicit confirmations.
 - Keep main conversation clean: summarize outcomes; omit tool traces.
 

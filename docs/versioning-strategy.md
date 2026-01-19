@@ -102,7 +102,7 @@ version: 0.4.0
 Version mismatches are detected by the version audit script:
 
 ```bash
-./scripts/audit-versions.sh
+./scripts/audit-versions.py
 ```
 
 ---
@@ -124,9 +124,9 @@ Version mismatches are detected by the version audit script:
 
 ### CCS.3: Create Version Verification Scripts
 
-- [ ] `scripts/audit-versions.sh` - Detect mismatches
+- [ ] `scripts/audit-versions.py` - Detect mismatches
 - [ ] `scripts/sync-versions.py` - Bulk version updates
-- [ ] `scripts/compare-versions.sh` - Version comparison tool
+- [ ] `scripts/compare-versions.py` - Version comparison tool
 
 ### CCS.4: CI/CD Integration
 
@@ -191,13 +191,13 @@ When releasing version 0.5.0 of `sc-delay-tasks`:
 
 ```bash
 # Audit all versions
-./scripts/audit-versions.sh
+./scripts/audit-versions.py
 
 # Compare versions by package
-./scripts/compare-versions.sh --by-package
+python3 scripts/compare-versions.py --by-package
 
 # Show version mismatches
-./scripts/compare-versions.sh --mismatches
+python3 scripts/compare-versions.py --mismatches
 ```
 
 ---
@@ -232,7 +232,7 @@ At this point:
 
 1. **Always bump versions together** - Package and artifacts must stay in sync
 2. **Use automated scripts** - `sync-versions.py` prevents manual errors
-3. **Test after versioning** - Run `audit-versions.sh` before committing
+3. **Test after versioning** - Run `audit-versions.py` before committing
 4. **Document changes** - Update CHANGELOG.md with every bump
 5. **Plan releases** - Coordinate version bumps across related packages
 6. **Use semantic versioning** - Reserve MAJOR version for breaking changes
@@ -244,6 +244,6 @@ At this point:
 - `version.yaml` - Current marketplace platform version
 - `packages/*/manifest.yaml` - Individual package manifests
 - `CHANGELOG.md` - Release history for each package
-- `scripts/audit-versions.sh` - Version consistency checker
+- `scripts/audit-versions.py` - Version consistency checker
 - `scripts/sync-versions.py` - Bulk version updater
 - `.github/workflows/version-audit.yml` - CI enforcement

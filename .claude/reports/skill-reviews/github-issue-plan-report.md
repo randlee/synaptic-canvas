@@ -133,7 +133,7 @@ Total: ~1.8KB ✅ Under 2KB limit
 **Suggestion**: Add to "Next Actions" section:
 ```markdown
 6. Implement version validation script from guidelines v0.4 (lines 642-669)
-7. Add pre-commit hook: `scripts/validate-agents.sh`
+7. Add pre-commit hook: `scripts/validate-agents.py`
 ```
 
 **Impact**: None - This is an implementation detail, not a plan requirement.
