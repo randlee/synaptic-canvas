@@ -81,7 +81,14 @@ def test_default_output_dir_fallback(monkeypatch: pytest.MonkeyPatch, tmp_path: 
 
 
 def test_output_schema_validation_ok() -> None:
-    schema_path = Path(__file__).resolve().parents[1] / "src" / "ai_cli" / "task_tool.output.schema.json"
+    schema_path = (
+        Path(__file__).resolve().parents[1]
+        / "packages"
+        / "sc-codex"
+        / "scripts"
+        / "ai_cli"
+        / "task_tool.output.schema.json"
+    )
     schema = json.loads(schema_path.read_text(encoding="utf-8"))
     validate_schema(instance={"output": "ok", "agentId": "agent-1"}, schema=schema)
     validate_schema(
@@ -91,7 +98,14 @@ def test_output_schema_validation_ok() -> None:
 
 
 def test_output_schema_validation_error() -> None:
-    schema_path = Path(__file__).resolve().parents[1] / "src" / "ai_cli" / "task_tool.output.schema.json"
+    schema_path = (
+        Path(__file__).resolve().parents[1]
+        / "packages"
+        / "sc-codex"
+        / "scripts"
+        / "ai_cli"
+        / "task_tool.output.schema.json"
+    )
     schema = json.loads(schema_path.read_text(encoding="utf-8"))
     with pytest.raises(SchemaValidationError):
         validate_schema(instance={"output": "ok"}, schema=schema)

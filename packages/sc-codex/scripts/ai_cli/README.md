@@ -4,9 +4,9 @@ Python/pydantic utilities for CLI integration and tool schemas.
 
 ## Task Tool schema
 
-Input schema (JSON) lives in `src/ai_cli/task_tool.schema.json` and is mirrored by
-the pydantic model in `src/ai_cli/task_tool.py`.
-Output schema (JSON) lives in `src/ai_cli/task_tool.output.schema.json`.
+Input schema (JSON) lives in `packages/sc-codex/scripts/ai_cli/task_tool.schema.json`
+and is mirrored by the pydantic model in `packages/sc-codex/scripts/ai_cli/task_tool.py`.
+Output schema (JSON) lives in `packages/sc-codex/scripts/ai_cli/task_tool.output.schema.json`.
 
 Foreground output (run_in_background: false or omitted):
 - Object with `output` and `agentId`.
@@ -58,25 +58,25 @@ from message types and tool results that include `is_error: true`.
 Print schema:
 
 ```bash
-python3 -m ai_cli schema
+PYTHONPATH=packages/sc-codex/scripts python3 -m ai_cli schema
 ```
 
 Validate input from file:
 
 ```bash
-python3 -m ai_cli validate --file /path/to/input.json
+PYTHONPATH=packages/sc-codex/scripts python3 -m ai_cli validate --file /path/to/input.json
 ```
 
 Run a task (blocking by default, runner auto-selects based on availability):
 
 ```bash
-python3 -m ai_cli run --file /path/to/input.json
+PYTHONPATH=packages/sc-codex/scripts python3 -m ai_cli run --file /path/to/input.json
 ```
 
 Run in background with Codex and custom output directory:
 
 ```bash
-python3 -m ai_cli run --runner codex --background --output-dir .sc/sessions --file /path/to/input.json
+PYTHONPATH=packages/sc-codex/scripts python3 -m ai_cli run --runner codex --background --output-dir .sc/sessions --file /path/to/input.json
 ```
 
 Background outputs default to `.sc/sessions` (gitignored). For Codex, if `CODEX_HOME` is set,
