@@ -12,7 +12,7 @@ upgrades gracefully. Runtime uses best-effort parsing; test suite validates
 schema compliance.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, computed_field
 from typing import Optional, List, Dict, Any
 from enum import Enum
 
@@ -103,11 +103,13 @@ class TokenUsage(BaseModel):
     cache_read_tokens: int = 0
     subagent_tokens: int = 0
 
+    @computed_field
     @property
     def total_billable(self) -> int:
         """Tokens likely billed (excludes cache reads)."""
         return self.input_tokens + self.output_tokens + self.cache_creation_tokens
 
+    @computed_field
     @property
     def total_all(self) -> int:
         """Total tokens including cache reads."""
