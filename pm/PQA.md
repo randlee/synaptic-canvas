@@ -61,6 +61,8 @@ ls test-packages/reports/
 ### Testing & Validation
 📋 **[Test Harness Design Spec](../docs/requirements/test-harness-design-spec.md)** - Fixture format, expectation types
 
+📦 **[Report Artifacts](../test-packages/docs/report-artifacts.md)** - Artifact preservation, folder structure, retention policy
+
 🔧 **[scripts/validate-agents.sh](../scripts/validate-agents.sh)** - Agent version validation against registry
 
 🔧 **[scripts/security-scan.sh](../scripts/security-scan.sh)** - Security scanning (secrets, scripts, deps)
