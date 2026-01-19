@@ -1,0 +1,23 @@
+Validation errors found:
+  ERROR: [skill-planning-agent]: (/Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/.claude/agents/skill-planning-agent.md): Version mismatch: file=0.7.0 registry=0.1.0
+  ERROR: [skill-review-agent]: (/Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/.claude/agents/skill-review-agent.md): Version mismatch: file=0.7.0 registry=0.1.0
+  ERROR: [sc-worktree-create]: (/Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/.claude/agents/sc-worktree-create.md): Version mismatch: file=0.7.0 registry=0.4.0
+  ERROR: [sc-worktree-scan]: (/Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/.claude/agents/sc-worktree-scan.md): Version mismatch: file=0.7.0 registry=0.4.0
+  ERROR: [sc-worktree-cleanup]: (/Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/.claude/agents/sc-worktree-cleanup.md): Version mismatch: file=0.7.0 registry=0.4.0
+  ERROR: [sc-worktree-abort]: (/Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/.claude/agents/sc-worktree-abort.md): Version mismatch: file=0.7.0 registry=0.4.0
+  ERROR: [issue-intake-agent]: (/Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/.claude/agents/issue-intake-agent.md): Version mismatch: file=0.7.0 registry=0.1.0
+  ERROR: [issue-mutate-agent]: (/Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/.claude/agents/issue-mutate-agent.md): Version mismatch: file=0.7.0 registry=0.1.0
+  ERROR: [issue-fix-agent]: (/Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/.claude/agents/issue-fix-agent.md): Version mismatch: file=0.7.0 registry=0.1.0
+  ERROR: [issue-pr-agent]: (/Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/.claude/agents/issue-pr-agent.md): Version mismatch: file=0.7.0 registry=0.1.0
+  ERROR: [ci-validate-agent]: (/Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/.claude/agents/ci-validate-agent.md): Version mismatch: file=0.7.0 registry=0.1.0
+  ERROR: [ci-pull-agent]: (/Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/.claude/agents/ci-pull-agent.md): Version mismatch: file=0.7.0 registry=0.1.0
+  ERROR: [ci-build-agent]: (/Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/.claude/agents/ci-build-agent.md): Version mismatch: file=0.7.0 registry=0.1.0
+  ERROR: [ci-test-agent]: (/Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/.claude/agents/ci-test-agent.md): Version mismatch: file=0.7.0 registry=0.1.0
+  ERROR: [ci-fix-agent]: (/Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/.claude/agents/ci-fix-agent.md): Version mismatch: file=0.7.0 registry=0.1.0
+  ERROR: [ci-root-cause-agent]: (/Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/.claude/agents/ci-root-cause-agent.md): Version mismatch: file=0.7.0 registry=0.1.0
+  ERROR: [ci-pr-agent]: (/Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/.claude/agents/ci-pr-agent.md): Version mismatch: file=0.7.0 registry=0.1.0
+  ERROR: [sc-checklist-status]: (/Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/.claude/agents/sc-checklist-status.md): Version mismatch: file=0.7.0 registry=0.6.0
+  ERROR: [sc-startup-init]: (/Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/.claude/agents/sc-startup-init.md): Version mismatch: file=0.7.0 registry=0.6.0
+
+Partial results: 2/21 agents validated
+Exit: 1
