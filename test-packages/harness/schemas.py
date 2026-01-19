@@ -66,6 +66,7 @@ class TimelineNodeType(str, Enum):
     TOOL_RESULT = "tool_result"
     SUBAGENT_START = "subagent_start"
     SUBAGENT_STOP = "subagent_stop"
+    SIDECHAIN = "sidechain"  # For subagent/Task tool invocations
 
 
 class TreeNode(BaseModel):
@@ -73,7 +74,10 @@ class TreeNode(BaseModel):
 
     parent_uuid: Optional[str] = None
     depth: int = 0
+    seq: int = 0  # Depth-first sequence number for ordering
     node_type: TimelineNodeType
+    timestamp: Optional[str] = None  # ISO timestamp from transcript entry
+    elapsed_ms: Optional[int] = None  # Milliseconds from session start
     agent_id: Optional[str] = None
     agent_type: Optional[str] = None
     tool_name: Optional[str] = None

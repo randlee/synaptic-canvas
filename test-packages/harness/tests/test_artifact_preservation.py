@@ -81,6 +81,122 @@ class TestWriteArtifact:
             assert "transcript:" in result.error.message
 
 
+class TestFileIOErrors:
+    """Tests for file I/O error handling.
+
+    Verifies that I/O errors are captured in Result pattern, not swallowed.
+    """
+
+    def test_handles_permission_denied(self, tmp_path: Path):
+        """Test that permission denied errors are captured in Result."""
+        # Mock open to raise PermissionError
+        with patch("builtins.open", side_effect=PermissionError("Permission denied")):
+            result = _write_artifact(
+                tmp_path / "test.txt", "content", "test_artifact"
+            )
+
+        assert isinstance(result, Failure)
+        assert isinstance(result.error, ArtifactError)
+        assert result.error.operation == "write"
+        assert "Permission denied" in result.error.message or "test_artifact:" in result.error.message
+
+    def test_handles_disk_full(self, tmp_path: Path):
+        """Test that disk full errors (OSError) are captured in Result."""
+        # Mock open to raise OSError with ENOSPC (no space left on device)
+        disk_full_error = OSError(28, "No space left on device")  # errno 28 = ENOSPC
+        with patch("builtins.open", side_effect=disk_full_error):
+            result = _write_artifact(
+                tmp_path / "test.txt", "content", "large_artifact"
+            )
+
+        assert isinstance(result, Failure)
+        assert isinstance(result.error, ArtifactError)
+        assert result.error.operation == "write"
+        # Error should contain useful context
+        assert "large_artifact:" in result.error.message
+
+    def test_reports_partial_failure(self, tmp_path: Path):
+        """Test that partial failures are reported correctly in ArtifactReport.
+
+        Some files succeed, some fail - both should be tracked.
+        """
+        # Set up mock data
+        collected_data = MagicMock()
+        collected_data.raw_transcript_entries = [{"type": "user", "message": "test"}]
+        collected_data.raw_hook_events = [{"event": "start"}]
+        collected_data.claude_cli_stdout = "stdout"
+        collected_data.claude_cli_stderr = ""
+
+        test_config = MagicMock()
+        test_config.test_id = "partial-test"
+        test_config.test_name = "Partial Failure Test"
+        test_config.source_path = Path("/tmp/test.yaml")
+
+        test_results_data = [
+            {
+                "test_id": "partial-test",
+                "test_config": test_config,
+                "collected_data": collected_data,
+                "pytest_output": "test output",
+            }
+        ]
+
+        fixture_config = MagicMock()
+        fixture_config.package = "test-pkg"
+        fixture_config.source_path = tmp_path / "fixture.yaml"
+
+        # Track write attempts and selectively fail some
+        write_count = [0]
+        original_write = _write_artifact
+
+        def selective_fail_write(path: Path, content: str, artifact_type: str):
+            write_count[0] += 1
+            # Fail transcript writes, succeed trace/cli/pytest
+            if artifact_type == "transcript":
+                return Failure(
+                    ArtifactError(
+                        operation="write",
+                        path=str(path),
+                        message="transcript: Simulated I/O error",
+                    )
+                )
+            return original_write(path, content, artifact_type)
+
+        with (
+            patch("harness.pytest_plugin._write_artifact", side_effect=selective_fail_write),
+            patch(
+                "harness.pytest_plugin._write_enriched_artifact",
+                return_value=Success(value=[], warnings=[]),
+            ),
+        ):
+            result = _preserve_artifacts(
+                fixture_name="partial-fixture",
+                report_path=tmp_path,
+                test_results_data=test_results_data,
+                fixture_config=fixture_config,
+            )
+
+        # Should be Failure since transcript failed
+        assert isinstance(result, Failure)
+
+        # Partial result should be present
+        partial_report = result.partial_result
+        assert partial_report is not None
+        assert isinstance(partial_report, ArtifactReport)
+
+        # Should have some successes (trace, cli, pytest in both dirs)
+        assert partial_report.success_count >= 6  # trace + cli + pytest in latest + history
+
+        # Should have failures (transcript in both dirs)
+        assert partial_report.failure_count >= 2
+
+        # Verify failure errors are captured
+        assert len(partial_report.failed_writes) >= 2
+        for error in partial_report.failed_writes:
+            assert isinstance(error, ArtifactError)
+            assert "transcript" in error.message.lower() or "transcript" in error.path.lower()
+
+
 class TestArtifactReport:
     """Tests for ArtifactReport dataclass."""
 
