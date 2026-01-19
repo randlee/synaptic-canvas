@@ -38,11 +38,8 @@ class StatusBannerBuilder(BaseBuilder[StatusBannerDisplayModel]):
         if data.has_token_data:
             token_html = f'''
   <div class="token-section">
-    <div class="token-summary">
-      <span>Tokens: Input {data.formatted_token_input} | Output {data.formatted_token_output} | Total {data.formatted_token_total}</span>
-    </div>
     <details class="token-details">
-      <summary>Token Details</summary>
+      <summary>Tokens: {data.formatted_token_total} total</summary>
       <dl class="token-detail">
         <div><dt>Input tokens</dt><dd>{data.token_input:,}</dd></div>
         <div><dt>Output tokens</dt><dd>{data.token_output:,}</dd></div>
