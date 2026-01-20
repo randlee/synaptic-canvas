@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://synaptic-canvas.dev/schemas/skill-frontmatter.schema.json",
+  "title": "Skill Frontmatter Schema",
+  "description": "JSON Schema for Claude Code skill frontmatter validation",
+  "type": "object",
+  "required": ["name", "version", "description", "entry_point"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*$",
+      "description": "Skill name in kebab-case"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semantic version (X.Y.Z)"
+    },
+    "description": {
+      "type": "string",
+      "minLength": 10,
+      "description": "Brief description of the skill"
+    },
+    "entry_point": {
+      "type": "string",
+      "pattern": "^/[a-z][a-z0-9-]*$",
+      "description": "Slash command entry point (e.g., /skill-name)"
+    },
+    "triggers": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Keywords that trigger this skill"
+    }
+  },
+  "additionalProperties": false
+}

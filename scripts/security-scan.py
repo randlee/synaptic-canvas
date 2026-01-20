@@ -16,6 +16,7 @@ import argparse
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 from dataclasses import dataclass, field
@@ -692,11 +693,8 @@ class SecurityScanner:
 
     @staticmethod
     def _command_exists(command: str) -> bool:
-        """Check if a command exists in PATH."""
-        result = subprocess.run(
-            ["which", command], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
-        )
-        return result.returncode == 0
+        """Check if a command exists in PATH (cross-platform)."""
+        return shutil.which(command) is not None
 
 
 # =============================================================================

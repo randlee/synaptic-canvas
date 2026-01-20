@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://synaptic-canvas.dev/schemas/agent-frontmatter.schema.json",
+  "title": "Agent Frontmatter Schema",
+  "description": "JSON Schema for Claude Code agent frontmatter validation",
+  "type": "object",
+  "required": ["name", "version", "description", "model", "color"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*$",
+      "description": "Agent name in kebab-case"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semantic version (X.Y.Z)"
+    },
+    "description": {
+      "type": "string",
+      "minLength": 10,
+      "description": "Brief description of the agent"
+    },
+    "model": {
+      "type": "string",
+      "enum": ["sonnet", "opus", "haiku"],
+      "description": "Claude model to use"
+    },
+    "color": {
+      "type": "string",
+      "enum": ["gray", "green", "purple", "blue", "red", "yellow"],
+      "description": "Agent color indicator"
+    },
+    "tools": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Tools available to this agent"
+    }
+  },
+  "additionalProperties": false
+}
