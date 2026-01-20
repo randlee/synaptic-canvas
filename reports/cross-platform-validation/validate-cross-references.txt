@@ -1,0 +1,8 @@
+
+Validation Results:
+  Total checks: 13
+  Passed: 13
+  Failed: 0
+
+✓ All cross-references valid
+Exit: 0
