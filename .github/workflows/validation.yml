@@ -22,8 +22,6 @@ jobs:
 
   validate-agents:
     runs-on: ubuntu-latest
-    # Known issues: version mismatches in agent registry need fixing
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python
@@ -37,8 +35,6 @@ jobs:
 
   validate-manifest-artifacts:
     runs-on: ubuntu-latest
-    # Known issues: orphaned files and invalid scripts in some packages
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python
@@ -65,8 +61,6 @@ jobs:
 
   validate-frontmatter:
     runs-on: ubuntu-latest
-    # Known issues: missing required fields and invalid values in frontmatter
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python
@@ -106,8 +100,6 @@ jobs:
 
   security-scan:
     runs-on: ubuntu-latest
-    # Known issues: false positives in docs/tests, missing LICENSE files
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python

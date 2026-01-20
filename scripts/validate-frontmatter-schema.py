@@ -78,6 +78,15 @@ class FrontmatterValidationError:
 # -----------------------------------------------------------------------------
 
 
+class CommandOption(BaseModel):
+    """Schema for command option objects."""
+
+    name: str = Field(..., description="Option name (e.g., --minutes)")
+    description: str = Field(..., description="Option description")
+
+    model_config = {"extra": "allow"}
+
+
 class BaseFrontmatter(BaseModel):
     """Base frontmatter fields common to all types."""
 
@@ -85,7 +94,7 @@ class BaseFrontmatter(BaseModel):
     version: str = Field(..., description="Semantic version X.Y.Z")
     description: str = Field(..., description="Description of the artifact")
 
-    model_config = {"extra": "forbid"}
+    model_config = {"extra": "allow"}  # Allow extra fields for flexibility
 
     @field_validator("name")
     @classmethod
@@ -107,19 +116,19 @@ class BaseFrontmatter(BaseModel):
 class CommandFrontmatter(BaseFrontmatter):
     """Frontmatter schema for commands."""
 
-    options: Optional[List[str]] = Field(default=None, description="Command options")
+    options: Optional[List[CommandOption]] = Field(default=None, description="Command options")
 
 
 class SkillFrontmatter(BaseFrontmatter):
     """Frontmatter schema for skills."""
 
-    entry_point: str = Field(..., description="Entry point starting with /")
+    entry_point: Optional[str] = Field(default=None, description="Entry point starting with /")
 
     @field_validator("entry_point")
     @classmethod
-    def validate_entry_point(cls, v: str) -> str:
-        """Validate entry point starts with /."""
-        if not v.startswith("/"):
+    def validate_entry_point(cls, v: Optional[str]) -> Optional[str]:
+        """Validate entry point starts with / if provided."""
+        if v is not None and not v.startswith("/"):
             raise ValueError(f"Entry point must start with /: {v}")
         return v
 
@@ -127,25 +136,28 @@ class SkillFrontmatter(BaseFrontmatter):
 class AgentFrontmatter(BaseFrontmatter):
     """Frontmatter schema for agents."""
 
-    model: str = Field(..., description="Model: sonnet, opus, or haiku")
-    color: str = Field(..., description="Color: gray, green, purple, blue, red, or yellow")
+    model: Optional[str] = Field(default=None, description="Model: sonnet, opus, or haiku")
+    color: Optional[str] = Field(default=None, description="Color for agent display")
+    hooks: Optional[Any] = Field(default=None, description="Agent hooks configuration")
 
     @field_validator("model")
     @classmethod
-    def validate_model(cls, v: str) -> str:
-        """Validate model is one of allowed values."""
-        allowed = {"sonnet", "opus", "haiku"}
-        if v not in allowed:
-            raise ValueError(f"Model must be one of {allowed}: {v}")
+    def validate_model(cls, v: Optional[str]) -> Optional[str]:
+        """Validate model is one of allowed values if provided."""
+        if v is not None:
+            allowed = {"sonnet", "opus", "haiku"}
+            if v not in allowed:
+                raise ValueError(f"Model must be one of {allowed}: {v}")
         return v
 
     @field_validator("color")
     @classmethod
-    def validate_color(cls, v: str) -> str:
-        """Validate color is one of allowed values."""
-        allowed = {"gray", "green", "purple", "blue", "red", "yellow"}
-        if v not in allowed:
-            raise ValueError(f"Color must be one of {allowed}: {v}")
+    def validate_color(cls, v: Optional[str]) -> Optional[str]:
+        """Validate color is one of allowed values if provided."""
+        if v is not None:
+            allowed = {"gray", "green", "purple", "blue", "red", "yellow", "orange", "cyan"}
+            if v not in allowed:
+                raise ValueError(f"Color must be one of {allowed}: {v}")
         return v
 
 

@@ -25,6 +25,7 @@ artifacts:
     - agents/sc-git-pr-check-delay.md
   scripts:
     - scripts/sc-delay-run.py
+    - scripts/delay-run.sh
 
 # No variables — Tier 0 package (direct copy)
 
