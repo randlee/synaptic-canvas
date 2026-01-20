@@ -105,7 +105,7 @@ Path rules: must be repo-root-relative. Set worktree/PR toggles to false if the 
 - `ci-automation` (pull-only when `--pull` is set; runs before checklist update)
 - `sc-checklist-status` (report/update checklist; no auto-commit; report-only under `--readonly`)
 
-## Safety
+## Security
 - Repo-root-relative paths only; block escapes.
 - Default mutating; `--readonly` forces report-only.
 - No auto-commit of checklist changes.

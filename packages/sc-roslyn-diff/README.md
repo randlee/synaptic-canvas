@@ -107,7 +107,9 @@ Agents always return fenced JSON using a discriminated union:
 }
 ```
 
-## Safety notes
+## Security
 
 - Default diff mode is `auto` (semantic for .cs/.vb, line diff otherwise).
 - Large batches require `--allow-large` and will be split across agents.
+- Read-only file operations; no modifications to source files.
+- Local processing only; no external service calls for diff computation.
