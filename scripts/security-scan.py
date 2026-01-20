@@ -16,7 +16,6 @@ import argparse
 import json
 import os
 import re
-import shutil
 import subprocess
 import sys
 from dataclasses import dataclass, field
@@ -151,10 +150,23 @@ class SecurityScanner:
     ]
 
     # Directories to exclude from scanning
-    EXCLUDE_DIRS = [".git", ".venv", "__pycache__", "node_modules", "docs", "tests", "test-packages"]
+    EXCLUDE_DIRS = [".git", ".venv", "__pycache__", "node_modules"]
 
-    # Files to exclude from secrets/python safety scanning (patterns in the filename)
-    EXCLUDE_FILES = ["security-scan", "security_scan", "SECURITY-SCANNING"]
+    # Files/patterns to exclude from secrets detection (documentation with examples)
+    EXCLUDE_FROM_SECRETS = [
+        "SECURITY-SCANNING-GUIDE.md",  # Documentation with example patterns
+        "test_security_scan.py",  # Test file with example patterns
+        "agent-runner-comprehensive.md",  # Documentation
+        "security_scan.py",  # Symlink to security-scan.py
+    ]
+
+    # Files to exclude from Python safety checks (scripts that need these patterns)
+    EXCLUDE_FROM_PYTHON_SAFETY = [
+        "security-scan.py",  # This script itself uses patterns for detection
+        "security_scan.py",  # Legacy name
+        "test_security_scan.py",  # Test file
+        "pytest_plugin.py",  # Test harness legitimately needs shell=True
+    ]
 
     def __init__(self, config: ScanConfiguration):
         """Initialize scanner with configuration."""
@@ -203,6 +215,9 @@ class SecurityScanner:
         for pattern in self.SECRET_PATTERNS:
             matches = self._grep_pattern(pattern, search_path, case_insensitive=True)
             for file_path, line_num, line_content in matches:
+                # Skip excluded files (documentation/tests with example patterns)
+                if any(excluded in file_path for excluded in self.EXCLUDE_FROM_SECRETS):
+                    continue
                 # Skip this script itself
                 if "security-scan" in file_path:
                     continue
@@ -223,6 +238,9 @@ class SecurityScanner:
             md_pattern, search_path, include_glob="*.md", case_insensitive=True
         )
         for file_path, line_num, line_content in md_matches:
+            # Skip excluded documentation files
+            if any(excluded in file_path for excluded in self.EXCLUDE_FROM_SECRETS):
+                continue
             if re.search(
                 r'(password|secret|token|key).*["\'].*[a-zA-Z0-9]{16,}',
                 line_content,
@@ -334,9 +352,15 @@ class SecurityScanner:
         issues: List[SecurityIssue] = []
         search_path = self._get_search_path()
 
+        def should_exclude(file_path: str) -> bool:
+            """Check if file should be excluded from Python safety checks."""
+            return any(excluded in file_path for excluded in self.EXCLUDE_FROM_PYTHON_SAFETY)
+
         # Check for eval()
         eval_matches = self._grep_pattern(r"eval\(", search_path, include_glob="*.py")
         for file_path, line_num, _ in eval_matches:
+            if should_exclude(file_path):
+                continue
             issues.append(
                 SecurityIssue(
                     severity=Severity.HIGH,
@@ -349,6 +373,8 @@ class SecurityScanner:
         # Check for exec()
         exec_matches = self._grep_pattern(r"exec\(", search_path, include_glob="*.py")
         for file_path, line_num, _ in exec_matches:
+            if should_exclude(file_path):
+                continue
             issues.append(
                 SecurityIssue(
                     severity=Severity.HIGH,
@@ -361,6 +387,8 @@ class SecurityScanner:
         # Check for shell=True
         shell_matches = self._grep_pattern(r"shell=True", search_path, include_glob="*.py")
         for file_path, line_num, _ in shell_matches:
+            if should_exclude(file_path):
+                continue
             issues.append(
                 SecurityIssue(
                     severity=Severity.MEDIUM,
@@ -373,6 +401,8 @@ class SecurityScanner:
         # Check for pickle.loads
         pickle_matches = self._grep_pattern(r"pickle\.loads", search_path, include_glob="*.py")
         for file_path, line_num, _ in pickle_matches:
+            if should_exclude(file_path):
+                continue
             issues.append(
                 SecurityIssue(
                     severity=Severity.MEDIUM,
@@ -471,21 +501,16 @@ class SecurityScanner:
                     )
                 )
 
-        # Missing docs are warnings; invalid YAML or corrupt files are failures
-        has_critical = any(
-            "Invalid YAML" in issue.message or "Empty" in issue.message
-            for issue in issues
-        )
+        # Only fail on HIGH severity issues; MEDIUM/LOW are warnings
         high_issues = sum(1 for issue in issues if issue.severity == Severity.HIGH)
-
         if not issues:
             status = CheckStatus.PASSED
             message = f"(all {len(packages)} packages have required docs)"
-        elif has_critical:
-            status = CheckStatus.FAILED
-            message = f"({high_issues} critical issues)"
-        else:
+        elif high_issues == 0:
             status = CheckStatus.WARNING
+            message = f"({len(issues)} recommendations in {len(packages)} packages)"
+        else:
+            status = CheckStatus.FAILED
             message = f"({len(issues)} issues in {len(packages)} packages)"
 
         self.checks["package_documentation"] = CheckResult(
@@ -529,20 +554,8 @@ class SecurityScanner:
                 )
             )
 
-        # Missing LICENSE is a warning, but invalid/empty LICENSE is a failure
-        has_critical = any(
-            "Empty LICENSE" in issue.message or "Invalid" in issue.message
-            for issue in issues
-        )
-        if not issues:
-            status = CheckStatus.PASSED
-            message = "(all packages have LICENSE)"
-        elif has_critical:
-            status = CheckStatus.FAILED
-            message = f"({len(issues)} license issues)"
-        else:
-            status = CheckStatus.WARNING
-            message = f"({len(issues)} missing licenses)"
+        status = CheckStatus.PASSED if not issues else CheckStatus.FAILED
+        message = "(all packages have LICENSE)" if not issues else f"({len(issues)} missing licenses)"
 
         self.checks["license_files"] = CheckResult(
             check_name="License Files", status=status, issues=issues, message=message
@@ -691,11 +704,7 @@ class SecurityScanner:
         matches = []
 
         if include_glob:
-            # Get files matching glob but filter out excluded directories
-            files = [
-                f for f in search_path.rglob(include_glob)
-                if not any(excl in f.parts for excl in self.EXCLUDE_DIRS)
-            ]
+            files = list(search_path.rglob(include_glob))
         else:
             # Get all files, excluding certain directories
             files = []
@@ -709,16 +718,11 @@ class SecurityScanner:
         compiled_pattern = re.compile(pattern, regex_flags)
 
         for file_path in files:
-            # Skip excluded files
-            file_path_str = file_path.as_posix()
-            if any(excl in file_path_str for excl in self.EXCLUDE_FILES):
-                continue
-
             try:
                 with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
                     for line_num, line in enumerate(f, 1):
                         if compiled_pattern.search(line):
-                            matches.append((file_path_str, line_num, line.strip()))
+                            matches.append((file_path.as_posix(), line_num, line.strip()))
             except Exception:
                 # Skip files that can't be read
                 pass
@@ -727,8 +731,11 @@ class SecurityScanner:
 
     @staticmethod
     def _command_exists(command: str) -> bool:
-        """Check if a command exists in PATH (cross-platform)."""
-        return shutil.which(command) is not None
+        """Check if a command exists in PATH."""
+        result = subprocess.run(
+            ["which", command], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+        )
+        return result.returncode == 0
 
 
 # =============================================================================
@@ -816,8 +823,9 @@ Checks Performed:
   6. Dependency Audit       - Check for vulnerable dependencies
 
 Exit Codes:
-  0 - All checks passed (or only warnings found)
-  1 - Failures found (critical issues)
+  0 - All checks passed
+  1 - Warnings found (non-critical)
+  2 - Failures found (critical issues)
         """,
     )
 
@@ -860,9 +868,9 @@ Exit Codes:
         print(format_text_output(result.value))
 
     # Return appropriate exit code
-    # Exit code 0: PASSED or WARNING (warnings are informational)
-    # Exit code 1: FAILED (critical issues that should block)
     if result.value.overall_status == CheckStatus.FAILED:
+        return 2
+    elif result.value.overall_status == CheckStatus.WARNING:
         return 1
     else:
         return 0

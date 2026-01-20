@@ -78,15 +78,6 @@ class FrontmatterValidationError:
 # -----------------------------------------------------------------------------
 
 
-class CommandOption(BaseModel):
-    """Schema for command option objects."""
-
-    name: str = Field(..., description="Option name (e.g., --minutes)")
-    description: str = Field(..., description="Option description")
-
-    model_config = {"extra": "allow"}
-
-
 class BaseFrontmatter(BaseModel):
     """Base frontmatter fields common to all types."""
 
@@ -94,7 +85,7 @@ class BaseFrontmatter(BaseModel):
     version: str = Field(..., description="Semantic version X.Y.Z")
     description: str = Field(..., description="Description of the artifact")
 
-    model_config = {"extra": "allow"}  # Allow extra fields for flexibility
+    model_config = {"extra": "allow"}  # Allow additional fields for flexibility
 
     @field_validator("name")
     @classmethod
@@ -116,12 +107,14 @@ class BaseFrontmatter(BaseModel):
 class CommandFrontmatter(BaseFrontmatter):
     """Frontmatter schema for commands."""
 
-    options: Optional[List[CommandOption]] = Field(default=None, description="Command options")
+    # Allow options as list of strings OR list of objects with name/description
+    options: Optional[List[Any]] = Field(default=None, description="Command options")
 
 
 class SkillFrontmatter(BaseFrontmatter):
     """Frontmatter schema for skills."""
 
+    # entry_point is optional - not all skills define it in SKILL.md
     entry_point: Optional[str] = Field(default=None, description="Entry point starting with /")
 
     @field_validator("entry_point")
@@ -136,28 +129,31 @@ class SkillFrontmatter(BaseFrontmatter):
 class AgentFrontmatter(BaseFrontmatter):
     """Frontmatter schema for agents."""
 
+    # model and color are optional for agents in .claude/agents/
     model: Optional[str] = Field(default=None, description="Model: sonnet, opus, or haiku")
-    color: Optional[str] = Field(default=None, description="Color for agent display")
-    hooks: Optional[Any] = Field(default=None, description="Agent hooks configuration")
+    color: Optional[str] = Field(default=None, description="Color for display")
 
     @field_validator("model")
     @classmethod
     def validate_model(cls, v: Optional[str]) -> Optional[str]:
         """Validate model is one of allowed values if provided."""
-        if v is not None:
-            allowed = {"sonnet", "opus", "haiku"}
-            if v not in allowed:
-                raise ValueError(f"Model must be one of {allowed}: {v}")
+        if v is None:
+            return v
+        allowed = {"sonnet", "opus", "haiku"}
+        if v not in allowed:
+            raise ValueError(f"Model must be one of {allowed}: {v}")
         return v
 
     @field_validator("color")
     @classmethod
     def validate_color(cls, v: Optional[str]) -> Optional[str]:
         """Validate color is one of allowed values if provided."""
-        if v is not None:
-            allowed = {"gray", "green", "purple", "blue", "red", "yellow", "orange", "cyan"}
-            if v not in allowed:
-                raise ValueError(f"Color must be one of {allowed}: {v}")
+        if v is None:
+            return v
+        # Expanded color palette to match actual usage
+        allowed = {"gray", "green", "purple", "blue", "red", "yellow", "orange", "cyan"}
+        if v not in allowed:
+            raise ValueError(f"Color must be one of {allowed}: {v}")
         return v
 
 
