@@ -14,6 +14,23 @@ from typing import Literal, Optional, Union
 from pydantic import BaseModel, Field
 
 
+CodexModel = Literal[
+    "codex",
+    "gpt-5.2-codex",
+    "codex-max",
+    "max",
+    "gpt-5.1-codex-max",
+    "codex-mini",
+    "mini",
+    "gpt-5.1-codex-mini",
+    "gpt-5",
+    "gpt-5.2",
+    "gtp-5",
+]
+ClaudeModel = Literal["sonnet", "opus", "haiku"]
+ModelName = Union[CodexModel, ClaudeModel]
+
+
 class TaskToolInput(BaseModel):
     description: str = Field(
         description="A short (3-5 word) description of the task",
@@ -27,11 +44,12 @@ class TaskToolInput(BaseModel):
         description="The type of specialized agent to use for this task",
         min_length=1,
     )
-    model: Optional[Literal["sonnet", "opus", "haiku"]] = Field(
+    model: Optional[ModelName] = Field(
         default=None,
         description=(
             "Optional model to use for this agent. If not specified, inherits from parent. "
-            "Prefer haiku for quick, straightforward tasks to minimize cost and latency."
+            "Claude models: sonnet, opus, haiku. Codex models: codex, max/codex-max, "
+            "mini/codex-mini, gpt-5, or full model names."
         ),
     )
     run_in_background: Optional[bool] = Field(

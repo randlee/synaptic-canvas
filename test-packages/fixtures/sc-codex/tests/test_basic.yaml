@@ -3,7 +3,10 @@ test_name: Basic /sc-codex invocation
 description: Verify /sc-codex runs and returns JSON with output/agentId.
 
 execution:
-  prompt: "/sc-codex write a short haiku about rain. Wait for Codex to finish, then grade the haiku on a scale from 1-10."
+  prompt: |
+    /sc-codex --background write a short haiku about rain.
+    Wait up to 8 seconds for Codex to finish. If it completes, return the haiku and a line `Grade: N` (N is 1-10).
+    If it is still running after 8 seconds, reply only with `STILL RUNNING` and the output_file path.
   model: haiku
   tools:
     - Bash
@@ -21,5 +24,5 @@ expectations:
     description: Output includes grade
     type: output_contains
     expected:
-      pattern: "grade"
+      pattern: 'Grade:\s*(10|[1-9])\b'
       flags: "i"

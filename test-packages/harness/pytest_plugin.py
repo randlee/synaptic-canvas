@@ -382,6 +382,32 @@ class YAMLTestItem(pytest.Item):
                 self.collected_data.claude_cli_stdout = self.claude_stdout
                 self.collected_data.claude_cli_stderr = self.claude_stderr
 
+                # Recompute log analysis to include CLI output and .claude/state logs
+                from .log_analyzer import analyze_logs, collect_log_content, merge_log_analysis
+
+                analyses = []
+                if self.collected_data.log_analysis:
+                    analyses.append(self.collected_data.log_analysis)
+
+                if self.claude_stdout or self.claude_stderr:
+                    combined_output = ""
+                    if self.claude_stdout:
+                        combined_output += f"=== Claude CLI stdout ===\n{self.claude_stdout}\n"
+                    if self.claude_stderr:
+                        combined_output += f"=== Claude CLI stderr ===\n{self.claude_stderr}\n"
+                    analyses.append(analyze_logs(combined_output))
+
+                log_dirs = [
+                    session.isolated_home / ".claude" / "state" / "logs",
+                    project_path / ".claude" / "state" / "logs",
+                ]
+                log_content = collect_log_content(log_dirs)
+                if log_content:
+                    analyses.append(analyze_logs(log_content))
+
+                if analyses:
+                    self.collected_data.log_analysis = merge_log_analysis(analyses)
+
                 # Evaluate expectations
                 evaluator = ExpectationEvaluator(self.collected_data)
                 failures = []

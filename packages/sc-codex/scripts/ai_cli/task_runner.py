@@ -82,16 +82,63 @@ def resolve_model(runner: RunnerType, model: Optional[str]) -> str:
     return resolved
 
 
-def build_prompt(payload: TaskToolInput) -> str:
-    return "\n".join(
+def _resume_context(payload: TaskToolInput, runner: RunnerType) -> Optional[str]:
+    if not payload.resume:
+        return None
+    output_dir = _default_output_dir(runner)
+    path = output_dir / f"{payload.resume}.jsonl"
+    if not path.exists():
+        raise FileNotFoundError(f"Resume transcript not found: {path}")
+
+    assistant_texts: list[str] = []
+    with path.open("r", encoding="utf-8") as handle:
+        for line in handle:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                entry = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if entry.get("type") != "assistant":
+                continue
+            content = entry.get("message", {}).get("content")
+            if isinstance(content, str):
+                assistant_texts.append(content)
+            elif isinstance(content, list):
+                for item in content:
+                    if isinstance(item, dict) and item.get("type") == "text":
+                        assistant_texts.append(item.get("text", ""))
+                    elif isinstance(item, str):
+                        assistant_texts.append(item)
+
+    if not assistant_texts:
+        return None
+
+    return "\n".join(assistant_texts[-3:])
+
+
+def build_prompt(payload: TaskToolInput, runner: RunnerType) -> str:
+    resume_text = _resume_context(payload, runner)
+    lines = [
+        f"You are a specialized agent of type '{payload.subagent_type}'.",
+        f"Description: {payload.description}",
+    ]
+    if resume_text:
+        lines.extend(
+            [
+                "Previous assistant output:",
+                resume_text,
+            ]
+        )
+    lines.extend(
         [
-            f"You are a specialized agent of type '{payload.subagent_type}'.",
-            f"Description: {payload.description}",
             f"Task: {payload.prompt}",
             "",
             "Return your result as plain text.",
         ]
     )
+    return "\n".join(lines)
 
 
 def _preview(text: str, limit: int = 200) -> str:
@@ -104,7 +151,7 @@ def _preview(text: str, limit: int = 200) -> str:
 def run_sync(runner: RunnerType, model: str, prompt: str) -> str:
     _check_runner_available(runner)
     if runner == "codex":
-        cmd = ["codex", "exec", "--model", model, prompt]
+        cmd = ["codex", "exec", "--yolo", "--model", model, prompt]
     else:
         cmd = ["claude", "--model", model, "--print", prompt]
     res = subprocess.run(cmd, text=True, capture_output=True)
@@ -315,7 +362,23 @@ def run_background(payload: TaskToolInput, runner: RunnerType, model: str, outpu
         "--input-file",
         str(payload_file),
     ]
-    proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    env = os.environ.copy()
+    scripts_dir = Path(__file__).resolve().parent.parent
+    existing = env.get("PYTHONPATH", "")
+    paths = [str(scripts_dir)]
+    if existing:
+        paths.append(existing)
+    env["PYTHONPATH"] = os.pathsep.join(paths)
+
+    stderr_path = output_file.with_suffix(".stderr")
+    stderr_handle = stderr_path.open("w", encoding="utf-8")
+    proc = subprocess.Popen(
+        cmd,
+        stdout=subprocess.DEVNULL,
+        stderr=stderr_handle,
+        env=env,
+    )
+    stderr_handle.close()
     if proc.poll() is not None:
         raise RuntimeError("Failed to start background process")
 
@@ -333,7 +396,7 @@ def run_background_child_with_payload(
     try:
         agent_path = resolve_agent_path(payload.subagent_type, runner)
         run_pretool_hooks(agent_path, payload)
-        output = run_sync(runner, model, build_prompt(payload))
+        output = run_sync(runner, model, build_prompt(payload, runner))
         assistant_entry = _jsonl_entry(agent_id, "assistant", output, None)
         write_log(
             {
@@ -396,7 +459,7 @@ def run_task(
     try:
         agent_path = resolve_agent_path(payload.subagent_type, runner)
         run_pretool_hooks(agent_path, payload)
-        output = run_sync(runner, model, build_prompt(payload))
+        output = run_sync(runner, model, build_prompt(payload, runner))
         write_log(
             {
                 "component": "ai_cli",

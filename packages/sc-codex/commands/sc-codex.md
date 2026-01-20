@@ -51,8 +51,31 @@ Interpret arguments as follows:
 When running:
 1) Build Task Tool JSON with `description`, `prompt`, `subagent_type: "sc-codex"` (unless user provided one).
    Default `run_in_background` to true unless `--no-background` is provided.
-2) Call the codex-agent runner as a Bash tool call.
-3) Tail the `output_file` until a final assistant line appears or a short timeout is reached.
+2) Call the codex-agent runner as a Bash tool call using `--json`.
+   Always use `python3 .claude/scripts/sc_codex_task.py --json '{...}'` (do not call other runner scripts).
+   Do not invent flags like `--run_in_background`, `--description`, `--prompt`, or `--subagent_type`.
+3) Poll the `output_file` for up to 8 seconds using Python (avoid `tail -f` and avoid `timeout`, which may be missing on macOS):
+
+```bash
+python3 - <<'PY'
+import json, time
+from pathlib import Path
+
+path = Path("PATH_TO_OUTPUT_FILE")
+deadline = time.time() + 8
+while time.time() < deadline:
+    if path.exists():
+        lines = [line for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+        if any('"type": "assistant"' in line for line in lines):
+            print(path.read_text(encoding="utf-8"))
+            break
+    time.sleep(0.5)
+else:
+    print("STILL RUNNING")
+PY
+```
+
+If the task is still running, return `agentId` and `output_file`.
 4) Return the Codex output and the `agentId`. If the task is still running at timeout, return `agentId` and `output_file`
    and tell the user how to check status.
 

@@ -10,6 +10,15 @@ This guide captures learned patterns for using fenced JSON, tool calls, and PreT
 - Prefer schema validation (pydantic) over ad-hoc parsing.
 - Keep tool outputs machine-readable; avoid mixed prose + JSON.
 
+## Script Dependency Standards
+
+- Always declare runtime dependencies in `manifest.yaml` under `requires`.
+- Use a structured `requires` object:
+  - `cli`: command-line tools (e.g., `python3`, `codex`, `git`)
+  - `python`: pip-installable packages required by scripts (e.g., `pydantic`, `pyyaml`)
+- `sc-manage` installs `requires.python` during package install (prefers venv; otherwise uses `pip --user`).
+- If a script imports a package, it must be listed in `requires.python` and mentioned in the package README.
+
 ## Fenced JSON Everywhere
 
 ### Agent input

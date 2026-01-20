@@ -7,8 +7,7 @@ import json
 import sys
 from pathlib import Path
 
-from jsonschema import ValidationError as SchemaValidationError
-from jsonschema import validate as validate_schema
+from pydantic import TypeAdapter, ValidationError as SchemaValidationError
 
 from ai_cli.logging import write_log
 from ai_cli.task_runner import (
@@ -17,7 +16,7 @@ from ai_cli.task_runner import (
     run_task,
     resolve_model,
 )
-from ai_cli.task_tool import TaskToolInput, task_tool_input_schema
+from ai_cli.task_tool import TaskToolInput, TaskToolOutput, task_tool_input_schema
 
 
 def _read_json(path: str | None) -> dict:
@@ -58,15 +57,13 @@ def cmd_run(args: argparse.Namespace) -> int:
         output_dir=Path(args.output_dir) if args.output_dir else None,
     )
     output_dict = output.model_dump()
-    schema_path = Path(__file__).resolve().parent / "task_tool.output.schema.json"
-    schema = json.loads(schema_path.read_text(encoding="utf-8"))
     try:
-        validate_schema(instance=output_dict, schema=schema)
+        TypeAdapter(TaskToolOutput).validate_python(output_dict)
     except SchemaValidationError as exc:
         err = {
             "error": "OUTPUT_SCHEMA_INVALID",
             "message": "Task Tool output failed schema validation",
-            "details": exc.message,
+            "details": str(exc),
         }
         write_log(
             {

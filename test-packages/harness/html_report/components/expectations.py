@@ -36,21 +36,22 @@ class ExpectationsBuilder(BaseBuilder[ExpectationsDisplayModel]):
             onclick=f"copySection('expectations-{data.test_index}', 'Expectations')"
         )
 
-        header = f'''<div class="section-header">
+        header = f'''<summary class="section-header">
   <h2>Expectations <span class="pass-count">({data.passed_count} passed)</span> <span class="fail-count">({data.failed_count} failed)</span></h2>
   {copy_btn}
-</div>'''
+</summary>'''
 
         # Build expectation items
         items_html = []
         for exp in data.expectations:
             items_html.append(self._build_expectation_item(exp))
 
-        return f'''{header}
-
+        return f'''<details class="expectations-section" open>
+{header}
 <ul class="expectations-list" id="expectations-{data.test_index}">
   {"".join(items_html)}
-</ul>'''
+</ul>
+</details>'''
 
     def _build_expectation_item(self, exp: ExpectationDisplayModel) -> str:
         """Build a single expectation item HTML.
@@ -70,9 +71,13 @@ class ExpectationsBuilder(BaseBuilder[ExpectationsDisplayModel]):
         )
 
         # Build toggle button
-        toggle_class = "has-content" if exp.has_details else "no-content"
-        toggle_onclick = f"toggleExpectation('{exp.exp_id}')" if exp.has_details else ""
-        toggle_btn = f'''<button class="expectation-toggle {toggle_class}" onclick="{toggle_onclick}">Details</button>'''
+        if exp.has_details:
+            toggle_btn = (
+                f'''<button class="expectation-toggle has-content" '''
+                f'''onclick="toggleExpectation('{exp.exp_id}')">Details</button>'''
+            )
+        else:
+            toggle_btn = '''<span class="expectation-toggle no-content">No details</span>'''
 
         # Build expanded details section
         expanded_html = ""
@@ -83,11 +88,11 @@ class ExpectationsBuilder(BaseBuilder[ExpectationsDisplayModel]):
             expanded_html = f'''
       <div class="expectation-expanded" id="{exp.exp_id}">
         <div class="expected-actual">
-          <div>
+          <div class="expected-block">
             <h4>Expected</h4>
             {expected_pre}
           </div>
-          <div>
+          <div class="actual-block">
             <h4>Actual</h4>
             {actual_pre}
           </div>

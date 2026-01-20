@@ -35,6 +35,7 @@ import yaml
 
 from .collector import CollectedData, DataCollector
 from .environment import get_git_state, isolated_claude_session
+from .log_analyzer import analyze_logs, collect_log_content
 from .models import (
     ClaudeResponse,
     DebugInfo,
@@ -485,13 +486,27 @@ class TestRunner:
                 collector = DataCollector(
                     trace_path=session.trace_path,
                     transcript_path=session.transcript_path,
-                    project_path=self.project_path,
                 )
                 collected_data = collector.collect()
 
                 # Propagate Claude CLI output to collected data
                 collected_data.claude_cli_stdout = claude_stdout
                 collected_data.claude_cli_stderr = claude_stderr
+
+                # Analyze CLI output plus Claude state logs for warnings/errors
+                log_dirs = [
+                    session.isolated_home / ".claude" / "state" / "logs",
+                    self.project_path / ".claude" / "state" / "logs",
+                ]
+                log_content = collect_log_content(log_dirs)
+                combined_output = ""
+                if claude_stdout:
+                    combined_output += f"=== Claude CLI stdout ===\n{claude_stdout}\n"
+                if claude_stderr:
+                    combined_output += f"=== Claude CLI stderr ===\n{claude_stderr}\n"
+                if log_content:
+                    combined_output += f"=== Claude state logs ===\n{log_content}\n"
+                collected_data.log_analysis = analyze_logs(combined_output)
 
                 # Fill in missing data
                 if not collected_data.start_timestamp:
@@ -532,7 +547,6 @@ class TestRunner:
                     setup_commands=setup_commands,
                     cleanup_commands=cleanup_commands,
                     pytest_output=claude_session_log,
-                    allow_warnings=test_config.allow_warnings,
                 )
 
                 # Override duration with measured time

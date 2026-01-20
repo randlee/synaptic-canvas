@@ -12,6 +12,8 @@ with modular component builders that transform Pydantic models into HTML.
 from __future__ import annotations
 
 from datetime import datetime
+import json
+import re
 from typing import TYPE_CHECKING
 
 from .models import (
@@ -411,6 +413,7 @@ class HTMLReportBuilder:
             )
 
         log_analysis = test.log_analysis
+        raw_context = self._format_log_context(log_analysis.raw_content)
 
         # Transform log entries to display models
         issues = []
@@ -439,7 +442,37 @@ class HTMLReportBuilder:
             test_index=index,
             issues=issues,
             allow_warnings=getattr(test, 'allow_warnings', False),
+            raw_context=raw_context,
         )
+
+    @staticmethod
+    def _format_log_context(raw_content: str) -> str | None:
+        """Format raw log content for display."""
+        if not raw_content:
+            return None
+
+        lines = []
+        for line in raw_content.splitlines():
+            stripped = line.rstrip()
+            if not stripped:
+                # Collapse multiple blank lines
+                if lines and lines[-1] == "":
+                    continue
+                lines.append("")
+                continue
+            # Pretty-print JSON object lines when possible
+            if stripped.startswith("{") and stripped.endswith("}"):
+                try:
+                    parsed = json.loads(stripped)
+                except json.JSONDecodeError:
+                    lines.append(stripped)
+                else:
+                    lines.append(json.dumps(parsed, indent=2, ensure_ascii=False))
+                continue
+            lines.append(stripped)
+
+        formatted = "\n".join(lines).strip()
+        return formatted or None
 
     def _transform_expectation(self, exp: "Expectation") -> ExpectationDisplayModel:
         """Transform Expectation to ExpectationDisplayModel.
@@ -456,17 +489,11 @@ class HTMLReportBuilder:
         details_text = exp.failure_reason or f"Type: {exp.type.value}"
 
         # Determine if details should be shown
-        has_details = exp.has_details or (
-            exp.expected is not None and exp.actual is not None
-        )
+        has_details = exp.has_details or bool(exp.expected) or bool(exp.actual)
 
         # Format expected/actual content
-        expected_content = None
-        actual_content = None
-        if exp.expected:
-            expected_content = str(exp.expected)
-        if exp.actual:
-            actual_content = str(exp.actual)
+        expected_content = self._format_expectation_content(exp.expected)
+        actual_content = self._format_expectation_content(exp.actual)
 
         return ExpectationDisplayModel(
             exp_id=exp.id,
@@ -477,6 +504,56 @@ class HTMLReportBuilder:
             expected_content=expected_content,
             actual_content=actual_content,
         )
+
+    def _format_expectation_content(self, value: object) -> str | None:
+        if value is None:
+            return None
+
+        if isinstance(value, dict):
+            value = self._format_expectation_dict(value)
+            return json.dumps(value, indent=2, sort_keys=True, ensure_ascii=False)
+
+        if isinstance(value, list):
+            return json.dumps(value, indent=2, sort_keys=True, ensure_ascii=False)
+
+        if isinstance(value, str):
+            cleaned = self._format_command_json(value)
+            if cleaned != value:
+                return cleaned
+            stripped = value.strip()
+            if stripped.startswith("{") or stripped.startswith("["):
+                try:
+                    parsed = json.loads(stripped)
+                except json.JSONDecodeError:
+                    return value
+                return json.dumps(parsed, indent=2, ensure_ascii=False)
+            return value
+
+        return str(value)
+
+    def _format_expectation_dict(self, data: dict) -> dict:
+        formatted = dict(data)
+        command = formatted.get("command")
+        if isinstance(command, str):
+            formatted["command"] = self._format_command_json(command)
+        return formatted
+
+    def _format_command_json(self, command: str) -> str:
+        """Pretty-print embedded JSON passed via --json in a command string."""
+        pattern = re.compile(r"--json\\s+(?P<quote>['\"])(?P<payload>.*?)(?P=quote)")
+        match = pattern.search(command)
+        if not match:
+            return command
+
+        payload = match.group("payload")
+        try:
+            parsed = json.loads(payload)
+        except json.JSONDecodeError:
+            return command
+
+        pretty = json.dumps(parsed, indent=2, ensure_ascii=False)
+        replacement = f"--json {pretty}"
+        return command[: match.start()] + replacement + command[match.end() :]
 
     def _transform_timeline(
         self,

@@ -217,6 +217,8 @@ class TestConfig:
             This should only be used with explicit user approval.
             IMPORTANT: Using this flag requires documenting the reason in
             a comment and obtaining user approval. Errors are NEVER suppressed.
+        allow_warnings_reason: Required when allow_warnings is true. Must
+            document the user-approved reason for suppression.
     """
     __test__ = False  # Prevent pytest collection
 
@@ -231,6 +233,7 @@ class TestConfig:
     skip_reason: str = ""
     source_path: Path | None = None
     allow_warnings: bool = False
+    allow_warnings_reason: str = ""
 
     @classmethod
     def from_yaml(cls, yaml_path: Path) -> "TestConfig":
@@ -254,6 +257,14 @@ class TestConfig:
             for i, exp in enumerate(data.get("expectations", []))
         ]
 
+        allow_warnings = data.get("allow_warnings", False)
+        allow_warnings_reason = data.get("allow_warnings_reason", "")
+        if allow_warnings and not allow_warnings_reason:
+            raise FixtureValidationError(
+                "allow_warnings requires allow_warnings_reason with documented approval",
+                fixture_name=yaml_path.parent.parent.name if yaml_path.parent.parent else None,
+            )
+
         return cls(
             test_id=data.get("test_id", yaml_path.stem),
             test_name=data.get("test_name", yaml_path.stem.replace("_", " ").title()),
@@ -265,7 +276,8 @@ class TestConfig:
             skip=data.get("skip", False),
             skip_reason=data.get("skip_reason", ""),
             source_path=yaml_path,
-            allow_warnings=data.get("allow_warnings", False),
+            allow_warnings=allow_warnings,
+            allow_warnings_reason=allow_warnings_reason,
         )
 
     @property

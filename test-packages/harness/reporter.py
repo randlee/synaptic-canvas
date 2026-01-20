@@ -38,6 +38,7 @@ from typing import Any
 
 from .collector import CollectedData, DataCollector
 from .environment import get_git_state
+from .response_filters import OutputFilterConfig, compile_output_pattern, filter_response_texts
 from .schemas import ArtifactPaths, EnrichedData, TimelineTree
 from .models import (
     ClaudeResponse,
@@ -242,7 +243,6 @@ class ReportBuilder:
             ),
             timeline_tree=timeline_tree,
             artifacts=artifacts,
-            log_analysis=data.log_analysis,
             allow_warnings=allow_warnings,
         )
 
@@ -561,20 +561,31 @@ class ExpectationEvaluator:
         """Evaluate an output_contains expectation."""
         pattern = expected.get("pattern", "")
         flags_str = expected.get("flags", "")
+        case_sensitive = expected.get("case_sensitive", False)
+        response_filter = expected.get("response_filter", "assistant_all")
+        exclude_prompt = expected.get("exclude_prompt", True)
 
-        # Build regex flags
-        flags = 0
-        if "i" in flags_str:
-            flags |= re.IGNORECASE
+        compiled = compile_output_pattern(
+            pattern=pattern,
+            flags=flags_str,
+            case_sensitive=case_sensitive,
+        )
+        response_texts = filter_response_texts(
+            self.data,
+            OutputFilterConfig(
+                response_filter=response_filter,
+                exclude_prompt=exclude_prompt,
+            ),
+        )
 
         # Search in Claude responses
-        for response in self.data.claude_responses:
-            match = re.search(pattern, response.text, flags)
+        for response_text in response_texts:
+            match = compiled.search(response_text)
             if match:
                 # Get context around match
                 start = max(0, match.start() - 50)
-                end = min(len(response.text), match.end() + 50)
-                context = response.text[start:end]
+                end = min(len(response_text), match.end() + 50)
+                context = response_text[start:end]
 
                 return Expectation(
                     id=expectation_id,

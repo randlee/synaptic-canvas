@@ -18,6 +18,9 @@ Call the runner script (installed path in projects is `.claude/scripts`):
 python3 .claude/scripts/sc_codex_task.py --json '{...}'
 ```
 
+Use `sc_codex_task.py` only (do not call other runner script names).
+Do not invent flags like `--run_in_background`, `--description`, `--prompt`, or `--subagent_type`.
+
 ## Input
 
 Provide Task Tool input JSON with:
@@ -37,6 +40,6 @@ Provide Task Tool input JSON with:
   - Add `--background` to force background explicitly.
   - Add `--no-background` to force blocking mode.
   - The JSON output includes `output_file` (JSONL transcript path) and `agentId`.
-  - Use `tail -f <output_file>` to monitor progress, then read the final output.
+  - Poll `output_file` via a short Python loop (avoid `tail -f` and avoid `timeout`, which may be missing on macOS).
 - Blocking mode (default without `--background`) returns `{ "output", "agentId" }`.
 - The runner enforces schema validation and logs to `.claude/state/logs/<package-name>/`.

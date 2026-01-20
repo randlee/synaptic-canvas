@@ -1,0 +1,36 @@
+test_id: sc-codex-002
+test_name: Two mini runs in one prompt
+description: Launch two codex-mini runs back-to-back and grade both results.
+
+execution:
+  prompt: |
+    /sc-codex Launch two background Codex mini runs: (1) write a short haiku about sunrise, (2) write a short haiku about the ocean.
+    Start both runs before waiting. Wait up to 8 seconds for each to finish. If they complete, return both haikus and two lines
+    `Grade: N` (one per haiku) where N is a numeric score from 1-10. If either is still running after 8 seconds, reply only with
+    `STILL RUNNING` and both output_file paths.
+  model: haiku
+  tools:
+    - Bash
+  timeout_ms: 120000
+
+expectations:
+  - id: exp-001
+    description: Runs codex mini for sunrise
+    type: tool_call
+    expected:
+      tool: Bash
+      pattern: "sc_codex_task.py.*sunrise"
+
+  - id: exp-002
+    description: Runs codex mini for ocean
+    type: tool_call
+    expected:
+      tool: Bash
+      pattern: "sc_codex_task.py.*ocean"
+
+  - id: exp-003
+    description: Output includes grade
+    type: output_contains
+    expected:
+      pattern: 'Grade:\s*(10|[1-9])\b.*Grade:\s*(10|[1-9])\b'
+      flags: "is"

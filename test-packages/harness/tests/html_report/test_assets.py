@@ -246,7 +246,7 @@ class TestCSSExpectations:
     def test_contains_expected_actual_grid(self):
         """Verify expected/actual grid is defined."""
         assert ".expected-actual {" in CSS_EXPECTATIONS
-        assert "grid-template-columns: 1fr 1fr" in CSS_EXPECTATIONS
+        assert "flex-direction: column" in CSS_EXPECTATIONS
 
 
 class TestCSSTimeline:

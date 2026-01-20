@@ -18,8 +18,23 @@
     },
     "model": {
       "type": "string",
-      "enum": ["sonnet", "opus", "haiku"],
-      "description": "Optional model to use for this agent. If not specified, inherits from parent. Prefer haiku for quick, straightforward tasks to minimize cost and latency."
+      "enum": [
+        "sonnet",
+        "opus",
+        "haiku",
+        "codex",
+        "gpt-5.2-codex",
+        "codex-max",
+        "max",
+        "gpt-5.1-codex-max",
+        "codex-mini",
+        "mini",
+        "gpt-5.1-codex-mini",
+        "gpt-5",
+        "gpt-5.2",
+        "gtp-5"
+      ],
+      "description": "Optional model to use for this agent. If not specified, inherits from parent. Claude models: sonnet, opus, haiku. Codex models: codex, max/codex-max, mini/codex-mini, gpt-5, or full model names."
     },
     "run_in_background": {
       "type": "boolean",

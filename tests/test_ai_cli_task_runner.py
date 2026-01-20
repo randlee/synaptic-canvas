@@ -173,7 +173,7 @@ def test_run_pretool_hooks_success(tmp_path: Path) -> None:
         "    - matcher: \"Bash\"\n"
         "      hooks:\n"
         "        - type: command\n"
-        "          command: \"python3 -c 'import json,sys; json.load(sys.stdin); sys.exit(0)'\"\n"
+        "          command: \"python -c \\\"import json,sys; json.load(sys.stdin); sys.exit(0)\\\"\"\n"
         "---\n",
         encoding="utf-8",
     )
@@ -194,7 +194,7 @@ def test_run_pretool_hooks_failure(tmp_path: Path) -> None:
         "    - matcher: \"Bash\"\n"
         "      hooks:\n"
         "        - type: command\n"
-        "          command: \"python3 -c 'import sys; sys.exit(2)'\"\n"
+        "          command: \"python -c \\\"import sys; sys.exit(2)\\\"\"\n"
         "---\n",
         encoding="utf-8",
     )

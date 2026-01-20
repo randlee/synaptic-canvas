@@ -1267,7 +1267,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: '3.14'
 
       - name: Verify Python
         run: |
@@ -1637,7 +1637,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: '3.14'
 
       - name: Set up Node.js
         uses: actions/setup-node@v3

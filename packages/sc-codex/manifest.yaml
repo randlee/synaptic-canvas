@@ -31,5 +31,9 @@ artifacts:
     - scripts/ai_cli/README.md
 
 requires:
-  - python3
-  - codex
+  cli:
+    - python3
+    - codex
+  python:
+    - pydantic
+    - pyyaml

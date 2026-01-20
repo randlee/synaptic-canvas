@@ -507,6 +507,7 @@ class LogIssuesDisplayModel(BaseModel):
     test_index: int
     issues: list[LogIssueDisplayModel] = Field(default_factory=list)
     allow_warnings: bool = False
+    raw_context: str | None = None
 
     @computed_field
     @property
