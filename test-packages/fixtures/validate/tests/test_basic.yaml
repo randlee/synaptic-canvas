@@ -1,0 +1,41 @@
+# P1 Test: Basic validation runs all validators
+# Component Type: COMMAND
+# Tests: /validate (no flags)
+
+test_id: validate-basic-001
+test_name: Basic validation runs all validators
+component_type: command
+description: |
+  Verify /validate runs the full validation suite including all validators.
+  Should show pass/fail status for each validator.
+
+execution:
+  prompt: "/validate"
+  model: haiku
+  timeout_ms: 180000
+  tools:
+    - Read
+    - Bash
+    - Glob
+
+expectations:
+  - id: exp-runs-validate-all
+    description: Runs validate-all.py script
+    type: tool_call
+    expected:
+      tool: Bash
+      pattern: "validate-all.py"
+
+  - id: exp-shows-summary
+    description: Shows validation summary with pass/fail counts
+    type: output_contains
+    expected:
+      pattern: "(passed|failed|summary|result)"
+      flags: "i"
+
+  - id: exp-mentions-validators
+    description: Output mentions individual validators
+    type: output_contains
+    expected:
+      pattern: "(agent|cross-reference|frontmatter|manifest|marketplace|script)"
+      flags: "i"
