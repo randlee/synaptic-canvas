@@ -1,0 +1,24 @@
+=== Synaptic Canvas Version Comparison ===
+
+Marketplace Version: 0.7.0
+
+[0;32mPackage: sc-ci-automation (manifest: 0.7.0)[0m
+
+[0;32mPackage: sc-delay-tasks (manifest: 0.7.0)[0m
+
+[0;32mPackage: sc-git-worktree (manifest: 0.7.0)[0m
+
+[0;32mPackage: sc-github-issue (manifest: 0.7.0)[0m
+
+[0;32mPackage: sc-kanban (manifest: 0.7.0)[0m
+
+[0;32mPackage: sc-manage (manifest: 0.7.0)[0m
+
+[0;32mPackage: sc-repomix-nuget (manifest: 0.7.0)[0m
+
+[0;32mPackage: sc-roslyn-diff (manifest: 0.7.0)[0m
+
+[0;32mPackage: sc-startup (manifest: 0.7.0)[0m
+
+[0;32mAll versions consistent![0m
+Exit: 0

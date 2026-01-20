@@ -1,0 +1,48 @@
+✓ Validated 29 script references successfully
+  Warning: No frontmatter found
+  Warning: No frontmatter found
+  Warning: No frontmatter found
+  Warning: No frontmatter found
+  Warning: No frontmatter found
+  Warning: No frontmatter found
+  Warning: No frontmatter found
+  Warning: No frontmatter found
+  Warning: No frontmatter found
+  Warning: No frontmatter found
+  Warning: No frontmatter found
+  Warning: No frontmatter found
+  Warning: No script references found
+  Warning: No frontmatter found
+  Warning: No frontmatter found
+  Warning: No frontmatter found
+  Warning: No frontmatter found
+  Warning: No frontmatter found
+  Warning: No frontmatter found
+  Warning: No script references found
+  Warning: No frontmatter found
+  Warning: No frontmatter found
+  Warning: No frontmatter found
+  Warning: No frontmatter found
+  Warning: No frontmatter found
+  Warning: No frontmatter found
+  Warning: No frontmatter found
+  Warning: No frontmatter found
+  Warning: No frontmatter found
+  Warning: No script references found
+  Warning: No frontmatter found
+  Warning: No frontmatter found
+  Warning: No frontmatter found
+  Warning: No frontmatter found
+  Warning: No frontmatter found
+  Warning: No frontmatter found
+  Warning: No frontmatter found
+  Warning: No script references found
+  Warning: No frontmatter found
+  Warning: No frontmatter found
+  Warning: No frontmatter found
+  Warning: No frontmatter found
+  Warning: No frontmatter found
+  Warning: No frontmatter found
+  Warning: No frontmatter found
+  Warning: No frontmatter found
+Exit: 0

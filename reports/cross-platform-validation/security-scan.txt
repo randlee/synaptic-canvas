@@ -1,0 +1,93 @@
+
+═══════════════════════════════════════════════════════════════
+Security Scan Report - 2026-01-19T22:50:21Z
+═══════════════════════════════════════════════════════════════
+
+❌ Secrets Detection: FAILED (23 potential secrets found)
+   [HIGH] Potential secret in: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/tests/scripts/test_security_scan.py
+   [HIGH] Potential secret in: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/tests/scripts/test_security_scan.py
+   [HIGH] Potential secret in: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/tests/scripts/test_security_scan.py
+   [HIGH] Potential secret in: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/docs/SECURITY-SCANNING-GUIDE.md
+   [HIGH] Potential secret in: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/docs/SECURITY-SCANNING-GUIDE.md
+   [HIGH] Potential secret in: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/docs/SECURITY-SCANNING-GUIDE.md
+   [HIGH] Potential secret in: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/tests/scripts/test_security_scan.py
+   [HIGH] Potential secret in: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/docs/agent-runner-comprehensive.md
+   [HIGH] Potential secret in: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/docs/SECURITY-SCANNING-GUIDE.md
+   [HIGH] Potential secret in: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/docs/SECURITY-SCANNING-GUIDE.md
+   [HIGH] Potential secret in: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/docs/SECURITY-SCANNING-GUIDE.md
+   [HIGH] Potential secret in: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/docs/SECURITY-SCANNING-GUIDE.md
+   [HIGH] Potential secret in: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/docs/SECURITY-SCANNING-GUIDE.md
+   [HIGH] Potential secret in: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/docs/SECURITY-SCANNING-GUIDE.md
+   [HIGH] Potential secret in: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/docs/SECURITY-SCANNING-GUIDE.md
+   [HIGH] Potential secret in: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/tests/scripts/test_security_scan.py
+   [HIGH] Potential secret in: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/docs/SECURITY-SCANNING-GUIDE.md
+   [HIGH] Potential secret in: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/docs/SECURITY-SCANNING-GUIDE.md
+   [HIGH] Potential secret in: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/tests/scripts/test_security_scan.py
+   [HIGH] Potential secret in: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/docs/SECURITY-SCANNING-GUIDE.md
+   [HIGH] Potential secret in: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/scripts/security_scan.py
+   [HIGH] Potential secret in: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/scripts/security_scan.py
+   [MEDIUM] Possible credential in markdown: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/docs/SECURITY-SCANNING-GUIDE.md
+✅ Script Quality: PASSED (all 6 scripts valid)
+❌ Python Safety: FAILED (30 unsafe patterns found)
+   [HIGH] Unsafe eval() call in: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/scripts/security-scan.py
+   [HIGH] Unsafe eval() call in: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/scripts/security-scan.py
+   [HIGH] Unsafe eval() call in: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/scripts/security_scan.py
+   [HIGH] Unsafe eval() call in: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/scripts/security_scan.py
+   [HIGH] Unsafe eval() call in: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/tests/scripts/test_security_scan.py
+   [HIGH] Unsafe eval() call in: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/tests/scripts/test_security_scan.py
+   [HIGH] Unsafe eval() call in: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/tests/scripts/test_security_scan.py
+   [HIGH] Unsafe eval() call in: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/tests/scripts/test_security_scan.py
+   [HIGH] Unsafe exec() call in: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/scripts/security-scan.py
+   [HIGH] Unsafe exec() call in: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/scripts/security-scan.py
+   [HIGH] Unsafe exec() call in: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/scripts/security_scan.py
+   [HIGH] Unsafe exec() call in: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/scripts/security_scan.py
+   [HIGH] Unsafe exec() call in: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/tests/scripts/test_security_scan.py
+   [HIGH] Unsafe exec() call in: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/tests/scripts/test_security_scan.py
+   [HIGH] Unsafe exec() call in: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/tests/scripts/test_security_scan.py
+   [MEDIUM] Potentially unsafe shell=True in: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/scripts/security-scan.py
+   [MEDIUM] Potentially unsafe shell=True in: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/scripts/security-scan.py
+   [MEDIUM] Potentially unsafe shell=True in: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/scripts/security-scan.py
+   [MEDIUM] Potentially unsafe shell=True in: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/scripts/security_scan.py
+   [MEDIUM] Potentially unsafe shell=True in: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/scripts/security_scan.py
+   [MEDIUM] Potentially unsafe shell=True in: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/scripts/security_scan.py
+   [MEDIUM] Potentially unsafe shell=True in: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/test-packages/harness/pytest_plugin.py
+   [MEDIUM] Potentially unsafe shell=True in: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/test-packages/harness/pytest_plugin.py
+   [MEDIUM] Potentially unsafe shell=True in: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/tests/scripts/test_security_scan.py
+   [MEDIUM] Potentially unsafe shell=True in: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/tests/scripts/test_security_scan.py
+   [MEDIUM] Potentially unsafe shell=True in: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/tests/scripts/test_security_scan.py
+   [MEDIUM] Pickle deserialization in: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/scripts/security-scan.py
+   [MEDIUM] Pickle deserialization in: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/scripts/security_scan.py
+   [MEDIUM] Pickle deserialization in: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/tests/scripts/test_security_scan.py
+   [MEDIUM] Pickle deserialization in: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/tests/scripts/test_security_scan.py
+❌ Package Documentation: FAILED (12 issues in 9 packages)
+   [MEDIUM] README missing security information: sc-startup
+   [HIGH] Missing LICENSE in: sc-manage
+   [HIGH] Missing LICENSE in: sc-ci-automation
+   [HIGH] Missing LICENSE in: sc-repomix-nuget
+   [MEDIUM] README missing security information: sc-kanban
+   [HIGH] Missing LICENSE in: sc-kanban
+   [HIGH] Missing LICENSE in: sc-git-worktree
+   [MEDIUM] README missing security information: sc-github-issue
+   [HIGH] Missing LICENSE in: sc-github-issue
+   [MEDIUM] README missing security information: sc-roslyn-diff
+   [HIGH] Missing LICENSE in: sc-roslyn-diff
+   [HIGH] Missing LICENSE in: sc-delay-tasks
+❌ License Files: FAILED (8 missing licenses)
+   [HIGH] Missing LICENSE in: sc-manage
+   [HIGH] Missing LICENSE in: sc-ci-automation
+   [HIGH] Missing LICENSE in: sc-repomix-nuget
+   [HIGH] Missing LICENSE in: sc-kanban
+   [HIGH] Missing LICENSE in: sc-git-worktree
+   [HIGH] Missing LICENSE in: sc-github-issue
+   [HIGH] Missing LICENSE in: sc-roslyn-diff
+   [HIGH] Missing LICENSE in: sc-delay-tasks
+✅ Dependency Audit: PASSED (no vulnerabilities found)
+
+───────────────────────────────────────────────────────────────
+
+OVERALL STATUS: ❌ FAILED
+Total Issues Found: 73
+Scan Date: 2026-01-19T22:50:21Z
+
+═══════════════════════════════════════════════════════════════
+Exit: 2

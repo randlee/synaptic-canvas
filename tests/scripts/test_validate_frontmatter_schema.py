@@ -150,15 +150,19 @@ def test_base_frontmatter_semver_validation():
 
 
 def test_command_frontmatter_valid():
-    """Test valid command frontmatter."""
+    """Test valid command frontmatter with option objects."""
     data = {
         "name": "test-cmd",
         "version": "1.0.0",
         "description": "Test",
-        "options": ["--flag1", "--flag2"],
+        "options": [
+            {"name": "--flag1", "description": "First flag"},
+            {"name": "--flag2", "description": "Second flag"},
+        ],
     }
     model = CommandFrontmatter(**data)
-    assert model.options == ["--flag1", "--flag2"]
+    assert len(model.options) == 2
+    assert model.options[0].name == "--flag1"
 
 
 def test_command_frontmatter_optional_options():
@@ -242,8 +246,8 @@ def test_agent_frontmatter_model_validation():
 
 
 def test_agent_frontmatter_color_validation():
-    """Test color must be one of allowed values (expanded palette)."""
-    # Valid colors - now includes orange and cyan
+    """Test color must be one of allowed values."""
+    # Valid colors (including orange and cyan which are used in the codebase)
     for color in ["gray", "green", "purple", "blue", "red", "yellow", "orange", "cyan"]:
         AgentFrontmatter(
             name="test",
@@ -253,14 +257,14 @@ def test_agent_frontmatter_color_validation():
             color=color,
         )
 
-    # Invalid color - use a truly invalid color
+    # Invalid color
     with pytest.raises(ValueError, match="Color must be one of"):
         AgentFrontmatter(
             name="test",
             version="1.0.0",
             description="Test",
             model="sonnet",
-            color="magenta",
+            color="magenta",  # An actually invalid color
         )
 
 
@@ -389,7 +393,7 @@ def test_validate_frontmatter_schema_skill_valid(valid_skill_frontmatter):
 
 
 def test_validate_frontmatter_schema_skill_missing_entry_point():
-    """Test skill with missing entry_point - now allowed (optional)."""
+    """Test skill with missing entry_point (now optional)."""
     data = FrontmatterData(
         file_path="/test/skills/test/SKILL.md",
         artifact_type="skill",
@@ -451,7 +455,7 @@ def test_validate_frontmatter_schema_agent_invalid_model():
 
 
 def test_validate_frontmatter_schema_agent_invalid_color():
-    """Test agent with invalid color - orange is now valid."""
+    """Test agent with invalid color."""
     data = FrontmatterData(
         file_path="/test/agents/test.md",
         artifact_type="agent",
@@ -460,26 +464,7 @@ def test_validate_frontmatter_schema_agent_invalid_color():
             "version": "1.0.0",
             "description": "Test",
             "model": "sonnet",
-            "color": "orange",
-        },
-        raw_frontmatter="",
-    )
-    result = validate_frontmatter_schema(data)
-    # orange is now a valid color
-    assert isinstance(result, Success)
-
-
-def test_validate_frontmatter_schema_agent_truly_invalid_color():
-    """Test agent with truly invalid color (not in expanded palette)."""
-    data = FrontmatterData(
-        file_path="/test/agents/test.md",
-        artifact_type="agent",
-        data={
-            "name": "test",
-            "version": "1.0.0",
-            "description": "Test",
-            "model": "sonnet",
-            "color": "magenta",  # Not in valid colors
+            "color": "magenta",  # An actually invalid color (orange is now valid)
         },
         raw_frontmatter="",
     )
@@ -699,15 +684,15 @@ def test_empty_description():
 
 
 def test_extra_fields_allowed():
-    """Test that extra fields are now allowed for flexibility."""
-    # Extra fields should no longer raise an error
-    cmd = CommandFrontmatter(
+    """Test that extra fields are allowed for flexibility."""
+    # Extra fields are now allowed (extra="allow" in model_config)
+    model = CommandFrontmatter(
         name="test",
         version="1.0.0",
         description="Test",
-        extra_field="now allowed",
+        extra_field="allowed",
     )
-    assert cmd.name == "test"
+    assert model.name == "test"
 
 
 def test_version_with_leading_zeros():

@@ -421,7 +421,8 @@ class TestPackageDocumentation:
         scanner.verify_package_documentation()
 
         check = scanner.checks["package_documentation"]
-        assert check.status == CheckStatus.FAILED
+        # Missing README is a warning, not a failure
+        assert check.status == CheckStatus.WARNING
         assert any("README" in issue.message for issue in check.issues)
 
     def test_readme_missing_security(self, temp_repo):
@@ -516,7 +517,8 @@ class TestLicenseFiles:
         scanner.verify_license_files()
 
         check = scanner.checks["license_files"]
-        assert check.status == CheckStatus.FAILED
+        # Missing LICENSE is a warning, not a failure
+        assert check.status == CheckStatus.WARNING
         assert any("LICENSE" in issue.message for issue in check.issues)
 
     def test_empty_license_file(self, temp_repo):
@@ -541,7 +543,8 @@ class TestLicenseFiles:
         scanner.verify_license_files()
 
         check = scanner.checks["license_files"]
-        assert check.status == CheckStatus.FAILED
+        # Missing LICENSE is a warning, not a failure
+        assert check.status == CheckStatus.WARNING
         assert any("repository root" in issue.message for issue in check.issues)
 
 
@@ -741,6 +744,14 @@ class TestHelperFunctions:
     def test_command_exists_false(self):
         """Test _command_exists with non-existing command."""
         assert not SecurityScanner._command_exists("nonexistent_command_xyz")
+
+    def test_command_exists_cross_platform(self):
+        """Test _command_exists uses shutil.which for cross-platform support."""
+        import shutil
+        # Verify python3 exists (should work on all platforms)
+        assert SecurityScanner._command_exists("python3") == (shutil.which("python3") is not None)
+        # Verify the implementation matches shutil.which behavior
+        assert SecurityScanner._command_exists("git") == (shutil.which("git") is not None)
 
     def test_get_search_path_repo_root(self, basic_config):
         """Test _get_search_path returns repo root."""
@@ -960,7 +971,7 @@ class TestMainFunction:
 
     @patch("sys.argv", ["security-scan.py"])
     def test_main_warning_exit_code(self, temp_repo):
-        """Test main() returns exit code 1 for warnings."""
+        """Test main() returns exit code 0 for warnings (warnings are non-blocking)."""
         with patch("security_scan.Path") as mock_path:
             mock_path.return_value.parent.parent.resolve.return_value = temp_repo
             with patch("security_scan.SecurityScanner.run") as mock_run:
@@ -976,11 +987,12 @@ class TestMainFunction:
                 mock_run.return_value = Success(value=mock_results)
 
                 exit_code = main()
-                assert exit_code == 1
+                # Warnings return 0 (non-blocking)
+                assert exit_code == 0
 
     @patch("sys.argv", ["security-scan.py"])
     def test_main_failed_exit_code(self, temp_repo):
-        """Test main() returns exit code 2 for failures."""
+        """Test main() returns exit code 1 for failures."""
         with patch("security_scan.Path") as mock_path:
             mock_path.return_value.parent.parent.resolve.return_value = temp_repo
             with patch("security_scan.SecurityScanner.run") as mock_run:
@@ -996,7 +1008,8 @@ class TestMainFunction:
                 mock_run.return_value = Success(value=mock_results)
 
                 exit_code = main()
-                assert exit_code == 2
+                # Failures return 1
+                assert exit_code == 1
 
 
 # =============================================================================

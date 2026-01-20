@@ -339,9 +339,9 @@ def test_validate_script_file_valid(package_with_files):
     assert result.value is True
 
 
-def test_validate_script_file_shell_extension(temp_dir):
-    """Test validating shell script with .sh extension - now allowed."""
-    package_dir = temp_dir / "shell-script-package"
+def test_validate_script_file_shell_script(temp_dir):
+    """Test validating shell script (.sh extension) is valid."""
+    package_dir = temp_dir / "shell-package"
     package_dir.mkdir()
     (package_dir / "scripts").mkdir()
 
@@ -349,20 +349,20 @@ def test_validate_script_file_shell_extension(temp_dir):
     script_path.write_text("#!/bin/bash\necho test\n")
 
     result = validate_script_file(package_dir, "scripts/test.sh")
-    # .sh scripts are now allowed
+    # Shell scripts (.sh) are now valid
     assert isinstance(result, Success)
 
 
 def test_validate_script_file_wrong_extension(temp_dir):
-    """Test validating script with truly wrong extension."""
+    """Test validating script with unsupported extension."""
     package_dir = temp_dir / "bad-ext-package"
     package_dir.mkdir()
     (package_dir / "scripts").mkdir()
 
-    script_path = package_dir / "scripts" / "test.txt"
-    script_path.write_text("#!/bin/bash\necho test\n")
+    script_path = package_dir / "scripts" / "test.rb"
+    script_path.write_text("#!/usr/bin/env ruby\nputs 'test'\n")
 
-    result = validate_script_file(package_dir, "scripts/test.txt")
+    result = validate_script_file(package_dir, "scripts/test.rb")
     assert isinstance(result, Failure)
     assert "extension" in result.error.message.lower()
 
@@ -467,8 +467,8 @@ def test_validate_manifest_artifacts_orphaned_files(temp_dir, sample_manifest):
     assert "commands/orphan.md" in result.value.orphaned_files
 
 
-def test_validate_manifest_artifacts_shell_script_now_valid(temp_dir):
-    """Test validation with shell script - now valid."""
+def test_validate_manifest_artifacts_shell_script_valid(temp_dir):
+    """Test validation with shell script (.sh) is now valid."""
     package_dir = temp_dir / "shell-script-package"
     package_dir.mkdir()
 
@@ -491,12 +491,12 @@ def test_validate_manifest_artifacts_shell_script_now_valid(temp_dir):
 
     result = validate_manifest_artifacts(package_dir, verbose=False)
     assert isinstance(result, Success)
-    # .sh scripts are now valid
+    # Shell scripts are now valid
     assert result.value.is_valid()
 
 
 def test_validate_manifest_artifacts_invalid_script_extension(temp_dir):
-    """Test validation with truly invalid script extension."""
+    """Test validation with invalid script extension (e.g., .rb)."""
     package_dir = temp_dir / "invalid-ext-package"
     package_dir.mkdir()
 
@@ -507,7 +507,7 @@ def test_validate_manifest_artifacts_invalid_script_extension(temp_dir):
         "author": "test",
         "license": "MIT",
         "artifacts": {
-            "scripts": ["scripts/test.txt"],
+            "scripts": ["scripts/test.rb"],
         },
     }
 
@@ -515,12 +515,12 @@ def test_validate_manifest_artifacts_invalid_script_extension(temp_dir):
         yaml.dump(manifest, f)
 
     (package_dir / "scripts").mkdir()
-    (package_dir / "scripts" / "test.txt").write_text("#!/bin/bash\necho test\n")
+    (package_dir / "scripts" / "test.rb").write_text("#!/usr/bin/env ruby\nputs 'test'\n")
 
     result = validate_manifest_artifacts(package_dir, verbose=False)
     assert isinstance(result, Success)
     assert not result.value.is_valid()
-    assert "scripts/test.txt" in result.value.invalid_scripts
+    assert "scripts/test.rb" in result.value.invalid_scripts
 
 
 def test_validate_manifest_artifacts_missing_shebang(temp_dir):
@@ -576,6 +576,7 @@ def test_validate_manifest_artifacts_multiple_issues(temp_dir):
     package_dir = temp_dir / "multi-issue-package"
     package_dir.mkdir()
 
+    # Use .rb extension which is actually invalid (not .sh which is now valid)
     manifest = {
         "name": "test-package",
         "version": "1.0.0",
@@ -584,8 +585,7 @@ def test_validate_manifest_artifacts_multiple_issues(temp_dir):
         "license": "MIT",
         "artifacts": {
             "commands": ["commands/missing.md"],
-            # Use .txt (invalid extension) instead of .sh since .sh is now valid
-            "scripts": ["scripts/bad.txt", "scripts/no-shebang.py"],
+            "scripts": ["scripts/bad.rb", "scripts/no-shebang.py"],
         },
     }
 
@@ -595,7 +595,7 @@ def test_validate_manifest_artifacts_multiple_issues(temp_dir):
     (package_dir / "commands").mkdir()
     (package_dir / "scripts").mkdir()
     (package_dir / "commands" / "orphan.md").write_text("# Orphan")
-    (package_dir / "scripts" / "bad.txt").write_text("#!/bin/bash\n")
+    (package_dir / "scripts" / "bad.rb").write_text("#!/usr/bin/env ruby\n")
     (package_dir / "scripts" / "no-shebang.py").write_text("print('test')\n")
 
     result = validate_manifest_artifacts(package_dir, verbose=False)
@@ -603,7 +603,7 @@ def test_validate_manifest_artifacts_multiple_issues(temp_dir):
     assert not result.value.is_valid()
     assert len(result.value.missing_files) >= 1
     assert len(result.value.orphaned_files) >= 1
-    assert len(result.value.invalid_scripts) >= 1
+    assert len(result.value.invalid_scripts) >= 1  # .rb is invalid
     assert len(result.value.missing_shebangs) >= 1
 
 

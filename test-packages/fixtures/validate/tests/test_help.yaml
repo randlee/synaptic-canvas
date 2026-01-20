@@ -1,0 +1,44 @@
+# P0 Test: Help flag shows usage
+# Component Type: COMMAND
+# Tests: /validate --help
+
+test_id: validate-help-001
+test_name: Help flag shows usage
+component_type: command
+description: |
+  Verify /validate --help displays usage information and available flags
+  without running the validation suite.
+
+execution:
+  prompt: "/validate --help"
+  model: haiku
+  timeout_ms: 30000
+  tools:
+    - Read
+    - Bash
+
+expectations:
+  - id: exp-help-usage
+    description: Output contains usage or options information
+    type: output_contains
+    expected:
+      pattern: "(usage|options|validate)"
+      flags: "i"
+
+  - id: exp-help-quick-flag
+    description: Output mentions --quick flag
+    type: output_contains
+    expected:
+      pattern: "--quick"
+
+  - id: exp-help-report-flag
+    description: Output mentions --report flag
+    type: output_contains
+    expected:
+      pattern: "--report"
+
+  - id: exp-help-open-flag
+    description: Output mentions --open flag
+    type: output_contains
+    expected:
+      pattern: "--open"

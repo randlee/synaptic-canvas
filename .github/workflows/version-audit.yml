@@ -22,20 +22,18 @@ jobs:
           fetch-depth: 0
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: '3.11'
 
       - name: Install Python dependencies
         run: pip install pyyaml pydantic
 
       - name: Run version audit
-        run: |
-          python3 ./scripts/audit-versions.py --verbose
+        run: python3 ./scripts/audit-versions.py --verbose
 
       - name: Compare versions by package
-        run: |
-          python3 ./scripts/compare-versions.py --by-package
+        run: python3 ./scripts/compare-versions.py --by-package
         if: always()
 
       - name: Check for version mismatches
@@ -45,11 +43,11 @@ jobs:
 
           # Check if any failures occurred
           if grep -q "check(s) failed" /tmp/audit.log; then
-            echo "❌ Version audit failed - mismatches detected"
+            echo "Version audit failed - mismatches detected"
             cat /tmp/audit.log
             exit 1
           else
-            echo "✅ Version audit passed"
+            echo "Version audit passed"
             cat /tmp/audit.log
             exit 0
           fi
@@ -63,12 +61,12 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: '3.11'
 
       - name: Install Python dependencies
-        run: pip install pyyaml
+        run: pip install pyyaml pydantic
 
       - name: Validate manifest YAML format
         run: |
@@ -83,12 +81,12 @@ jobs:
                   with open(manifest) as f:
                       data = yaml.safe_load(f)
                       if 'version' not in data:
-                          print(f'❌ {manifest}: Missing version field')
+                          print(f'{manifest}: Missing version field')
                           issues += 1
                       else:
-                          print(f'✅ {manifest}: version={data[\"version\"]}')
+                          print(f'{manifest}: version={data[\"version\"]}')
               except Exception as e:
-                  print(f'❌ {manifest}: Parse error - {e}')
+                  print(f'{manifest}: Parse error - {e}')
                   issues += 1
 
           if issues > 0:
@@ -103,21 +101,35 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
       - name: Verify CHANGELOG files exist
         run: |
-          MISSING=0
-          for package in packages/*/; do
-              PACKAGE_NAME=$(basename "$package")
-              if [ ! -f "$package/CHANGELOG.md" ]; then
-                  echo "⚠️  Warning: Missing CHANGELOG.md in $PACKAGE_NAME"
-                  MISSING=$((MISSING+1))
-              else
-                  echo "✅ Found CHANGELOG.md in $PACKAGE_NAME"
-              fi
-          done
+          python3 -c "
+          import sys
+          from pathlib import Path
 
-          if [ $MISSING -gt 0 ]; then
-              echo ""
-              echo "⚠️  Note: Missing CHANGELOGs are warnings, not failures."
-              echo "Please create CHANGELOG.md for consistency with semantic versioning."
-          fi
+          missing = 0
+          packages_dir = Path('packages')
+
+          if not packages_dir.exists():
+              print('No packages directory found')
+              sys.exit(0)
+
+          for package in packages_dir.iterdir():
+              if package.is_dir():
+                  changelog = package / 'CHANGELOG.md'
+                  if not changelog.exists():
+                      print(f'Warning: Missing CHANGELOG.md in {package.name}')
+                      missing += 1
+                  else:
+                      print(f'Found CHANGELOG.md in {package.name}')
+
+          if missing > 0:
+              print()
+              print(f'Note: {missing} missing CHANGELOG(s) are warnings, not failures.')
+              print('Please create CHANGELOG.md for consistency with semantic versioning.')
+          "
