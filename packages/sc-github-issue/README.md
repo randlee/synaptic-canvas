@@ -163,13 +163,14 @@ After PR is merged, clean up with:
 /sc-github-issue --fix --issue $ISSUE_NUMBER --yolo
 ```
 
-## Safety Features
+## Security
 
 - **Pre-flight checks**: Validates `gh` auth, repo access, clean working tree
 - **Approval gates**: Prompts before fix (unless `--yolo`)
 - **Test failure prompts**: Asks for approval if tests fail
 - **Protected branches**: Integrates with `sc-git-worktree` protected branch safeguards
 - **Error recovery**: Actionable error messages with suggested fixes
+- **Isolated environments**: Worktrees prevent cross-contamination of fixes
 
 ## Error Handling
 

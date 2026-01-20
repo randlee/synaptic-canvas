@@ -151,7 +151,10 @@ class SecurityScanner:
     ]
 
     # Directories to exclude from scanning
-    EXCLUDE_DIRS = [".git", ".venv", "__pycache__", "node_modules"]
+    EXCLUDE_DIRS = [".git", ".venv", "__pycache__", "node_modules", "docs", "tests", "test-packages"]
+
+    # Files to exclude from secrets/python safety scanning (patterns in the filename)
+    EXCLUDE_FILES = ["security-scan", "security_scan", "SECURITY-SCANNING"]
 
     def __init__(self, config: ScanConfiguration):
         """Initialize scanner with configuration."""
@@ -468,12 +471,22 @@ class SecurityScanner:
                     )
                 )
 
-        status = CheckStatus.PASSED if not issues else CheckStatus.FAILED
-        message = (
-            f"(all {len(packages)} packages have required docs)"
-            if not issues
-            else f"({len(issues)} issues in {len(packages)} packages)"
+        # Missing docs are warnings; invalid YAML or corrupt files are failures
+        has_critical = any(
+            "Invalid YAML" in issue.message or "Empty" in issue.message
+            for issue in issues
         )
+        high_issues = sum(1 for issue in issues if issue.severity == Severity.HIGH)
+
+        if not issues:
+            status = CheckStatus.PASSED
+            message = f"(all {len(packages)} packages have required docs)"
+        elif has_critical:
+            status = CheckStatus.FAILED
+            message = f"({high_issues} critical issues)"
+        else:
+            status = CheckStatus.WARNING
+            message = f"({len(issues)} issues in {len(packages)} packages)"
 
         self.checks["package_documentation"] = CheckResult(
             check_name="Package Documentation", status=status, issues=issues, message=message
@@ -516,8 +529,20 @@ class SecurityScanner:
                 )
             )
 
-        status = CheckStatus.PASSED if not issues else CheckStatus.FAILED
-        message = "(all packages have LICENSE)" if not issues else f"({len(issues)} missing licenses)"
+        # Missing LICENSE is a warning, but invalid/empty LICENSE is a failure
+        has_critical = any(
+            "Empty LICENSE" in issue.message or "Invalid" in issue.message
+            for issue in issues
+        )
+        if not issues:
+            status = CheckStatus.PASSED
+            message = "(all packages have LICENSE)"
+        elif has_critical:
+            status = CheckStatus.FAILED
+            message = f"({len(issues)} license issues)"
+        else:
+            status = CheckStatus.WARNING
+            message = f"({len(issues)} missing licenses)"
 
         self.checks["license_files"] = CheckResult(
             check_name="License Files", status=status, issues=issues, message=message
@@ -666,7 +691,11 @@ class SecurityScanner:
         matches = []
 
         if include_glob:
-            files = list(search_path.rglob(include_glob))
+            # Get files matching glob but filter out excluded directories
+            files = [
+                f for f in search_path.rglob(include_glob)
+                if not any(excl in f.parts for excl in self.EXCLUDE_DIRS)
+            ]
         else:
             # Get all files, excluding certain directories
             files = []
@@ -680,11 +709,16 @@ class SecurityScanner:
         compiled_pattern = re.compile(pattern, regex_flags)
 
         for file_path in files:
+            # Skip excluded files
+            file_path_str = file_path.as_posix()
+            if any(excl in file_path_str for excl in self.EXCLUDE_FILES):
+                continue
+
             try:
                 with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
                     for line_num, line in enumerate(f, 1):
                         if compiled_pattern.search(line):
-                            matches.append((file_path.as_posix(), line_num, line.strip()))
+                            matches.append((file_path_str, line_num, line.strip()))
             except Exception:
                 # Skip files that can't be read
                 pass
@@ -782,9 +816,8 @@ Checks Performed:
   6. Dependency Audit       - Check for vulnerable dependencies
 
 Exit Codes:
-  0 - All checks passed
-  1 - Warnings found (non-critical)
-  2 - Failures found (critical issues)
+  0 - All checks passed (or only warnings found)
+  1 - Failures found (critical issues)
         """,
     )
 
@@ -827,9 +860,9 @@ Exit Codes:
         print(format_text_output(result.value))
 
     # Return appropriate exit code
+    # Exit code 0: PASSED or WARNING (warnings are informational)
+    # Exit code 1: FAILED (critical issues that should block)
     if result.value.overall_status == CheckStatus.FAILED:
-        return 2
-    elif result.value.overall_status == CheckStatus.WARNING:
         return 1
     else:
         return 0

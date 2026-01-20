@@ -7,8 +7,8 @@ This script validates that:
 - All actual files in commands/skills/agents/scripts are in manifest
 - Reports orphaned files (exist but not in manifest)
 - Reports missing files (in manifest but don't exist)
-- All scripts in manifest are Python (.py extension)
-- Scripts have proper shebang (#!/usr/bin/env python3)
+- All scripts in manifest are Python (.py) or shell (.sh) files
+- Scripts have proper shebang (#!/usr/bin/env python3 or #!/usr/bin/env bash)
 
 Exit codes:
     0: All checks passed
@@ -209,6 +209,8 @@ def get_disk_files(package_path: Path) -> list[str]:
     """
     disk_files = []
     artifact_dirs = ["commands", "skills", "agents", "scripts"]
+    # Directories to skip
+    skip_dirs = {"__pycache__", ".git", "node_modules", ".pytest_cache"}
 
     for dir_name in artifact_dirs:
         dir_path = package_path / dir_name
@@ -216,6 +218,10 @@ def get_disk_files(package_path: Path) -> list[str]:
             continue
 
         for file_path in dir_path.rglob("*"):
+            # Skip files in excluded directories
+            if any(skip_dir in file_path.parts for skip_dir in skip_dirs):
+                continue
+
             if file_path.is_file():
                 # Get path relative to package root
                 rel_path = file_path.relative_to(package_path)
@@ -240,11 +246,12 @@ def validate_script_file(
     """
     warnings = []
 
-    # Check extension
-    if not script_path.endswith(".py"):
+    # Check extension - allow .py and .sh scripts
+    allowed_extensions = (".py", ".sh")
+    if not any(script_path.endswith(ext) for ext in allowed_extensions):
         return Failure(
             error=ValidationError(
-                message="Script must have .py extension",
+                message=f"Script must have one of {allowed_extensions} extensions",
                 file_path=script_path,
             )
         )
@@ -255,7 +262,12 @@ def validate_script_file(
         with open(full_path) as f:
             first_line = f.readline().strip()
 
-        expected_shebang = "#!/usr/bin/env python3"
+        # Determine expected shebang based on extension
+        if script_path.endswith(".py"):
+            expected_shebang = "#!/usr/bin/env python3"
+        else:  # .sh
+            expected_shebang = "#!/usr/bin/env bash"
+
         if not first_line.startswith("#!"):
             return Failure(
                 error=ValidationError(
@@ -265,10 +277,19 @@ def validate_script_file(
                 )
             )
 
-        if first_line != expected_shebang:
+        # For shell scripts, accept both bash and sh shebangs
+        valid_shebangs = [expected_shebang]
+        if script_path.endswith(".sh"):
+            valid_shebangs.extend([
+                "#!/bin/bash",
+                "#!/bin/sh",
+                "#!/usr/bin/env sh",
+            ])
+
+        if first_line not in valid_shebangs:
             warnings.append(
                 f"Non-standard shebang in {script_path}: {first_line} "
-                f"(expected: {expected_shebang})"
+                f"(expected one of: {valid_shebangs})"
             )
 
     except Exception as e:
