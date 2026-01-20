@@ -1,0 +1,41 @@
+# P1 Test: Quick validation runs without tests
+# Component Type: COMMAND
+# Tests: /validate --quick
+
+test_id: validate-quick-001
+test_name: Quick validation runs without tests
+component_type: command
+description: |
+  Verify /validate --quick runs validation scripts without pytest.
+  Should execute validate-all.py with --quick flag and show summary.
+
+execution:
+  prompt: "/validate --quick"
+  model: haiku
+  timeout_ms: 120000
+  tools:
+    - Read
+    - Bash
+    - Glob
+
+expectations:
+  - id: exp-quick-runs-validators
+    description: Runs validation scripts with quick flag
+    type: tool_call
+    expected:
+      tool: Bash
+      pattern: "validate-all.py.*--quick"
+
+  - id: exp-quick-output
+    description: Shows validation summary
+    type: output_contains
+    expected:
+      pattern: "(pass|success|validation|complete|PASSED|FAILED)"
+      flags: "i"
+
+  - id: exp-quick-no-pytest
+    description: Pytest is skipped in quick mode
+    type: output_contains
+    expected:
+      pattern: "(skip|skipped|pytest)"
+      flags: "i"
