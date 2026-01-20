@@ -27,6 +27,11 @@ spec.loader.exec_module(validate_module)
 extract_frontmatter = validate_module.extract_frontmatter
 extract_script_references_from_hooks = validate_module.extract_script_references_from_hooks
 extract_script_references_from_manifest = validate_module.extract_script_references_from_manifest
+extract_preexec_script_references = validate_module.extract_preexec_script_references
+extract_markdown_body = validate_module.extract_markdown_body
+get_package_name_from_path = validate_module.get_package_name_from_path
+validate_same_package_constraint = validate_module.validate_same_package_constraint
+validate_install_path_resolution = validate_module.validate_install_path_resolution
 validate_script_exists = validate_module.validate_script_exists
 validate_script_is_python = validate_module.validate_script_is_python
 validate_shebang = validate_module.validate_shebang
@@ -787,3 +792,379 @@ def test_script_reference_error_str():
     assert "scripts/test.py" in error_str
     assert "10" in error_str
     assert "Test error" in error_str
+
+
+# -----------------------------------------------------------------------------
+# Test Pre-exec Line Extraction
+# -----------------------------------------------------------------------------
+
+
+def test_preexec_line_extraction_basic():
+    """Test extraction of script paths from basic ! pre-exec lines."""
+    content = """
+# My Command
+
+Some description.
+
+## Pre-exec
+
+!`python3 scripts/my_script.py`
+
+More content.
+"""
+    references = extract_preexec_script_references("/test/cmd.md", content)
+    assert len(references) == 1
+    assert references[0].script_path == "scripts/my_script.py"
+    assert references[0].reference_type == "preexec"
+    assert references[0].line_number == 8
+
+
+def test_preexec_line_extraction_with_arguments():
+    """Test extraction with $ARGUMENTS suffix."""
+    content = """
+## Context
+
+- Status: !`python3 scripts/status.py $ARGUMENTS`
+"""
+    references = extract_preexec_script_references("/test/cmd.md", content)
+    assert len(references) == 1
+    assert references[0].script_path == "scripts/status.py"
+
+
+def test_preexec_line_extraction_without_backticks():
+    """Test extraction of ! lines without backticks."""
+    content = """
+!python3 scripts/run.py
+"""
+    references = extract_preexec_script_references("/test/cmd.md", content)
+    assert len(references) == 1
+    assert references[0].script_path == "scripts/run.py"
+
+
+def test_preexec_line_extraction_with_dotslash():
+    """Test extraction with ./ prefix in path."""
+    content = """
+!`python3 ./scripts/local.py`
+"""
+    references = extract_preexec_script_references("/test/cmd.md", content)
+    assert len(references) == 1
+    assert references[0].script_path == "scripts/local.py"
+
+
+def test_preexec_line_extraction_multiple():
+    """Test extraction of multiple pre-exec lines."""
+    content = """
+!`python3 scripts/first.py`
+!python3 scripts/second.py $ARGUMENTS
+!`python3 ./scripts/third.py`
+"""
+    references = extract_preexec_script_references("/test/cmd.md", content)
+    assert len(references) == 3
+    assert references[0].script_path == "scripts/first.py"
+    assert references[1].script_path == "scripts/second.py"
+    assert references[2].script_path == "scripts/third.py"
+
+
+def test_preexec_line_extraction_non_python_ignored():
+    """Test that non-Python files are ignored in pre-exec lines."""
+    content = """
+!bash scripts/run.sh
+!`python3 scripts/valid.py`
+"""
+    references = extract_preexec_script_references("/test/cmd.md", content)
+    assert len(references) == 1
+    assert references[0].script_path == "scripts/valid.py"
+
+
+def test_preexec_line_extraction_nested_path():
+    """Test extraction with nested paths."""
+    content = """
+!`python3 agents/subdir/agent_impl.py`
+"""
+    references = extract_preexec_script_references("/test/cmd.md", content)
+    assert len(references) == 1
+    assert references[0].script_path == "agents/subdir/agent_impl.py"
+
+
+# -----------------------------------------------------------------------------
+# Test Markdown Body Extraction
+# -----------------------------------------------------------------------------
+
+
+def test_extract_markdown_body_with_frontmatter():
+    """Test extracting body from markdown with frontmatter."""
+    content = """---
+name: test
+version: 1.0.0
+---
+
+# Body Content
+
+This is the body.
+"""
+    body = extract_markdown_body(content)
+    assert "# Body Content" in body
+    assert "name: test" not in body
+
+
+def test_extract_markdown_body_no_frontmatter():
+    """Test extracting body when no frontmatter present."""
+    content = """# Just Content
+
+No frontmatter here.
+"""
+    body = extract_markdown_body(content)
+    assert body == content
+
+
+# -----------------------------------------------------------------------------
+# Test Same-Package Constraint
+# -----------------------------------------------------------------------------
+
+
+def test_same_package_constraint_valid(temp_dir):
+    """Test that same-package references pass validation."""
+    # Create package structure
+    pkg_dir = temp_dir / "packages" / "sc-test"
+    scripts_dir = pkg_dir / "scripts"
+    scripts_dir.mkdir(parents=True)
+    commands_dir = pkg_dir / "commands"
+    commands_dir.mkdir()
+
+    create_python_script(scripts_dir / "test.py")
+
+    reference = ScriptReference(
+        source_file=str(commands_dir / "cmd.md"),
+        script_path="scripts/test.py",
+        reference_type="preexec",
+    )
+
+    result = validate_same_package_constraint(reference, str(temp_dir))
+    assert isinstance(result, Success)
+
+
+def test_same_package_constraint_invalid():
+    """Test that cross-package references fail validation."""
+    # Create reference from package A to script in package B
+    reference = ScriptReference(
+        source_file="/repo/packages/sc-foo/commands/cmd.md",
+        script_path="../sc-bar/scripts/test.py",
+        reference_type="preexec",
+    )
+
+    result = validate_same_package_constraint(reference, "/repo")
+    assert isinstance(result, Failure)
+    assert "Cross-package reference" in result.error.message
+
+
+def test_same_package_constraint_root_level():
+    """Test that root-level files have no constraint."""
+    reference = ScriptReference(
+        source_file="/repo/.claude/commands/cmd.md",
+        script_path="scripts/test.py",
+        reference_type="preexec",
+    )
+
+    result = validate_same_package_constraint(reference, "/repo")
+    assert isinstance(result, Success)
+
+
+def test_get_package_name_from_path():
+    """Test extraction of package name from path."""
+    assert get_package_name_from_path("/repo/packages/sc-foo/commands/cmd.md") == "sc-foo"
+    assert get_package_name_from_path("/repo/packages/sc-bar/agents/agent.md") == "sc-bar"
+    assert get_package_name_from_path("/repo/.claude/commands/cmd.md") is None
+    assert get_package_name_from_path("/repo/scripts/test.py") is None
+
+
+# -----------------------------------------------------------------------------
+# Test Install Path Resolution
+# -----------------------------------------------------------------------------
+
+
+def test_install_path_resolution_valid(temp_dir):
+    """Test validation of install path for valid script location."""
+    scripts_dir = temp_dir / "scripts"
+    scripts_dir.mkdir()
+    create_python_script(scripts_dir / "test.py")
+
+    reference = ScriptReference(
+        source_file=str(temp_dir / "commands" / "cmd.md"),
+        script_path="scripts/test.py",
+        reference_type="preexec",
+    )
+
+    result = validate_install_path_resolution(reference, str(temp_dir))
+    assert isinstance(result, Success)
+    assert len(result.warnings) == 0
+
+
+def test_install_path_resolution_agents_dir(temp_dir):
+    """Test validation for scripts in agents directory."""
+    agents_dir = temp_dir / "agents"
+    agents_dir.mkdir()
+    create_python_script(agents_dir / "impl.py")
+
+    reference = ScriptReference(
+        source_file=str(temp_dir / "agents" / "agent.md"),
+        script_path="agents/impl.py",
+        reference_type="preexec",
+    )
+
+    result = validate_install_path_resolution(reference, str(temp_dir))
+    assert isinstance(result, Success)
+    assert len(result.warnings) == 0
+
+
+def test_install_path_resolution_non_standard_location(temp_dir):
+    """Test that non-standard locations produce warnings."""
+    other_dir = temp_dir / "other"
+    other_dir.mkdir()
+    create_python_script(other_dir / "test.py")
+
+    reference = ScriptReference(
+        source_file=str(temp_dir / "cmd.md"),
+        script_path="other/test.py",
+        reference_type="preexec",
+    )
+
+    result = validate_install_path_resolution(reference, str(temp_dir))
+    assert isinstance(result, Success)
+    assert len(result.warnings) == 1
+    assert "not in a standard location" in result.warnings[0]
+
+
+# -----------------------------------------------------------------------------
+# Test Package Validation with Pre-exec
+# -----------------------------------------------------------------------------
+
+
+def test_validate_package_with_preexec(temp_dir):
+    """Test validating package with pre-exec script references."""
+    # Create package structure
+    pkg_dir = temp_dir / "packages" / "test-pkg"
+    commands_dir = pkg_dir / "commands"
+    scripts_dir = pkg_dir / "scripts"
+    commands_dir.mkdir(parents=True)
+    scripts_dir.mkdir()
+
+    # Create manifest
+    manifest = {
+        "name": "test-pkg",
+        "version": "1.0.0",
+        "description": "Test",
+        "artifacts": {"commands": ["commands/cmd.md"]},
+    }
+    with open(pkg_dir / "manifest.yaml", "w") as f:
+        yaml.dump(manifest, f)
+
+    # Create command with pre-exec
+    cmd_content = """---
+name: test-cmd
+version: 1.0.0
+description: Test command
+---
+
+# Test Command
+
+!`python3 scripts/test.py $ARGUMENTS`
+"""
+    (commands_dir / "cmd.md").write_text(cmd_content)
+
+    # Create script
+    create_python_script(scripts_dir / "test.py")
+
+    result = validate_package_scripts(str(pkg_dir), str(temp_dir))
+    assert isinstance(result, Success)
+    assert len(result.value) == 1
+    assert result.value[0].reference.reference_type == "preexec"
+
+
+def test_validate_package_preexec_missing_script(temp_dir):
+    """Test validation fails when pre-exec references missing script."""
+    # Create package structure
+    pkg_dir = temp_dir / "packages" / "test-pkg"
+    commands_dir = pkg_dir / "commands"
+    commands_dir.mkdir(parents=True)
+
+    # Create manifest
+    manifest = {
+        "name": "test-pkg",
+        "version": "1.0.0",
+        "description": "Test",
+        "artifacts": {"commands": ["commands/cmd.md"]},
+    }
+    with open(pkg_dir / "manifest.yaml", "w") as f:
+        yaml.dump(manifest, f)
+
+    # Create command with pre-exec referencing non-existent script
+    cmd_content = """---
+name: test-cmd
+version: 1.0.0
+description: Test command
+---
+
+# Test Command
+
+!`python3 scripts/missing.py`
+"""
+    (commands_dir / "cmd.md").write_text(cmd_content)
+
+    result = validate_package_scripts(str(pkg_dir), str(temp_dir))
+    assert isinstance(result, Failure)
+    assert len(result.error) == 1
+    assert "does not exist" in result.error[0].message
+
+
+# -----------------------------------------------------------------------------
+# Test Integration with All Validations
+# -----------------------------------------------------------------------------
+
+
+def test_full_validation_pipeline_with_new_features(temp_dir):
+    """Test complete validation with all new features."""
+    # Create package with all features
+    pkg_dir = temp_dir / "packages" / "sc-full-test"
+    commands_dir = pkg_dir / "commands"
+    scripts_dir = pkg_dir / "scripts"
+    commands_dir.mkdir(parents=True)
+    scripts_dir.mkdir()
+
+    # Create manifest
+    manifest = {
+        "name": "sc-full-test",
+        "version": "1.0.0",
+        "description": "Full test package",
+        "artifacts": {
+            "commands": ["commands/main.md"],
+            "scripts": ["scripts/helper.py"],
+        },
+    }
+    with open(pkg_dir / "manifest.yaml", "w") as f:
+        yaml.dump(manifest, f)
+
+    # Create command with pre-exec
+    cmd_content = """---
+name: main
+version: 1.0.0
+description: Main command
+allowed-tools: Bash(python3 scripts/*)
+---
+
+# Main Command
+
+Pre-execution:
+!`python3 scripts/helper.py $ARGUMENTS`
+
+Instructions here.
+"""
+    (commands_dir / "main.md").write_text(cmd_content)
+
+    # Create script
+    create_python_script(scripts_dir / "helper.py")
+
+    # Run full validation
+    result = validate_all_packages(str(temp_dir))
+    assert isinstance(result, Success)
+    # Should have 2 references: 1 from manifest, 1 from pre-exec
+    assert len(result.value) == 2
