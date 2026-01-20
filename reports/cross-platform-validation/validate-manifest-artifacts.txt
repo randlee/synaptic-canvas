@@ -1,0 +1,33 @@
+✓ sc-ci-automation: PASS
+✗ sc-delay-tasks: FAIL
+
+Validation Results for sc-delay-tasks:
+  Manifest artifacts: 6
+  Files on disk: 7
+
+  Orphaned files (1):
+    - scripts/delay-run.sh
+
+  Status: FAIL ✗
+✓ sc-git-worktree: PASS
+✓ sc-github-issue: PASS
+✓ sc-kanban: PASS
+✓ sc-manage: PASS
+✗ sc-repomix-nuget: FAIL
+
+Validation Results for sc-repomix-nuget:
+  Manifest artifacts: 9
+  Files on disk: 9
+
+  Invalid scripts (2):
+    - scripts/generate.sh
+    - scripts/validate-registry.sh
+
+  Status: FAIL ✗
+✓ sc-roslyn-diff: PASS
+✓ sc-startup: PASS
+
+======================================================================
+Some validations FAILED ✗
+======================================================================
+Exit: 1

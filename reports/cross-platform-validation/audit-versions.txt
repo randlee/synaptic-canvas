@@ -1,0 +1,106 @@
+=== Synaptic Canvas Version Audit ===
+
+Checking commands...
+Checking skills...
+Checking agents...
+Checking version consistency...
+Checking CHANGELOGs...
+Checking marketplace version...
+[0;32m✓[0m Command: sc-startup (v0.7.0)
+[0;32m✓[0m Command: sc-manage (v0.7.0)
+[0;32m✓[0m Command: sc-ci-automation (v0.7.0)
+[0;32m✓[0m Command: sc-repomix-nuget (v0.7.0)
+[0;32m✓[0m Command: sc-kanban (v0.7.0)
+[0;32m✓[0m Command: sc-git-worktree (v0.7.0)
+[0;32m✓[0m Command: sc-github-issue (v0.7.0)
+[0;32m✓[0m Command: sc-diff (v0.7.0)
+[0;32m✓[0m Command: delay (v0.7.0)
+[0;32m✓[0m Skill: sc-startup (v0.7.0)
+[0;32m✓[0m Skill: managing-sc-packages (v0.7.0)
+[0;32m✓[0m Skill: sc-ci-automation (v0.7.0)
+[0;32m✓[0m Skill: sc-repomix-nuget (v0.7.0)
+[0;32m✓[0m Skill: sc-kanban (v0.7.0)
+[0;32m✓[0m Skill: sc-git-worktree (v0.7.0)
+[0;32m✓[0m Skill: sc-managing-github-issues (v0.7.0)
+[0;32m✓[0m Skill: sc-diff (v0.7.0)
+[0;32m✓[0m Skill: sc-delaying-tasks (v0.7.0)
+[0;32m✓[0m Agent: sc-checklist-status (v0.7.0)
+[0;32m✓[0m Agent: sc-startup-init (v0.7.0)
+[0;32m✓[0m Agent: sc-packages-list (v0.7.0)
+[0;32m✓[0m Agent: sc-package-install (v0.7.0)
+[0;32m✓[0m Agent: sc-package-docs (v0.7.0)
+[0;32m✓[0m Agent: sc-package-uninstall (v0.7.0)
+[0;32m✓[0m Agent: ci-pr-agent (v0.7.0)
+[0;32m✓[0m Agent: ci-root-cause-agent (v0.7.0)
+[0;32m✓[0m Agent: ci-fix-agent (v0.7.0)
+[0;32m✓[0m Agent: ci-build-agent (v0.7.0)
+[0;32m✓[0m Agent: ci-test-agent (v0.7.0)
+[0;32m✓[0m Agent: ci-pull-agent (v0.7.0)
+[0;32m✓[0m Agent: ci-validate-agent (v0.7.0)
+[0;32m✓[0m Agent: sc-repomix-nuget-analyze (v0.7.0)
+[0;32m✓[0m Agent: sc-repomix-nuget-validate (v0.7.0)
+[0;32m✓[0m Agent: sc-repomix-nuget-generate (v0.7.0)
+[0;32m✓[0m Agent: kanban-transition (v0.7.0)
+[0;32m✓[0m Agent: checklist-agent (v0.7.0)
+[0;32m✓[0m Agent: kanban-query (v0.7.0)
+[0;32m✓[0m Agent: kanban-card (v0.7.0)
+[0;32m✓[0m Agent: sc-git-worktree-update (v0.7.0)
+[0;32m✓[0m Agent: sc-git-worktree-scan (v0.7.0)
+[0;32m✓[0m Agent: sc-git-worktree-create (v0.7.0)
+[0;32m✓[0m Agent: sc-git-worktree-cleanup (v0.7.0)
+[0;32m✓[0m Agent: sc-git-worktree-abort (v0.7.0)
+[0;32m✓[0m Agent: sc-github-issue-fix (v0.7.0)
+[0;32m✓[0m Agent: sc-github-issue-intake (v0.7.0)
+[0;32m✓[0m Agent: sc-github-issue-pr (v0.7.0)
+[0;32m✓[0m Agent: sc-github-issue-mutate (v0.7.0)
+[0;32m✓[0m Agent: sc-git-diff (v0.7.0)
+[0;32m✓[0m Agent: sc-diff (v0.7.0)
+[0;32m✓[0m Agent: sc-delay-once (v0.7.0)
+[0;32m✓[0m Agent: sc-git-pr-check-delay (v0.7.0)
+[0;32m✓[0m Agent: sc-delay-poll (v0.7.0)
+[0;32m✓[0m Agent: marketplace-management-skill (v0.7.0)
+[0;32m✓[0m Agent: sc-worktree-cleanup (v0.7.0)
+[0;32m✓[0m Agent: issue-pr-agent (v0.7.0)
+[0;32m✓[0m Agent: type-librarian-refresh (v0.7.0)
+[0;32m✓[0m Agent: issue-intake-agent (v0.7.0)
+[0;32m✓[0m Agent: ci-pr-agent (v0.7.0)
+[0;32m✓[0m Agent: sc-worktree-scan (v0.7.0)
+[0;32m✓[0m Agent: sc-git-diff (v0.7.0)
+[0;32m✓[0m Agent: skill-review-agent (v0.7.0)
+[0;32m✓[0m Agent: sc-checklist-status (v0.7.0)
+[0;32m✓[0m Agent: marketplace-package-discovery (v0.7.0)
+[0;32m✓[0m Agent: ci-root-cause-agent (v0.7.0)
+[0;32m✓[0m Agent: ci-fix-agent (v0.7.0)
+[0;32m✓[0m Agent: ci-build-agent (v0.7.0)
+[0;32m✓[0m Agent: marketplace-registry-manager (v0.7.0)
+[0;32m✓[0m Agent: ci-test-agent (v0.7.0)
+[0;32m✓[0m Agent: sc-startup-init (v0.7.0)
+[0;32m✓[0m Agent: ci-pull-agent (v0.7.0)
+[0;32m✓[0m Agent: skill-planning-agent (v0.7.0)
+[0;32m✓[0m Agent: sc-diff (v0.7.0)
+[0;32m✓[0m Agent: marketplace-package-installer (v0.7.0)
+[0;32m✓[0m Agent: sc-worktree-abort (v0.7.0)
+[0;32m✓[0m Agent: type-librarian-cleanup (v0.7.0)
+[0;32m✓[0m Agent: ci-validate-agent (v0.7.0)
+[0;32m✓[0m Agent: issue-fix-agent (v0.7.0)
+[0;32m✓[0m Agent: sc-worktree-create (v0.7.0)
+[0;32m✓[0m Agent: issue-mutate-agent (v0.7.0)
+[0;32m✓[0m CHANGELOG for sc-startup
+[0;32m✓[0m CHANGELOG for sc-manage
+[0;32m✓[0m CHANGELOG for sc-ci-automation
+[0;32m✓[0m CHANGELOG for sc-repomix-nuget
+[0;32m✓[0m CHANGELOG for sc-kanban
+[0;32m✓[0m CHANGELOG for sc-git-worktree
+[0;32m✓[0m CHANGELOG for sc-github-issue
+[0;32m✓[0m CHANGELOG for sc-roslyn-diff
+[0;32m✓[0m CHANGELOG for sc-delay-tasks
+[0;32m✓[0m Marketplace version (v0.7.0)
+
+=== Audit Results ===
+Total checks: 89
+Passed: [0;32m89[0m
+Failed: [0;31m0[0m
+Warnings: [1;33m0[0m
+
+[0;32mAll checks passed![0m
+Exit: 0

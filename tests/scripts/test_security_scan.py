@@ -742,6 +742,14 @@ class TestHelperFunctions:
         """Test _command_exists with non-existing command."""
         assert not SecurityScanner._command_exists("nonexistent_command_xyz")
 
+    def test_command_exists_cross_platform(self):
+        """Test _command_exists uses shutil.which for cross-platform support."""
+        import shutil
+        # Verify python3 exists (should work on all platforms)
+        assert SecurityScanner._command_exists("python3") == (shutil.which("python3") is not None)
+        # Verify the implementation matches shutil.which behavior
+        assert SecurityScanner._command_exists("git") == (shutil.which("git") is not None)
+
     def test_get_search_path_repo_root(self, basic_config):
         """Test _get_search_path returns repo root."""
         scanner = SecurityScanner(basic_config)
