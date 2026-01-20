@@ -1,0 +1,18 @@
+test_id: sc-codex-001
+test_name: Basic /sc-codex invocation
+description: Verify /sc-codex runs and returns JSON with output/agentId.
+
+execution:
+  prompt: "/sc-codex write a short haiku about rain"
+  model: haiku
+  tools:
+    - Bash
+  timeout_ms: 120000
+
+expectations:
+  - id: exp-001
+    description: Output contains agentId or sc-codex context
+    type: output_contains
+    expected:
+      pattern: "(agentId|sc-codex)"
+      flags: "i"

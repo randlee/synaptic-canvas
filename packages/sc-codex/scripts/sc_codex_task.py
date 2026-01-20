@@ -53,7 +53,13 @@ def main() -> int:
 
     runner = resolve_runner("codex")
     model = resolve_model(runner, args.model or payload.model)
-    result = run_task(payload, runner=runner, model=model, run_in_background=args.background or bool(payload.run_in_background))
+    result = run_task(
+        payload,
+        runner=runner,
+        model=model,
+        run_in_background=args.background or bool(payload.run_in_background),
+        raise_on_error=False,
+    )
     print(result.model_dump_json(indent=2))
     return 0
 

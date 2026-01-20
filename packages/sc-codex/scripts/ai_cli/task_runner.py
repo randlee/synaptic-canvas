@@ -375,6 +375,7 @@ def run_task(
     model: str,
     run_in_background: bool,
     output_dir: Optional[Path] = None,
+    raise_on_error: bool = True,
 ) -> TaskToolOutputForeground | TaskToolOutputBackground:
     if run_in_background:
         return run_background(payload, runner, model, output_dir or _default_output_dir(runner))
@@ -423,4 +424,6 @@ def run_task(
                 "duration_ms": int((time.monotonic() - start) * 1000),
             }
         )
-        raise
+        if raise_on_error:
+            raise
+        return TaskToolOutputForeground(output=f"ERROR: {exc}", agentId=agent_id)

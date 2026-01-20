@@ -1,5 +1,5 @@
 ---
-allowed-tools: Bash(python3 scripts/sc_codex_task.py*)
+allowed-tools: Bash(python3 .claude/scripts/sc_codex_task.py*)
 name: sc-codex
 description: Run Codex tasks via the ai_cli runner (supports JSON input, background runs, and model selection).
 version: 0.7.0
@@ -29,4 +29,8 @@ Usage:
 
 ## Context
 
-- Execute: !`python3 scripts/sc_codex_task.py $ARGUMENTS`
+- Execute: !`python3 .claude/scripts/sc_codex_task.py $ARGUMENTS`
+
+## Response
+
+Return only the JSON emitted by the execution step. Do not add commentary, code fences, or extra text.
