@@ -16,7 +16,7 @@ It does not run the Task tool itself; it prepares the prompt and records an audi
 - `tools/agent-runner.py` — CLI wrapper
 - `tools/claude-agent-runner.py` — CLI runner for background-friendly agent execution (Claude or Codex)
 - `.claude/agents/registry.yaml` — source of truth for agents and (optionally) skill constraints
-- `scripts/validate-agents.sh` — CI/pre-commit validator for registry ↔ frontmatter
+- `scripts/validate-agents.py` — CI/pre-commit validator for registry ↔ frontmatter
 
 ## Getting started
 
@@ -40,7 +40,7 @@ Note: Path format
 2) Validate versions (frontmatter vs registry)
 
 ```bash
-bash scripts/validate-agents.sh
+python3 scripts/validate-agents.py
 ```
 
 3) Prepare a Task tool prompt (no execution yet)

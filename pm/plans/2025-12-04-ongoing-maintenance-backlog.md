@@ -353,7 +353,7 @@ Project startup automation package with parallel agent coordination for PR triag
 **Status:** Ongoing
 **Frequency:** Monthly or on-demand
 **Scope:**
-- Run `scripts/security-scan.sh` monthly to check for vulnerabilities
+- Run `scripts/security-scan.py` monthly to check for vulnerabilities
 - Update dependency documentation if new requirements emerge
 - Monitor GitHub Dependabot alerts
 - Document any breaking changes in dependencies
@@ -454,14 +454,14 @@ Main Repo: /Users/randlee/Documents/github/synaptic-canvas
 **⚠️ Design Review Findings (ARCH-CODEX 2025-12-05):**
 - ❌ README.md: ✅ FIXED - Now has sc-prefixed names and examples
 - ❌ Registry schema examples: Still showing old package names
-- ❌ Scripts (security-scan.sh): Still referencing old package names
+- ❌ Scripts (security-scan.py): Still referencing old package names
 - ❌ CLI docstrings/examples: Still showing old package names
 - ❌ Test validation: test_no_old_package_name_references stub needs enhancement
 - ⚠️ Mock registry tests: 7 failures due to test fixture setup (not code issues)
 
 **Remaining Work (Pre-Release):**
 1. Update `docs/registries/nuget/registry.schema.json` examples - 15 min
-2. Update `scripts/security-scan.sh` and CLI references - 30 min
+2. Update `scripts/security-scan.py` and CLI references - 30 min
 3. Fix 7 mock registry test fixtures - 30 min
 4. Enhance test validation to catch stale doc/script references - 30 min
 5. Re-run comprehensive test suite to confirm all pass

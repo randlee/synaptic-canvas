@@ -21,22 +21,27 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Install Python dependencies
+        run: pip install pyyaml pydantic
+
       - name: Run version audit
         run: |
-          chmod +x ./scripts/audit-versions.sh
-          ./scripts/audit-versions.sh --verbose
+          python3 ./scripts/audit-versions.py --verbose
 
       - name: Compare versions by package
         run: |
-          chmod +x ./scripts/compare-versions.sh
-          ./scripts/compare-versions.sh --by-package
+          python3 ./scripts/compare-versions.py --by-package
         if: always()
 
       - name: Check for version mismatches
         run: |
           # Run audit and capture exit code
-          chmod +x ./scripts/audit-versions.sh
-          ./scripts/audit-versions.sh > /tmp/audit.log 2>&1 || EXIT_CODE=$?
+          python3 ./scripts/audit-versions.py > /tmp/audit.log 2>&1 || EXIT_CODE=$?
 
           # Check if any failures occurred
           if grep -q "check(s) failed" /tmp/audit.log; then

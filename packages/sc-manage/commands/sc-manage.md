@@ -9,7 +9,7 @@ options:
   - name: --install
     args:
       - name: package
-        description: Package name to install (e.g., sc-delay-tasks, sc-git-worktree).
+        description: "Package name to install (e.g., sc-delay-tasks, sc-git-worktree)."
     description: Install a package. Use --local/--project or --global/--user to choose scope.
   - name: --uninstall
     args:
@@ -19,7 +19,7 @@ options:
   - name: --docs
     args:
       - name: package
-        description: Package name whose documentation to display (alias: --doc).
+        description: "Package name whose documentation to display (alias: --doc)."
     description: Show package documentation (README) for review and Q&A.
   - name: --local
     description: Target the current repository's .claude directory.
@@ -28,7 +28,7 @@ options:
   - name: --global
     description: Target the global .claude directory.
   - name: --user
-    description: Alias for --global (defaults to ~/.claude).
+    description: "Alias for --global (defaults to ~/.claude)."
 ---
 
 # /sc-manage

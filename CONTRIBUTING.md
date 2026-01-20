@@ -347,10 +347,10 @@ Before committing, verify all versions are synchronized:
 
 ```bash
 # Audit all versions
-./scripts/audit-versions.sh
+./scripts/audit-versions.py
 
 # Compare versions by package
-./scripts/compare-versions.sh --by-package
+python3 scripts/compare-versions.py --by-package
 
 # Update versions in bulk
 python3 scripts/sync-versions.py --package my-package --version 0.5.0
@@ -368,7 +368,7 @@ When ready to release a new version:
 3. **Update CHANGELOG.md** with release notes
 4. **Run audit** to verify consistency:
    ```bash
-   ./scripts/audit-versions.sh
+   ./scripts/audit-versions.py
    ```
 5. **Commit with clear message**:
    ```bash

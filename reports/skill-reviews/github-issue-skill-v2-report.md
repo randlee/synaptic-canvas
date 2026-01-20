@@ -363,7 +363,7 @@ Add a subsection after line 131:
 **Severity**: WARNING
 
 **Issue**:
-The plan describes requirements for `scripts/validate-agents.sh` (lines 549-563) and references the v0.4 example script (lines 642-669), but provides NO:
+The plan describes requirements for `scripts/validate-agents.py` (lines 549-563) and references the v0.4 example script (lines 642-669), but provides NO:
 1. Example test cases showing expected pass/fail scenarios
 2. Integration guidance for pre-commit hooks or CI pipelines
 3. How to run the validation script locally during development
@@ -386,20 +386,20 @@ Add a subsection after line 563:
 **Local testing**:
 ```bash
 # From project root
-./scripts/validate-agents.sh
+./scripts/validate-agents.py
 echo "Exit code: $?"  # 0 = pass, 1 = fail
 ```
 
 **CI Integration** (GitHub Actions example):
 ```yaml
 - name: Validate Agent Versions
-  run: ./scripts/validate-agents.sh
+  run: ./scripts/validate-agents.py
 ```
 
 **Pre-commit hook** (`.git/hooks/pre-commit`):
 ```bash
 #!/bin/bash
-./scripts/validate-agents.sh || exit 1
+./scripts/validate-agents.py || exit 1
 ```
 ```
 

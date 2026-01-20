@@ -385,7 +385,7 @@ Update line 13:
 3. Add explicit command file link
 
 ### Phase 3: Validation (Est. 10 minutes)
-1. Run `scripts/validate-agents.sh` to verify registry alignment
+1. Run `scripts/validate-agents.py` to verify registry alignment
 2. Test Agent Runner invocation with one agent
 3. Verify reference file accessibility
 
@@ -406,7 +406,7 @@ for agent in .claude/agents/ci-*.md; do
 done
 
 # Validate registry alignment
-scripts/validate-agents.sh
+scripts/validate-agents.py
 
 # Verify reference files exist
 ls -lh .claude/references/ci-automation-*.md

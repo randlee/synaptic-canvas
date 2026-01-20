@@ -236,7 +236,7 @@ class TestCrossReferenceValidation:
         files_to_check = [
             'README.md',
             'docs/registries/nuget/registry.schema.json',
-            'scripts/security-scan.sh',
+            'scripts/security-scan.py',
             'src/sc_cli/skill_integration.py',
             'packages/sc-delay-tasks/TROUBLESHOOTING.md',
             'packages/sc-manage/agents/sc-package-install.md',

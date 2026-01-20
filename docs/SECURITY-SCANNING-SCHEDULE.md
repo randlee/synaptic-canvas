@@ -18,7 +18,7 @@ This document outlines when and how security scans are performed on the Synaptic
 
 **Duration**: ~2-5 minutes depending on repository size
 
-**Command**: `./scripts/security-scan.sh`
+**Command**: `./scripts/security-scan.py`
 
 ### Quick Scan
 
@@ -33,7 +33,7 @@ This document outlines when and how security scans are performed on the Synaptic
 
 **Duration**: ~30-60 seconds
 
-**Command**: `./scripts/security-scan.sh --quick`
+**Command**: `./scripts/security-scan.py --quick`
 
 ## Scan Schedule
 
@@ -131,16 +131,16 @@ This document outlines when and how security scans are performed on the Synaptic
 **Process**:
 ```bash
 # Full scan
-./scripts/security-scan.sh
+./scripts/security-scan.py
 
 # Quick scan
-./scripts/security-scan.sh --quick
+./scripts/security-scan.py --quick
 
 # Single package
-./scripts/security-scan.sh --package sc-delay-tasks
+./scripts/security-scan.py --package sc-delay-tasks
 
 # JSON output
-./scripts/security-scan.sh --json > results.json
+./scripts/security-scan.py --json > results.json
 ```
 
 **When to Run**:
@@ -437,8 +437,8 @@ jobs:
 
       - name: Run security scan
         run: |
-          chmod +x scripts/security-scan.sh
-          ./scripts/security-scan.sh --json > scan-results.json
+          chmod +x scripts/security-scan.py
+          ./scripts/security-scan.py --json > scan-results.json
 
       - name: Check results
         run: |
@@ -471,7 +471,7 @@ jobs:
 # .git/hooks/pre-commit
 
 echo "Running quick security scan..."
-./scripts/security-scan.sh --quick
+./scripts/security-scan.py --quick
 
 if [ $? -ne 0 ]; then
     echo ""
@@ -520,7 +520,7 @@ All security scans create an audit trail:
 
 **Issue**: Scan script not executable
 ```bash
-chmod +x scripts/security-scan.sh
+chmod +x scripts/security-scan.py
 ```
 
 **Issue**: shellcheck not found

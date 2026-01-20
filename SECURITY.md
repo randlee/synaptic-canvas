@@ -433,7 +433,7 @@ python3 --version  # Should be >= 3.12
 **How**:
 ```bash
 # Run security scan
-./scripts/security-scan.sh --package your-package
+./scripts/security-scan.py --package your-package
 
 # Validate manifest
 python3 -c "import yaml; yaml.safe_load(open('packages/your-package/manifest.yaml'))"
@@ -587,7 +587,7 @@ Additional security information:
 - [Shellcheck](https://github.com/koalaman/shellcheck) - Shell script analysis
 - [npm audit](https://docs.npmjs.com/cli/v8/commands/npm-audit) - Node.js dependency security
 - [pip-audit](https://github.com/pypa/pip-audit) - Python dependency security
-- [Security Scan Script](scripts/security-scan.sh) - Our automated scanner
+- [Security Scan Script](scripts/security-scan.py) - Our automated scanner
 
 ## Questions and Feedback
 

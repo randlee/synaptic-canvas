@@ -280,7 +280,7 @@ python3 tools/sc-install.py install PACKAGE --dest /path/to/repo/.claude
 ### "Can't find diagnostic info"
 Run the diagnostic tool:
 ```bash
-scripts/security-scan.sh
+scripts/security-scan.py
 ```
 
 ### More help needed?

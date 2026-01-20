@@ -80,6 +80,42 @@
       "license": "MIT",
       "keywords": ["startup", "checklist", "git", "ci", "automation"],
       "category": "productivity"
+    },
+    {
+      "name": "sc-ci-automation",
+      "source": "./packages/sc-ci-automation",
+      "description": "Run CI quality gates (pull → build → test) with optional auto-fix and PR creation",
+      "version": "0.7.0",
+      "author": {
+        "name": "randlee"
+      },
+      "license": "MIT",
+      "keywords": ["ci", "automation", "testing", "build", "quality-gates"],
+      "category": "automation"
+    },
+    {
+      "name": "sc-roslyn-diff",
+      "source": "./packages/sc-roslyn-diff",
+      "description": "Semantic diffing for .NET source using roslyn-diff with JSON-first output",
+      "version": "0.7.0",
+      "author": {
+        "name": "randlee"
+      },
+      "license": "MIT",
+      "keywords": ["diff", "roslyn", "semantic", ".net", "csharp"],
+      "category": "development"
+    },
+    {
+      "name": "sc-kanban",
+      "source": "./packages/sc-kanban",
+      "description": "Kanban state machine with three-file lifecycle (backlog → board → done)",
+      "version": "0.7.0",
+      "author": {
+        "name": "randlee"
+      },
+      "license": "MIT",
+      "keywords": ["kanban", "task-tracking", "workflow", "project-management"],
+      "category": "productivity"
     }
   ]
 }
