@@ -658,17 +658,20 @@ class OutputContainsExpectation(ExpectationEvaluator):
 
         # Search through Claude responses
         for idx, response in enumerate(data.claude_responses, 1):
-            match = self._compiled_pattern.search(response.text)
+            search_text = response.text
+            if data.prompt and data.prompt in search_text:
+                search_text = search_text.replace(data.prompt, "")
+            match = self._compiled_pattern.search(search_text)
             if match:
                 # Extract matched text and context
                 matched_text = match.group(0)
                 start = max(0, match.start() - 50)
-                end = min(len(response.text), match.end() + 50)
-                context = response.text[start:end]
+                end = min(len(search_text), match.end() + 50)
+                context = search_text[start:end]
 
                 actual = {
                     "matched_text": matched_text,
-                    "context": f"...{context}..." if start > 0 or end < len(response.text) else context,
+                    "context": f"...{context}..." if start > 0 or end < len(search_text) else context,
                 }
                 timestamp = response.timestamp or datetime.now()
                 return self._create_pass_result(expected, actual, idx, timestamp)

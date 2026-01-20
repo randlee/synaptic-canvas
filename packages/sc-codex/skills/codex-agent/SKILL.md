@@ -7,14 +7,15 @@ version: 0.7.0
 # Codex Agent
 
 Use this skill to run Codex tasks via the ai_cli runner. This is intended for Claude
-to delegate work to Codex when appropriate.
+to delegate work to Codex when appropriate, including long-running background tasks
+that can be monitored while other work continues.
 
 ## Invocation
 
-Call the runner script:
+Call the runner script (installed path in projects is `.claude/scripts`):
 
 ```bash
-python3 scripts/sc_codex_task.py --json '{...}'
+python3 .claude/scripts/sc_codex_task.py --json '{...}'
 ```
 
 ## Input
@@ -26,4 +27,16 @@ Provide Task Tool input JSON with:
 
 ## Notes
 
-- The runner enforces schema validation and logs to `.claude/state/logs/ai-cli/`.
+- Model flags (aliases and full names are accepted):
+  - `--model codex` (default: gpt-5.2-codex)
+  - `--model codex-max` or `--model max` (maps to gpt-5.1-codex-max)
+  - `--model codex-mini` or `--model mini` (maps to gpt-5.1-codex-mini)
+  - `--model gpt-5` (maps to gpt-5.2)
+- Background mode:
+  - Default is background unless `--no-background` is provided.
+  - Add `--background` to force background explicitly.
+  - Add `--no-background` to force blocking mode.
+  - The JSON output includes `output_file` (JSONL transcript path) and `agentId`.
+  - Use `tail -f <output_file>` to monitor progress, then read the final output.
+- Blocking mode (default without `--background`) returns `{ "output", "agentId" }`.
+- The runner enforces schema validation and logs to `.claude/state/logs/<package-name>/`.

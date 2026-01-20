@@ -114,6 +114,7 @@ class ReportBuilder:
         plugin_verification: "PluginVerification | None" = None,
         reports_dir: Path | str | None = None,
         fixture_name: str | None = None,
+        allow_warnings: bool = False,
     ) -> TestResult:
         """Build a complete TestResult from collected data.
 
@@ -241,6 +242,8 @@ class ReportBuilder:
             ),
             timeline_tree=timeline_tree,
             artifacts=artifacts,
+            log_analysis=data.log_analysis,
+            allow_warnings=allow_warnings,
         )
 
         return result

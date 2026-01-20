@@ -5,14 +5,175 @@
   "author": {
     "name": "randlee"
   },
-  "packages": [],
+  "packages": [
+    {
+      "name": "sc-ci-automation",
+      "version": "0.7.0",
+      "description": "Run CI quality gates (pull \u2192 build \u2192 test) with optional auto-fix and PR creation. Coordinates pull from upstream, builds projects, runs tests, applies straightforward fixes, and creates PRs when all quality gates pass. Supports version bumping with --patch flag.\n",
+      "author": "randlee",
+      "license": "MIT",
+      "keywords": [],
+      "category": "tools",
+      "artifacts": {
+        "commands": 1,
+        "skills": 1,
+        "agents": 7,
+        "scripts": 0
+      },
+      "lastUpdated": "2026-01-19T17:47:12.885998"
+    },
+    {
+      "name": "sc-codex",
+      "version": "0.7.0",
+      "description": "Run Codex agents via a Task Tool-compatible runner, with hooks emulation and background execution support.\n",
+      "author": "synaptic-canvas",
+      "license": "MIT",
+      "keywords": [],
+      "category": "tools",
+      "artifacts": {
+        "commands": 1,
+        "skills": 1,
+        "agents": 1,
+        "scripts": 10
+      },
+      "lastUpdated": "2026-01-19T17:47:12.886594"
+    },
+    {
+      "name": "sc-delay-tasks",
+      "version": "0.7.0",
+      "description": "Schedule delayed one-shot or bounded polling actions with minimal heartbeats. Useful for waiting before running checks (e.g., CI status) or polling with stop-on-success.\n",
+      "author": "randlee",
+      "license": "MIT",
+      "keywords": [],
+      "category": "tools",
+      "artifacts": {
+        "commands": 1,
+        "skills": 1,
+        "agents": 3,
+        "scripts": 1
+      },
+      "lastUpdated": "2026-01-19T17:47:12.887141"
+    },
+    {
+      "name": "sc-git-worktree",
+      "version": "0.7.0",
+      "description": "Manage git worktrees with optional tracking and protected branch safeguards: create, scan, cleanup, abort, and update worktrees using a standard sibling folder layout with tracking documents. Prevents accidental deletion of protected branches.\n",
+      "author": "randlee",
+      "license": "MIT",
+      "keywords": [],
+      "category": "tools",
+      "artifacts": {
+        "commands": 1,
+        "skills": 1,
+        "agents": 5,
+        "scripts": 0
+      },
+      "lastUpdated": "2026-01-19T17:47:12.887952"
+    },
+    {
+      "name": "sc-github-issue",
+      "version": "0.7.0",
+      "description": "GitHub issue lifecycle management with worktree isolation: list, create, update, and fix issues with automated workflows including PR creation. Integrates with sc-git-worktree for safe isolation.\n",
+      "author": "randlee",
+      "license": "MIT",
+      "keywords": [],
+      "category": "tools",
+      "artifacts": {
+        "commands": 1,
+        "skills": 1,
+        "agents": 4,
+        "scripts": 0
+      },
+      "lastUpdated": "2026-01-19T17:47:12.888790"
+    },
+    {
+      "name": "sc-kanban",
+      "version": "0.7.0",
+      "description": "Kanban state machine for Synaptic Canvas: backlog \u2192 board \u2192 done with gate validation, scrubbing, and shared board config (v0.7).\n",
+      "author": "randlee",
+      "license": "MIT",
+      "keywords": [],
+      "category": "tools",
+      "artifacts": {
+        "commands": 1,
+        "skills": 1,
+        "agents": 8,
+        "scripts": 4
+      },
+      "lastUpdated": "2026-01-19T17:47:12.889366"
+    },
+    {
+      "name": "sc-manage",
+      "version": "0.7.0",
+      "description": "Manage Synaptic Canvas Claude packages. List available packages and their install status (local/global), and install or uninstall packages according to policy.\n",
+      "author": "synaptic-canvas",
+      "license": "MIT",
+      "keywords": [],
+      "category": "tools",
+      "artifacts": {
+        "commands": 1,
+        "skills": 1,
+        "agents": 4,
+        "scripts": 7
+      },
+      "lastUpdated": "2026-01-19T17:47:12.889898"
+    },
+    {
+      "name": "sc-repomix-nuget",
+      "version": "0.7.0",
+      "description": "Generate AI-optimized NuGet package context using Repomix with NuGet metadata (dependencies, dependents, namespaces, frameworks). Produces a compressed API surface.\n",
+      "author": "synaptic-canvas",
+      "license": "MIT",
+      "keywords": [],
+      "category": "tools",
+      "artifacts": {
+        "commands": 1,
+        "skills": 3,
+        "agents": 3,
+        "scripts": 2
+      },
+      "lastUpdated": "2026-01-19T17:47:12.890480"
+    },
+    {
+      "name": "sc-roslyn-diff",
+      "version": "0.7.0",
+      "description": "Semantic diffing for .NET source using roslyn-diff with JSON-first outputs, HTML reports, and git/PR-aware comparisons.\n",
+      "author": "randlee",
+      "license": "MIT",
+      "keywords": [],
+      "category": "tools",
+      "artifacts": {
+        "commands": 1,
+        "skills": 1,
+        "agents": 2,
+        "scripts": 5
+      },
+      "lastUpdated": "2026-01-19T17:47:12.891013"
+    },
+    {
+      "name": "sc-startup",
+      "version": "0.7.0",
+      "description": "Startup runner for Synaptic Canvas: read startup prompt, sync master checklist, optional PR triage, worktree hygiene, and CI pull, then emit a concise status with next steps. Supports read-only mode.\n",
+      "author": "randlee",
+      "license": "MIT",
+      "keywords": [],
+      "category": "tools",
+      "artifacts": {
+        "commands": 1,
+        "skills": 1,
+        "agents": 4,
+        "scripts": 0
+      },
+      "lastUpdated": "2026-01-19T17:47:12.891598"
+    }
+  ],
   "metadata": {
-    "totalPackages": 0,
-    "totalCommands": 0,
-    "totalSkills": 0,
-    "totalAgents": 0,
-    "totalScripts": 0
+    "totalPackages": 10,
+    "totalCommands": 10,
+    "totalSkills": 12,
+    "totalAgents": 41,
+    "totalScripts": 29
   },
-  "generated": "2026-01-19T12:33:02.835641",
-  "lastUpdated": "2026-01-19T12:33:02.835646"
+  "generated": "2026-01-19T17:47:12.891605",
+  "lastUpdated": "2026-01-19T17:47:12.891606"
 }

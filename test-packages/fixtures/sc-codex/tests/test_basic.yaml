@@ -3,7 +3,7 @@ test_name: Basic /sc-codex invocation
 description: Verify /sc-codex runs and returns JSON with output/agentId.
 
 execution:
-  prompt: "/sc-codex write a short haiku about rain"
+  prompt: "/sc-codex write a short haiku about rain. Wait for Codex to finish, then grade the haiku on a scale from 1-10."
   model: haiku
   tools:
     - Bash
@@ -11,8 +11,15 @@ execution:
 
 expectations:
   - id: exp-001
-    description: Output contains agentId or sc-codex context
+    description: sc-codex command invokes Python runner
+    type: tool_call
+    expected:
+      tool: Bash
+      pattern: "sc_codex_task.py"
+
+  - id: exp-002
+    description: Output includes grade
     type: output_contains
     expected:
-      pattern: "(agentId|sc-codex)"
+      pattern: "grade"
       flags: "i"

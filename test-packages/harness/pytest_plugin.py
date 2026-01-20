@@ -41,6 +41,8 @@ Based on the fixture design from:
 from __future__ import annotations
 
 import logging
+import subprocess
+import sys
 import time
 import webbrowser
 from datetime import datetime
@@ -330,6 +332,7 @@ class YAMLTestItem(pytest.Item):
         )
 
         try:
+            self._reset_test_repo(project_path)
             with isolated_claude_session(
                 project_path=project_path,
                 trace_path=project_path / "reports" / "trace.jsonl",
@@ -371,6 +374,7 @@ class YAMLTestItem(pytest.Item):
                 collector = DataCollector(
                     trace_path=session.trace_path,
                     transcript_path=session.transcript_path,
+                    project_path=project_path,
                 )
                 self.collected_data = collector.collect()
 
@@ -439,6 +443,33 @@ class YAMLTestItem(pytest.Item):
             self._cleanup_plugins()
             # Run teardown commands
             self._run_teardown_commands(merged_setup)
+
+    def _reset_test_repo(self, project_path: Path) -> None:
+        """Reset the sc-test-harness repo before one-time setup/plugins."""
+        script_path = project_path / "scripts" / "reset_test_repo.py"
+        if not script_path.exists():
+            raise YAMLTestFailure(
+                self.test_config,
+                [],
+                error_message=f"Missing reset script: {script_path}",
+            )
+        result = subprocess.run(
+            [sys.executable, str(script_path)],
+            cwd=project_path,
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode != 0:
+            error = (
+                "Failed to reset sc-test-harness repo.\n"
+                f"stdout: {result.stdout}\n"
+                f"stderr: {result.stderr}"
+            )
+            raise YAMLTestFailure(
+                self.test_config,
+                [],
+                error_message=error,
+            )
 
     def _find_project_path(self) -> Path:
         """Find the test harness project path for isolated test execution.
@@ -1443,6 +1474,7 @@ def _generate_fixture_report(
                     plugin_verification=plugin_verification,
                     reports_dir=report_path,
                     fixture_name=fixture_name,
+                    allow_warnings=test_config.allow_warnings,
                 )
             else:
                 # Create minimal result for tests without collected data

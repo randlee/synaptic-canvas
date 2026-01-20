@@ -24,6 +24,7 @@ Example usage:
 
 from __future__ import annotations
 
+import json
 import re
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -286,6 +287,75 @@ def analyze_captured_output(captured: "CaptureFixture") -> LogAnalysisResult:
         combined_content += f"--- stderr ---\n{err}\n"
 
     return analyze_logs(combined_content)
+
+
+def analyze_structured_logs(
+    records: list[dict[str, object]],
+    source: str = "structured",
+) -> LogAnalysisResult:
+    """Analyze structured log records for warnings/errors.
+
+    Args:
+        records: List of JSON-decoded log records.
+        source: Label describing the source of records.
+    """
+    result = LogAnalysisResult(raw_content=f"structured:{source}")
+    if not records:
+        return result
+
+    for idx, record in enumerate(records, start=1):
+        level = record.get("level") or record.get("severity")
+        status = record.get("status")
+        if not level and status:
+            status_str = str(status).lower()
+            if status_str == "error":
+                level = "ERROR"
+            elif status_str == "warning":
+                level = "WARNING"
+            else:
+                continue
+        if not level:
+            continue
+
+        try:
+            level_enum = LogLevel(str(level).upper())
+        except ValueError:
+            continue
+
+        message = record.get("message") or record.get("error") or record.get("event") or "structured log entry"
+        if isinstance(message, dict):
+            message = json.dumps(message)
+        elif not isinstance(message, str):
+            message = str(message)
+
+        entry = LogEntry(
+            level=level_enum,
+            message=message,
+            logger_name=str(record.get("component") or record.get("logger") or ""),
+            line_number=idx,
+            raw_line=json.dumps(record),
+        )
+        result.all_entries.append(entry)
+        if entry.level == LogLevel.WARNING:
+            result.warnings.append(entry)
+        elif entry.level in (LogLevel.ERROR, LogLevel.CRITICAL):
+            result.errors.append(entry)
+
+    return result
+
+
+def merge_log_analysis(results: list[LogAnalysisResult]) -> LogAnalysisResult:
+    """Merge multiple LogAnalysisResults into a single result."""
+    merged = LogAnalysisResult(raw_content="")
+    for result in results:
+        if not result:
+            continue
+        merged.warnings.extend(result.warnings)
+        merged.errors.extend(result.errors)
+        merged.all_entries.extend(result.all_entries)
+        if result.raw_content:
+            merged.raw_content += result.raw_content + "\n"
+    return merged
 
 
 def filter_allowed_warnings(

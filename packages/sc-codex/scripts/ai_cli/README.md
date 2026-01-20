@@ -95,7 +95,7 @@ Codex model aliases:
 ## Logs
 
 Errors and schema validation failures are logged to:
-- `.claude/state/logs/ai-cli/`
+- `.claude/state/logs/<package-name>/` (derived from the runner script path)
 
 Task start/end events are also logged with `agentId`, `runner`, `model`, and parameters.
 Logs include `prompt_preview` and `duration_ms`.

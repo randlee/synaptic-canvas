@@ -33,7 +33,10 @@ def _build_payload(prompt: str, subagent_type: str) -> TaskToolInput:
 def main() -> int:
     ap = argparse.ArgumentParser(description="Run Codex tasks via ai_cli", add_help=True)
     ap.add_argument("--model", help="Codex model or alias (codex, max, mini, gpt-5)")
-    ap.add_argument("--background", action="store_true", help="Run in background mode")
+    bg_group = ap.add_mutually_exclusive_group()
+    bg_group.add_argument("--background", dest="background", action="store_true", help="Run in background mode")
+    bg_group.add_argument("--no-background", dest="background", action="store_false", help="Run in blocking mode")
+    ap.set_defaults(background=None)
     ap.add_argument("--json", action="store_true", help="Treat remaining args as JSON Task Tool input")
     ap.add_argument("args", nargs="*", help="Prompt or JSON input")
     args = ap.parse_args()
@@ -53,11 +56,15 @@ def main() -> int:
 
     runner = resolve_runner("codex")
     model = resolve_model(runner, args.model or payload.model)
+    if args.background is None:
+        run_in_background = True if payload.run_in_background is None else bool(payload.run_in_background)
+    else:
+        run_in_background = args.background
     result = run_task(
         payload,
         runner=runner,
         model=model,
-        run_in_background=args.background or bool(payload.run_in_background),
+        run_in_background=run_in_background,
         raise_on_error=False,
     )
     print(result.model_dump_json(indent=2))

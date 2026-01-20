@@ -1,7 +1,7 @@
 {
   "$schema": "https://yourcompany.github.io/schemas/package-registry.schema.json",
   "version": "2.0.0",
-  "generated": "2026-01-17T03:01:02Z",
+  "generated": "2026-01-20T01:49:16Z",
   "repo": "randlee/synaptic-canvas",
   "marketplace": {
     "name": "Synaptic Canvas",
@@ -10,36 +10,6 @@
     "url": "https://github.com/randlee/synaptic-canvas"
   },
   "packages": {
-    "sc-delay-tasks": {
-      "name": "sc-delay-tasks",
-      "version": "0.7.0",
-      "status": "beta",
-      "tier": 0,
-      "description": "Schedule delayed or interval-based actions with minimal heartbeats. Ideal for waiting before running checks (e.g., GH Actions, PR status) or polling on a bounded interval.",
-      "github": "randlee/synaptic-canvas",
-      "repo": "https://github.com/randlee/synaptic-canvas",
-      "path": "packages/sc-delay-tasks",
-      "readme": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-delay-tasks/README.md",
-      "license": "MIT",
-      "author": "Anthropic",
-      "tags": [
-        "delay",
-        "polling",
-        "tasks",
-        "ci",
-        "automation"
-      ],
-      "artifacts": {
-        "commands": 1,
-        "skills": 1,
-        "agents": 3,
-        "scripts": 1
-      },
-      "dependencies": [],
-      "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-delay-tasks/CHANGELOG.md",
-      "lastUpdated": "2025-12-21",
-      "dependents": []
-    },
     "sc-ci-automation": {
       "name": "sc-ci-automation",
       "version": "0.7.0",
@@ -71,6 +41,65 @@
         "git >= 2.20"
       ],
       "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-ci-automation/CHANGELOG.md",
+      "lastUpdated": "2025-12-21",
+      "dependents": []
+    },
+    "sc-codex": {
+      "name": "sc-codex",
+      "version": "0.7.0",
+      "status": "beta",
+      "tier": 0,
+      "description": "Run Codex agents via a Task Tool-compatible runner, with hooks emulation and background execution support.",
+      "github": "randlee/synaptic-canvas",
+      "repo": "https://github.com/randlee/synaptic-canvas",
+      "path": "packages/sc-codex",
+      "readme": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-codex/README.md",
+      "license": "MIT",
+      "author": "synaptic-canvas",
+      "tags": [
+        "codex",
+        "agents",
+        "task-tool",
+        "cli"
+      ],
+      "artifacts": {
+        "commands": 1,
+        "skills": 1,
+        "agents": 1,
+        "scripts": 10
+      },
+      "dependencies": [],
+      "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-codex/CHANGELOG.md",
+      "lastUpdated": "2026-01-20",
+      "dependents": []
+    },
+    "sc-delay-tasks": {
+      "name": "sc-delay-tasks",
+      "version": "0.7.0",
+      "status": "beta",
+      "tier": 0,
+      "description": "Schedule delayed or interval-based actions with minimal heartbeats. Ideal for waiting before running checks (e.g., GH Actions, PR status) or polling on a bounded interval.",
+      "github": "randlee/synaptic-canvas",
+      "repo": "https://github.com/randlee/synaptic-canvas",
+      "path": "packages/sc-delay-tasks",
+      "readme": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-delay-tasks/README.md",
+      "license": "MIT",
+      "author": "Anthropic",
+      "tags": [
+        "delay",
+        "polling",
+        "tasks",
+        "ci",
+        "automation"
+      ],
+      "artifacts": {
+        "commands": 1,
+        "skills": 1,
+        "agents": 3,
+        "scripts": 1
+      },
+      "dependencies": [],
+      "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-delay-tasks/CHANGELOG.md",
       "lastUpdated": "2025-12-21",
       "dependents": []
     },
@@ -114,6 +143,77 @@
       "dependents": [
         "sc-github-issue"
       ]
+    },
+    "sc-github-issue": {
+      "name": "sc-github-issue",
+      "version": "0.7.0",
+      "status": "beta",
+      "tier": 2,
+      "description": "GitHub issue lifecycle management with worktree isolation. List, create, update issues, and implement fixes in isolated worktrees with automated testing, commits, and PR creation.",
+      "github": "randlee/synaptic-canvas",
+      "repo": "https://github.com/randlee/synaptic-canvas",
+      "path": "packages/sc-github-issue",
+      "readme": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-github-issue/README.md",
+      "license": "MIT",
+      "author": "Anthropic",
+      "tags": [
+        "github",
+        "issues",
+        "pull-requests",
+        "worktree",
+        "automation",
+        "ci",
+        "bug-fixing"
+      ],
+      "artifacts": {
+        "commands": 1,
+        "skills": 1,
+        "agents": 4,
+        "scripts": 0
+      },
+      "dependencies": [
+        "sc-git-worktree >= 0.7.0",
+        "gh >= 2.0"
+      ],
+      "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-github-issue/CHANGELOG.md",
+      "lastUpdated": "2025-12-21",
+      "dependents": []
+    },
+    "sc-kanban": {
+      "name": "sc-kanban",
+      "version": "0.7.0",
+      "status": "beta",
+      "tier": 2,
+      "description": "Kanban state machine with three-file lifecycle (backlog → board → done), provider abstraction, automatic scrubbing, and WIP enforcement. Integrates with sc-project-manager via shared board config.",
+      "github": "randlee/synaptic-canvas",
+      "repo": "https://github.com/randlee/synaptic-canvas",
+      "path": "packages/sc-kanban",
+      "readme": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-kanban/README.md",
+      "license": "MIT",
+      "author": "randlee",
+      "tags": [
+        "kanban",
+        "task-tracking",
+        "workflow",
+        "project-management",
+        "git",
+        "pr",
+        "gates"
+      ],
+      "artifacts": {
+        "commands": 1,
+        "skills": 1,
+        "agents": 4,
+        "scripts": 4
+      },
+      "dependencies": [
+        "PyYAML",
+        "pydantic >= 2.0",
+        "sc-git-worktree >= 0.5.2"
+      ],
+      "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-kanban/CHANGELOG.md",
+      "lastUpdated": "2026-01-09",
+      "dependents": []
     },
     "sc-manage": {
       "name": "sc-manage",
@@ -218,77 +318,6 @@
       ],
       "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-roslyn-diff/CHANGELOG.md",
       "lastUpdated": "2026-01-17",
-      "dependents": []
-    },
-    "sc-github-issue": {
-      "name": "sc-github-issue",
-      "version": "0.7.0",
-      "status": "beta",
-      "tier": 2,
-      "description": "GitHub issue lifecycle management with worktree isolation. List, create, update issues, and implement fixes in isolated worktrees with automated testing, commits, and PR creation.",
-      "github": "randlee/synaptic-canvas",
-      "repo": "https://github.com/randlee/synaptic-canvas",
-      "path": "packages/sc-github-issue",
-      "readme": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-github-issue/README.md",
-      "license": "MIT",
-      "author": "Anthropic",
-      "tags": [
-        "github",
-        "issues",
-        "pull-requests",
-        "worktree",
-        "automation",
-        "ci",
-        "bug-fixing"
-      ],
-      "artifacts": {
-        "commands": 1,
-        "skills": 1,
-        "agents": 4,
-        "scripts": 0
-      },
-      "dependencies": [
-        "sc-git-worktree >= 0.7.0",
-        "gh >= 2.0"
-      ],
-      "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-github-issue/CHANGELOG.md",
-      "lastUpdated": "2025-12-21",
-      "dependents": []
-    },
-    "sc-kanban": {
-      "name": "sc-kanban",
-      "version": "0.7.0",
-      "status": "beta",
-      "tier": 2,
-      "description": "Kanban state machine with three-file lifecycle (backlog → board → done), provider abstraction, automatic scrubbing, and WIP enforcement. Integrates with sc-project-manager via shared board config.",
-      "github": "randlee/synaptic-canvas",
-      "repo": "https://github.com/randlee/synaptic-canvas",
-      "path": "packages/sc-kanban",
-      "readme": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-kanban/README.md",
-      "license": "MIT",
-      "author": "randlee",
-      "tags": [
-        "kanban",
-        "task-tracking",
-        "workflow",
-        "project-management",
-        "git",
-        "pr",
-        "gates"
-      ],
-      "artifacts": {
-        "commands": 1,
-        "skills": 1,
-        "agents": 4,
-        "scripts": 4
-      },
-      "dependencies": [
-        "PyYAML",
-        "pydantic >= 2.0",
-        "sc-git-worktree >= 0.5.2"
-      ],
-      "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-kanban/CHANGELOG.md",
-      "lastUpdated": "2026-01-09",
       "dependents": []
     },
     "sc-startup": {

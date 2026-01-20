@@ -485,6 +485,7 @@ class TestRunner:
                 collector = DataCollector(
                     trace_path=session.trace_path,
                     transcript_path=session.transcript_path,
+                    project_path=self.project_path,
                 )
                 collected_data = collector.collect()
 
@@ -531,6 +532,7 @@ class TestRunner:
                     setup_commands=setup_commands,
                     cleanup_commands=cleanup_commands,
                     pytest_output=claude_session_log,
+                    allow_warnings=test_config.allow_warnings,
                 )
 
                 # Override duration with measured time
