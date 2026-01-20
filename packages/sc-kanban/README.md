@@ -187,6 +187,13 @@ Adds: `worktree`, `dev_agent`, `qa_agent`, `dev_prompt`, `qa_prompt`, `acceptanc
 ### Done (Scrubbed)
 Keeps: `sprint_id`, `title`, `pr_url`, `completed_at`, `actual_cycles`
 
+## Security
+
+- Local file operations only; no remote access
+- Gate validation prevents incomplete work from progressing
+- WIP enforcement limits concurrent active work
+- All state changes logged for audit
+
 ## Status
 
 **v0.7.0 (Current)**:
