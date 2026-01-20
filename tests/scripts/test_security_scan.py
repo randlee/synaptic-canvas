@@ -421,8 +421,8 @@ class TestPackageDocumentation:
         scanner.verify_package_documentation()
 
         check = scanner.checks["package_documentation"]
-        # Missing README is a warning, not a failure
-        assert check.status == CheckStatus.WARNING
+        # Missing README is HIGH severity -> FAILED status
+        assert check.status == CheckStatus.FAILED
         assert any("README" in issue.message for issue in check.issues)
 
     def test_readme_missing_security(self, temp_repo):
@@ -517,8 +517,8 @@ class TestLicenseFiles:
         scanner.verify_license_files()
 
         check = scanner.checks["license_files"]
-        # Missing LICENSE is a warning, not a failure
-        assert check.status == CheckStatus.WARNING
+        # Missing LICENSE is HIGH severity -> FAILED status
+        assert check.status == CheckStatus.FAILED
         assert any("LICENSE" in issue.message for issue in check.issues)
 
     def test_empty_license_file(self, temp_repo):
@@ -543,8 +543,8 @@ class TestLicenseFiles:
         scanner.verify_license_files()
 
         check = scanner.checks["license_files"]
-        # Missing LICENSE is a warning, not a failure
-        assert check.status == CheckStatus.WARNING
+        # Missing root LICENSE is HIGH severity -> FAILED status
+        assert check.status == CheckStatus.FAILED
         assert any("repository root" in issue.message for issue in check.issues)
 
 
@@ -971,7 +971,7 @@ class TestMainFunction:
 
     @patch("sys.argv", ["security-scan.py"])
     def test_main_warning_exit_code(self, temp_repo):
-        """Test main() returns exit code 0 for warnings (warnings are non-blocking)."""
+        """Test main() returns exit code 1 for warnings."""
         with patch("security_scan.Path") as mock_path:
             mock_path.return_value.parent.parent.resolve.return_value = temp_repo
             with patch("security_scan.SecurityScanner.run") as mock_run:
@@ -987,12 +987,12 @@ class TestMainFunction:
                 mock_run.return_value = Success(value=mock_results)
 
                 exit_code = main()
-                # Warnings return 0 (non-blocking)
-                assert exit_code == 0
+                # Warnings return 1
+                assert exit_code == 1
 
     @patch("sys.argv", ["security-scan.py"])
     def test_main_failed_exit_code(self, temp_repo):
-        """Test main() returns exit code 1 for failures."""
+        """Test main() returns exit code 2 for failures."""
         with patch("security_scan.Path") as mock_path:
             mock_path.return_value.parent.parent.resolve.return_value = temp_repo
             with patch("security_scan.SecurityScanner.run") as mock_run:
@@ -1008,8 +1008,8 @@ class TestMainFunction:
                 mock_run.return_value = Success(value=mock_results)
 
                 exit_code = main()
-                # Failures return 1
-                assert exit_code == 1
+                # Failures return 2
+                assert exit_code == 2
 
 
 # =============================================================================
