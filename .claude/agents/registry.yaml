@@ -3,70 +3,70 @@
 
 agents:
   skill-planning-agent:
-    version: 0.1.0
+    version: 0.7.0
     path: .claude/agents/skill-planning-agent.md
   skill-review-agent:
-    version: 0.1.0
+    version: 0.7.0
     path: .claude/agents/skill-review-agent.md
 
   # Worktree management agents
   sc-worktree-create:
-    version: 0.4.0
+    version: 0.7.0
     path: .claude/agents/sc-worktree-create.md
   sc-worktree-scan:
-    version: 0.4.0
+    version: 0.7.0
     path: .claude/agents/sc-worktree-scan.md
   sc-worktree-cleanup:
-    version: 0.4.0
+    version: 0.7.0
     path: .claude/agents/sc-worktree-cleanup.md
   sc-worktree-abort:
-    version: 0.4.0
+    version: 0.7.0
     path: .claude/agents/sc-worktree-abort.md
 
   # GitHub issue management agents
   issue-intake-agent:
-    version: 0.1.0
+    version: 0.7.0
     path: .claude/agents/issue-intake-agent.md
   issue-mutate-agent:
-    version: 0.1.0
+    version: 0.7.0
     path: .claude/agents/issue-mutate-agent.md
   issue-fix-agent:
-    version: 0.1.0
+    version: 0.7.0
     path: .claude/agents/issue-fix-agent.md
   issue-pr-agent:
-    version: 0.1.0
+    version: 0.7.0
     path: .claude/agents/issue-pr-agent.md
 
   # CI automation agents
   ci-validate-agent:
-    version: 0.1.0
+    version: 0.7.0
     path: .claude/agents/ci-validate-agent.md
   ci-pull-agent:
-    version: 0.1.0
+    version: 0.7.0
     path: .claude/agents/ci-pull-agent.md
   ci-build-agent:
-    version: 0.1.0
+    version: 0.7.0
     path: .claude/agents/ci-build-agent.md
   ci-test-agent:
-    version: 0.1.0
+    version: 0.7.0
     path: .claude/agents/ci-test-agent.md
   ci-fix-agent:
-    version: 0.1.0
+    version: 0.7.0
     path: .claude/agents/ci-fix-agent.md
   ci-root-cause-agent:
-    version: 0.1.0
+    version: 0.7.0
     path: .claude/agents/ci-root-cause-agent.md
   ci-pr-agent:
-    version: 0.1.0
+    version: 0.7.0
     path: .claude/agents/ci-pr-agent.md
 
   # Startup checklist
   sc-checklist-status:
-    version: 0.6.0
+    version: 0.7.0
     path: .claude/agents/sc-checklist-status.md
 
   sc-startup-init:
-    version: 0.6.0
+    version: 0.7.0
     path: .claude/agents/sc-startup-init.md
 
   # Roslyn diff agents
