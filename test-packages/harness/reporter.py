@@ -197,6 +197,12 @@ class ReportBuilder:
                     logger.warning(f"Failed to load enriched data from {enriched_path}: {e}")
 
         # Build the TestResult
+        raw_trace_file = None
+        if artifacts and reports_dir:
+            trace_path = Path(reports_dir) / artifacts.trace
+            if trace_path.exists():
+                raw_trace_file = str(trace_path)
+
         result = TestResult(
             test_id=test_id,
             test_name=test_name,
@@ -237,7 +243,7 @@ class ReportBuilder:
             debug=DebugInfo(
                 pytest_output=pytest_output or None,
                 pytest_status=pytest_status,
-                raw_trace_file=str(data.transcript_path) if data.transcript_path else None,
+                raw_trace_file=raw_trace_file,
                 errors=[e.error_content for e in data.errors],
                 plugin_verification=plugin_verification,
             ),

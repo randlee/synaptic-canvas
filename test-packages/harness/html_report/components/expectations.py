@@ -37,7 +37,7 @@ class ExpectationsBuilder(BaseBuilder[ExpectationsDisplayModel]):
         )
 
         header = f'''<summary class="section-header">
-  <h2>Expectations <span class="pass-count">({data.passed_count} passed)</span> <span class="fail-count">({data.failed_count} failed)</span></h2>
+  <span class="summary-text">Expectations <span class="pass-count">({data.passed_count} passed)</span> <span class="fail-count">({data.failed_count} failed)</span></span>
   {copy_btn}
 </summary>'''
 

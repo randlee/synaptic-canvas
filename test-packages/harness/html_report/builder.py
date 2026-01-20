@@ -449,7 +449,7 @@ class HTMLReportBuilder:
     def _format_log_context(raw_content: str) -> str | None:
         """Format raw log content for display."""
         if not raw_content:
-            return None
+            return "No log content captured."
 
         lines = []
         for line in raw_content.splitlines():

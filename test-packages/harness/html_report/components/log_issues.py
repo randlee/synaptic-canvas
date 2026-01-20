@@ -149,7 +149,7 @@ class LogIssuesBuilder(BaseBuilder[LogIssuesDisplayModel]):
 
         rendered = "\n".join(lines)
         return f'''
-    <details class="log-raw-context">
+    <details class="log-raw-context" open>
       <summary>
         <span class="summary-text">Raw Log Context</span>
       </summary>

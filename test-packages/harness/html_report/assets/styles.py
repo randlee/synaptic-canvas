@@ -75,6 +75,11 @@ CSS_HEADER = """.fixture-header {
 .fixture-meta-item.wide {
   grid-column: 1 / -1;
 }
+.fixture-meta-item.wide .fixture-meta-value {
+  white-space: nowrap;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
 .fixture-meta-label {
   color: #94a3b8;
   font-size: 0.75rem;
@@ -455,16 +460,34 @@ CSS_EXPECTATIONS = """.expectations-list {
 .expectations-section > summary {
   list-style: none;
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: center;
   padding: 8px 0;
   cursor: pointer;
+  gap: 8px;
+}
+.expectations-section > summary .copy-icon-btn {
+  margin-left: auto;
+}
+.expectations-section > summary .summary-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text);
 }
 .expectations-section > summary::before {
   content: "▸";
   color: var(--text-muted);
   margin-right: 8px;
-  transform: translateY(1px);
+  font-size: 1.1rem;
+  width: 12px;
+  display: inline-block;
+  text-align: center;
+}
+.expectations-section > summary::marker {
+  content: "";
 }
 .expectations-section[open] > summary::before {
   content: "▾";
@@ -1097,6 +1120,7 @@ CSS_LOG_ISSUES = """.log-issues-section {
   border-radius: 6px;
   padding: 8px;
   border: 1px solid var(--border);
+  color: var(--text);
 }
 .log-line {
   display: block;
