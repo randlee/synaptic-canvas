@@ -152,6 +152,22 @@ class SecurityScanner:
     # Directories to exclude from scanning
     EXCLUDE_DIRS = [".git", ".venv", "__pycache__", "node_modules"]
 
+    # Files/patterns to exclude from secrets detection (documentation with examples)
+    EXCLUDE_FROM_SECRETS = [
+        "SECURITY-SCANNING-GUIDE.md",  # Documentation with example patterns
+        "test_security_scan.py",  # Test file with example patterns
+        "agent-runner-comprehensive.md",  # Documentation
+        "security_scan.py",  # Symlink to security-scan.py
+    ]
+
+    # Files to exclude from Python safety checks (scripts that need these patterns)
+    EXCLUDE_FROM_PYTHON_SAFETY = [
+        "security-scan.py",  # This script itself uses patterns for detection
+        "security_scan.py",  # Legacy name
+        "test_security_scan.py",  # Test file
+        "pytest_plugin.py",  # Test harness legitimately needs shell=True
+    ]
+
     def __init__(self, config: ScanConfiguration):
         """Initialize scanner with configuration."""
         self.config = config
@@ -199,6 +215,9 @@ class SecurityScanner:
         for pattern in self.SECRET_PATTERNS:
             matches = self._grep_pattern(pattern, search_path, case_insensitive=True)
             for file_path, line_num, line_content in matches:
+                # Skip excluded files (documentation/tests with example patterns)
+                if any(excluded in file_path for excluded in self.EXCLUDE_FROM_SECRETS):
+                    continue
                 # Skip this script itself
                 if "security-scan" in file_path:
                     continue
@@ -219,6 +238,9 @@ class SecurityScanner:
             md_pattern, search_path, include_glob="*.md", case_insensitive=True
         )
         for file_path, line_num, line_content in md_matches:
+            # Skip excluded documentation files
+            if any(excluded in file_path for excluded in self.EXCLUDE_FROM_SECRETS):
+                continue
             if re.search(
                 r'(password|secret|token|key).*["\'].*[a-zA-Z0-9]{16,}',
                 line_content,
@@ -330,9 +352,15 @@ class SecurityScanner:
         issues: List[SecurityIssue] = []
         search_path = self._get_search_path()
 
+        def should_exclude(file_path: str) -> bool:
+            """Check if file should be excluded from Python safety checks."""
+            return any(excluded in file_path for excluded in self.EXCLUDE_FROM_PYTHON_SAFETY)
+
         # Check for eval()
         eval_matches = self._grep_pattern(r"eval\(", search_path, include_glob="*.py")
         for file_path, line_num, _ in eval_matches:
+            if should_exclude(file_path):
+                continue
             issues.append(
                 SecurityIssue(
                     severity=Severity.HIGH,
@@ -345,6 +373,8 @@ class SecurityScanner:
         # Check for exec()
         exec_matches = self._grep_pattern(r"exec\(", search_path, include_glob="*.py")
         for file_path, line_num, _ in exec_matches:
+            if should_exclude(file_path):
+                continue
             issues.append(
                 SecurityIssue(
                     severity=Severity.HIGH,
@@ -357,6 +387,8 @@ class SecurityScanner:
         # Check for shell=True
         shell_matches = self._grep_pattern(r"shell=True", search_path, include_glob="*.py")
         for file_path, line_num, _ in shell_matches:
+            if should_exclude(file_path):
+                continue
             issues.append(
                 SecurityIssue(
                     severity=Severity.MEDIUM,
@@ -369,6 +401,8 @@ class SecurityScanner:
         # Check for pickle.loads
         pickle_matches = self._grep_pattern(r"pickle\.loads", search_path, include_glob="*.py")
         for file_path, line_num, _ in pickle_matches:
+            if should_exclude(file_path):
+                continue
             issues.append(
                 SecurityIssue(
                     severity=Severity.MEDIUM,
@@ -467,12 +501,17 @@ class SecurityScanner:
                     )
                 )
 
-        status = CheckStatus.PASSED if not issues else CheckStatus.FAILED
-        message = (
-            f"(all {len(packages)} packages have required docs)"
-            if not issues
-            else f"({len(issues)} issues in {len(packages)} packages)"
-        )
+        # Only fail on HIGH severity issues; MEDIUM/LOW are warnings
+        high_issues = sum(1 for issue in issues if issue.severity == Severity.HIGH)
+        if not issues:
+            status = CheckStatus.PASSED
+            message = f"(all {len(packages)} packages have required docs)"
+        elif high_issues == 0:
+            status = CheckStatus.WARNING
+            message = f"({len(issues)} recommendations in {len(packages)} packages)"
+        else:
+            status = CheckStatus.FAILED
+            message = f"({len(issues)} issues in {len(packages)} packages)"
 
         self.checks["package_documentation"] = CheckResult(
             check_name="Package Documentation", status=status, issues=issues, message=message

@@ -217,6 +217,9 @@ def get_disk_files(package_path: Path) -> list[str]:
 
         for file_path in dir_path.rglob("*"):
             if file_path.is_file():
+                # Skip __pycache__ directories and .pyc files
+                if "__pycache__" in file_path.parts or file_path.suffix == ".pyc":
+                    continue
                 # Get path relative to package root
                 rel_path = file_path.relative_to(package_path)
                 # Normalize to forward slashes for cross-platform compatibility
@@ -240,11 +243,13 @@ def validate_script_file(
     """
     warnings = []
 
-    # Check extension
-    if not script_path.endswith(".py"):
+    # Check extension - allow .py and .sh scripts
+    valid_extensions = [".py", ".sh"]
+    has_valid_extension = any(script_path.endswith(ext) for ext in valid_extensions)
+    if not has_valid_extension:
         return Failure(
             error=ValidationError(
-                message="Script must have .py extension",
+                message=f"Script must have one of {valid_extensions} extension",
                 file_path=script_path,
             )
         )
@@ -255,7 +260,12 @@ def validate_script_file(
         with open(full_path) as f:
             first_line = f.readline().strip()
 
-        expected_shebang = "#!/usr/bin/env python3"
+        # Expected shebangs based on extension
+        if script_path.endswith(".py"):
+            expected_shebang = "#!/usr/bin/env python3"
+        else:  # .sh
+            expected_shebang = "#!/usr/bin/env bash"
+
         if not first_line.startswith("#!"):
             return Failure(
                 error=ValidationError(
@@ -265,7 +275,15 @@ def validate_script_file(
                 )
             )
 
-        if first_line != expected_shebang:
+        # Allow common shebang variants for shell scripts
+        valid_shell_shebangs = ["#!/usr/bin/env bash", "#!/bin/bash", "#!/bin/sh"]
+        if script_path.endswith(".sh"):
+            if first_line not in valid_shell_shebangs:
+                warnings.append(
+                    f"Non-standard shebang in {script_path}: {first_line} "
+                    f"(expected one of: {valid_shell_shebangs})"
+                )
+        elif first_line != expected_shebang:
             warnings.append(
                 f"Non-standard shebang in {script_path}: {first_line} "
                 f"(expected: {expected_shebang})"

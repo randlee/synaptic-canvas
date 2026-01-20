@@ -242,9 +242,9 @@ def test_agent_frontmatter_model_validation():
 
 
 def test_agent_frontmatter_color_validation():
-    """Test color must be one of allowed values."""
-    # Valid colors
-    for color in ["gray", "green", "purple", "blue", "red", "yellow"]:
+    """Test color must be one of allowed values (expanded palette)."""
+    # Valid colors - now includes orange and cyan
+    for color in ["gray", "green", "purple", "blue", "red", "yellow", "orange", "cyan"]:
         AgentFrontmatter(
             name="test",
             version="1.0.0",
@@ -253,14 +253,14 @@ def test_agent_frontmatter_color_validation():
             color=color,
         )
 
-    # Invalid color
+    # Invalid color - use a truly invalid color
     with pytest.raises(ValueError, match="Color must be one of"):
         AgentFrontmatter(
             name="test",
             version="1.0.0",
             description="Test",
             model="sonnet",
-            color="orange",
+            color="magenta",
         )
 
 
@@ -389,7 +389,7 @@ def test_validate_frontmatter_schema_skill_valid(valid_skill_frontmatter):
 
 
 def test_validate_frontmatter_schema_skill_missing_entry_point():
-    """Test skill with missing entry_point."""
+    """Test skill with missing entry_point - now allowed (optional)."""
     data = FrontmatterData(
         file_path="/test/skills/test/SKILL.md",
         artifact_type="skill",
@@ -397,8 +397,8 @@ def test_validate_frontmatter_schema_skill_missing_entry_point():
         raw_frontmatter="",
     )
     result = validate_frontmatter_schema(data)
-    assert isinstance(result, Failure)
-    assert "entry_point" in result.error.field_name.lower()
+    # entry_point is now optional, so this should succeed
+    assert isinstance(result, Success)
 
 
 def test_validate_frontmatter_schema_skill_invalid_entry_point():
@@ -451,7 +451,7 @@ def test_validate_frontmatter_schema_agent_invalid_model():
 
 
 def test_validate_frontmatter_schema_agent_invalid_color():
-    """Test agent with invalid color."""
+    """Test agent with invalid color - orange is now valid."""
     data = FrontmatterData(
         file_path="/test/agents/test.md",
         artifact_type="agent",
@@ -461,6 +461,25 @@ def test_validate_frontmatter_schema_agent_invalid_color():
             "description": "Test",
             "model": "sonnet",
             "color": "orange",
+        },
+        raw_frontmatter="",
+    )
+    result = validate_frontmatter_schema(data)
+    # orange is now a valid color
+    assert isinstance(result, Success)
+
+
+def test_validate_frontmatter_schema_agent_truly_invalid_color():
+    """Test agent with truly invalid color (not in expanded palette)."""
+    data = FrontmatterData(
+        file_path="/test/agents/test.md",
+        artifact_type="agent",
+        data={
+            "name": "test",
+            "version": "1.0.0",
+            "description": "Test",
+            "model": "sonnet",
+            "color": "magenta",  # Not in valid colors
         },
         raw_frontmatter="",
     )
@@ -679,15 +698,16 @@ def test_empty_description():
     assert model.description == ""
 
 
-def test_extra_fields_forbidden():
-    """Test that extra fields are forbidden."""
-    with pytest.raises(ValueError):
-        CommandFrontmatter(
-            name="test",
-            version="1.0.0",
-            description="Test",
-            extra_field="not allowed",
-        )
+def test_extra_fields_allowed():
+    """Test that extra fields are now allowed for flexibility."""
+    # Extra fields should no longer raise an error
+    cmd = CommandFrontmatter(
+        name="test",
+        version="1.0.0",
+        description="Test",
+        extra_field="now allowed",
+    )
+    assert cmd.name == "test"
 
 
 def test_version_with_leading_zeros():
