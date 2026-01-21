@@ -64,6 +64,7 @@ registry.json
 │   ├── totalSkills
 │   ├── totalAgents
 │   ├── totalScripts
+│   ├── totalSchemas
 │   └── categories
 └── versionCompatibility       (object)
     ├── marketplace
@@ -135,7 +136,8 @@ registry.json
     "commands": 1,
     "skills": 2,
     "agents": 3,
-    "scripts": 0
+    "scripts": 0,
+    "schemas": 1
   },
   "dependencies": ["git >= 2.27"],
   "changelog": "https://raw.githubusercontent.com/owner/repo/main/packages/package-name/CHANGELOG.md",
@@ -238,6 +240,7 @@ The metadata object contains aggregate counts that should match package data:
   "totalSkills": 4,             // Sum of all skills across packages
   "totalAgents": 14,            // Sum of all agents across packages
   "totalScripts": 2             // Sum of all scripts across packages
+  "totalSchemas": 1            // Sum of all schemas across packages
 }
 ```
 

@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 Task Tool runner for Claude/Codex CLI.
 

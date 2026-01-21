@@ -23,7 +23,7 @@ import json
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Optional, Set
+from typing import Dict, List, Optional, Set, Union
 
 import yaml
 from pydantic import BaseModel, Field, field_validator
@@ -98,7 +98,7 @@ class PluginSchema(BaseModel):
     name: str
     description: str
     version: str
-    author: Dict[str, str]
+    author: Union[str, Dict[str, str]]
     license: str
     keywords: List[str] = Field(default_factory=list)
     commands: Optional[List[str]] = Field(default_factory=list)
@@ -123,7 +123,7 @@ class MarketplacePluginSchema(BaseModel):
     source: str
     description: str
     version: str
-    author: Dict[str, str]
+    author: Union[str, Dict[str, str]]
     license: str
     keywords: List[str] = Field(default_factory=list)
     category: str
@@ -133,7 +133,7 @@ class MarketplaceSchema(BaseModel):
     """Schema for marketplace.json."""
 
     name: str
-    owner: Dict[str, str]
+    owner: Union[str, Dict[str, str]]
     metadata: Dict[str, str]
     plugins: List[MarketplacePluginSchema]
 

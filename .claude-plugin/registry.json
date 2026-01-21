@@ -18,7 +18,8 @@
         "commands": 1,
         "skills": 1,
         "agents": 7,
-        "scripts": 0
+        "scripts": 0,
+        "schemas": 0
       },
       "lastUpdated": "2026-01-19T17:47:12.885998"
     },
@@ -34,7 +35,8 @@
         "commands": 1,
         "skills": 1,
         "agents": 1,
-        "scripts": 10
+        "scripts": 10,
+        "schemas": 2
       },
       "lastUpdated": "2026-01-19T17:47:12.886594"
     },
@@ -50,7 +52,8 @@
         "commands": 1,
         "skills": 1,
         "agents": 3,
-        "scripts": 1
+        "scripts": 1,
+        "schemas": 0
       },
       "lastUpdated": "2026-01-19T17:47:12.887141"
     },
@@ -66,7 +69,8 @@
         "commands": 1,
         "skills": 1,
         "agents": 5,
-        "scripts": 0
+        "scripts": 0,
+        "schemas": 0
       },
       "lastUpdated": "2026-01-19T17:47:12.887952"
     },
@@ -82,7 +86,8 @@
         "commands": 1,
         "skills": 1,
         "agents": 4,
-        "scripts": 0
+        "scripts": 0,
+        "schemas": 0
       },
       "lastUpdated": "2026-01-19T17:47:12.888790"
     },
@@ -98,7 +103,8 @@
         "commands": 1,
         "skills": 1,
         "agents": 8,
-        "scripts": 4
+        "scripts": 4,
+        "schemas": 0
       },
       "lastUpdated": "2026-01-19T17:47:12.889366"
     },
@@ -114,7 +120,8 @@
         "commands": 1,
         "skills": 1,
         "agents": 4,
-        "scripts": 7
+        "scripts": 7,
+        "schemas": 0
       },
       "lastUpdated": "2026-01-19T17:47:12.889898"
     },
@@ -130,7 +137,8 @@
         "commands": 1,
         "skills": 3,
         "agents": 3,
-        "scripts": 2
+        "scripts": 2,
+        "schemas": 0
       },
       "lastUpdated": "2026-01-19T17:47:12.890480"
     },
@@ -146,7 +154,8 @@
         "commands": 1,
         "skills": 1,
         "agents": 2,
-        "scripts": 5
+        "scripts": 5,
+        "schemas": 0
       },
       "lastUpdated": "2026-01-19T17:47:12.891013"
     },
@@ -162,7 +171,8 @@
         "commands": 1,
         "skills": 1,
         "agents": 4,
-        "scripts": 0
+        "scripts": 0,
+        "schemas": 0
       },
       "lastUpdated": "2026-01-19T17:47:12.891598"
     }
@@ -172,7 +182,8 @@
     "totalCommands": 10,
     "totalSkills": 12,
     "totalAgents": 41,
-    "totalScripts": 29
+    "totalScripts": 29,
+    "totalSchemas": 2
   },
   "generated": "2026-01-19T17:47:12.891605",
   "lastUpdated": "2026-01-19T17:47:12.891606"

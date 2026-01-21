@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """Lightweight structured logging for ai_cli."""
 from __future__ import annotations
 

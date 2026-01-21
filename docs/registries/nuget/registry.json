@@ -15,7 +15,7 @@
       "version": "0.7.0",
       "status": "beta",
       "tier": 2,
-      "description": "Run CI quality gates (pull → build → test) with optional auto-fix and PR creation. Coordinates pull from upstream, builds projects, runs tests, applies straightforward fixes, and creates PRs when all quality gates pass.",
+      "description": "Run CI quality gates (pull \u2192 build \u2192 test) with optional auto-fix and PR creation. Coordinates pull from upstream, builds projects, runs tests, applies straightforward fixes, and creates PRs when all quality gates pass.",
       "github": "randlee/synaptic-canvas",
       "repo": "https://github.com/randlee/synaptic-canvas",
       "path": "packages/sc-ci-automation",
@@ -35,7 +35,8 @@
         "commands": 1,
         "skills": 1,
         "agents": 7,
-        "scripts": 0
+        "scripts": 0,
+        "schemas": 0
       },
       "dependencies": [
         "git >= 2.20"
@@ -66,7 +67,8 @@
         "commands": 1,
         "skills": 1,
         "agents": 1,
-        "scripts": 10
+        "scripts": 10,
+        "schemas": 2
       },
       "dependencies": [],
       "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-codex/CHANGELOG.md",
@@ -96,7 +98,8 @@
         "commands": 1,
         "skills": 1,
         "agents": 3,
-        "scripts": 1
+        "scripts": 1,
+        "schemas": 0
       },
       "dependencies": [],
       "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-delay-tasks/CHANGELOG.md",
@@ -127,7 +130,8 @@
         "commands": 1,
         "skills": 1,
         "agents": 5,
-        "scripts": 0
+        "scripts": 0,
+        "schemas": 0
       },
       "variables": {
         "REPO_NAME": {
@@ -169,7 +173,8 @@
         "commands": 1,
         "skills": 1,
         "agents": 4,
-        "scripts": 0
+        "scripts": 0,
+        "schemas": 0
       },
       "dependencies": [
         "sc-git-worktree >= 0.7.0",
@@ -184,7 +189,7 @@
       "version": "0.7.0",
       "status": "beta",
       "tier": 2,
-      "description": "Kanban state machine with three-file lifecycle (backlog → board → done), provider abstraction, automatic scrubbing, and WIP enforcement. Integrates with sc-project-manager via shared board config.",
+      "description": "Kanban state machine with three-file lifecycle (backlog \u2192 board \u2192 done), provider abstraction, automatic scrubbing, and WIP enforcement. Integrates with sc-project-manager via shared board config.",
       "github": "randlee/synaptic-canvas",
       "repo": "https://github.com/randlee/synaptic-canvas",
       "path": "packages/sc-kanban",
@@ -204,7 +209,8 @@
         "commands": 1,
         "skills": 1,
         "agents": 4,
-        "scripts": 4
+        "scripts": 4,
+        "schemas": 0
       },
       "dependencies": [
         "PyYAML",
@@ -237,7 +243,8 @@
         "commands": 1,
         "skills": 1,
         "agents": 4,
-        "scripts": 0
+        "scripts": 0,
+        "schemas": 0
       },
       "dependencies": [],
       "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-manage/CHANGELOG.md",
@@ -267,7 +274,8 @@
         "commands": 1,
         "skills": 1,
         "agents": 3,
-        "scripts": 1
+        "scripts": 1,
+        "schemas": 0
       },
       "variables": {
         "REPO_NAME": {
@@ -309,7 +317,8 @@
         "commands": 1,
         "skills": 1,
         "agents": 2,
-        "scripts": 0
+        "scripts": 0,
+        "schemas": 0
       },
       "dependencies": [
         "dotnet >= 10",
@@ -344,7 +353,8 @@
         "commands": 1,
         "skills": 1,
         "agents": 1,
-        "scripts": 0
+        "scripts": 0,
+        "schemas": 0
       },
       "dependencies": [
         "sc-ci-automation >= 0.7.0",
@@ -380,7 +390,8 @@
       "documentation": [
         "sc-repomix-nuget"
       ]
-    }
+    },
+    "totalSchemas": 2
   },
   "versionCompatibility": {
     "marketplace": "0.7.0",

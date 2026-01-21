@@ -75,7 +75,8 @@ Each package in the registry contains complete metadata about a distributable un
     "commands": 1,
     "skills": 1,
     "agents": 3,
-    "scripts": 1
+    "scripts": 1,
+    "schemas": 1
   },
   "dependencies": [],
   "changelog": "https://raw.githubusercontent.com/...",
@@ -100,7 +101,7 @@ Each package in the registry contains complete metadata about a distributable un
 | `license` | string | SPDX identifier | License type (e.g., MIT, Apache-2.0) |
 | `author` | string | 1+ chars | Package maintainer/author |
 | `tags` | array | 1-20 unique, lowercase | Searchable keywords |
-| `artifacts` | object | - | Artifact type counts |
+| `artifacts` | object | - | Artifact type counts (commands, skills, agents, scripts, schemas) |
 | `dependencies` | array | - | Required system/package dependencies |
 | `changelog` | string | Raw GitHub URL | CHANGELOG documentation URL |
 | `lastUpdated` | string | ISO-8601 date (YYYY-MM-DD) | Last update timestamp |
@@ -121,7 +122,8 @@ Specifies the count of different artifact types in a package:
   "commands": 1,
   "skills": 1,
   "agents": 3,
-  "scripts": 1
+  "scripts": 1,
+  "schemas": 1
 }
 ```
 
@@ -130,6 +132,7 @@ All fields are integers with minimum value of 0:
 - `skills`: Callable skills/capabilities
 - `agents`: Automated workflows
 - `scripts`: Utility scripts
+- `schemas`: Schema files
 
 ### Variables Object (Optional)
 
@@ -164,6 +167,7 @@ Aggregated statistics and organizational information:
   "totalSkills": 4,
   "totalAgents": 14,
   "totalScripts": 2,
+  "totalSchemas": 1,
   "categories": {
     "automation": ["sc-delay-tasks"],
     "development-tools": ["sc-git-worktree"],
@@ -182,6 +186,7 @@ Aggregated statistics and organizational information:
 | `totalSkills` | integer | Aggregate skill count |
 | `totalAgents` | integer | Aggregate agent count |
 | `totalScripts` | integer | Aggregate script count |
+| `totalSchemas` | integer | Aggregate schema count |
 | `categories` | object | Category-to-packages mapping |
 
 ### Version Compatibility Object

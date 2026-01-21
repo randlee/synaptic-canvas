@@ -85,8 +85,7 @@ def test_output_schema_validation_ok() -> None:
         Path(__file__).resolve().parents[1]
         / "packages"
         / "sc-codex"
-        / "scripts"
-        / "ai_cli"
+        / "schemas"
         / "task_tool.output.schema.json"
     )
     schema = json.loads(schema_path.read_text(encoding="utf-8"))
@@ -102,8 +101,7 @@ def test_output_schema_validation_error() -> None:
         Path(__file__).resolve().parents[1]
         / "packages"
         / "sc-codex"
-        / "scripts"
-        / "ai_cli"
+        / "schemas"
         / "task_tool.output.schema.json"
     )
     schema = json.loads(schema_path.read_text(encoding="utf-8"))

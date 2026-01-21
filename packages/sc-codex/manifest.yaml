@@ -26,10 +26,11 @@ artifacts:
     - scripts/ai_cli/logging.py
     - scripts/ai_cli/task_runner.py
     - scripts/ai_cli/task_tool.py
-    - scripts/ai_cli/task_tool.schema.json
-    - scripts/ai_cli/task_tool.output.schema.json
     - scripts/ai_cli/README.md
 
+  schemas:
+    - schemas/task_tool.schema.json
+    - schemas/task_tool.output.schema.json
 requires:
   cli:
     - python3

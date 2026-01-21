@@ -152,6 +152,7 @@ def extract_package_info(manifest: dict[str, Any], package_dir: Path) -> dict[st
     skills_count = len(manifest.get("artifacts", {}).get("skills", []))
     agents_count = len(manifest.get("artifacts", {}).get("agents", []))
     scripts_count = len(manifest.get("artifacts", {}).get("scripts", []))
+    schemas_count = len(manifest.get("artifacts", {}).get("schemas", []))
 
     return {
         "name": manifest.get("name", ""),
@@ -166,6 +167,7 @@ def extract_package_info(manifest: dict[str, Any], package_dir: Path) -> dict[st
             "skills": skills_count,
             "agents": agents_count,
             "scripts": scripts_count,
+            "schemas": schemas_count,
         },
         "lastUpdated": datetime.now().isoformat(),
     }
@@ -177,6 +179,7 @@ def calculate_metadata(packages: list[dict[str, Any]]) -> dict[str, Any]:
     total_skills = sum(p.get("artifacts", {}).get("skills", 0) for p in packages)
     total_agents = sum(p.get("artifacts", {}).get("agents", 0) for p in packages)
     total_scripts = sum(p.get("artifacts", {}).get("scripts", 0) for p in packages)
+    total_schemas = sum(p.get("artifacts", {}).get("schemas", 0) for p in packages)
 
     return {
         "totalPackages": len(packages),
@@ -184,6 +187,7 @@ def calculate_metadata(packages: list[dict[str, Any]]) -> dict[str, Any]:
         "totalSkills": total_skills,
         "totalAgents": total_agents,
         "totalScripts": total_scripts,
+        "totalSchemas": total_schemas,
     }
 
 

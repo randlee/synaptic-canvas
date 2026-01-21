@@ -4,9 +4,9 @@ Python/pydantic utilities for CLI integration and tool schemas.
 
 ## Task Tool schema
 
-Input schema (JSON) lives in `packages/sc-codex/scripts/ai_cli/task_tool.schema.json`
+Input schema (JSON) lives in `packages/sc-codex/schemas/task_tool.schema.json`
 and is mirrored by the pydantic model in `packages/sc-codex/scripts/ai_cli/task_tool.py`.
-Output schema (JSON) lives in `packages/sc-codex/scripts/ai_cli/task_tool.output.schema.json`.
+Output schema (JSON) lives in `packages/sc-codex/schemas/task_tool.output.schema.json`.
 
 Foreground output (run_in_background: false or omitted):
 - Object with `output` and `agentId`.
