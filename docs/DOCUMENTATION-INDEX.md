@@ -17,6 +17,7 @@ This is the central hub for all Synaptic Canvas documentation. Use this index to
 
 ### For Package Maintainers
 - **[CONTRIBUTING.md](../CONTRIBUTING.md)** - Contribution guidelines and development setup
+- **[Plugin Conventions](./PLUGIN-CONVENTIONS.md)** - Standard directories, shared settings, logging
 - **[Versioning Strategy](./versioning-strategy.md)** - Version management and release process
 - **[Architecture Guidelines](./claude-code-skills-agents-guidelines-0.4.md)** - Best practices for agents/skills/commands
 
@@ -45,6 +46,7 @@ This is the central hub for all Synaptic Canvas documentation. Use this index to
 ### Tools and Infrastructure
 | Document | Purpose | Location |
 |----------|---------|----------|
+| [Plugin Conventions](./PLUGIN-CONVENTIONS.md) | Standard directories, shared settings, logs, outputs | `docs/PLUGIN-CONVENTIONS.md` |
 | [Marketplace Infrastructure](./MARKETPLACE-INFRASTRUCTURE.md) | Complete guide to building and operating Claude Code marketplaces | `docs/MARKETPLACE-INFRASTRUCTURE.md` |
 | [Agent Runner](./agent-runner-comprehensive.md) | Complete guide: features, benefits, integration | `docs/agent-runner-comprehensive.md` |
 | [NuGet Integration](./nuget/) | NuGet-specific documentation | `docs/nuget/` |
