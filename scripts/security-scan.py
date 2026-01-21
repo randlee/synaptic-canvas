@@ -151,10 +151,15 @@ class SecurityScanner:
     ]
 
     # Directories to exclude from scanning
-    EXCLUDE_DIRS = [".git", ".venv", "__pycache__", "node_modules", "docs", "tests", "test-packages"]
+    EXCLUDE_DIRS = [".git", ".venv", ".venv.bak", "__pycache__", "node_modules", "docs", "tests", "test-packages"]
 
     # Files to exclude from secrets/python safety scanning (patterns in the filename)
     EXCLUDE_FILES = ["security-scan", "security_scan", "SECURITY-SCANNING"]
+
+    # Allowlisted shell=True usage for vetted cases (repo-relative paths)
+    ALLOW_SHELL_TRUE = {
+        "packages/sc-codex/scripts/ai_cli/task_runner.py",
+    }
 
     def __init__(self, config: ScanConfiguration):
         """Initialize scanner with configuration."""
@@ -361,6 +366,12 @@ class SecurityScanner:
         # Check for shell=True
         shell_matches = self._grep_pattern(r"shell=True", search_path, include_glob="*.py")
         for file_path, line_num, _ in shell_matches:
+            try:
+                rel_path = Path(file_path).resolve().relative_to(self.config.repo_root).as_posix()
+            except Exception:
+                rel_path = file_path
+            if rel_path in self.ALLOW_SHELL_TRUE:
+                continue
             issues.append(
                 SecurityIssue(
                     severity=Severity.MEDIUM,

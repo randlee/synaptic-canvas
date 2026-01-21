@@ -24,11 +24,13 @@ Example usage:
 
 from __future__ import annotations
 
+import json
 import re
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING
+from pathlib import Path
+from typing import TYPE_CHECKING, Iterable
 
 if TYPE_CHECKING:
     from _pytest.capture import CaptureFixture
@@ -261,6 +263,103 @@ def analyze_logs(log_content: str) -> LogAnalysisResult:
             result.errors.append(entry)
 
     return result
+
+
+def collect_log_content(log_dirs: Iterable[Path]) -> str:
+    """Collect raw log content from one or more log directories."""
+    chunks: list[str] = []
+    for log_dir in log_dirs:
+        if not log_dir or not log_dir.exists():
+            continue
+        for log_path in sorted(log_dir.rglob("*")):
+            if not log_path.is_file():
+                continue
+            try:
+                content = log_path.read_text(errors="replace")
+            except OSError:
+                continue
+            if not content:
+                continue
+            chunks.append(f"=== {log_path} ===\n{content}")
+    return "\n".join(chunks)
+
+
+def _parse_iso_timestamp(value: str | None) -> datetime | None:
+    if not value:
+        return None
+    try:
+        return datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+
+
+def analyze_structured_logs(
+    records: Iterable[dict],
+    source: str | None = None,
+) -> LogAnalysisResult:
+    """Analyze structured log records for warnings and errors."""
+    result = LogAnalysisResult()
+    raw_chunks = []
+
+    for record in records:
+        if not isinstance(record, dict):
+            continue
+
+        raw_chunks.append(json.dumps(record, ensure_ascii=False))
+
+        level = (
+            str(record.get("level") or record.get("severity") or record.get("status") or "")
+        ).upper()
+        if level in ("WARN", "WARNING"):
+            level = "WARNING"
+        elif level in ("ERR", "ERROR"):
+            level = "ERROR"
+        elif level in ("CRITICAL", "FATAL"):
+            level = "CRITICAL"
+
+        if level not in ("WARNING", "ERROR", "CRITICAL"):
+            continue
+
+        message = (
+            record.get("message")
+            or record.get("msg")
+            or record.get("error")
+            or record.get("detail")
+            or json.dumps(record, ensure_ascii=False)
+        )
+        logger_name = str(record.get("logger") or record.get("name") or source or "")
+        timestamp = _parse_iso_timestamp(record.get("timestamp") or record.get("ts"))
+
+        entry = LogEntry(
+            level=LogLevel(level),
+            message=str(message),
+            logger_name=logger_name,
+            timestamp=timestamp,
+            line_number=0,
+            raw_line=json.dumps(record, ensure_ascii=False),
+        )
+        result.all_entries.append(entry)
+        if entry.level == LogLevel.WARNING:
+            result.warnings.append(entry)
+        else:
+            result.errors.append(entry)
+
+    result.raw_content = "\n".join(raw_chunks)
+    return result
+
+
+def merge_log_analysis(results: Iterable[LogAnalysisResult]) -> LogAnalysisResult:
+    """Merge multiple LogAnalysisResult objects into one."""
+    merged = LogAnalysisResult()
+    raw_parts = []
+    for result in results:
+        merged.warnings.extend(result.warnings)
+        merged.errors.extend(result.errors)
+        merged.all_entries.extend(result.all_entries)
+        if result.raw_content:
+            raw_parts.append(result.raw_content)
+    merged.raw_content = "\n".join(raw_parts)
+    return merged
 
 
 def analyze_captured_output(captured: "CaptureFixture") -> LogAnalysisResult:

@@ -645,6 +645,50 @@ class TestOutputContainsExpectation:
 
         assert result.status == TestStatus.PASS
 
+    def test_ignores_prompt_echo(self, base_timestamp):
+        """Do not match patterns that only appear in the prompt echo."""
+        data = CollectedData(
+            prompt="please grade",
+            claude_responses=[
+                ClaudeResponseText(
+                    text="You asked: please grade",
+                    timestamp=base_timestamp,
+                )
+            ],
+        )
+        exp = OutputContainsExpectation(
+            id="exp-008",
+            description="Ignore prompt echo",
+            pattern=r"grade",
+            flags="i",
+        )
+
+        result = exp.evaluate(data)
+
+        assert result.status == TestStatus.FAIL
+
+    def test_matches_after_prompt_echo(self, base_timestamp):
+        """Match content that appears beyond the prompt echo."""
+        data = CollectedData(
+            prompt="please grade",
+            claude_responses=[
+                ClaudeResponseText(
+                    text="You asked: please grade.\nGrade: 7/10",
+                    timestamp=base_timestamp,
+                )
+            ],
+        )
+        exp = OutputContainsExpectation(
+            id="exp-009",
+            description="Match post-echo content",
+            pattern=r"Grade:\s*7/10",
+            flags="i",
+        )
+
+        result = exp.evaluate(data)
+
+        assert result.status == TestStatus.PASS
+
     def test_expectation_type(self):
         """Test that expectation type is correct."""
         exp = OutputContainsExpectation(id="exp", description="test", pattern="test")

@@ -65,6 +65,7 @@ from .models import (
     HookEventType,
     TestStatus,
 )
+from .response_filters import OutputFilterConfig, compile_output_pattern, filter_response_texts
 
 logger = logging.getLogger(__name__)
 
@@ -101,12 +102,13 @@ class ExpectationResult(BaseModel):
 
     def to_expectation_model(self) -> Expectation:
         """Convert to the Expectation model for report serialization."""
+        has_details = bool(self.expected) or bool(self.actual)
         return Expectation(
             id=self.id,
             description=self.description,
             type=self.type,
             status=self.status,
-            has_details=True,
+            has_details=has_details,
             expected=self.expected,
             actual=self.actual,
             matched_at=self.matched_at,
@@ -594,7 +596,8 @@ class OutputContainsExpectation(ExpectationEvaluator):
     """Expectation that Claude's response contains a pattern.
 
     Matches a regex pattern against Claude's text responses.
-    Supports case-insensitive matching and other regex flags.
+    Defaults to case-insensitive matching unless case_sensitive is True.
+    Supports regex flags (i/m/s) and shared response filtering options.
 
     Example:
         # Match report header (case insensitive)
@@ -619,6 +622,9 @@ class OutputContainsExpectation(ExpectationEvaluator):
         description: str,
         pattern: str,
         flags: str = "",
+        case_sensitive: bool = False,
+        response_filter: str = "assistant_all",
+        exclude_prompt: bool = True,
     ):
         """Initialize output contains expectation.
 
@@ -632,19 +638,18 @@ class OutputContainsExpectation(ExpectationEvaluator):
         super().__init__(id, description)
         self.pattern = pattern
         self.flags = flags
+        self.case_sensitive = case_sensitive
+        self.response_filter = response_filter
+        self.exclude_prompt = exclude_prompt
         self._compiled_pattern = self._compile_pattern()
 
     def _compile_pattern(self) -> re.Pattern:
         """Compile pattern with flags."""
-        regex_flags = 0
-        if "i" in self.flags:
-            regex_flags |= re.IGNORECASE
-        if "m" in self.flags:
-            regex_flags |= re.MULTILINE
-        if "s" in self.flags:
-            regex_flags |= re.DOTALL
-
-        return re.compile(self.pattern, regex_flags)
+        return compile_output_pattern(
+            pattern=self.pattern,
+            flags=self.flags,
+            case_sensitive=self.case_sensitive,
+        )
 
     @property
     def expectation_type(self) -> ExpectationType:
@@ -655,29 +660,40 @@ class OutputContainsExpectation(ExpectationEvaluator):
         expected = {"pattern": self.pattern}
         if self.flags:
             expected["flags"] = self.flags
+        if self.case_sensitive:
+            expected["case_sensitive"] = True
+        if self.response_filter != "assistant_all":
+            expected["response_filter"] = self.response_filter
+        if self.exclude_prompt is not True:
+            expected["exclude_prompt"] = self.exclude_prompt
 
         # Search through Claude responses
-        for idx, response in enumerate(data.claude_responses, 1):
-            match = self._compiled_pattern.search(response.text)
+        filter_config = OutputFilterConfig(
+            response_filter=self.response_filter,
+            exclude_prompt=self.exclude_prompt,
+        )
+        response_texts = filter_response_texts(data, filter_config)
+        for idx, text in enumerate(response_texts, 1):
+            match = self._compiled_pattern.search(text)
             if match:
                 # Extract matched text and context
                 matched_text = match.group(0)
                 start = max(0, match.start() - 50)
-                end = min(len(response.text), match.end() + 50)
-                context = response.text[start:end]
+                end = min(len(text), match.end() + 50)
+                context = text[start:end]
 
                 actual = {
                     "matched_text": matched_text,
-                    "context": f"...{context}..." if start > 0 or end < len(response.text) else context,
+                    "context": f"...{context}..." if start > 0 or end < len(text) else context,
                 }
-                timestamp = response.timestamp or datetime.now()
+                timestamp = datetime.now()
                 return self._create_pass_result(expected, actual, idx, timestamp)
 
         # No match found
-        if data.claude_responses:
-            total_chars = sum(len(r.text) for r in data.claude_responses)
+        if response_texts:
+            total_chars = sum(len(text) for text in response_texts)
             failure_reason = (
-                f"Pattern '{self.pattern}' not found in {len(data.claude_responses)} "
+                f"Pattern '{self.pattern}' not found in {len(response_texts)} "
                 f"responses ({total_chars} total characters)"
             )
         else:

@@ -259,6 +259,18 @@ class OutputContainsExpected(BaseModel):
 
     pattern: str = Field(description="Regex pattern to search for in output")
     flags: str = Field(default="", description="Regex flags (e.g., 'i' for ignore case)")
+    case_sensitive: bool = Field(
+        default=False,
+        description="If true, do not apply default case-insensitive matching",
+    )
+    response_filter: str = Field(
+        default="assistant_all",
+        description="Response filter (assistant_all or assistant_last)",
+    )
+    exclude_prompt: bool = Field(
+        default=True,
+        description="If true, remove the exact prompt text before matching",
+    )
 
 
 class OutputContainsActual(BaseModel):

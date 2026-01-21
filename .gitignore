@@ -1,6 +1,10 @@
 # Local temp files
 .tmp/
 temp/
+.sc/
+.venv/
+.venv.bak/
+.claude/state/
 
 # Archive directory (for historical reference, not in version control)
 .archive/

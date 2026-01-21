@@ -188,7 +188,25 @@ expectations:
   - type: output_contains
     expected:
       pattern: "(success|complete|done)"
-      flags: "i"  # Case insensitive
+      # Defaults:
+      # - case-insensitive matching
+      # - response_filter: assistant_all
+      # - exclude_prompt: true
+      #
+      # Optional overrides:
+      # flags: "im"
+      # case_sensitive: true
+      # response_filter: assistant_last
+      # exclude_prompt: false
+```
+
+### allow_warnings (restricted)
+Warnings are failures by default. To suppress warnings you must provide
+explicit, documented approval:
+
+```yaml
+allow_warnings: true
+allow_warnings_reason: "Approved by user <name/date>: <reason>"
 ```
 
 ### tool_call

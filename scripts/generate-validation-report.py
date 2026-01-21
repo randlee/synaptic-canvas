@@ -130,6 +130,7 @@ class PackageVersion(BaseModel):
     skills: list[dict] = Field(default_factory=list)
     agents: list[dict] = Field(default_factory=list)
     scripts: list[str] = Field(default_factory=list)
+    schemas: list[str] = Field(default_factory=list)
     is_consistent: bool = True
 
 
@@ -291,6 +292,7 @@ HTML_TEMPLATE = '''<!DOCTYPE html>
                                 <th>Skills</th>
                                 <th>Agents</th>
                                 <th>Scripts</th>
+                                <th>Schemas</th>
                                 <th>Status</th>
                             </tr>
                         </thead>
@@ -303,6 +305,7 @@ HTML_TEMPLATE = '''<!DOCTYPE html>
                                 <td>{{ pkg.skills | length }} items</td>
                                 <td>{{ pkg.agents | length }} items</td>
                                 <td>{{ pkg.scripts | length }} items</td>
+                                <td>{{ pkg.schemas | length }} items</td>
                                 <td>
                                     {% if pkg.is_consistent %}
                                     <span class="badge bg-success">Consistent</span>
@@ -339,7 +342,7 @@ HTML_TEMPLATE = '''<!DOCTYPE html>
                         <div id="pkg-{{ loop.index }}" class="accordion-collapse collapse">
                             <div class="accordion-body">
                                 <div class="row">
-                                    <div class="col-md-3">
+                                    <div class="col-md-2">
                                         <h6>Commands ({{ pkg.commands | length }})</h6>
                                         <ul class="list-unstyled">
                                             {% for cmd in pkg.commands %}
@@ -349,7 +352,7 @@ HTML_TEMPLATE = '''<!DOCTYPE html>
                                             {% endfor %}
                                         </ul>
                                     </div>
-                                    <div class="col-md-3">
+                                    <div class="col-md-2">
                                         <h6>Skills ({{ pkg.skills | length }})</h6>
                                         <ul class="list-unstyled">
                                             {% for skill in pkg.skills %}
@@ -359,7 +362,7 @@ HTML_TEMPLATE = '''<!DOCTYPE html>
                                             {% endfor %}
                                         </ul>
                                     </div>
-                                    <div class="col-md-3">
+                                    <div class="col-md-2">
                                         <h6>Agents ({{ pkg.agents | length }})</h6>
                                         <ul class="list-unstyled">
                                             {% for agent in pkg.agents %}
@@ -369,11 +372,21 @@ HTML_TEMPLATE = '''<!DOCTYPE html>
                                             {% endfor %}
                                         </ul>
                                     </div>
-                                    <div class="col-md-3">
+                                    <div class="col-md-2">
                                         <h6>Scripts ({{ pkg.scripts | length }})</h6>
                                         <ul class="list-unstyled">
                                             {% for script in pkg.scripts %}
                                             <li>{{ script }}</li>
+                                            {% else %}
+                                            <li class="text-muted">None</li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <h6>Schemas ({{ pkg.schemas | length }})</h6>
+                                        <ul class="list-unstyled">
+                                            {% for schema in pkg.schemas %}
+                                            <li>{{ schema }}</li>
                                             {% else %}
                                             <li class="text-muted">None</li>
                                             {% endfor %}
@@ -688,6 +701,7 @@ def collect_package_versions(
 
         # Collect scripts
         pkg_version.scripts = artifacts.get("scripts", [])
+        pkg_version.schemas = artifacts.get("schemas", [])
 
         package_versions.append(pkg_version)
 

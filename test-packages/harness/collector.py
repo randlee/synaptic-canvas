@@ -60,7 +60,7 @@ from .models import (
     ToolOutput,
     UserPromptSubmitEvent,
 )
-from .log_analyzer import LogAnalysisResult, analyze_logs
+from .log_analyzer import LogAnalysisResult, analyze_logs, analyze_structured_logs, merge_log_analysis
 from .schemas import TokenUsage
 
 logger = logging.getLogger(__name__)
@@ -726,6 +726,7 @@ class DataCollector:
         self,
         trace_path: Path | str | None = None,
         transcript_path: Path | str | None = None,
+        project_path: Path | str | None = None,
     ):
         """Initialize the DataCollector.
 
@@ -735,6 +736,12 @@ class DataCollector:
         """
         self.trace_path = Path(trace_path) if trace_path else None
         self.transcript_path = Path(transcript_path) if transcript_path else None
+        if project_path is not None:
+            self.project_path = Path(project_path)
+        elif self.trace_path is not None:
+            self.project_path = self.trace_path.parent.parent
+        else:
+            self.project_path = None
         self._tool_to_agent_map: dict[str, tuple[str, str | None]] = {}
 
     def collect(self) -> CollectedData:
@@ -801,14 +808,22 @@ class DataCollector:
             # Extract Claude responses
             data.claude_responses = extract_claude_responses(transcript_entries)
 
-        # Analyze logs from CLI output for warnings/errors
+        # Analyze logs from CLI output and structured logs for warnings/errors
+        analyses: list[LogAnalysisResult] = []
         if data.claude_cli_stdout or data.claude_cli_stderr:
             combined_output = ""
             if data.claude_cli_stdout:
                 combined_output += data.claude_cli_stdout
             if data.claude_cli_stderr:
                 combined_output += "\n" + data.claude_cli_stderr
-            data.log_analysis = analyze_logs(combined_output)
+            analyses.append(analyze_logs(combined_output))
+
+        structured_records = self._read_structured_logs()
+        if structured_records:
+            analyses.append(analyze_structured_logs(structured_records, source=str(self.project_path)))
+
+        if analyses:
+            data.log_analysis = merge_log_analysis(analyses)
 
         logger.info(
             f"Collected data: {len(data.tool_calls)} tool calls, "
@@ -818,6 +833,41 @@ class DataCollector:
         )
 
         return data
+
+    def _read_structured_logs(self) -> list[dict[str, Any]]:
+        if self.project_path is None:
+            return []
+        log_root = self.project_path / ".claude" / "state" / "logs"
+        if not log_root.exists():
+            return []
+        records: list[dict[str, Any]] = []
+        for path in log_root.rglob("*.json"):
+            try:
+                text = path.read_text(encoding="utf-8")
+            except Exception:
+                continue
+            stripped = text.strip()
+            if not stripped:
+                continue
+            try:
+                payload = json.loads(stripped)
+            except json.JSONDecodeError:
+                payload = None
+            if isinstance(payload, dict):
+                records.append(payload)
+                continue
+            if isinstance(payload, list):
+                records.extend([item for item in payload if isinstance(item, dict)])
+                continue
+            for line in text.splitlines():
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    records.append(json.loads(line))
+                except json.JSONDecodeError:
+                    continue
+        return records
 
     def build_timeline(
         self, data: CollectedData, start_time: datetime | None = None

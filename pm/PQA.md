@@ -30,6 +30,8 @@ ls test-packages/reports/
 ### Reports
 - **Location:** `test-packages/reports/<fixture-name>.html` and `.json`
 - Both HTML and JSON contain identical data (generated from same Pydantic models)
+- Design requirement: HTML must not hide data that is missing in JSON (and vice versa)
+- Reports must capture the full conversation (all assistant turns)
 - Historical reports persist until manually cleared
 
 ---
@@ -53,6 +55,10 @@ ls test-packages/reports/
 - Preserve timeline visibility (tool calls, responses, errors)
 - Never sacrifice observability for automation convenience
 - When modifying fixtures, verify reports remain informative
+- Always analyze `.claude/state/logs/*/*` for warnings/errors (mandatory)
+- `allow_warnings: true` is prohibited without documented user approval
+- If `allow_warnings: true` is required, include `allow_warnings_reason` in the test YAML
+- Reports must use the shared template (no custom per-fixture report variants)
 
 ---
 
@@ -114,6 +120,14 @@ expectations:
   - type: output_contains
     expected:
       pattern: "expected output"
+      # Defaults:
+      # - case-insensitive matching
+      # - response_filter: assistant_all
+      # - exclude_prompt: true
+      # Optional overrides:
+      # case_sensitive: true
+      # response_filter: assistant_last
+      # exclude_prompt: false
 ```
 
 ---

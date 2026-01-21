@@ -38,6 +38,7 @@ from typing import Any
 
 from .collector import CollectedData, DataCollector
 from .environment import get_git_state
+from .response_filters import OutputFilterConfig, compile_output_pattern, filter_response_texts
 from .schemas import ArtifactPaths, EnrichedData, TimelineTree
 from .models import (
     ClaudeResponse,
@@ -114,6 +115,7 @@ class ReportBuilder:
         plugin_verification: "PluginVerification | None" = None,
         reports_dir: Path | str | None = None,
         fixture_name: str | None = None,
+        allow_warnings: bool = False,
     ) -> TestResult:
         """Build a complete TestResult from collected data.
 
@@ -195,6 +197,12 @@ class ReportBuilder:
                     logger.warning(f"Failed to load enriched data from {enriched_path}: {e}")
 
         # Build the TestResult
+        raw_trace_file = None
+        if artifacts and reports_dir:
+            trace_path = Path(reports_dir) / artifacts.trace
+            if trace_path.exists():
+                raw_trace_file = str(trace_path)
+
         result = TestResult(
             test_id=test_id,
             test_name=test_name,
@@ -235,12 +243,13 @@ class ReportBuilder:
             debug=DebugInfo(
                 pytest_output=pytest_output or None,
                 pytest_status=pytest_status,
-                raw_trace_file=str(data.transcript_path) if data.transcript_path else None,
+                raw_trace_file=raw_trace_file,
                 errors=[e.error_content for e in data.errors],
                 plugin_verification=plugin_verification,
             ),
             timeline_tree=timeline_tree,
             artifacts=artifacts,
+            allow_warnings=allow_warnings,
         )
 
         return result
@@ -558,20 +567,31 @@ class ExpectationEvaluator:
         """Evaluate an output_contains expectation."""
         pattern = expected.get("pattern", "")
         flags_str = expected.get("flags", "")
+        case_sensitive = expected.get("case_sensitive", False)
+        response_filter = expected.get("response_filter", "assistant_all")
+        exclude_prompt = expected.get("exclude_prompt", True)
 
-        # Build regex flags
-        flags = 0
-        if "i" in flags_str:
-            flags |= re.IGNORECASE
+        compiled = compile_output_pattern(
+            pattern=pattern,
+            flags=flags_str,
+            case_sensitive=case_sensitive,
+        )
+        response_texts = filter_response_texts(
+            self.data,
+            OutputFilterConfig(
+                response_filter=response_filter,
+                exclude_prompt=exclude_prompt,
+            ),
+        )
 
         # Search in Claude responses
-        for response in self.data.claude_responses:
-            match = re.search(pattern, response.text, flags)
+        for response_text in response_texts:
+            match = compiled.search(response_text)
             if match:
                 # Get context around match
                 start = max(0, match.start() - 50)
-                end = min(len(response.text), match.end() + 50)
-                context = response.text[start:end]
+                end = min(len(response_text), match.end() + 50)
+                context = response_text[start:end]
 
                 return Expectation(
                     id=expectation_id,

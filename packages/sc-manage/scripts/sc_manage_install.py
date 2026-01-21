@@ -2,6 +2,9 @@
 from __future__ import annotations
 
 import json
+import os
+import subprocess
+import sys
 from pathlib import Path
 
 from sc_manage_common import (
@@ -14,6 +17,27 @@ from sc_manage_common import (
     resolve_dest,
     run_install,
 )
+
+
+def _in_virtualenv() -> bool:
+    return bool(os.environ.get("VIRTUAL_ENV")) or sys.prefix != sys.base_prefix
+
+
+def _install_python_deps(requires: dict) -> tuple[bool, str]:
+    deps = requires.get("python") if isinstance(requires, dict) else None
+    if not deps:
+        return True, ""
+    if not isinstance(deps, list) or not all(isinstance(d, str) for d in deps):
+        return False, "Invalid requires.python; expected a list of strings."
+
+    cmd = [sys.executable, "-m", "pip", "install"]
+    if not _in_virtualenv():
+        cmd.append("--user")
+    cmd.extend(deps)
+    result = subprocess.run(cmd, text=True, capture_output=True)
+    if result.returncode != 0:
+        return False, result.stderr.strip() or result.stdout.strip() or "pip install failed"
+    return True, ""
 
 
 def main() -> int:
@@ -74,6 +98,24 @@ def main() -> int:
                         "message": f"Package '{package}' may only be installed locally",
                         "recoverable": False,
                         "suggested_action": "Use --local scope",
+                    },
+                }
+            )
+        )
+        return 1
+
+    ok, err = _install_python_deps(manifest.get("requires") or {})
+    if not ok:
+        print(
+            json.dumps(
+                {
+                    "success": False,
+                    "data": None,
+                    "error": {
+                        "code": "DEPENDENCY_INSTALL_FAILED",
+                        "message": err,
+                        "recoverable": True,
+                        "suggested_action": "Check pip access or install dependencies manually",
                     },
                 }
             )

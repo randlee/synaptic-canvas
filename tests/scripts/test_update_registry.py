@@ -53,6 +53,7 @@ def sample_manifest():
             "skills": ["skill1/SKILL.md"],
             "agents": ["agent1/AGENT.md", "agent2/AGENT.md"],
             "scripts": ["script1.py"],
+            "schemas": ["schemas/schema1.json"],
         },
     }
 
@@ -72,6 +73,7 @@ def sample_registry():
             "totalSkills": 0,
             "totalAgents": 0,
             "totalScripts": 0,
+            "totalSchemas": 0,
         },
         "generated": datetime.now().isoformat(),
         "lastUpdated": datetime.now().isoformat(),
@@ -149,6 +151,7 @@ def test_extract_package_info(sample_manifest, temp_dir):
     assert result["artifacts"]["skills"] == 1
     assert result["artifacts"]["agents"] == 2
     assert result["artifacts"]["scripts"] == 1
+    assert result["artifacts"]["schemas"] == 1
 
 
 def test_extract_package_info_empty():
@@ -167,6 +170,7 @@ def test_calculate_metadata():
                 "skills": 1,
                 "agents": 3,
                 "scripts": 1,
+                "schemas": 2,
             },
         },
         {
@@ -176,6 +180,7 @@ def test_calculate_metadata():
                 "skills": 2,
                 "agents": 1,
                 "scripts": 0,
+                "schemas": 0,
             },
         },
     ]
@@ -186,6 +191,7 @@ def test_calculate_metadata():
     assert result["totalSkills"] == 3
     assert result["totalAgents"] == 4
     assert result["totalScripts"] == 1
+    assert result["totalSchemas"] == 2
 
 
 def test_calculate_metadata_empty():

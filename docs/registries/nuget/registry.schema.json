@@ -199,7 +199,7 @@
         },
         "artifacts": {
           "$ref": "#/definitions/artifacts",
-          "description": "Breakdown of included artifacts by type (commands, skills, agents, scripts)."
+          "description": "Breakdown of included artifacts by type (commands, skills, agents, scripts, schemas)."
         },
         "variables": {
           "$ref": "#/definitions/variables",
@@ -239,7 +239,7 @@
       "type": "object",
       "title": "Artifact Counts",
       "description": "Breakdown of different artifact types included in a package.",
-      "required": ["commands", "skills", "agents", "scripts"],
+      "required": ["commands", "skills", "agents", "scripts", "schemas"],
       "additionalProperties": false,
       "properties": {
         "commands": {
@@ -261,6 +261,11 @@
           "type": "integer",
           "minimum": 0,
           "description": "Number of utility scripts included in this package."
+        },
+        "schemas": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of schema files included in this package."
         }
       }
     },
@@ -318,6 +323,7 @@
         "totalSkills",
         "totalAgents",
         "totalScripts",
+        "totalSchemas",
         "categories"
       ],
       "additionalProperties": false,
@@ -356,6 +362,11 @@
           "type": "integer",
           "minimum": 0,
           "description": "Aggregate count of all scripts across all packages."
+        },
+        "totalSchemas": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Aggregate count of all schema files across all packages."
         },
         "categories": {
           "type": "object",

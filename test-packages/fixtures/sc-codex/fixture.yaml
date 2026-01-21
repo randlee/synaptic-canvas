@@ -1,0 +1,36 @@
+name: sc-codex
+description: Tests for sc-codex slash command and skill
+package: sc-codex@synaptic-canvas
+
+setup:
+  plugins:
+    - sc-codex@synaptic-canvas
+  commands:
+    - |
+      python3 - <<'PY'
+      import json
+      from pathlib import Path
+
+      settings = Path(".claude/settings.json")
+      data = json.loads(settings.read_text(encoding="utf-8"))
+      enabled = data.setdefault("enabledPlugins", {})
+      enabled["sc-codex@synaptic-canvas"] = True
+      settings.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+      PY
+
+teardown:
+  commands:
+    - |
+      python3 - <<'PY'
+      import json
+      from pathlib import Path
+
+      settings = Path(".claude/settings.json")
+      data = json.loads(settings.read_text(encoding="utf-8"))
+      enabled = data.get("enabledPlugins", {})
+      enabled.pop("sc-codex@synaptic-canvas", None)
+      data["enabledPlugins"] = enabled
+      settings.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+      PY
+
+tests_dir: tests

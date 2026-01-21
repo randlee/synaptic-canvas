@@ -1,0 +1,40 @@
+name: sc-codex
+version: 0.7.0
+description: >
+  Run Codex agents via a Task Tool-compatible runner, with hooks emulation
+  and background execution support.
+author: synaptic-canvas
+license: MIT
+tags:
+  - codex
+  - agents
+  - task-tool
+  - cli
+
+artifacts:
+  commands:
+    - commands/sc-codex.md
+  skills:
+    - skills/codex-agent/SKILL.md
+  agents:
+    - agents/sc-codex.md
+  scripts:
+    - scripts/sc_codex_task.py
+    - scripts/ai_cli/__init__.py
+    - scripts/ai_cli/__main__.py
+    - scripts/ai_cli/cli.py
+    - scripts/ai_cli/logging.py
+    - scripts/ai_cli/task_runner.py
+    - scripts/ai_cli/task_tool.py
+    - scripts/ai_cli/README.md
+
+  schemas:
+    - schemas/task_tool.schema.json
+    - schemas/task_tool.output.schema.json
+requires:
+  cli:
+    - python3
+    - codex
+  python:
+    - pydantic
+    - pyyaml

@@ -37,7 +37,7 @@ class LogIssuesBuilder(BaseBuilder[LogIssuesDisplayModel]):
 
         # If no issues and warnings aren't allowed, show clean status
         if not data.has_issues:
-            return self._build_clean_section(n)
+            return self._build_clean_section(data)
 
         # Build copy button for entire section
         copy_btn = CopyButtonBuilder.build(
@@ -94,6 +94,10 @@ class LogIssuesBuilder(BaseBuilder[LogIssuesDisplayModel]):
       <span>Warning override enabled (<code>allow_warnings: true</code>) - these issues did not cause test failure</span>
     </div>'''
 
+        raw_context_html = ""
+        if data.raw_context:
+            raw_context_html = self._build_raw_context(data.raw_context)
+
         return f'''<details class="log-issues-section {data.severity_class}" {open_attr}>
   <summary>
     <span class="summary-text">Log Warnings &amp; Errors</span>
@@ -104,24 +108,52 @@ class LogIssuesBuilder(BaseBuilder[LogIssuesDisplayModel]):
     <div class="log-issues-list">
       {issues_list_html}
     </div>
+    {raw_context_html}
   </div>
 </details>'''
 
-    def _build_clean_section(self, test_index: int) -> str:
+    def _build_clean_section(self, data: LogIssuesDisplayModel) -> str:
         """Build a minimal section showing no issues found.
 
         Args:
-            test_index: Index of the test for unique IDs
+            data: LogIssuesDisplayModel with raw context, if present
 
         Returns:
             Clean log section HTML string
         """
+        raw_context_html = ""
+        if data.raw_context:
+            raw_context_html = self._build_raw_context(data.raw_context)
+
         return f'''<details class="log-issues-section log-severity-clean">
   <summary>
     <span class="summary-text">Log Warnings &amp; Errors</span>
     <span class="log-count-badge log-clean-badge">No issues</span>
   </summary>
-  <div class="content" id="log-issues-{test_index}">
+  <div class="content" id="log-issues-{data.test_index}">
     <p class="log-clean-message">No warnings or errors were captured during test execution.</p>
+    {raw_context_html}
   </div>
 </details>'''
+
+    def _build_raw_context(self, raw_context: str) -> str:
+        lines = []
+        for line in raw_context.splitlines():
+            escaped = self.escape(line)
+            if "ERROR" in line or "CRITICAL" in line:
+                lines.append(f'<span class="log-line log-line-error">{escaped}</span>')
+            elif "WARNING" in line:
+                lines.append(f'<span class="log-line log-line-warning">{escaped}</span>')
+            else:
+                lines.append(f'<span class="log-line">{escaped}</span>')
+
+        rendered = "\n".join(lines)
+        return f'''
+    <details class="log-raw-context" open>
+      <summary>
+        <span class="summary-text">Raw Log Context</span>
+      </summary>
+      <div class="content">
+        <pre>{rendered}</pre>
+      </div>
+    </details>'''

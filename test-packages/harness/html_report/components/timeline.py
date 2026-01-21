@@ -8,6 +8,9 @@ prompts, tool calls, and responses during test execution.
 from dataclasses import dataclass, field
 from typing import List, Optional
 
+import json
+import re
+
 from ..models import TimelineDisplayModel, TimelineItemDisplayModel, TimelineEntryType
 from .base import BaseBuilder, CopyButtonBuilder
 
@@ -288,8 +291,8 @@ class TimelineBuilder(BaseBuilder[TimelineDisplayModel]):
 
         if entry.entry_type == TimelineEntryType.TOOL_CALL:
             # Show command and output for tool calls
-            command = entry.command or ""
-            output = entry.output or ""
+            command = self._format_command(entry.command or "")
+            output = self._format_output(entry.output or "")
             if command and output:
                 return f'<pre>$ {self.escape(command)}\n\n{self.escape(output)}</pre>'
             elif command:
@@ -306,3 +309,38 @@ class TimelineBuilder(BaseBuilder[TimelineDisplayModel]):
             return f'<pre>{self.escape(entry.content)}</pre>'
 
         return ''
+
+    def _format_command(self, command: str) -> str:
+        """Pretty-print embedded JSON passed via --json in a command string."""
+        if not command:
+            return command
+        pattern = re.compile(r"--json\\s+(?P<quote>['\"])(?P<payload>.*?)(?P=quote)")
+        match = pattern.search(command)
+        if not match:
+            return command
+        payload = match.group("payload")
+        try:
+            parsed = json.loads(payload)
+        except json.JSONDecodeError:
+            return command
+        pretty = json.dumps(parsed, indent=2, ensure_ascii=False)
+        replacement = f"--json {pretty}"
+        return command[: match.start()] + replacement + command[match.end() :]
+
+    def _format_output(self, output: str) -> str:
+        """Pretty-print JSONL output when detected."""
+        if not output:
+            return output
+        lines = []
+        for line in output.splitlines():
+            stripped = line.strip()
+            if stripped.startswith("{") and stripped.endswith("}"):
+                try:
+                    parsed = json.loads(stripped)
+                except json.JSONDecodeError:
+                    lines.append(line)
+                else:
+                    lines.append(json.dumps(parsed, indent=2, ensure_ascii=False))
+            else:
+                lines.append(line)
+        return "\n".join(lines)

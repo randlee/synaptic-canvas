@@ -154,6 +154,30 @@ def copy_marketplace_data(
     return copied_any
 
 
+def copy_codex_auth(isolated_home: Path, source_home: Path | None = None) -> bool:
+    """Copy Codex auth/config files into isolated HOME."""
+    source_home = source_home or Path.home()
+    source_dir = source_home / ".codex"
+    if not source_dir.exists():
+        return False
+
+    dest_dir = isolated_home / ".codex"
+    dest_dir.mkdir(parents=True, exist_ok=True)
+
+    copied_any = False
+    for name in ("auth.json",):
+        src = source_dir / name
+        if not src.exists():
+            continue
+        try:
+            shutil.copy2(src, dest_dir / name)
+            copied_any = True
+        except Exception as exc:
+            logger.warning(f"Failed to copy Codex file {src}: {exc}")
+
+    return copied_any
+
+
 def setup_test_environment(
     isolated_home: Path,
     project_path: Path,
@@ -190,6 +214,9 @@ def setup_test_environment(
     # Copy marketplace data if requested
     if copy_marketplace:
         copy_marketplace_data(isolated_home, source_home)
+
+    # Copy Codex auth/config into isolated HOME (if available)
+    copy_codex_auth(isolated_home, source_home)
 
     logger.debug(f"Configured test environment with HOME={isolated_home}")
     return env

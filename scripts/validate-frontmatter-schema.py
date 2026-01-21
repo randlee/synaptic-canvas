@@ -34,7 +34,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, ValidationInfo, field_validator
 from pydantic import ValidationError as PydanticValidationError
 
 # Add test-packages/harness to path for Result types
@@ -133,6 +133,21 @@ class SkillFrontmatter(BaseFrontmatter):
         return v
 
 
+CODEX_MODEL_ALLOWLIST = {"sc-codex"}
+
+
+def package_name_from_path(file_path: Optional[str]) -> Optional[str]:
+    """Resolve package name from a file path under packages/."""
+    if not file_path:
+        return None
+    parts = Path(file_path).parts
+    if "packages" in parts:
+        idx = parts.index("packages")
+        if idx + 1 < len(parts):
+            return parts[idx + 1]
+    return None
+
+
 class AgentFrontmatter(BaseFrontmatter):
     """Frontmatter schema for agents."""
 
@@ -142,10 +157,14 @@ class AgentFrontmatter(BaseFrontmatter):
 
     @field_validator("model")
     @classmethod
-    def validate_model(cls, v: Optional[str]) -> Optional[str]:
+    def validate_model(cls, v: Optional[str], info: ValidationInfo) -> Optional[str]:
         """Validate model is one of allowed values if provided."""
         if v is not None:
             allowed = {"sonnet", "opus", "haiku"}
+            if v == "codex":
+                package_name = package_name_from_path(info.context.get("file_path") if info.context else None)
+                if package_name in CODEX_MODEL_ALLOWLIST:
+                    return v
             if v not in allowed:
                 raise ValueError(f"Model must be one of {allowed}: {v}")
         return v
@@ -300,7 +319,7 @@ def validate_frontmatter_schema(data: FrontmatterData) -> Result[FrontmatterData
 
     # Validate against Pydantic model
     try:
-        schema(**data.data)
+        schema.model_validate(data.data, context={"file_path": data.file_path})
     except PydanticValidationError as e:
         # Extract first error for clarity
         first_error = e.errors()[0]

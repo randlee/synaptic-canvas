@@ -28,6 +28,7 @@ def test_marketplace_json_valid():
         "sc-ci-automation",
         "sc-roslyn-diff",
         "sc-kanban",
+        "sc-codex",
     ]
     assert len(data["plugins"]) == len(expected_plugins), f"Expected {len(expected_plugins)} plugins, found {len(data['plugins'])}"
     plugin_names = [p["name"] for p in data["plugins"]]
@@ -36,7 +37,7 @@ def test_marketplace_json_valid():
 
 def test_all_packages_have_plugin_json():
     """Verify each package has .claude-plugin/plugin.json."""
-    packages = ["sc-delay-tasks", "sc-git-worktree", "sc-manage", "sc-repomix-nuget", "sc-github-issue", "sc-startup"]
+    packages = ["sc-delay-tasks", "sc-git-worktree", "sc-manage", "sc-repomix-nuget", "sc-github-issue", "sc-startup", "sc-codex"]
 
     for pkg in packages:
         plugin_json = Path(f"packages/{pkg}/.claude-plugin/plugin.json")
@@ -50,7 +51,7 @@ def test_all_packages_have_plugin_json():
 
 def test_plugin_json_schema_valid():
     """Verify plugin.json files have required fields."""
-    packages = ["sc-delay-tasks", "sc-git-worktree", "sc-manage", "sc-repomix-nuget", "sc-github-issue", "sc-startup"]
+    packages = ["sc-delay-tasks", "sc-git-worktree", "sc-manage", "sc-repomix-nuget", "sc-github-issue", "sc-startup", "sc-codex"]
 
     required_fields = ["name", "description", "version", "author", "license"]
 
@@ -76,7 +77,7 @@ def test_marketplace_package_sources_exist():
 
 def test_plugin_component_directories_exist():
     """Verify plugin component directories (commands, agents, skills) exist."""
-    packages = ["sc-delay-tasks", "sc-git-worktree", "sc-manage", "sc-repomix-nuget"]
+    packages = ["sc-delay-tasks", "sc-git-worktree", "sc-manage", "sc-repomix-nuget", "sc-codex"]
 
     for pkg in packages:
         plugin_json = Path(f"packages/{pkg}/.claude-plugin/plugin.json")

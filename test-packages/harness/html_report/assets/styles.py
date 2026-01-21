@@ -73,7 +73,12 @@ CSS_HEADER = """.fixture-header {
   flex-direction: column;
 }
 .fixture-meta-item.wide {
-  grid-column: span 2;
+  grid-column: 1 / -1;
+}
+.fixture-meta-item.wide .fixture-meta-value {
+  white-space: nowrap;
+  overflow-x: auto;
+  padding-bottom: 2px;
 }
 .fixture-meta-label {
   color: #94a3b8;
@@ -452,6 +457,48 @@ CSS_EXPECTATIONS = """.expectations-list {
   padding: 0;
   margin: 0;
 }
+.expectations-section > summary {
+  list-style: none;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  padding: 8px 0;
+  cursor: pointer;
+  gap: 8px;
+}
+.expectations-section > summary .copy-icon-btn {
+  margin-left: auto;
+}
+.expectations-section > summary .summary-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text);
+}
+.expectations-section > summary::before {
+  content: "▸";
+  color: var(--text-muted);
+  margin-right: 8px;
+  font-size: 1.1rem;
+  width: 12px;
+  display: inline-block;
+  text-align: center;
+}
+.expectations-section > summary::marker {
+  content: "";
+}
+.expectations-section[open] > summary::before {
+  content: "▾";
+}
+.expectations-section > summary::-webkit-details-marker {
+  display: none;
+}
+.expectations-section[open] > summary {
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 12px;
+}
 .expectation-item {
   display: flex;
   align-items: flex-start;
@@ -511,8 +558,8 @@ CSS_EXPECTATIONS = """.expectations-list {
 }
 .expectation-expanded.show { display: block; }
 .expected-actual {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 16px;
 }
 .expected-actual h4 {
@@ -1047,6 +1094,44 @@ CSS_LOG_ISSUES = """.log-issues-section {
 /* Issue list */
 .log-issues-list {
   padding: 8px 0;
+}
+
+.log-raw-context {
+  margin: 12px 12px 0;
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+}
+.log-raw-context > summary {
+  padding: 8px 12px;
+  cursor: pointer;
+  font-weight: 600;
+  background: var(--bg-subtle);
+  border-radius: 6px;
+}
+.log-raw-context .content {
+  padding: 8px 12px 12px;
+}
+.log-raw-context pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 320px;
+  overflow: auto;
+  background: var(--bg-muted);
+  border-radius: 6px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+.log-line {
+  display: block;
+}
+.log-line-warning {
+  color: #b45309;
+  background: #fef3c7;
+}
+.log-line-error {
+  color: var(--fail);
+  background: var(--fail-bg);
 }
 
 /* Individual issue items */
