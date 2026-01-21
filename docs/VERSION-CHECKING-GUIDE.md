@@ -251,13 +251,13 @@ vim version.yaml
 # Save and commit
 ```
 
-**Method 2: Using sync-versions.py**
+**Method 2: Using set-package-version.py**
 ```bash
 # Sync marketplace to new version
-python3 scripts/sync-versions.py --marketplace --version 0.5.0
+python3 scripts/set-package-version.py --all --marketplace 0.5.0
 
 # With commit
-python3 scripts/sync-versions.py --marketplace --version 0.5.0 --commit
+python3 scripts/set-package-version.py --all --marketplace 0.5.0 --commit
 ```
 
 **Method 3: Using sed**
@@ -474,17 +474,17 @@ python3 -c "import yaml; print(yaml.safe_load(open('packages/sc-delay-tasks/mani
 
 ### Updating Package Version
 
-**Method 1: Using sync-versions.py (Recommended)**
+**Method 1: Using set-package-version.py (Recommended)**
 
 ```bash
 # Update specific package
-python3 scripts/sync-versions.py --package sc-delay-tasks --version 0.5.0
+python3 scripts/set-package-version.py sc-delay-tasks 0.5.0
 
 # With dry-run first
-python3 scripts/sync-versions.py --package sc-delay-tasks --version 0.5.0 --dry-run
+python3 scripts/set-package-version.py sc-delay-tasks 0.5.0 --dry-run
 
 # With commit
-python3 scripts/sync-versions.py --package sc-delay-tasks --version 0.5.0 --commit
+python3 scripts/set-package-version.py sc-delay-tasks 0.5.0 --commit
 ```
 
 **Method 2: Manual edit**
@@ -510,7 +510,7 @@ new_version="0.5.0"
 sed -i.bak "s/^version: .*/version: $new_version/" "packages/$package/manifest.yaml"
 
 # Note: This only updates manifest, not artifacts
-# Use sync-versions.py to update artifacts
+# Use set-package-version.py to update artifacts
 ```
 
 ---
@@ -1148,10 +1148,10 @@ echo ""
 echo "Next version: $next_version"
 echo ""
 echo "To update marketplace:"
-echo "  python3 scripts/sync-versions.py --marketplace --version $next_version"
+echo "  python3 scripts/set-package-version.py --all --marketplace $next_version"
 echo ""
 echo "To update package:"
-echo "  python3 scripts/sync-versions.py --package PACKAGE_NAME --version $next_version"
+echo "  python3 scripts/set-package-version.py PACKAGE_NAME $next_version"
 ```
 
 ---
@@ -1177,7 +1177,7 @@ grep "^version:" packages/sc-delay-tasks/commands/delay.md
 **Fix:**
 ```bash
 # Use sync script
-python3 scripts/sync-versions.py --package sc-delay-tasks --version 0.4.0
+python3 scripts/set-package-version.py sc-delay-tasks 0.4.0
 
 # Verify fix
 ./scripts/audit-versions.py
@@ -1207,7 +1207,7 @@ head -10 packages/sc-delay-tasks/commands/delay.md
 # ---
 
 # Or use sync script to add all at once
-python3 scripts/sync-versions.py --package sc-delay-tasks --version 0.4.0
+python3 scripts/set-package-version.py sc-delay-tasks 0.4.0
 ```
 
 ---
@@ -1232,7 +1232,7 @@ This may not be a problem! Packages can have different versions.
 **Fix (if updating is desired):**
 ```bash
 # Update sc-git-worktree to 0.4.0
-python3 scripts/sync-versions.py --package sc-git-worktree --version 0.4.0
+python3 scripts/set-package-version.py sc-git-worktree 0.4.0
 ```
 
 ---
@@ -1257,7 +1257,7 @@ This is expected! Marketplace and packages have independent versions.
 # Update all packages to match marketplace
 marketplace_version=$(grep "^version:" version.yaml | awk -F': *' '{print $2}' | tr -d '"')
 
-python3 scripts/sync-versions.py --all --version $marketplace_version
+python3 scripts/set-package-version.py --all $marketplace_version
 ```
 
 ---
@@ -1279,7 +1279,7 @@ previous_version=$(git show $previous:packages/sc-delay-tasks/manifest.yaml | gr
 echo "Previous version: $previous_version"
 
 # Rollback
-python3 scripts/sync-versions.py --package sc-delay-tasks --version $previous_version
+python3 scripts/set-package-version.py sc-delay-tasks $previous_version
 
 # Commit rollback
 git add packages/sc-delay-tasks/
@@ -1303,7 +1303,7 @@ previous_version=$(git show $previous:version.yaml | grep "^version:" | awk -F':
 echo "Previous version: $previous_version"
 
 # Rollback
-python3 scripts/sync-versions.py --marketplace --version $previous_version
+python3 scripts/set-package-version.py --all --marketplace $previous_version
 
 # Commit rollback
 git add version.yaml
@@ -1446,7 +1446,7 @@ crontab -e
 2. **When updating a package:**
    ```bash
    # Update package and all its artifacts
-   python3 scripts/sync-versions.py --package PACKAGE_NAME --version NEW_VERSION
+   python3 scripts/set-package-version.py PACKAGE_NAME NEW_VERSION
 
    # Verify
    ./scripts/audit-versions.py
@@ -1510,10 +1510,10 @@ python3 scripts/compare-versions.py
 ./scripts/audit-versions.py
 
 # Update package version
-python3 scripts/sync-versions.py --package NAME --version X.Y.Z
+python3 scripts/set-package-version.py NAME X.Y.Z
 
 # Update marketplace version
-python3 scripts/sync-versions.py --marketplace --version X.Y.Z
+python3 scripts/set-package-version.py --all --marketplace X.Y.Z
 
 # Validate registry
 python3 docs/registries/nuget/validate-registry.py

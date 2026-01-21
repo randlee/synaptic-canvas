@@ -1,6 +1,6 @@
 ---
 name: kanban-card
-version: 0.7.0
+version: 0.8.0
 description: Create or update kanban cards (backlog → board) using shared board config.
 ---
 

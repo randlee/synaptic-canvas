@@ -167,7 +167,7 @@ Python 3.11.5 (or higher)
 - Wide availability across platforms
 
 **Used By:**
-- `scripts/sync-versions.py` - Version synchronization
+- `scripts/set-package-version.py` - Version management and registry regeneration
 - `docs/registries/nuget/validate-registry.py` - Registry validation
 - Various package scripts
 

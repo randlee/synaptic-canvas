@@ -173,9 +173,9 @@ version: 0.4.0
 ```
 ✗ FAIL Command in sc-delay-tasks: Version mismatch: command=0.3.0, package=0.4.0
 ```
-**Fix:** Use sync-versions.py to update:
+**Fix:** Use set-package-version.py to update:
 ```bash
-python3 scripts/sync-versions.py --package sc-delay-tasks --version 0.4.0
+python3 scripts/set-package-version.py sc-delay-tasks 0.4.0
 ```
 
 ⚠️ **Missing CHANGELOG:**
@@ -186,116 +186,88 @@ python3 scripts/sync-versions.py --package sc-delay-tasks --version 0.4.0
 
 ---
 
-#### 2. `scripts/sync-versions.py`
+#### 2. `scripts/set-package-version.py`
 
-**Purpose:** Synchronize version numbers across package artifacts
+**Purpose:** Set package versions and regenerate all registry files
 
-**Location:** `/Users/randlee/Documents/github/synaptic-canvas/scripts/sync-versions.py`
+**Location:** `/Users/randlee/Documents/github/synaptic-canvas/scripts/set-package-version.py`
 
 **Usage:**
 ```bash
-python3 scripts/sync-versions.py [OPTIONS]
-
-Required:
-  --version VERSION    Target version (SemVer: X.Y.Z)
-
-Scope (choose one):
-  --package NAME       Update version for specific package
-  --marketplace        Update marketplace platform version (version.yaml)
-  --all                Update all packages to same version
+python3 scripts/set-package-version.py <package> <version>
+python3 scripts/set-package-version.py --all <version>
+python3 scripts/set-package-version.py --all --marketplace <version>
 
 Options:
-  --commit             Create git commit after update
   --dry-run            Show changes without applying
+  --force              Allow version decrement (use with caution)
 ```
 
 **Examples:**
 
 **Update single package:**
 ```bash
-# Update sc-delay-tasks to version 0.5.0
-python3 scripts/sync-versions.py --package sc-delay-tasks --version 0.5.0
+# Update sc-delay-tasks to version 0.9.0
+python3 scripts/set-package-version.py sc-delay-tasks 0.9.0
 
 # Output:
-Syncing sc-delay-tasks to version 0.5.0...
-  ✓ Updated: /path/to/packages/sc-delay-tasks/manifest.yaml
-  ✓ Updated: /path/to/packages/sc-delay-tasks/commands/delay.md
-  ✓ Updated: /path/to/packages/sc-delay-tasks/skills/delaying-tasks/SKILL.md
-  ✓ Updated: /path/to/packages/sc-delay-tasks/agents/delay-once.md
-  ✓ Updated: /path/to/packages/sc-delay-tasks/agents/delay-poll.md
-  ✓ Updated: /path/to/packages/sc-delay-tasks/agents/git-pr-check-delay.md
-Updated 6 file(s) in sc-delay-tasks
+Setting version to 0.9.0
+============================================================
+sc-delay-tasks: 0.8.0 -> 0.9.0
+  ✓ packages/sc-delay-tasks/manifest.yaml
+  ✓ packages/sc-delay-tasks/.claude-plugin/plugin.json
+  ✓ packages/sc-delay-tasks/commands/delay.md
+  ...
+============================================================
+Regenerating registry files...
+  ✓ .claude-plugin/marketplace.json
+  ✓ .claude-plugin/registry.json
+  ✓ docs/registries/nuget/registry.json
 ```
 
-**Update marketplace version:**
+**Update all packages:**
 ```bash
-# Update marketplace platform version
-python3 scripts/sync-versions.py --marketplace --version 0.5.0
-
-# Output:
-Syncing marketplace to version 0.5.0...
-  ✓ Updated: /path/to/version.yaml
+# Update ALL packages to version 1.0.0
+python3 scripts/set-package-version.py --all 1.0.0
 ```
 
-**Update all packages (rare):**
+**Update all packages AND marketplace version:**
 ```bash
-# Update ALL packages to version 1.0.0 (major release)
-python3 scripts/sync-versions.py --all --version 1.0.0
-
-# Output:
-Syncing all packages to version 1.0.0...
-Syncing sc-delay-tasks to version 1.0.0...
-  ✓ Updated: /path/to/packages/sc-delay-tasks/manifest.yaml
-  ...
-Syncing sc-git-worktree to version 1.0.0...
-  ✓ Updated: /path/to/packages/sc-git-worktree/manifest.yaml
-  ...
+# Update all packages and marketplace platform version
+python3 scripts/set-package-version.py --all --marketplace 1.0.0
 ```
 
 **Dry run (preview changes):**
 ```bash
-python3 scripts/sync-versions.py --package sc-delay-tasks --version 0.5.0 --dry-run
+python3 scripts/set-package-version.py --all 0.9.0 --dry-run
 
 # Shows what would be updated without making changes
 ```
 
-**With automatic commit:**
-```bash
-python3 scripts/sync-versions.py --package sc-delay-tasks --version 0.5.0 --commit
-
-# Output:
-Syncing sc-delay-tasks to version 0.5.0...
-  ✓ Updated: ...
-Updated 6 file(s) in sc-delay-tasks
-✓ Created git commit: chore(versioning): sync versions across artifacts
-```
-
 **Exit Codes:**
 - `0` - Success
-- `1` - Validation error or update failure
+- `1` - Validation error or version decrement attempted
 
-**Validation:**
-
-The script validates version format before updating:
-
-```bash
-# Invalid version format
-python3 scripts/sync-versions.py --package sc-delay-tasks --version 1.0
-
-# Error:
-Error: Invalid version format: 1.0
-Must be semantic version (X.Y.Z)
-```
+**Safety Features:**
+- **Version decrement protection**: Errors if you try to set a lower version
+- **Dry-run mode**: Preview all changes before applying
+- **Skip detection**: Packages already at target version are skipped
 
 **What It Updates:**
 
-For package updates:
+For each package:
 - ✅ `packages/<name>/manifest.yaml`
+- ✅ `packages/<name>/.claude-plugin/plugin.json`
 - ✅ `packages/<name>/commands/*.md` (version frontmatter)
 - ✅ `packages/<name>/skills/*/SKILL.md` (version frontmatter)
 - ✅ `packages/<name>/agents/*.md` (version frontmatter)
 
-For marketplace updates:
+Registry files (regenerated automatically):
+- ✅ `.claude-plugin/marketplace.json`
+- ✅ `.claude-plugin/registry.json`
+- ✅ `docs/registries/nuget/registry.json`
+
+If `--marketplace`:
 - ✅ `version.yaml`
 
 **Version Format:**
@@ -924,10 +896,10 @@ find scripts/ -name "*.sh" -type f -exec chmod +x {} \;
 
 **Check Python scripts are readable:**
 ```bash
-ls -l scripts/sync-versions.py
+ls -l scripts/set-package-version.py
 
 # Expected output:
--rwxr-xr-x  1 user  staff  9163 Dec  2 09:23 scripts/sync-versions.py
+-rwxr-xr-x  1 user  staff  9163 Dec  2 09:23 scripts/set-package-version.py
 ```
 
 ---
@@ -1506,7 +1478,7 @@ sys     0m0.198s
 **Measure sync script performance:**
 ```bash
 # Time the sync script (dry run)
-time python3 scripts/sync-versions.py --package sc-delay-tasks --version 0.4.0 --dry-run
+time python3 scripts/set-package-version.py --package sc-delay-tasks --version 0.4.0 --dry-run
 
 # Output:
 Syncing sc-delay-tasks to version 0.4.0...
@@ -1793,7 +1765,7 @@ chmod +x scripts/audit-versions.py
 
 **Problem:**
 ```bash
-$ python3 scripts/sync-versions.py
+$ python3 scripts/set-package-version.py
 -bash: python3: command not found
 ```
 
@@ -1811,7 +1783,7 @@ brew install python3
 sudo apt-get install python3
 
 # Try with python instead of python3
-python scripts/sync-versions.py
+python scripts/set-package-version.py
 ```
 
 ---
@@ -1850,7 +1822,7 @@ $ ./scripts/audit-versions.py
 **Solution:**
 ```bash
 # Use sync script to fix
-python3 scripts/sync-versions.py --package sc-delay-tasks --version 0.4.0
+python3 scripts/set-package-version.py --package sc-delay-tasks --version 0.4.0
 
 # Verify fix
 ./scripts/audit-versions.py

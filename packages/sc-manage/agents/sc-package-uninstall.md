@@ -1,6 +1,6 @@
 ---
 name: sc-package-uninstall
-version: 0.7.0
+version: 0.8.0
 description: Uninstall a Synaptic Canvas package locally (repo .claude) or globally according to package policy.
 model: sonnet
 color: blue

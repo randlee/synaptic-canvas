@@ -82,7 +82,7 @@ Each package in `packages/*/` maintains its own documentation:
 
 - [Versioning Strategy](./versioning-strategy.md) - Complete versioning policy
 - [Version Audit Script](../scripts/audit-versions.py) - Verify version consistency
-- [Version Sync Script](../scripts/sync-versions.py) - Update versions bulk
+- [Version Management Script](../scripts/set-package-version.py) - Set package versions and regenerate registries
 - [Version Compare Tool](.python3 scripts/compare-versions.py) - Show versions by package
 
 ### Changelog Files
@@ -101,7 +101,7 @@ Located in `scripts/`:
 | Script | Purpose | Usage |
 |--------|---------|-------|
 | `audit-versions.py` | Verify version consistency across all artifacts | `./scripts/audit-versions.py` |
-| `sync-versions.py` | Bulk update versions in packages | `python3 scripts/sync-versions.py --package NAME --version X.Y.Z` |
+| `set-package-version.py` | Set package versions and regenerate registries | `python3 scripts/set-package-version.py NAME X.Y.Z` |
 | `compare-versions.py` | Compare versions by package | `python3 scripts/compare-versions.py --by-package` |
 
 ### Validation Scripts
@@ -131,7 +131,7 @@ synaptic-canvas/
 │   └── sc-repomix-nuget/             # Package 4
 ├── scripts/                       # Utility scripts
 │   ├── audit-versions.py
-│   ├── sync-versions.py
+│   ├── set-package-version.py
 │   ├── compare-versions.py
 │   └── ...
 ├── .claude/                       # Claude Code configuration
@@ -173,7 +173,7 @@ python3 tools/sc-install.py install sc-delay-tasks --local
 
 **Updating package version:**
 ```bash
-python3 scripts/sync-versions.py --package sc-git-worktree --version 0.5.0
+python3 scripts/set-package-version.py sc-git-worktree 0.5.0
 ```
 
 **Running tests:**
@@ -201,7 +201,7 @@ pytest -q
 
 **Releasing a new version:**
 1. Update package version in `packages/*/manifest.yaml`
-2. Run `python3 scripts/sync-versions.py --package name --version X.Y.Z`
+2. Run `python3 scripts/set-package-version.py name X.Y.Z`
 3. Update `packages/*/CHANGELOG.md`
 4. Run `./scripts/audit-versions.py` to verify
 5. Commit with clear message

@@ -1081,11 +1081,11 @@ version: 0.3.0
 
 ### Step 4: Determine Fix Strategy
 
-**Option A: Use sync-versions.py (Recommended)**
+**Option A: Use set-package-version.py (Recommended)**
 
 For package-wide updates:
 ```bash
-python3 scripts/sync-versions.py --package sc-delay-tasks --version 0.4.0 --dry-run
+python3 scripts/set-package-version.py sc-delay-tasks 0.4.0 --dry-run
 ```
 
 **Option B: Manual Update**
@@ -1104,7 +1104,7 @@ vim packages/sc-delay-tasks/skills/delaying-tasks/SKILL.md
 **Command:**
 ```bash
 # Sync all artifacts in sc-delay-tasks package
-python3 scripts/sync-versions.py --package sc-delay-tasks --version 0.4.0
+python3 scripts/set-package-version.py sc-delay-tasks 0.4.0
 
 # Verify changes
 git diff

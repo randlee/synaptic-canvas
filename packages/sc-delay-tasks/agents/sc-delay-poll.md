@@ -1,6 +1,6 @@
 ---
 name: delay-poll
-version: 0.7.0
+version: 0.8.0
 description: Perform bounded polling with minimal heartbeats. Sleep on an interval, emit a heartbeat each interval, stop on success/timeout, and emit the action text. No tool traces.
 model: sonnet
 color: gray

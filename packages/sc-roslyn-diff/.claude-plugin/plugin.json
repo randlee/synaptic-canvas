@@ -1,7 +1,7 @@
 {
   "name": "sc-roslyn-diff",
   "description": "Semantic diffing for .NET source using roslyn-diff with JSON-first outputs, HTML reports, and git/PR-aware comparisons.",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "author": {
     "name": "randlee"
   },

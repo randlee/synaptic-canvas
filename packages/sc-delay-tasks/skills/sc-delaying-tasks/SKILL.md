@@ -5,7 +5,7 @@ description: >
   Use to wait before running a check (e.g., GH Actions, PR status, CI pipeline)
   or to poll on a bounded interval. Trigger on: "wait", "delay", "poll", "check later",
   "retry after", "schedule check".
-version: 0.7.0
+version: 0.8.0
 ---
 
 # Delaying Tasks Skill

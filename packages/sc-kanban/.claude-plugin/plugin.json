@@ -1,7 +1,7 @@
 {
   "name": "sc-kanban",
   "description": "Kanban state machine for Synaptic Canvas: backlog to board to done with gate validation, automatic scrubbing, and shared board config.",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "author": {
     "name": "randlee"
   },

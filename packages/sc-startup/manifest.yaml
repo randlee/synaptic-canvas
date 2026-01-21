@@ -1,5 +1,5 @@
 name: sc-startup
-version: 0.7.0
+version: 0.8.0
 description: >
   Startup runner for Synaptic Canvas: read startup prompt, sync master checklist, optional PR triage, worktree hygiene, and CI pull,
   then emit a concise status with next steps. Supports read-only mode.

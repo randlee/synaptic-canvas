@@ -1,6 +1,6 @@
 ---
 name: sc-startup
-version: 0.7.0
+version: 0.8.0
 description: "Run repo startup: prompt load, checklist sync, optional PR triage, worktree hygiene, and CI pull. Best-effort with structured status."
 entry_point: /sc-startup
 ---

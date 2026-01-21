@@ -1119,7 +1119,7 @@ sed -i 's/version: 0.3.0/version: 0.4.0/g' .claude/agents/*.md
 
 Option C - Use sync script:
 ```bash
-python3 scripts/sync-versions.py --package sc-delay-tasks --version 0.4.0
+python3 scripts/set-package-version.py sc-delay-tasks 0.4.0
 ```
 
 ---

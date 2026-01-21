@@ -1,7 +1,7 @@
 {
   "name": "sc-codex",
   "description": "Run Codex agents via a Task Tool-compatible runner, with hooks emulation and background execution support.",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "author": {
     "name": "synaptic-canvas"
   },
