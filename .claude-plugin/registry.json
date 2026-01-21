@@ -1,6 +1,6 @@
 {
   "name": "synaptic-canvas",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "A marketplace for Claude Code skills",
   "author": {
     "name": "randlee"
@@ -21,7 +21,7 @@
         "scripts": 0,
         "schemas": 0
       },
-      "lastUpdated": "2026-01-19T17:47:12.885998"
+      "lastUpdated": "2026-01-20T18:27:23.739241"
     },
     {
       "name": "sc-codex",
@@ -35,10 +35,10 @@
         "commands": 1,
         "skills": 1,
         "agents": 1,
-        "scripts": 10,
+        "scripts": 8,
         "schemas": 2
       },
-      "lastUpdated": "2026-01-19T17:47:12.886594"
+      "lastUpdated": "2026-01-20T18:27:23.739842"
     },
     {
       "name": "sc-delay-tasks",
@@ -55,7 +55,7 @@
         "scripts": 1,
         "schemas": 0
       },
-      "lastUpdated": "2026-01-19T17:47:12.887141"
+      "lastUpdated": "2026-01-20T18:27:23.740294"
     },
     {
       "name": "sc-git-worktree",
@@ -72,7 +72,7 @@
         "scripts": 0,
         "schemas": 0
       },
-      "lastUpdated": "2026-01-19T17:47:12.887952"
+      "lastUpdated": "2026-01-20T18:27:23.740995"
     },
     {
       "name": "sc-github-issue",
@@ -89,7 +89,7 @@
         "scripts": 0,
         "schemas": 0
       },
-      "lastUpdated": "2026-01-19T17:47:12.888790"
+      "lastUpdated": "2026-01-20T18:27:23.742047"
     },
     {
       "name": "sc-kanban",
@@ -106,7 +106,7 @@
         "scripts": 4,
         "schemas": 0
       },
-      "lastUpdated": "2026-01-19T17:47:12.889366"
+      "lastUpdated": "2026-01-20T18:27:23.742598"
     },
     {
       "name": "sc-manage",
@@ -123,7 +123,7 @@
         "scripts": 7,
         "schemas": 0
       },
-      "lastUpdated": "2026-01-19T17:47:12.889898"
+      "lastUpdated": "2026-01-20T18:27:23.743114"
     },
     {
       "name": "sc-repomix-nuget",
@@ -140,7 +140,7 @@
         "scripts": 2,
         "schemas": 0
       },
-      "lastUpdated": "2026-01-19T17:47:12.890480"
+      "lastUpdated": "2026-01-20T18:27:23.743618"
     },
     {
       "name": "sc-roslyn-diff",
@@ -157,7 +157,7 @@
         "scripts": 5,
         "schemas": 0
       },
-      "lastUpdated": "2026-01-19T17:47:12.891013"
+      "lastUpdated": "2026-01-20T18:27:23.744141"
     },
     {
       "name": "sc-startup",
@@ -174,7 +174,7 @@
         "scripts": 0,
         "schemas": 0
       },
-      "lastUpdated": "2026-01-19T17:47:12.891598"
+      "lastUpdated": "2026-01-20T18:27:23.744685"
     }
   ],
   "metadata": {
@@ -182,9 +182,9 @@
     "totalCommands": 10,
     "totalSkills": 12,
     "totalAgents": 41,
-    "totalScripts": 29,
+    "totalScripts": 27,
     "totalSchemas": 2
   },
-  "generated": "2026-01-19T17:47:12.891605",
-  "lastUpdated": "2026-01-19T17:47:12.891606"
+  "generated": "2026-01-20T18:27:23.744693",
+  "lastUpdated": "2026-01-20T18:27:23.744694"
 }

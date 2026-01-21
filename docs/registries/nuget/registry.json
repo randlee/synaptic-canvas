@@ -1,11 +1,11 @@
 {
   "$schema": "https://yourcompany.github.io/schemas/package-registry.schema.json",
   "version": "2.0.0",
-  "generated": "2026-01-20T01:49:16Z",
+  "generated": "2026-01-21T02:28:03Z",
   "repo": "randlee/synaptic-canvas",
   "marketplace": {
     "name": "Synaptic Canvas",
-    "version": "0.7.0",
+    "version": "0.8.0",
     "status": "beta",
     "url": "https://github.com/randlee/synaptic-canvas"
   },
