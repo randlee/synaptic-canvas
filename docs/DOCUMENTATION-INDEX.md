@@ -46,8 +46,7 @@ This is the central hub for all Synaptic Canvas documentation. Use this index to
 | Document | Purpose | Location |
 |----------|---------|----------|
 | [Marketplace Infrastructure](./MARKETPLACE-INFRASTRUCTURE.md) | Complete guide to building and operating Claude Code marketplaces | `docs/MARKETPLACE-INFRASTRUCTURE.md` |
-| [Agent Runner Quick Ref](./agent-runner.md) | Quick reference for Agent Runner | `docs/agent-runner.md` |
-| [Agent Runner Comprehensive](./agent-runner-comprehensive.md) | Complete guide: features, benefits, integration | `docs/agent-runner-comprehensive.md` |
+| [Agent Runner](./agent-runner-comprehensive.md) | Complete guide: features, benefits, integration | `docs/agent-runner-comprehensive.md` |
 | [NuGet Integration](./nuget/) | NuGet-specific documentation | `docs/nuget/` |
 | [Registry Metadata](./registries/nuget/) | Package registry and discovery | `docs/registries/nuget/` |
 

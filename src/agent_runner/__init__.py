@@ -1,6 +1,6 @@
 """Agent Runner package.
 
-See docs/agent-runner.md for usage.
+See docs/agent-runner-comprehensive.md for usage.
 """
 
 from .runner import (

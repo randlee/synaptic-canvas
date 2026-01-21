@@ -112,7 +112,8 @@ synaptic-canvas/
 │   ├── __init__.py
 │   └── runner.py                    # Core library (225 lines)
 ├── tools/
-│   └── agent-runner.py              # CLI wrapper (81 lines)
+│   ├── agent-runner.py              # CLI wrapper (81 lines)
+│   └── claude-agent-runner.py       # CLI runner for background-friendly agent execution (Claude or Codex)
 ├── .claude/agents/
 │   ├── registry.yaml                # Source of truth (21 agents)
 │   └── *.md                         # Agent definitions
@@ -522,7 +523,29 @@ python3 tools/agent-runner.py invoke \
    - Partial failure: ⚠️ {failed_count} checks failed: {failed_ids}
 ```
 
-### Pattern 5: Library Import (Programmatic)
+### Pattern 5: Background Execution (Claude/Codex CLI)
+
+`tools/claude-agent-runner.py` validates JSON input with pydantic, loads the agent
+instructions, and runs the selected CLI runner:
+- `runner: "claude"` uses `claude --print`
+- `runner: "codex"` uses `codex exec`
+
+**Example:**
+
+```bash
+cat <<'JSON' | python3 tools/claude-agent-runner.py
+{
+  "agent": "sc-worktree-create",
+  "params": { "branch": "feature-x", "base": "main" },
+  "model": "haiku",
+  "runner": "claude"
+}
+JSON
+```
+
+This is useful for background-friendly agent execution where Claude or Codex CLI is invoked directly rather than through the Task tool within a conversation.
+
+### Pattern 6: Library Import (Programmatic)
 
 ```python
 from agent_runner.runner import invoke, validate_only
@@ -1110,7 +1133,6 @@ python3 scripts/validate-agents.py
 ## Related Documents
 
 - **[Guidelines (v0.5)](./claude-code-skills-agents-guidelines-0.4.md)** - Architecture guidelines making Agent Runner normative
-- **[Agent Runner Quick Ref](./agent-runner.md)** - Original 111-line quick reference
 - **[Registry Schema](../.claude/agents/registry.yaml)** - Live registry with 21 agents
 - **[Validation Script](../scripts/validate-agents.py)** - CI validation implementation
 

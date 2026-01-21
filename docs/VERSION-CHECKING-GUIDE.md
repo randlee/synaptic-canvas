@@ -20,6 +20,17 @@
 10. [Common Version Mismatches](#common-version-mismatches)
 11. [Version Rollback](#version-rollback)
 12. [Automated Version Checking](#automated-version-checking)
+13. [Version Compatibility Reference](#version-compatibility-reference)
+    - [Current Marketplace Status](#current-marketplace-status)
+    - [Package Tier Matrix](#package-tier-matrix)
+    - [Per-Package Compatibility](#per-package-compatibility)
+    - [Release Timeline](#release-timeline)
+    - [Upgrade Paths](#upgrade-paths)
+    - [Supported Version Combinations](#supported-version-combinations)
+    - [Deprecated & End-of-Life Versions](#deprecated--end-of-life-versions)
+    - [Installation Examples](#installation-examples)
+    - [Version Troubleshooting](#version-troubleshooting)
+    - [Glossary](#glossary)
 
 ---
 
@@ -1490,11 +1501,576 @@ crontab -e
 
 ## Related Documentation
 
-- [DIAGNOSTIC-TOOLS.md](DIAGNOSTIC-TOOLS.md) - Available diagnostic tools
-- [DIAGNOSTIC-WORKFLOW.md](DIAGNOSTIC-WORKFLOW.md) - Step-by-step workflows
+- [DIAGNOSTIC-TOOLS.md](DIAGNOSTIC-TOOLS.md) - Available diagnostic tools and step-by-step workflows
 - [DEPENDENCY-VALIDATION.md](DEPENDENCY-VALIDATION.md) - Dependencies and validation
 - [versioning-strategy.md](versioning-strategy.md) - Versioning policy
 - [RELEASE-PROCESS.md](RELEASE-PROCESS.md) - Release procedures
+
+---
+
+## Version Compatibility Reference
+
+This section provides comprehensive version compatibility information for the Synaptic Canvas marketplace. It serves as a reference for users installing packages, maintainers planning releases, and CI/CD systems validating compatibility.
+
+### Current Marketplace Status
+
+| Component | Version | Status | Support Level |
+|-----------|---------|--------|----------------|
+| **Marketplace** | 0.4.0 | Beta | Active Development |
+| **All Packages** | 0.4.0 | Beta | Active Development |
+| **Registry Format** | 2.0.0 | Stable | Supported |
+| **CLI Version** | 0.4.0 | Beta | Active Development |
+
+### Minimum Installation Requirements
+
+- **Marketplace CLI:** 0.4.0+
+- **Individual Packages:** 0.4.0+
+- **Package Tier Support:**
+  - Tier 0 (No dependencies): Always compatible
+  - Tier 1 (Token substitution): Requires git 2.27+
+  - Tier 2 (Runtime dependencies): See package-specific requirements
+
+### Package Tier Matrix
+
+| Package | Tier | Current Version | Runtime Requirements |
+|---------|------|-----------------|----------------------|
+| `sc-delay-tasks` | 0 | 0.4.0 | None |
+| `sc-manage` | 0 | 0.4.0 | None |
+| `sc-git-worktree` | 1 | 0.4.0 | git >= 2.27 |
+| `sc-repomix-nuget` | 2 | 0.4.0 | python3 >= 3.12 |
+
+---
+
+### Marketplace Version Compatibility
+
+This matrix shows which package versions are compatible with each marketplace version:
+
+| Marketplace | Min Package | Max Package | Recommended | Status | Breaking Changes |
+|-------------|-------------|-------------|-------------|--------|------------------|
+| **0.4.0** | 0.4.0 | 0.4.x | 0.4.0 | Beta | None (initial) |
+| **0.5.0** (planned) | 0.4.0 | 0.5.x | 0.5.0+ | Planned | Minor CLI updates |
+| **1.0.0** (planned) | 1.0.0 | 1.x.x | 1.0.0+ | Planned | Registry format v3.0.0 |
+
+### Per-Package Compatibility
+
+#### sc-delay-tasks
+
+| Version | Marketplace | Status | Notes |
+|---------|-------------|--------|-------|
+| 0.4.0 | 0.4.0+ | Beta | Supported, current release |
+| 0.5.0 | 0.5.0+ (planned) | Planned | New scheduling features |
+| 1.0.0 | 1.0.0+ (planned) | Planned | Stable release |
+
+**Dependencies:** None
+**Breaking Changes:** None yet
+**Last Updated:** 2025-12-02
+
+#### sc-git-worktree
+
+| Version | Marketplace | Status | Notes |
+|---------|-------------|--------|-------|
+| 0.4.0 | 0.4.0+ | Beta | Supported, current release |
+| 0.5.0 | 0.5.0+ (planned) | Planned | Enhanced worktree tracking |
+| 1.0.0 | 1.0.0+ (planned) | Planned | Stable release, new agents |
+
+**Dependencies:** `git >= 2.27`
+**Breaking Changes:** None yet
+**Last Updated:** 2025-12-02
+
+#### sc-manage
+
+| Version | Marketplace | Status | Notes |
+|---------|-------------|--------|-------|
+| 0.4.0 | 0.4.0+ | Beta | Supported, current release |
+| 0.5.0 | 0.5.0+ (planned) | Planned | Registry v2.0.0 support |
+| 1.0.0 | 1.0.0+ (planned) | Planned | Stable release |
+
+**Dependencies:** None
+**Breaking Changes:** None yet
+**Last Updated:** 2025-12-02
+
+#### sc-repomix-nuget
+
+| Version | Marketplace | Status | Notes |
+|---------|-------------|--------|-------|
+| 0.4.0 | 0.4.0+ | Beta | Supported, current release |
+| 0.5.0 | 0.5.0+ (planned) | Planned | .NET 8.0+ support |
+| 1.0.0 | 1.0.0+ (planned) | Planned | Stable release |
+
+**Dependencies:** `python3 >= 3.12`
+**Breaking Changes:** None yet
+**Last Updated:** 2025-12-02
+
+---
+
+### Version 0.4.0 Current Status
+
+**Release Date:** December 2, 2025
+**Status:** Beta - Active Development
+**Support Level:** Full
+**Estimated Stability:** 70%
+
+#### What's Included
+
+- 4 marketplace packages (all v0.4.0)
+- 4 commands
+- 4 skills
+- 14 agents
+- 2 scripts
+- Central registry at `docs/registries/nuget/registry.json`
+- Registry format 2.0.0
+
+#### Known Issues
+
+- No known critical issues
+- API stability may change before 1.0.0
+- v0.5.0 (SC-prefix) is a breaking change from v0.4.0 - updates required for all packages
+
+#### Breaking Change Policy
+
+During beta (0.4.x):
+- Minor breaking changes may occur with MINOR version bumps
+- Major breaking changes reserved for MAJOR version bumps
+- No long-term support for beta versions
+- Beta users should expect to update frequently
+
+---
+
+### Release Timeline
+
+#### Historical
+
+- **v0.4.0** (Dec 2, 2025) - Initial beta release
+  - Marketplace infrastructure
+  - 4 initial packages
+  - Registry format 2.0.0
+  - CLI version 0.4.0
+
+#### Planned Releases
+
+**v0.5.0 (Planned - Q1 2025)**
+- Focus: Feature expansion and API refinement
+- Enhanced package discovery
+- New agent templates
+- Improved token substitution
+- Breaking Changes: Minor CLI adjustments
+- Upgrade Path: 0.4.0 -> 0.5.0 (automatic compatibility)
+
+**v0.6.0 (Planned - Q2 2025)**
+- Focus: Additional package tier support
+- Tier 2 package improvements
+- Registry expansion
+- Breaking Changes: None expected
+
+**v1.0.0 (Planned - Q3/Q4 2025)**
+- Focus: Production-ready release
+- Registry format 3.0.0
+- Stable API contract
+- Long-term support commitment (1 year)
+- Breaking Changes: Registry format, CLI command structure
+- Support Timeline: Full support v1.0.0 - v1.x.x for 12 months
+
+---
+
+### Upgrade Paths
+
+#### Beta to Beta (0.4.0 -> 0.5.0)
+
+**Complexity:** Low | **Risk:** Low | **Time:** 1-2 minutes
+
+1. Backup current installation:
+   ```bash
+   cp -r .claude .claude.backup-0.4.0
+   ```
+
+2. Remove old packages:
+   ```bash
+   rm -rf .claude/commands .claude/skills .claude/agents
+   ```
+
+3. Install new version:
+   ```bash
+   python3 tools/sc-install.py install --version 0.5.0 [package-names]
+   ```
+
+4. Verify installation:
+   ```bash
+   python3 tools/sc-install.py verify
+   ```
+
+5. If issues, rollback:
+   ```bash
+   rm -rf .claude
+   cp -r .claude.backup-0.4.0 .claude
+   ```
+
+#### Beta to Stable (0.4.0 -> 1.0.0)
+
+**Complexity:** Medium | **Risk:** Medium | **Time:** 5-15 minutes
+
+**Breaking Changes in 1.0.0:**
+
+1. **Registry Format Change**
+   - Marketplace: v2.0.0 -> v3.0.0
+   - Package manifests: v1.0.0 -> v2.0.0
+   - New required fields: `minMarketplaceVersion`, `deprecationDate`
+
+2. **CLI Changes**
+   - Installation paths updated
+   - Token substitution syntax refined
+   - New validation requirements
+
+3. **Package Tier Restructuring**
+   - Tier 2 packages require explicit dependency declarations
+   - New runtime validation on install
+
+**Migration Checklist:**
+- [ ] Backup `.claude/` directory
+- [ ] Update CLI to v1.0.0
+- [ ] Review package-specific migration guides
+- [ ] Update token substitution values if needed
+- [ ] Test artifact loading with new version
+- [ ] Verify all dependencies are available
+- [ ] Test in isolated environment first
+
+---
+
+### Supported Version Combinations
+
+#### Recommended: Current Beta (for new projects)
+
+```yaml
+marketplace: 0.4.0
+packages:
+  - sc-delay-tasks: 0.4.0
+  - sc-git-worktree: 0.4.0
+  - sc-manage: 0.4.0
+  - sc-repomix-nuget: 0.4.0
+registry_format: 2.0.0
+cli_version: 0.4.0
+status: "Beta - Actively Tested"
+```
+
+#### Unsupported: Mixed Versions
+
+```yaml
+marketplace: 0.4.0
+packages:
+  - sc-delay-tasks: 0.3.0        # UNSUPPORTED
+  - sc-git-worktree: 0.4.0
+  - sc-manage: 0.5.0          # NOT YET RELEASED
+registry_format: 2.0.0
+status: "UNSUPPORTED"
+```
+
+**Issue:** Incompatible package versions
+**Fix:** Update all packages to 0.4.0
+
+---
+
+### Deprecated & End-of-Life Versions
+
+#### Deprecation Policy
+
+1. **Announcement Phase** (2 weeks)
+   - Public notice of deprecation
+   - Documentation marked [DEPRECATED]
+   - Still fully functional
+
+2. **Deprecation Phase** (4 weeks)
+   - Version shows deprecation warning on install
+   - Alternative version recommended
+   - Still receives critical security fixes
+
+3. **End-of-Life** (After deprecation)
+   - Version no longer available for new installations
+   - Old installations still work (no forced upgrade)
+   - Security issues not fixed
+
+#### Current Deprecation Status
+
+| Version | Status | Reason | Supported Until |
+|---------|--------|--------|-----------------|
+| 0.4.0 | Active | Current | TBD (beta) |
+| 0.3.x and earlier | N/A | Never released | N/A |
+| 1.0.0 (planned) | Future | Stable | 1 year after release + 1 month overlap |
+
+#### End-of-Life Timeline
+
+| Version | Released | Deprecated | EOL | Support Window |
+|---------|----------|-----------|-----|-----------------|
+| 0.4.0 (beta) | Dec 2024 | Q4 2025 | Q1 2026 | ~1 year (beta) |
+| 0.5.0 (beta) | Q1 2025 (est) | Q3 2025 (est) | Q4 2025 (est) | ~6 months (beta) |
+| 1.0.0 | Q3 2025 (est) | Q3 2026 (est) | Q4 2026 (est) | 12+ months (stable) |
+
+---
+
+### Installation Examples
+
+#### Example 1: Fresh Installation (0.4.0)
+
+```bash
+# Initialize .claude directory
+mkdir -p .claude/{commands,skills,agents,scripts}
+
+# Install all packages
+python3 tools/sc-install.py install \
+  --marketplace 0.4.0 \
+  sc-delay-tasks \
+  sc-git-worktree \
+  sc-manage \
+  sc-repomix-nuget
+
+# Verify
+python3 tools/sc-install.py verify
+```
+
+**Result:** SUPPORTED
+
+#### Example 2: Single Package Installation
+
+```bash
+# Install just one package
+python3 tools/sc-install.py install sc-git-worktree
+
+# Verify dependencies
+python3 tools/sc-install.py verify sc-git-worktree
+```
+
+**Output:**
+```
+Package: sc-git-worktree 0.4.0
+Status: Compatible with marketplace 0.4.0
+Dependencies satisfied:
+  - git >= 2.27: Found git 2.43.0
+```
+
+#### Example 3: Version Mismatch (Unsupported)
+
+```bash
+python3 tools/sc-install.py install \
+  --package-version 0.3.0 \
+  sc-git-worktree
+```
+
+**Error:**
+```
+ERROR: Package version 0.3.0 not compatible with marketplace 0.4.0
+Minimum package version: 0.4.0
+```
+
+#### Example 4: Missing Runtime Dependency (Unsupported)
+
+```bash
+# sc-repomix-nuget requires python3 >= 3.12
+python3 tools/sc-install.py install sc-repomix-nuget
+```
+
+**Error (if Python < 3.12):**
+```
+ERROR: Runtime dependency not satisfied for sc-repomix-nuget 0.4.0
+Missing: python3 >= 3.12
+```
+
+#### Example 5: Mixed Tier Installation
+
+```bash
+python3 tools/sc-install.py install \
+  sc-delay-tasks \
+  sc-git-worktree \
+  sc-repomix-nuget
+
+python3 tools/sc-install.py verify
+```
+
+**Output:**
+```
+Installation Report:
+  Tier 0 packages (no dependencies):
+    - sc-delay-tasks 0.4.0
+
+  Tier 1 packages (token substitution):
+    - sc-git-worktree 0.4.0
+
+  Tier 2 packages (runtime dependencies):
+    - sc-repomix-nuget 0.4.0
+      Dependencies satisfied:
+        - python3 >= 3.12: Found 3.12.1
+
+Overall: SUPPORTED
+```
+
+#### Example 6: Conditional Installation
+
+```bash
+#!/bin/bash
+# Install tier 0 and 1 packages (always available)
+python3 tools/sc-install.py install sc-delay-tasks sc-git-worktree
+
+# Check Python version for tier 2 package
+PYTHON_VERSION=$(python3 --version | awk '{print $2}')
+MIN_PYTHON="3.12"
+
+if [[ "$PYTHON_VERSION" > "$MIN_PYTHON" ]]; then
+    echo "Installing tier 2 packages..."
+    python3 tools/sc-install.py install sc-repomix-nuget
+else
+    echo "Python $MIN_PYTHON+ required for sc-repomix-nuget"
+    echo "Skipping sc-repomix-nuget installation"
+fi
+```
+
+---
+
+### Version Troubleshooting
+
+#### Issue 1: Version Conflict Detected
+
+**Symptoms:**
+```
+ERROR: Version conflict detected
+Package: sc-git-worktree
+Expected version: 0.4.0
+Found version: 0.3.0
+```
+
+**Solutions:**
+```bash
+# Option A - Reinstall correct version
+rm .claude/commands/sc-git-worktree.md
+rm -rf .claude/agents/*worktree*
+python3 tools/sc-install.py install --force sc-git-worktree
+
+# Option B - Use sync script
+python3 scripts/set-package-version.py sc-git-worktree 0.4.0
+```
+
+#### Issue 2: Marketplace Version Too Old
+
+**Symptoms:**
+```
+ERROR: Marketplace version 0.3.0 not supported
+Package requires: 0.4.0+
+```
+
+**Solutions:**
+```bash
+# Update CLI
+curl -o tools/sc-install.py https://raw.githubusercontent.com/randlee/synaptic-canvas/main/tools/sc-install.py
+
+# Or reinstall from scratch
+rm -rf .claude
+python3 tools/sc-install.py init
+python3 tools/sc-install.py install sc-delay-tasks
+```
+
+#### Issue 3: Runtime Dependency Missing
+
+**Symptoms:**
+```
+ERROR: Package sc-repomix-nuget requires:
+  python3 >= 3.12
+  Found: python3 3.8
+```
+
+**Solutions:**
+```bash
+# macOS
+brew install python@3.12
+
+# Ubuntu/Debian
+sudo apt-get install python3.12
+
+# Or skip tier 2 packages
+python3 tools/sc-install.py install sc-delay-tasks sc-git-worktree sc-manage
+```
+
+#### Issue 4: Artifact Version Mismatch
+
+**Symptoms:**
+```
+WARNING: Version mismatch detected
+File: .claude/commands/delay.md
+Package version: 0.4.0
+Artifact version: 0.3.0
+```
+
+**Solutions:**
+```bash
+# Option A - Reinstall package
+rm .claude/commands/delay.md
+rm -rf .claude/agents/delay-*
+python3 tools/sc-install.py install --force sc-delay-tasks
+
+# Option B - Use sync script
+python3 scripts/set-package-version.py sc-delay-tasks 0.4.0
+```
+
+#### Issue 5: Token Substitution Failed
+
+**Symptoms:**
+```
+ERROR: Token substitution failed for sc-git-worktree
+Variable: REPO_NAME
+```
+
+**Solutions:**
+```bash
+# Reinstall with token substitution
+cd /path/to/git/repo
+python3 tools/sc-install.py install --force sc-git-worktree
+
+# Or manual substitution
+REPO_NAME=$(basename $(git rev-parse --show-toplevel))
+sed -i "s/{{REPO_NAME}}/$REPO_NAME/g" .claude/agents/sc-git-worktree-*.md
+```
+
+#### Issue 6: Upgrade Interrupted / Partial State
+
+**Symptoms:**
+```
+ERROR: Installation interrupted
+.claude directory in inconsistent state
+```
+
+**Solutions:**
+```bash
+# Option A - Complete the upgrade
+python3 tools/sc-install.py install --force --version 0.5.0 \
+  sc-delay-tasks sc-git-worktree sc-manage
+
+# Option B - Restore from backup
+cp -r .claude-backup-0.4.0 .claude
+python3 tools/sc-install.py verify
+
+# Option C - Clean slate
+rm -rf .claude
+python3 tools/sc-install.py init
+python3 tools/sc-install.py install sc-delay-tasks
+```
+
+---
+
+### Glossary
+
+| Term | Definition |
+|------|------------|
+| **Artifact** | A CLI command, skill, agent, or script included in a package |
+| **Beta** | Pre-release version (0.x.x) with active development and potential breaking changes |
+| **Breaking Change** | A modification that requires updates to existing installations or code |
+| **Compatibility** | The ability of different versions to work together without issues |
+| **Dependency** | An external tool or library required by a package |
+| **End-of-Life (EOL)** | When a version is no longer supported or available |
+| **Marketplace** | The Synaptic Canvas platform that manages packages |
+| **Package** | A collection of related artifacts (commands, skills, agents) |
+| **Registry** | Centralized record of all available packages and versions |
+| **Semantic Versioning** | Version numbering system (MAJOR.MINOR.PATCH) |
+| **Stable** | Production-ready version (1.0.0+) with long-term support commitment |
+| **Tier 0** | Direct copy, no dependencies |
+| **Tier 1** | Token substitution only |
+| **Tier 2** | External runtime dependencies |
+| **Token Substitution** | Automatic replacement of placeholders (e.g., {{REPO_NAME}}) |
+| **Upgrade** | Moving from an older version to a newer one |
 
 ---
 
