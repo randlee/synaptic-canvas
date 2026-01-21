@@ -16,6 +16,20 @@ import pytest
 import yaml
 
 
+def _get_marketplace_version() -> str:
+    """Get the current marketplace version from version.yaml."""
+    version_file = Path("version.yaml")
+    if version_file.exists():
+        with open(version_file) as f:
+            data = yaml.safe_load(f)
+        return data.get("version", "0.8.0")
+    return "0.8.0"
+
+
+# Get the current version dynamically
+_CURRENT_VERSION = _get_marketplace_version()
+
+
 # ===========================
 # SINGLE SOURCE OF TRUTH
 # ===========================
@@ -26,7 +40,7 @@ PACKAGES = {
         'agents': ['sc-delay-once', 'sc-delay-poll', 'sc-git-pr-check-delay'],
         'commands': ['sc-delay'],
         'skills': ['sc-delaying-tasks'],
-        'version': '0.7.0',
+        'version': _CURRENT_VERSION,
         'path': 'packages/sc-delay-tasks',
         'artifact_counts': {'agents': 3, 'commands': 1, 'skills': 1}
     },
@@ -35,7 +49,7 @@ PACKAGES = {
         'agents': ['sc-git-worktree-create', 'sc-git-worktree-scan', 'sc-git-worktree-cleanup', 'sc-git-worktree-abort', 'sc-git-worktree-update'],
         'commands': ['sc-git-worktree'],
         'skills': ['sc-managing-worktrees'],
-        'version': '0.7.0',
+        'version': _CURRENT_VERSION,
         'path': 'packages/sc-git-worktree',
         'artifact_counts': {'agents': 5, 'commands': 1, 'skills': 1}
     },
@@ -44,7 +58,7 @@ PACKAGES = {
         'agents': ['sc-repomix-nuget-analyze', 'sc-repomix-nuget-generate', 'sc-repomix-nuget-validate'],
         'commands': ['sc-repomix-nuget'],
         'skills': ['sc-generating-nuget-context'],
-        'version': '0.7.0',
+        'version': _CURRENT_VERSION,
         'path': 'packages/sc-repomix-nuget',
         'artifact_counts': {'agents': 3, 'commands': 1, 'skills': 1}
     },
@@ -53,7 +67,7 @@ PACKAGES = {
         'agents': ['sc-packages-list', 'sc-package-install', 'sc-package-uninstall', 'sc-package-docs'],
         'commands': ['sc-manage'],
         'skills': ['sc-managing-sc-packages'],
-        'version': '0.7.0',
+        'version': _CURRENT_VERSION,
         'path': 'packages/sc-manage',
         'artifact_counts': {'agents': 4, 'commands': 1, 'skills': 1}
     }
