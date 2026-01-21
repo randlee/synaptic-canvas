@@ -1,9 +1,15 @@
 ---
 name: sc-packages-list
-version: 0.7.0
+version: 0.8.0
 description: Enumerate available Synaptic Canvas packages, detect install scope (no/local/global), and return a machine-readable table.
 model: sonnet
 color: blue
+hooks:
+  PreToolUse:
+    - matcher: "Bash"
+      hooks:
+        - type: command
+          command: "python3 scripts/validate_sc_manage_hook.py"
 ---
 
 # sc-packages-list
@@ -12,19 +18,20 @@ color: blue
 List available packages and detect whether each is installed locally (current repo .claude) or globally.
 
 ## Inputs (optional)
-- `sc_repo_path`: absolute path to the Synaptic Canvas repo. Default: `/Users/randlee/Documents/github/synaptic-canvas`.
-- `global_claude_dir`: absolute path to the global `.claude`. Default: `/Users/randlee/Documents/.claude`.
+- `sc_repo_path`: absolute path to the Synaptic Canvas repo. Default: `SC_REPO_PATH` or repo root.
+- `global_claude_dir`: absolute path to the global `.claude`. Default: `~/.claude` (or `GLOBAL_CLAUDE_DIR`).
 
 ## Execution
-1. Discover packages by reading `<sc_repo_path>/packages/*/manifest.yaml`.
-2. For each manifest, extract:
+1. Run: `python3 scripts/sc_manage_list.py` with JSON stdin.
+2. The script discovers packages by reading `<sc_repo_path>/packages/*/manifest.yaml`.
+3. For each manifest, extract:
    - `name`
    - first line of `description`
    - `install.scope` if present: `local-only` | `global-only` | `both` (default `both`)
-3. Detect installed state:
+4. Detect installed state:
    - Local: `<repo_root>/.claude/` has any of the manifest's artifacts (commands/skills/agents/scripts)
    - Global: `<global_claude_dir>/` has any of the manifest's artifacts
-4. Return a list ordered by package name with `installed` = `no` | `local` | `global` | `both`.
+5. Return a list ordered by package name with `installed` = `no` | `local` | `global` | `both`.
 
 ## Output
 

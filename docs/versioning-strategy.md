@@ -14,7 +14,6 @@ Synaptic Canvas uses a **three-layer versioning system** based on semantic versi
 
 **Location:** `version.yaml`
 **Purpose:** Version of the Synaptic Canvas platform infrastructure (installer, registry format, CLI)
-**Current Version:** 0.5.0 (Beta)
 
 ### When to Bump
 
@@ -45,23 +44,14 @@ Each package maintains its own version independently:
 ```yaml
 # packages/<package-name>/manifest.yaml
 name: <package-name>
-version: 0.4.0  # Package version (SemVer)
+version: 0.8.0  # Package version (SemVer)
 description: "..."
 ```
 
-### Current Package Versions
-
-| Package | Version | Status | Notes |
-|---------|---------|--------|-------|
-| `sc-delay-tasks` | 1.0.0 | Beta | Core polling/delay functionality |
-| `sc-git-worktree` | 1.0.0 | Beta | Worktree management with tracking |
-| `sc-repomix-nuget` | 0.5.0 | Beta | NuGet packaging integration |
-| `sc-manage` | 0.5.0 | Beta | Package manager interface |
-
 ### When to Bump Package Version
 
-- **PATCH** (0.4.1): Bug fixes, documentation updates, non-breaking improvements
-- **MINOR** (0.5.0): New features, new agents/commands/skills, functionality enhancements
+- **PATCH** (0.8.1): Bug fixes, documentation updates, non-breaking improvements
+- **MINOR** (0.9.0): New features, new agents/commands/skills, functionality enhancements
 - **MAJOR** (1.0.0): Breaking changes, major refactoring, API changes, production-ready release
 
 ---
@@ -87,64 +77,69 @@ All artifacts must include version in YAML frontmatter:
 name: <artifact-name>
 description: >
   <description>
-version: 0.4.0
+version: 0.8.0
 ---
 ```
 
 ### Synchronization Rules
 
 - **Commands & Skills:** Version must match parent `manifest.yaml` version
-- **Agents:** Version must match parent package version OR marketplace version (for cross-package agents)
+- **Agents:** Version must match parent package version
 - **Installed Artifacts:** `.claude/` artifacts follow their source package version
 
 ### Validation
 
-Version mismatches are detected by the version audit script:
+Version mismatches are detected by the validation scripts:
 
 ```bash
-./scripts/audit-versions.sh
+python3 scripts/validate-all.py
+python3 scripts/audit-versions.py
 ```
 
 ---
 
-## Implementation Tasks
+## Version Management Script
 
-### CCS.1: Document Versioning Strategy ✅
+The `set-package-version.py` script is the **single source of truth** for version management.
 
-- [x] Create `docs/versioning-strategy.md` (this file)
-- [x] Update `version.yaml` with clarifying comments
-- [x] Document three-layer system clearly
+### Usage
 
-### CCS.2: Add Version Frontmatter
+```bash
+# Update a single package
+python3 scripts/set-package-version.py sc-delay-tasks 0.8.0
 
-- [x] Add version frontmatter to all commands
-- [x] Add version frontmatter to all skills
-- [x] Verify all agents have consistent versions
-- [x] Create frontmatter templates for future artifacts
+# Update all packages to the same version
+python3 scripts/set-package-version.py --all 0.8.0
 
-### CCS.3: Create Version Verification Scripts
+# Update all packages AND marketplace platform version
+python3 scripts/set-package-version.py --all --marketplace 0.8.0
 
-- [ ] `scripts/audit-versions.sh` - Detect mismatches
-- [ ] `scripts/sync-versions.py` - Bulk version updates
-- [ ] `scripts/compare-versions.sh` - Version comparison tool
+# Preview changes without applying
+python3 scripts/set-package-version.py --all 0.8.0 --dry-run
+```
 
-### CCS.4: CI/CD Integration
+### What It Updates
 
-- [ ] Create `.github/workflows/version-audit.yml`
-- [ ] Run audit on every PR and commit
-- [ ] Block merge if versions don't match
+For each package:
+- `packages/<package>/manifest.yaml`
+- `packages/<package>/.claude-plugin/plugin.json`
+- `packages/<package>/commands/*.md` (frontmatter)
+- `packages/<package>/skills/*/SKILL.md` (frontmatter)
+- `packages/<package>/agents/*.md` (frontmatter)
 
-### CCS.5: Update Registry Metadata
+Registry files (regenerated automatically):
+- `.claude-plugin/marketplace.json`
+- `.claude-plugin/registry.json`
+- `docs/registries/nuget/registry.json`
 
-- [ ] Add version fields to `docs/registries/nuget/registry.json`
-- [ ] Include artifact count per version
-- [ ] Document version compatibility
+If `--marketplace`:
+- `version.yaml`
 
-### CCS.6: Developer Documentation
+### Safety Features
 
-- [ ] Update `CONTRIBUTING.md` with versioning section
-- [ ] Add version management instructions for package maintainers
-- [ ] Document bump procedures
+- **Version decrement protection**: Errors if you try to set a lower version
+- **Dry-run mode**: Preview all changes before applying
+- **Skip detection**: Packages already at target version are skipped
 
 ---
 
@@ -152,90 +147,59 @@ Version mismatches are detected by the version audit script:
 
 ### Creating a New Version
 
-When releasing version 0.5.0 of `sc-delay-tasks`:
+When releasing version 0.9.0 of `sc-delay-tasks`:
 
-1. Update package manifest:
-   ```yaml
-   # packages/sc-delay-tasks/manifest.yaml
-   version: 0.5.0
-   ```
+```bash
+# 1. Set the new version (updates all files automatically)
+python3 scripts/set-package-version.py sc-delay-tasks 0.9.0
 
-2. Update all artifacts:
-   ```yaml
-   # packages/sc-delay-tasks/commands/delay.md
-   version: 0.5.0
+# 2. Run validation to verify
+python3 scripts/validate-all.py
 
-   # packages/sc-delay-tasks/skills/delaying-tasks/SKILL.md
-   version: 0.5.0
+# 3. Update CHANGELOG
+# Add entry to packages/sc-delay-tasks/CHANGELOG.md
 
-   # packages/sc-delay-tasks/agents/delay-once.md
-   version: 0.5.0
-   ```
+# 4. Commit with clear message
+git commit -m "chore(sc-delay-tasks): release v0.9.0"
+```
 
-3. Use sync script:
-   ```bash
-   python3 scripts/sync-versions.py --package sc-delay-tasks --version 0.5.0
-   ```
+### Marketplace-Wide Release
 
-4. Update CHANGELOG:
-   ```bash
-   # Add entry to packages/sc-delay-tasks/CHANGELOG.md
-   ```
+When releasing all packages at once:
 
-5. Commit with clear message:
-   ```bash
-   git commit -m "chore(sc-delay-tasks): release v0.5.0"
-   ```
+```bash
+# 1. Set version for all packages and marketplace
+python3 scripts/set-package-version.py --all --marketplace 1.0.0
+
+# 2. Run validation
+python3 scripts/validate-all.py
+
+# 3. Commit
+git commit -m "chore: release v1.0.0"
+```
 
 ### Checking Version Consistency
 
 ```bash
-# Audit all versions
-./scripts/audit-versions.sh
+# Run full validation suite
+python3 scripts/validate-all.py
+
+# Audit versions specifically
+python3 scripts/audit-versions.py
 
 # Compare versions by package
-./scripts/compare-versions.sh --by-package
-
-# Show version mismatches
-./scripts/compare-versions.sh --mismatches
+python3 scripts/compare-versions.py --by-package
 ```
-
----
-
-## Marketplace Release Cycle
-
-When all packages reach feature parity and stability, bump the marketplace version:
-
-```yaml
-# version.yaml
-version: 1.0.0  # Production release
-```
-
-At this point:
-- All packages should be >= 1.0.0
-- All breaking changes documented
-- Registry format stable
-- Installation process proven
-
----
-
-## Version Compatibility Matrix
-
-| Marketplace | Min Package | Agents | Commands | Skills |
-|-------------|-------------|--------|----------|--------|
-| 0.4.0 | 0.4.0 | 0.4.0+ | 0.4.0+ | 0.4.0+ |
-| 1.0.0 | 1.0.0 | 1.0.0+ | 1.0.0+ | 1.0.0+ |
 
 ---
 
 ## Best Practices
 
-1. **Always bump versions together** - Package and artifacts must stay in sync
-2. **Use automated scripts** - `sync-versions.py` prevents manual errors
-3. **Test after versioning** - Run `audit-versions.sh` before committing
-4. **Document changes** - Update CHANGELOG.md with every bump
-5. **Plan releases** - Coordinate version bumps across related packages
-6. **Use semantic versioning** - Reserve MAJOR version for breaking changes
+1. **Use the script** - Always use `set-package-version.py`, never edit versions manually
+2. **Validate after changes** - Run `validate-all.py` before committing
+3. **Document changes** - Update CHANGELOG.md with every version bump
+4. **Use semantic versioning** - Reserve MAJOR version for breaking changes
+5. **Review before release** - Use `--dry-run` to preview changes
 
 ---
 
@@ -244,6 +208,7 @@ At this point:
 - `version.yaml` - Current marketplace platform version
 - `packages/*/manifest.yaml` - Individual package manifests
 - `CHANGELOG.md` - Release history for each package
-- `scripts/audit-versions.sh` - Version consistency checker
-- `scripts/sync-versions.py` - Bulk version updater
-- `.github/workflows/version-audit.yml` - CI enforcement
+- `scripts/set-package-version.py` - Version management script
+- `scripts/validate-all.py` - Full validation suite
+- `scripts/audit-versions.py` - Version consistency checker
+- `RELEASING.md` - Step-by-step release process

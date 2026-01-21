@@ -1,0 +1,72 @@
+# P1 Test: Init flag discovers configuration
+# Component Type: COMMAND
+# Tests: /sc-startup --init
+
+test_id: sc-startup-init-001
+test_name: Init flag discovers configuration
+component_type: command
+description: |
+  Verify /sc-startup --init performs configuration discovery:
+  - Detects candidate startup prompt files
+  - Detects candidate checklist files
+  - Identifies installed packages
+  - Reports findings for user confirmation
+
+setup:
+  commands:
+    # Remove any existing config to test fresh init
+    - rm -f .claude/sc-startup.yaml
+    - mkdir -p pm
+    # Create candidate files for discovery
+    - |
+      cat > pm/ARCH-SC.md << 'EOF'
+      # Architecture Prompt
+      This is a candidate startup prompt file.
+      EOF
+    - |
+      cat > pm/checklist.md << 'EOF'
+      # Project Checklist
+      - [ ] Task 1
+      - [ ] Task 2
+      EOF
+
+execution:
+  prompt: "/sc-startup --init"
+  model: haiku
+  timeout_ms: 60000
+  tools:
+    - Read
+    - Bash
+    - Skill
+    - Task
+    - Glob
+    - AskUserQuestion
+
+expectations:
+  - id: exp-init-agent-started
+    description: sc-startup-init agent is spawned
+    type: subagent_event
+    expected:
+      event: SubagentStart
+      agent_type: "sc-startup-init"
+
+  - id: exp-discovery
+    description: Discovery or detection is mentioned
+    type: output_contains
+    expected:
+      pattern: "(detect|discover|found|candidate|search)"
+      flags: "i"
+
+  - id: exp-prompt-candidate
+    description: Startup prompt candidate identified
+    type: output_contains
+    expected:
+      pattern: "(startup.prompt|ARCH|prompt.*file|candidate)"
+      flags: "i"
+
+  - id: exp-checklist-candidate
+    description: Checklist candidate identified
+    type: output_contains
+    expected:
+      pattern: "(checklist|check.list|task.*list)"
+      flags: "i"

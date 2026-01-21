@@ -1,6 +1,6 @@
 ---
 name: kanban-transition
-version: 0.7.0
+version: 0.8.0
 description: Move kanban cards across backlog/board/done with gates and scrubbing.
 ---
 

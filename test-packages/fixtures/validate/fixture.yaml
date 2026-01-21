@@ -1,0 +1,17 @@
+# Fixture for /validate command tests
+# Tests the /validate slash command that runs the validation suite
+
+name: validate
+description: Tests for /validate command
+package: validate@synaptic-canvas  # root-level command
+
+setup:
+  plugins: []  # root command, no package to install - command is in .claude/commands/ already
+  commands:
+    # Command is in .claude/commands/ already
+    - echo "Validate command test setup complete"
+
+teardown:
+  commands: []
+
+tests_dir: tests

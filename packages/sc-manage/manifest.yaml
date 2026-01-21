@@ -1,5 +1,5 @@
 name: sc-manage
-version: 0.7.0
+version: 0.8.0
 description: >
   Manage Synaptic Canvas Claude packages. List available packages and their install
   status (local/global), and install or uninstall packages according to policy.
@@ -22,6 +22,14 @@ artifacts:
     - agents/sc-package-install.md
     - agents/sc-package-uninstall.md
     - agents/sc-package-docs.md
+  scripts:
+    - scripts/sc_manage_common.py
+    - scripts/sc_manage_list.py
+    - scripts/sc_manage_install.py
+    - scripts/sc_manage_uninstall.py
+    - scripts/sc_manage_docs.py
+    - scripts/sc_manage_dispatch.py
+    - scripts/validate_sc_manage_hook.py
 
 # Runtime requirements
 requires:

@@ -1,7 +1,7 @@
 {
   "name": "sc-github-issue",
   "description": "GitHub issue lifecycle management with worktree isolation. List, create, update issues, and implement fixes in isolated worktrees with automated testing, commits, and PR creation.",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "author": {
     "name": "randlee"
   },

@@ -1,0 +1,37 @@
+# Category A: NO subagent expected (baseline)
+# This test runs a simple bash command - NO subagent should be spawned
+
+test_id: subagent-baseline-001
+test_name: Simple bash command without subagent
+description: |
+  Run a basic `ls -la` command. This should use ONLY the Bash tool.
+  NO Task tool invocation. NO SubagentStart/SubagentStop events.
+  This is the simplest baseline to verify hook capture works.
+
+tags:
+  - baseline
+  - no-subagent
+  - category-a
+
+execution:
+  prompt: "Run `ls -la` in the current directory and show me the output."
+  model: haiku
+  tools:
+    - Bash
+  timeout_ms: 30000
+
+expectations:
+  # MUST happen: Bash tool is called
+  - id: exp-001
+    description: Bash tool invoked with ls command
+    type: tool_call
+    expected:
+      tool: Bash
+      pattern: "ls.*-la"
+
+  # Output should contain directory listing
+  - id: exp-002
+    description: Output contains directory listing
+    type: output_contains
+    expected:
+      pattern: "(total|drwx|README)"

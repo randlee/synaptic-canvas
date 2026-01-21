@@ -160,6 +160,28 @@ artifacts:
     - scripts/my-script.sh
 ```
 
+### Agent Implementation Standard (Python)
+
+When an agent requires deterministic behavior, provide a Python implementation alongside the agent spec:
+
+- **Location**: `packages/<pkg>/agents/<agent_name>.py`
+- **Naming**: match the agent name in snake_case (e.g., `agents/sc-startup-init.md` -> `agents/sc_startup_init.py`).
+- **Manifest**: list the `.py` file under `artifacts.agents` (same section as the `.md`).
+- **Output**: return the v0.5 JSON envelope used by other agents.
+- **Tests**: add unit tests under `packages/<pkg>/tests/` with edge-case coverage; use `pydantic` for input/output validation where possible.
+
+### Shared Python Runtime Dependencies
+
+The installer only copies files listed under `artifacts.*` in `manifest.yaml`, scoped to the package directory. It does **not**
+auto-install shared runtime libraries from `src/` or other packages.
+
+If an agent script imports shared modules, you must:
+
+- **Vendor the dependency** inside the package (e.g., `packages/<pkg>/lib/<module>/` and add to `artifacts.scripts` or `artifacts.agents`), **or**
+- **Provide a documented install step** that installs the shared runtime into `.claude/` before running the agent.
+
+The `dependencies:` field is metadata and is not auto-resolved by the installer today.
+
 ### Optional Fields
 
 ```yaml
@@ -325,10 +347,10 @@ Before committing, verify all versions are synchronized:
 
 ```bash
 # Audit all versions
-./scripts/audit-versions.sh
+./scripts/audit-versions.py
 
 # Compare versions by package
-./scripts/compare-versions.sh --by-package
+python3 scripts/compare-versions.py --by-package
 
 # Update versions in bulk
 python3 scripts/sync-versions.py --package my-package --version 0.5.0
@@ -346,7 +368,7 @@ When ready to release a new version:
 3. **Update CHANGELOG.md** with release notes
 4. **Run audit** to verify consistency:
    ```bash
-   ./scripts/audit-versions.sh
+   ./scripts/audit-versions.py
    ```
 5. **Commit with clear message**:
    ```bash

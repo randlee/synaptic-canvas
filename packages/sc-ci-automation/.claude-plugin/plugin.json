@@ -1,7 +1,7 @@
 {
   "name": "sc-ci-automation",
   "description": "Run CI quality gates (pull → build → test) with optional auto-fix and PR creation. Coordinates pull from upstream, builds projects, runs tests, applies straightforward fixes, and creates PRs when all quality gates pass.",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "author": {
     "name": "randlee"
   },

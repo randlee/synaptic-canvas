@@ -106,7 +106,7 @@ Each package in the registry contains:
 - `license` - SPDX license identifier
 - `author` - Package maintainer
 - `tags` - Searchable keywords (1-20, unique)
-- `artifacts` - Artifact counts (commands, skills, agents, scripts)
+- `artifacts` - Artifact counts (commands, skills, agents, scripts, schemas)
 - `dependencies` - Required system/package dependencies (array)
 - `changelog` - Raw GitHub URL to CHANGELOG.md
 - `lastUpdated` - ISO-8601 date of last update
@@ -278,7 +278,8 @@ Update the schema by:
     "commands": 0,
     "skills": 1,
     "agents": 0,
-    "scripts": 0
+    "scripts": 0,
+    "schemas": 0
   },
   "dependencies": [],
   "changelog": "https://raw.githubusercontent.com/owner/repo/main/packages/simple-tool/CHANGELOG.md",
@@ -307,7 +308,8 @@ Update the schema by:
     "commands": 3,
     "skills": 5,
     "agents": 8,
-    "scripts": 2
+    "scripts": 2,
+    "schemas": 1
   },
   "variables": {
     "API_KEY": {

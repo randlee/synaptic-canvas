@@ -2,6 +2,18 @@
 import json
 from pathlib import Path
 
+import yaml
+
+
+def _get_marketplace_version() -> str:
+    """Get the current marketplace version from version.yaml."""
+    version_file = Path("version.yaml")
+    if version_file.exists():
+        with open(version_file) as f:
+            data = yaml.safe_load(f)
+        return data.get("version", "0.8.0")
+    return "0.8.0"
+
 
 def test_marketplace_json_exists():
     """Verify .claude-plugin/marketplace.json exists."""
@@ -25,6 +37,10 @@ def test_marketplace_json_valid():
         "sc-repomix-nuget",
         "sc-github-issue",
         "sc-startup",
+        "sc-ci-automation",
+        "sc-roslyn-diff",
+        "sc-kanban",
+        "sc-codex",
     ]
     assert len(data["plugins"]) == len(expected_plugins), f"Expected {len(expected_plugins)} plugins, found {len(data['plugins'])}"
     plugin_names = [p["name"] for p in data["plugins"]]
@@ -33,7 +49,7 @@ def test_marketplace_json_valid():
 
 def test_all_packages_have_plugin_json():
     """Verify each package has .claude-plugin/plugin.json."""
-    packages = ["sc-delay-tasks", "sc-git-worktree", "sc-manage", "sc-repomix-nuget", "sc-github-issue", "sc-startup"]
+    packages = ["sc-delay-tasks", "sc-git-worktree", "sc-manage", "sc-repomix-nuget", "sc-github-issue", "sc-startup", "sc-codex"]
 
     for pkg in packages:
         plugin_json = Path(f"packages/{pkg}/.claude-plugin/plugin.json")
@@ -42,12 +58,13 @@ def test_all_packages_have_plugin_json():
         data = json.loads(plugin_json.read_text())
         assert data["name"] == pkg, f"Expected name '{pkg}', got '{data['name']}'"
         assert "version" in data, f"{pkg}/plugin.json missing 'version' field"
-        assert data["version"] == "0.7.0", f"{pkg} expected version 0.7.0, got {data['version']}"
+        expected_version = _get_marketplace_version()
+        assert data["version"] == expected_version, f"{pkg} expected version {expected_version}, got {data['version']}"
 
 
 def test_plugin_json_schema_valid():
     """Verify plugin.json files have required fields."""
-    packages = ["sc-delay-tasks", "sc-git-worktree", "sc-manage", "sc-repomix-nuget", "sc-github-issue", "sc-startup"]
+    packages = ["sc-delay-tasks", "sc-git-worktree", "sc-manage", "sc-repomix-nuget", "sc-github-issue", "sc-startup", "sc-codex"]
 
     required_fields = ["name", "description", "version", "author", "license"]
 
@@ -73,7 +90,7 @@ def test_marketplace_package_sources_exist():
 
 def test_plugin_component_directories_exist():
     """Verify plugin component directories (commands, agents, skills) exist."""
-    packages = ["sc-delay-tasks", "sc-git-worktree", "sc-manage", "sc-repomix-nuget"]
+    packages = ["sc-delay-tasks", "sc-git-worktree", "sc-manage", "sc-repomix-nuget", "sc-codex"]
 
     for pkg in packages:
         plugin_json = Path(f"packages/{pkg}/.claude-plugin/plugin.json")

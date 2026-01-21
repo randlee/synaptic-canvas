@@ -1,5 +1,5 @@
 name: sc-github-issue
-version: 0.7.0
+version: 0.8.0
 description: >
   GitHub issue lifecycle management with worktree isolation: list, create, update, and fix issues
   with automated workflows including PR creation. Integrates with sc-git-worktree for safe isolation.

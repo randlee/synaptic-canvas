@@ -1,0 +1,22 @@
+{
+  "name": "sc-kanban",
+  "description": "Kanban state machine for Synaptic Canvas: backlog to board to done with gate validation, automatic scrubbing, and shared board config.",
+  "version": "0.8.0",
+  "author": {
+    "name": "randlee"
+  },
+  "license": "MIT",
+  "keywords": ["kanban", "task-tracking", "workflow", "git", "pr", "gates"],
+  "commands": [
+    "./commands/sc-kanban.md"
+  ],
+  "agents": [
+    "./agents/kanban-transition.md",
+    "./agents/kanban-query.md",
+    "./agents/kanban-card.md",
+    "./agents/checklist-agent.md"
+  ],
+  "skills": [
+    "./skills/sc-kanban/SKILL.md"
+  ]
+}

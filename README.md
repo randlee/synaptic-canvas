@@ -178,15 +178,21 @@ python3 tools/sc-install.py install sc-delay-tasks
 ```bash
 python3 tools/sc-install.py install PACKAGE_NAME
 ```
-Installs to your global Claude configuration. Use this for tools you want everywhere.
+Installs to your user Claude configuration (`~/.claude`). Use this for tools you want everywhere.
 
 ### Method 2: Repository-Specific Install
 ```bash
+python3 tools/sc-install.py install PACKAGE_NAME --local
+```
+Installs to the current repo’s `.claude/` folder. Use this for repo-specific tools.
+
+### Method 3: Custom Destination Install
+```bash
 python3 tools/sc-install.py install PACKAGE_NAME --dest /path/to/repo/.claude
 ```
-Installs to a specific repository's `.claude/` folder. Use this for repo-specific tools.
+Installs to a specific `.claude/` folder.
 
-### Method 3: Manual Copy
+### Method 4: Manual Copy
 1. Clone or download the package folder
 2. Copy contents to your project's `.claude/` directory
 3. If Tier 1: Replace `{{REPO_NAME}}` tokens with your repository name
@@ -274,7 +280,7 @@ python3 tools/sc-install.py install PACKAGE --dest /path/to/repo/.claude
 ### "Can't find diagnostic info"
 Run the diagnostic tool:
 ```bash
-scripts/security-scan.sh
+scripts/security-scan.py
 ```
 
 ### More help needed?

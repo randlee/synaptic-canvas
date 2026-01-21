@@ -1,6 +1,6 @@
 ---
 name: sc-checklist-status
-version: 0.7.0
+version: 0.8.0
 description: Read the master checklist, scan the repo for missing items, optionally update the checklist, and report a structured status.
 ---
 
@@ -18,7 +18,13 @@ Ensure the master checklist reflects current repo work by scanning for missing i
 ## Execution Steps
 1. Validate inputs:
    - Reject absent `checklist_path` or `repo_root`.
-   - Reject absolute paths that escape `repo_root`; resolve `checklist_path` against `repo_root`.
+   - Resolve `checklist_path` to an absolute path.
+   - Reject paths outside allowed directories. Allowed directories include `repo_root`, `cwd`, and any `permissions.additionalDirectories` listed in:
+     - `~/.claude/settings.json`
+     - `<project>/.claude/settings.json`
+     - `~/.codex/settings.json`
+     - `<project>/.codex/settings.json`
+     - `$CODEX_HOME/settings.json` (if set)
    - If file missing: return `success: false` with `error.code = "VALIDATION.MISSING_CHECKLIST"`.
 2. Load checklist contents.
 3. Scan repo for signals of missing work (lightweight heuristics):

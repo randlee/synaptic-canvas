@@ -1,0 +1,70 @@
+# Category B: Subagent CLEARLY expected (Task tool)
+# Explicitly request Task tool usage - subagent MUST be spawned
+
+test_id: subagent-task-001
+test_name: Explicit Task tool usage spawns subagent
+description: |
+  Explicitly ask Claude to use the Task tool for a background operation.
+  This tests the most direct way to trigger a subagent:
+  telling Claude "use the Task tool".
+
+  Any Task tool call MUST produce SubagentStart/SubagentStop events.
+
+tags:
+  - subagent-required
+  - task-tool
+  - category-b
+
+execution:
+  prompt: |
+    I want you to use the Task tool to count the number of files
+    in this repository. Use Task, not Bash directly.
+    The Task subagent should do the work.
+  model: haiku
+  tools:
+    - Task
+    - Bash
+    - Glob
+  timeout_ms: 120000
+
+expectations:
+  # MUST happen: Task tool invoked (this is the key assertion)
+  - id: exp-001
+    description: Task tool explicitly invoked
+    type: tool_call
+    expected:
+      tool: Task
+      # Any task prompt should work
+      pattern: "."
+
+  # MUST happen: PreToolUse hook for Task
+  - id: exp-002
+    description: PreToolUse hook captures Task invocation
+    type: hook_event
+    expected:
+      event: PreToolUse
+      tool_name: Task
+
+  # MUST happen: SubagentStart event
+  - id: exp-003
+    description: SubagentStart hook event captured
+    type: hook_event
+    expected:
+      event: SubagentStart
+
+  # MUST happen: SubagentStop event
+  - id: exp-004
+    description: SubagentStop hook event captured
+    type: hook_event
+    expected:
+      event: SubagentStop
+
+  # Correlation: SubagentStart and SubagentStop have same agent_id
+  - id: exp-005
+    description: SubagentStart and SubagentStop share agent_id
+    type: subagent_lifecycle
+    expected:
+      events:
+        - SubagentStart
+        - SubagentStop
+      correlation: agent_id

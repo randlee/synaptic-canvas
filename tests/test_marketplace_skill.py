@@ -551,7 +551,7 @@ class TestMarketplaceWorkflows:
         """Mock skill execution context."""
         return {
             "user_dir": Path.home() / ".claude",
-            "project_dir": Path.cwd() / ".claude-local",
+            "project_dir": Path.cwd() / ".claude",
         }
 
     def test_workflow_list_packages(self, mock_skill_context):
@@ -978,7 +978,7 @@ def sample_marketplace_packages():
             "status": "stable",
             "description": "Schedule delayed or interval-based actions",
             "tags": ["delay", "polling", "tasks", "ci", "automation"],
-            "artifacts": {"commands": 1, "skills": 1, "agents": 3, "scripts": 1},
+            "artifacts": {"commands": 1, "skills": 1, "agents": 3, "scripts": 1, "schemas": 0},
             "dependencies": [],
             "repo": "https://github.com/randlee/synaptic-canvas",
             "license": "MIT",
@@ -991,7 +991,7 @@ def sample_marketplace_packages():
             "status": "beta",
             "description": "Create, manage, scan, and clean up git worktrees",
             "tags": ["git", "worktree", "branches", "development", "parallel"],
-            "artifacts": {"commands": 1, "skills": 1, "agents": 4, "scripts": 0},
+            "artifacts": {"commands": 1, "skills": 1, "agents": 4, "scripts": 0, "schemas": 0},
             "dependencies": ["git >= 2.27"],
             "repo": "https://github.com/randlee/synaptic-canvas",
             "license": "MIT",

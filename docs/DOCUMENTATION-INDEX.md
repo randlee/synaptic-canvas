@@ -65,6 +65,7 @@ Each package in `packages/*/` maintains its own documentation:
 | **sc-git-worktree** | 0.4.0 | Git worktree management | [README](../packages/sc-git-worktree/README.md) |
 | **sc-manage** | 0.4.0 | Synaptic Canvas package manager | [README](../packages/sc-manage/README.md) |
 | **sc-repomix-nuget** | 0.4.0 | NuGet context generation | [README](../packages/sc-repomix-nuget/README.md) |
+| **sc-roslyn-diff** | 0.7.0 | Semantic .NET diffs with roslyn-diff | [README](../packages/sc-roslyn-diff/README.md) |
 
 **→ See each package's README.md for details on usage, features, and skills**
 
@@ -80,9 +81,9 @@ Each package in `packages/*/` maintains its own documentation:
 ### Version Tracking
 
 - [Versioning Strategy](./versioning-strategy.md) - Complete versioning policy
-- [Version Audit Script](../scripts/audit-versions.sh) - Verify version consistency
-- [Version Sync Script](../scripts/sync-versions.py) - Update versions bulk
-- [Version Compare Tool](../scripts/compare-versions.sh) - Show versions by package
+- [Version Audit Script](../scripts/audit-versions.py) - Verify version consistency
+- [Version Management Script](../scripts/set-package-version.py) - Set package versions and regenerate registries
+- [Version Compare Tool](.python3 scripts/compare-versions.py) - Show versions by package
 
 ### Changelog Files
 
@@ -99,15 +100,15 @@ Located in `scripts/`:
 
 | Script | Purpose | Usage |
 |--------|---------|-------|
-| `audit-versions.sh` | Verify version consistency across all artifacts | `./scripts/audit-versions.sh` |
-| `sync-versions.py` | Bulk update versions in packages | `python3 scripts/sync-versions.py --package NAME --version X.Y.Z` |
-| `compare-versions.sh` | Compare versions by package | `./scripts/compare-versions.sh --by-package` |
+| `audit-versions.py` | Verify version consistency across all artifacts | `./scripts/audit-versions.py` |
+| `set-package-version.py` | Set package versions and regenerate registries | `python3 scripts/set-package-version.py NAME X.Y.Z` |
+| `compare-versions.py` | Compare versions by package | `python3 scripts/compare-versions.py --by-package` |
 
 ### Validation Scripts
 
 | Script | Purpose | Location |
 |--------|---------|----------|
-| `validate-agents.sh` | Validate agent frontmatter | `scripts/validate-agents.sh` |
+| `validate-agents.py` | Validate agent frontmatter | `scripts/validate-agents.py` |
 
 ---
 
@@ -129,9 +130,9 @@ synaptic-canvas/
 │   ├── sc-manage/                 # Package 3
 │   └── sc-repomix-nuget/             # Package 4
 ├── scripts/                       # Utility scripts
-│   ├── audit-versions.sh
-│   ├── sync-versions.py
-│   ├── compare-versions.sh
+│   ├── audit-versions.py
+│   ├── set-package-version.py
+│   ├── compare-versions.py
 │   └── ...
 ├── .claude/                       # Claude Code configuration
 │   ├── commands/                  # Global commands
@@ -162,17 +163,17 @@ The project uses three synchronized version layers:
 
 **Installing a package:**
 ```bash
-python3 tools/sc-install.py install sc-delay-tasks --dest /path/to/.claude
+python3 tools/sc-install.py install sc-delay-tasks --local
 ```
 
 **Checking version consistency:**
 ```bash
-./scripts/audit-versions.sh
+./scripts/audit-versions.py
 ```
 
 **Updating package version:**
 ```bash
-python3 scripts/sync-versions.py --package sc-git-worktree --version 0.5.0
+python3 scripts/set-package-version.py sc-git-worktree 0.5.0
 ```
 
 **Running tests:**
@@ -200,9 +201,9 @@ pytest -q
 
 **Releasing a new version:**
 1. Update package version in `packages/*/manifest.yaml`
-2. Run `python3 scripts/sync-versions.py --package name --version X.Y.Z`
+2. Run `python3 scripts/set-package-version.py name X.Y.Z`
 3. Update `packages/*/CHANGELOG.md`
-4. Run `./scripts/audit-versions.sh` to verify
+4. Run `./scripts/audit-versions.py` to verify
 5. Commit with clear message
 6. Create git tag: `git tag v0.5.0`
 

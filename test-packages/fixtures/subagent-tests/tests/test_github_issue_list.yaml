@@ -1,0 +1,64 @@
+# Category C: Skill-invoked subagents
+# The /sc-github-issue skill should invoke an intake agent
+
+test_id: subagent-skill-001
+test_name: GitHub issue skill invokes intake agent
+description: |
+  The /sc-github-issue list command should delegate to an intake subagent.
+  This tests that skill-based subagent invocation is captured.
+
+  Expected flow:
+  1. Skill tool invoked (Skill)
+  2. Skill spawns intake subagent
+  3. SubagentStart/SubagentStop hooks fire
+
+tags:
+  - subagent-required
+  - skill-invoked
+  - github-issue
+  - category-c
+
+execution:
+  prompt: "/sc-github-issue list"
+  model: haiku
+  tools:
+    - Skill
+    - Task
+    - Bash
+    - Read
+  timeout_ms: 90000
+
+setup:
+  plugins:
+    - sc-github-issue@synaptic-canvas
+
+expectations:
+  # MUST happen: Skill tool invoked
+  - id: exp-001
+    description: Skill tool invoked for sc-github-issue
+    type: tool_call
+    expected:
+      tool: Skill
+      pattern: "sc-github-issue"
+
+  # SHOULD happen: Subagent spawned by skill
+  - id: exp-002
+    description: SubagentStart hook event captured
+    type: hook_event
+    expected:
+      event: SubagentStart
+
+  # SHOULD happen: Subagent completes
+  - id: exp-003
+    description: SubagentStop hook event captured
+    type: hook_event
+    expected:
+      event: SubagentStop
+
+  # Fallback: At minimum, Task tool should be called
+  - id: exp-004
+    description: Task tool invoked by skill (fallback check)
+    type: tool_call
+    expected:
+      tool: Task
+    optional: true

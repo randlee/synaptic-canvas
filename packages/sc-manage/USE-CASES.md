@@ -111,8 +111,8 @@ You just created a new project repository and want to install Synaptic Canvas pa
 **Tips and Best Practices:**
 - Use `--list` first to see available packages
 - Check package descriptions to understand purpose
-- Use `--local` for repo-specific packages (sc-git-worktree, sc-repomix-nuget)
-- Use `--global` for general-purpose packages (sc-delay-tasks, sc-manage)
+- Use `--local`/`--project` for repo-specific packages (sc-git-worktree, sc-repomix-nuget)
+- Use `--global`/`--user` for general-purpose packages (sc-delay-tasks, sc-manage)
 - Document installed packages in your project README
 - Add `.claude/` to git (or `.claude-packages/` in `.gitignore` if using only scripts)
 
@@ -152,7 +152,7 @@ You're starting a new development workflow and want to understand what Synaptic 
    Provides a /delay command and agents reusable by other skills.
 
    Quick Start:
-   python3 tools/sc-install.py install sc-delay-tasks --dest /Users/<you>/Documents/.claude
+   python3 tools/sc-install.py install sc-delay-tasks --dest ~/.claude
 
    Usage:
    - /delay --once --minutes 2 --action "go"
@@ -1027,7 +1027,7 @@ Error: sc-git-worktree can only be installed locally
 ### Minimum Setup
 ```bash
 # Install sc-manage globally (one-time)
-python3 tools/sc-install.py install sc-manage --dest /Users/<you>/Documents/.claude
+python3 tools/sc-install.py install sc-manage --dest ~/.claude
 
 # In any project, list packages
 /sc-manage --list

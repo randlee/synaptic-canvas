@@ -1,0 +1,37 @@
+test_id: sc-codex-003
+test_name: Resume a Codex task
+description: Run a Codex task, then resume using the agentId from the first run.
+
+execution:
+  prompt: |
+    /sc-codex --background --model mini write a short haiku about rain. Capture the agentId and output_file, but do not tail the log.
+    Verify the output_file exists, then derive <agentId> from the output_file filename (basename without .jsonl).
+    Immediately run /sc-codex --json {"description":"Refine haiku","prompt":"Refine the previous haiku and improve imagery.","subagent_type":"sc-codex","model":"mini","resume":"<agentId>","run_in_background":false}.
+    Replace <agentId> with the derived value, and return the refined haiku with a line `Grade: N` (N is 1-10).
+    Do not run any other Codex tasks. If the resume call fails, report the error and stop.
+  model: haiku
+  tools:
+    - Bash
+  timeout_ms: 120000
+
+expectations:
+  - id: exp-001
+    description: Initial run launches codex task
+    type: tool_call
+    expected:
+      tool: Bash
+      pattern: "sc_codex_task.py.*haiku about rain"
+
+  - id: exp-002
+    description: Resume run uses resume field
+    type: tool_call
+    expected:
+      tool: Bash
+      pattern: "resume"
+
+  - id: exp-003
+    description: Output includes grade
+    type: output_contains
+    expected:
+      pattern: 'Grade:\s*(10|[1-9])\b'
+      flags: "i"

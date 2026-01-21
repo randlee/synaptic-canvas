@@ -1,0 +1,27 @@
+{
+  "name": "sc-roslyn-diff",
+  "description": "Semantic diffing for .NET source using roslyn-diff with JSON-first outputs, HTML reports, and git/PR-aware comparisons.",
+  "version": "0.8.0",
+  "author": {
+    "name": "randlee"
+  },
+  "license": "MIT",
+  "keywords": ["diff", "roslyn", "semantic", "csharp", "vb", "git", "azure", "github"],
+  "commands": [
+    "./commands/sc-diff.md"
+  ],
+  "agents": [
+    "./agents/sc-diff.md",
+    "./agents/sc-git-diff.md"
+  ],
+  "skills": [
+    "./skills/sc-diff/SKILL.md"
+  ],
+  "scripts": [
+    "./scripts/roslyn_diff_runner.py",
+    "./scripts/sc_diff.py",
+    "./scripts/sc_git_diff.py",
+    "./scripts/validate_sc_diff_hook.py",
+    "./scripts/validate_sc_git_diff_hook.py"
+  ]
+}

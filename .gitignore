@@ -1,5 +1,10 @@
 # Local temp files
 .tmp/
+temp/
+.sc/
+.venv/
+.venv.bak/
+.claude/state/
 
 # Archive directory (for historical reference, not in version control)
 .archive/
@@ -9,6 +14,12 @@
 
 # macOS
 .DS_Store
+
+# local test reports
+test-packages/reports/
+
+# Test artifact history (timestamped runs)
+test-packages/reports/history/
 
 # Python
 __pycache__/

@@ -35,7 +35,7 @@ Beta release - initial v0.x publication. Recommended for global installation.
   - Show installation status: none / local-only / global / both scopes
   - Filter by tag or search criteria
   - Respect package installation policies
-- **sc-package-install** agent: Install packages into local or global scopes
+- **sc-package-install** agent: Install packages into local/project or global/user scopes
   - Enforce package scope policies (e.g., sc-git-worktree is local-only)
   - Automatic token substitution for Tier 1 packages ({{REPO_NAME}}, etc.)
   - Validate prerequisites before installation
@@ -52,8 +52,8 @@ Beta release - initial v0.x publication. Recommended for global installation.
   - Link to full documentation and issue tracker
 - `/sc-manage` command: User-facing command for package management
   - `--list`: Show all packages and their installation status
-  - `--install <package> --local|--global`: Install a package
-  - `--uninstall <package> --local|--global`: Uninstall a package
+- `--install <package> --local|--project|--global|--user`: Install a package
+- `--uninstall <package> --local|--project|--global|--user`: Uninstall a package
   - `--docs <package>`: Preview and ask questions about a package
 - **Central Package Registry**: Curated registry of verified packages
   - Registry location: `docs/registries/nuget/registry.json`
@@ -102,7 +102,7 @@ Beta release - initial v0.x publication. Recommended for global installation.
 ### Installation
 ```bash
 # Global installation (recommended)
-python3 tools/sc-install.py install sc-manage --dest /Users/<you>/Documents/.claude
+python3 tools/sc-install.py install sc-manage --dest ~/.claude
 
 # Local (repo-specific) installation
 python3 tools/sc-install.py install sc-manage --dest /path/to/your-repo/.claude

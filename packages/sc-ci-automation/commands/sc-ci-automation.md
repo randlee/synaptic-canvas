@@ -1,6 +1,6 @@
 ---
 name: sc-ci-automation
-version: 0.7.0
+version: 0.8.0
 description: Run CI quality gates (pull → build → test) with optional auto-fix and PR.
 ---
 

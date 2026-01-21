@@ -1,28 +1,31 @@
 ---
 name: sc-package-uninstall
-version: 0.7.0
+version: 0.8.0
 description: Uninstall a Synaptic Canvas package locally (repo .claude) or globally according to package policy.
 model: sonnet
 color: blue
+hooks:
+  PreToolUse:
+    - matcher: "Bash"
+      hooks:
+        - type: command
+          command: "python3 scripts/validate_sc_manage_hook.py"
 ---
 
 # sc-package-uninstall
 
 ## Inputs
 - `package`: required package name
-- `scope`: required `local` | `global`
-- `sc_repo_path`: absolute path to the Synaptic Canvas repo. Default: `/Users/randlee/Documents/github/synaptic-canvas`.
-- `global_claude_dir`: absolute path to the global `.claude`. Default: `/Users/randlee/Documents/.claude`.
+- `scope`: required `local` | `project` | `global` | `user`
+- `sc_repo_path`: absolute path to the Synaptic Canvas repo. Default: `SC_REPO_PATH` or repo root.
+- `global_claude_dir`: absolute path to the global `.claude`. Default: `~/.claude` (or `GLOBAL_CLAUDE_DIR`).
+- `user_claude_dir`: absolute path to the user `.claude`. Default: `~/.claude` (or `USER_CLAUDE_DIR`).
 
 ## Execution
-1. Validate `package` exists under `<sc_repo_path>/packages/`.
-2. If `install.scope: local-only` and `scope=global`, return error (same policy as install).
-3. Resolve destination as in install.
-4. Run uninstaller:
-   ```
-   python3 <sc_repo_path>/tools/sc-install.py uninstall <package> --dest <dest>
-   ```
-5. Return JSON summary.
+1. Run: `python3 scripts/sc_manage_uninstall.py` with JSON stdin.
+2. The script validates package, scope, and install policy.
+3. The script resolves destination and runs `tools/sc-install.py`.
+4. Return JSON summary.
 
 ## Output
 
@@ -30,7 +33,7 @@ color: blue
 ```json
 {
   "success": true,
-  "data": { "package": "sc-delay-tasks", "scope": "global", "dest": "/Users/me/Documents/.claude" },
+  "data": { "package": "sc-delay-tasks", "scope": "global", "dest": "/home/user/.claude" },
   "error": null
 }
 ```

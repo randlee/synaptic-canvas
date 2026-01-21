@@ -1,0 +1,38 @@
+✗ Validation failed with 36 errors:
+  ERROR: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/packages/sc-ci-automation/agents/ci-build-agent.md (model): Field required
+  ERROR: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/packages/sc-ci-automation/agents/ci-fix-agent.md (model): Field required
+  ERROR: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/packages/sc-ci-automation/agents/ci-pr-agent.md (model): Field required
+  ERROR: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/packages/sc-ci-automation/agents/ci-pull-agent.md (model): Field required
+  ERROR: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/packages/sc-ci-automation/agents/ci-root-cause-agent.md (model): Field required
+  ERROR: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/packages/sc-ci-automation/agents/ci-test-agent.md (model): Field required
+  ERROR: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/packages/sc-ci-automation/agents/ci-validate-agent.md (model): Field required
+  ERROR: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/packages/sc-delay-tasks/commands/delay.md (options.0): Input should be a valid string
+  ERROR: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/packages/sc-delay-tasks/skills/sc-delaying-tasks/SKILL.md (entry_point): Field required
+  ERROR: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/packages/sc-git-worktree/agents/sc-git-worktree-cleanup.md (color): Value error, Color must be one of {'blue', 'green', 'gray', 'red', 'purple', 'yellow'}: orange
+  ERROR: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/packages/sc-git-worktree/agents/sc-git-worktree-scan.md (color): Value error, Color must be one of {'blue', 'green', 'gray', 'red', 'purple', 'yellow'}: cyan
+  ERROR: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/packages/sc-git-worktree/commands/sc-git-worktree.md (options.0): Input should be a valid string
+  ERROR: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/packages/sc-git-worktree/skills/sc-git-worktree/SKILL.md (entry_point): Field required
+  ERROR: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/packages/sc-kanban/agents/checklist-agent.md (model): Field required
+  ERROR: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/packages/sc-kanban/agents/kanban-card.md (model): Field required
+  ERROR: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/packages/sc-kanban/agents/kanban-query.md (model): Field required
+  ERROR: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/packages/sc-kanban/agents/kanban-transition.md (model): Field required
+  ERROR: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/packages/sc-kanban/skills/sc-kanban/SKILL.md (entry_point): Field required
+  ERROR: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/packages/sc-manage/agents/sc-package-docs.md (hooks): Extra inputs are not permitted
+  ERROR: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/packages/sc-manage/agents/sc-package-install.md (hooks): Extra inputs are not permitted
+  ERROR: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/packages/sc-manage/agents/sc-package-uninstall.md (hooks): Extra inputs are not permitted
+  ERROR: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/packages/sc-manage/agents/sc-packages-list.md (hooks): Extra inputs are not permitted
+  ERROR: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/packages/sc-manage/commands/sc-manage.md (options.0): Input should be a valid string
+  ERROR: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/packages/sc-manage/skills/managing-sc-packages/SKILL.md (entry_point): Field required
+  ERROR: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/packages/sc-repomix-nuget/agents/sc-repomix-nuget-analyze.md (model): Field required
+  ERROR: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/packages/sc-repomix-nuget/agents/sc-repomix-nuget-generate.md (model): Field required
+  ERROR: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/packages/sc-repomix-nuget/agents/sc-repomix-nuget-validate.md (model): Field required
+  ERROR: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/packages/sc-repomix-nuget/commands/sc-repomix-nuget.md (options.0): Input should be a valid string
+  ERROR: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/packages/sc-repomix-nuget/skills/sc-repomix-nuget/SKILL.md (entry_point): Field required
+  ERROR: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/packages/sc-roslyn-diff/agents/sc-diff.md (hooks): Extra inputs are not permitted
+  ERROR: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/packages/sc-roslyn-diff/agents/sc-git-diff.md (hooks): Extra inputs are not permitted
+  ERROR: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/packages/sc-roslyn-diff/commands/sc-diff.md (options.0): Input should be a valid string
+  ERROR: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/packages/sc-roslyn-diff/skills/sc-diff/SKILL.md (entry_point): Field required
+  ERROR: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/packages/sc-startup/agents/sc-checklist-status.md (model): Field required
+  ERROR: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/packages/sc-startup/agents/sc-startup-init.md (model): Field required
+  ERROR: /Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sprint3-cross-platform/packages/sc-startup/commands/sc-startup.md (options.0): Input should be a valid string
+Exit: 1

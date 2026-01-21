@@ -11,11 +11,11 @@ Run these commands to verify your setup:
 python3 --version
 
 # Check if sc-delay-tasks is installed (global)
-ls -la ~/Documents/.claude/commands/sc-delay.md
+ls -la ~/Documents/.claude/commands/delay.md
 ls -la ~/Documents/.claude/scripts/sc-delay-run.py
 
 # Check if sc-delay-tasks is installed (local)
-ls -la .claude/commands/sc-delay.md
+ls -la .claude/commands/delay.md
 ls -la .claude/scripts/sc-delay-run.py
 
 # Test the delay script directly
@@ -46,10 +46,10 @@ Unknown command: /delay
 1. Verify installation location:
 ```bash
 # For global use
-ls ~/Documents/.claude/commands/sc-delay.md
+ls ~/Documents/.claude/commands/delay.md
 
 # For local use (inside repo)
-ls .claude/commands/sc-delay.md
+ls .claude/commands/delay.md
 ```
 
 2. If missing, reinstall:
@@ -756,7 +756,7 @@ echo $SHELL
 
 2. **Installation details:**
 ```bash
-ls -la .claude/commands/sc-delay.md
+ls -la .claude/commands/delay.md
 ls -la .claude/scripts/sc-delay-run.py
 cat .claude/agents/registry.yaml | grep delay
 ```

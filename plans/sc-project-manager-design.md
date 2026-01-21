@@ -1,5 +1,9 @@
 # Project Manager Skill - Revised Design Document
 
+**Target Release:** Marketplace v0.7.0  
+**Integration:** Prefers sc-kanban as task engine via shared YAML board config; degrades to markdown checklist agent if kanban unavailable (same fenced JSON contract).  
+**Alignment:** v0.5 envelopes + registry/attestation (Agent Runner), shared schema with sc-git-worktree naming and sprint grammar.
+
 ## Updated Architecture
 
 Based on your clarifications and the sc-git-worktree interface analysis:
@@ -21,18 +25,20 @@ sc-project-manager/
 │   └── sc-project-manager/
 │       └── SKILL.md              # Main skill orchestration doc
 ├── agents/
-│   ├── sc-pm-planner.md          # Creates initial project structure
-│   ├── sc-pm-manager.md          # Foreground PM (user-facing)
-│   ├── sc-pm-status.md           # Status analysis agent
-│   ├── sc-pm-scrum-master.md     # Standard sprint coordinator
-│   ├── sc-pm-parallel-scrum.md   # Multi-worktree coordinator
-│   ├── sc-pm-competitive-scrum.md # A/B solution coordinator
-│   ├── sc-pm-merge.md            # Branch merge specialist
-│   ├── sc-pm-dev-default.md      # Default dev agent (fallback)
-│   └── sc-pm-qa-default.md       # Default QA agent (fallback)
+│   ├── sc-pm-manager.md          # v0.7.0: Foreground PM (user-facing)
+│   ├── sc-pm-scrum-master.md     # v0.7.0: Standard sprint coordinator
+│   ├── sc-pm-dev-default.md      # v0.7.0: Default dev agent (fallback)
+│   ├── sc-pm-qa-default.md       # v0.7.0: Default QA agent (fallback)
+│   └── future/                   # v0.8.0+
+│       ├── sc-pm-planner.md          # Creates initial project structure
+│       ├── sc-pm-status.md           # Status analysis agent
+│       ├── sc-pm-parallel-scrum.md   # Multi-worktree coordinator
+│       ├── sc-pm-competitive-scrum.md # A/B solution coordinator
+│       └── sc-pm-merge.md            # Branch merge specialist
 └── templates/
     ├── master-checklist.md
     ├── project-settings.json
+    ├── board.config.example.yaml
     ├── sprint-plan.md
     └── startup-prompt.md
 ```
@@ -78,6 +84,58 @@ Examples:
 - `develop/2-1a-auth-service`
 
 The project manager will invoke `sc-git-worktree` agents with appropriate branch names.
+
+### PM Daily Cadence (Autonomous Loop)
+- Morning (user/ARCH): select 8–10 items from backlog.json (lean), expand into rich cards on board.json (add worktree, dev/qa agents, prompts, acceptance_criteria, max_retries).
+- Daytime (PM unattended): run planned→active→review cycles, coordinating scrum-master and dev→QA iterations; accumulate PRs, update status_report and actual_cycles.
+- Evening (user): review PRs and transition review→done; kanban scrubs rich fields into done.json (keep sprint_id, title, pr_url, completed_at, actual_cycles).
+
+### Shared Board Config (with sc-kanban)
+
+- Single YAML source of truth shared with sc-kanban (default path: `.project/board.config.yaml`; override via command flag/env). Versioned to 0.7 schema. Example config: `templates/board.config.example.yaml`.
+- Kanban provider uses three files: `backlog.json` (lean), `board.json` (rich), `done.json` (scrubbed). Checklist provider uses `roadmap.md` + ephemeral `prompts/<sprint_id>.md` (no gates).
+- Provider flag allows plug-in swap between kanban engine and markdown checklist agent while keeping the same fenced JSON interface and card schema.
+- Config is validated (Pydantic v2 strict models) before orchestration; mutations are refused on version mismatch or invalid schema.
+- Card schema (kanban provider):
+  - Backlog (lean): `sprint_id`, `title`, `dependencies`.
+  - Board (rich planning): `worktree`, `dev_agent`, `qa_agent`, `dev_prompt`, `qa_prompt`, `acceptance_criteria`, `max_retries`, `base_branch`.
+  - Execution updates: `pr_url`, `status_report`, `actual_cycles`, `started_at`, `completed_at`, `status`.
+  - Done (scrubbed): keep `sprint_id`, `title`, `pr_url`, `completed_at`, `actual_cycles`; drop prompts/criteria/assignments.
+- Current status: Core board operations implemented; gates stubbed (v0.7.1), PM agents not yet implemented.
+- Example:
+  ```yaml
+  version: 0.7
+  board:
+    backlog_path: .project/backlog.json
+    board_path: .project/board.json
+    done_path: .project/done.json
+    provider: kanban                   # kanban|checklist
+    wip:
+      per_column:
+        active: 3
+        review: 2
+    columns:
+      - id: planned
+      - id: active
+      - id: review
+      - id: done
+  cards:
+    fields:
+      - id: worktree
+        required: true
+      - id: pr_url
+        required: false
+      - id: assignee
+        required: false
+    conventions:
+      worktree_pattern: "<project-branch>/<sprint-id>-<sprint-name>"
+      sprint_id_grammar: "<phase>.<number>[<letter>]*"
+  agents:
+    transition: sc-kanban/kanban-transition
+    query: sc-kanban/kanban-query
+    checklist_fallback: checklist-agent/query-update
+  ```
+- When `provider=kanban`, PM calls sc-kanban agents for `transition`/`query` and consumes `failed_gates`/`warnings`. When `provider=checklist`, PM swaps to the checklist agent but keeps the same envelope contract and card fields.
 
 ---
 
@@ -170,7 +228,7 @@ The project manager will invoke `sc-git-worktree` agents with appropriate branch
 }
 ```
 
-### Master Checklist Structure (roadmap.md)
+### Master Checklist Structure (roadmap.md) — checklist provider only
 
 ```markdown
 # Backend Migration Roadmap
@@ -253,10 +311,11 @@ Brief description and goals.
 │                   COMMAND HANDLER                                │
 │              (project-resume.md)                                 │
 │  1. Validate checklist path                                      │
-│  2. Load project settings                                        │
-│  3. Task → sc-pm-status (background)                            │
-│  4. Read startup prompt                                          │
-│  5. Task → sc-pm-manager (foreground handoff)                   │
+│  2. Load project settings + shared board config (yaml)           │
+│  3. Select provider: kanban (preferred) or checklist fallback    │
+│  4. Task → sc-pm-status (background) using provider agents       │
+│  5. Read startup prompt                                          │
+│  6. Task → sc-pm-manager (foreground handoff)                    │
 └───────────────────────────┬─────────────────────────────────────┘
                             │
         ┌───────────────────┼───────────────────┐
@@ -305,6 +364,11 @@ Brief description and goals.
    → OR creates inline agent prompt based on sprint requirements
 ```
 
+Provider selection for task tracking (shared with sc-kanban):
+- If `provider=kanban`, status/manager/scrum agents call `kanban-query` for reads and `kanban-transition` for moves/archives, consuming `failed_gates`/`warnings`.
+- If `provider=checklist`, the same calls route to the checklist agent (`templates/checklist-agent.md`), which returns the same v0.5 envelope shape so orchestration code is unchanged.
+- Checklist provider flow: PM reads `roadmap.md`, creates ephemeral prompts under `prompts/<sprint_id>.md`, runs manual transitions (no gates), and stores lean card refs; does not use backlog/board/done JSON files.
+
 ---
 
 ## Scrum Master Sprint Process (Detailed)
@@ -319,6 +383,7 @@ a) VERIFY STARTING CONDITIONS
    - Verify base branch exists and is clean
    - Check dependencies (prior sprints complete)
    - Load agent assignments or select agents
+   - Query board via provider (kanban-query or checklist agent) to ensure card exists with matching worktree naming
 
 b) CREATE WORKTREE
    - Task → sc-git-worktree-create
@@ -326,6 +391,7 @@ b) CREATE WORKTREE
      base: <base-branch>
      purpose: <sprint-description>
    - Update roadmap-worktrees.json
+   - Create/update rich card on board.json (kanban provider) with prompts, acceptance_criteria, max_retries
 
 c) VERIFY WORKTREE
    - Confirm worktree clean
@@ -347,6 +413,8 @@ f) EVALUATE QUALITY
      - Commit/push if autoCommit enabled
      - Create PR if autoCreatePR enabled
      - Update checklist status
+     - Update board via provider transition (kanban-transition or checklist agent) with gate results
+     - On kanban provider, prepare for review→done scrubbing (PR merged, worktree removed, code clean)
      - Report success to PM
    
    IF quality == "minor_issues":
@@ -404,6 +472,8 @@ sc-pm-competitive-scrum runs same work on multiple approaches:
 
 This skill depends on:
 - **sc-git-worktree** (v0.5.2+): Worktree creation, scanning, cleanup, and abort operations
+- **sc-kanban** (preferred): Transition/query gates, WIP enforcement, git/PR validation via shared YAML config
+- **checklist-agent** (fallback): Markdown checklist read/update with same fenced JSON envelope when `provider=checklist`
 
 ---
 

@@ -117,7 +117,7 @@ def validate_registry_structure(registry: Dict[str, Any],
                     if not isinstance(artifacts, dict):
                         errors.append(f"Package '{pkg_name}': 'artifacts' must be an object")
                     else:
-                        for artifact_type in ['commands', 'skills', 'agents', 'scripts']:
+                        for artifact_type in ['commands', 'skills', 'agents', 'scripts', 'schemas']:
                             if artifact_type not in artifacts:
                                 errors.append(f"Package '{pkg_name}': Missing artifact type '{artifact_type}'")
                             elif not isinstance(artifacts[artifact_type], int) or artifacts[artifact_type] < 0:

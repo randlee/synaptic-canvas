@@ -29,10 +29,10 @@
 
 ```bash
 # Quick system health check
-./scripts/audit-versions.sh
+./scripts/audit-versions.py
 
 # Compare versions across packages
-./scripts/compare-versions.sh
+python3 scripts/compare-versions.py
 
 # Validate registry integrity
 python3 docs/registries/nuget/validate-registry.py
@@ -62,7 +62,7 @@ git status
 git remote -v
 
 # 4. Run comprehensive version audit
-./scripts/audit-versions.sh --verbose
+./scripts/audit-versions.py --verbose
 
 # 5. Validate registry
 python3 docs/registries/nuget/validate-registry.py --verbose
@@ -74,15 +74,15 @@ python3 docs/registries/nuget/validate-registry.py --verbose
 
 ### Core Diagnostic Scripts
 
-#### 1. `scripts/audit-versions.sh`
+#### 1. `scripts/audit-versions.py`
 
 **Purpose:** Verify version consistency across packages and artifacts
 
-**Location:** `/Users/randlee/Documents/github/synaptic-canvas/scripts/audit-versions.sh`
+**Location:** `/Users/randlee/Documents/github/synaptic-canvas/scripts/audit-versions.py`
 
 **Usage:**
 ```bash
-./scripts/audit-versions.sh [OPTIONS]
+./scripts/audit-versions.py [OPTIONS]
 
 Options:
   --verbose        Show all checks (including passing checks)
@@ -100,7 +100,7 @@ Options:
 **Example Output (Success):**
 
 ```bash
-$ ./scripts/audit-versions.sh
+$ ./scripts/audit-versions.py
 
 === Synaptic Canvas Version Audit ===
 
@@ -123,7 +123,7 @@ All checks passed!
 **Example Output (With Errors):**
 
 ```bash
-$ ./scripts/audit-versions.sh
+$ ./scripts/audit-versions.py
 
 === Synaptic Canvas Version Audit ===
 
@@ -173,9 +173,9 @@ version: 0.4.0
 ```
 ✗ FAIL Command in sc-delay-tasks: Version mismatch: command=0.3.0, package=0.4.0
 ```
-**Fix:** Use sync-versions.py to update:
+**Fix:** Use set-package-version.py to update:
 ```bash
-python3 scripts/sync-versions.py --package sc-delay-tasks --version 0.4.0
+python3 scripts/set-package-version.py sc-delay-tasks 0.4.0
 ```
 
 ⚠️ **Missing CHANGELOG:**
@@ -186,116 +186,88 @@ python3 scripts/sync-versions.py --package sc-delay-tasks --version 0.4.0
 
 ---
 
-#### 2. `scripts/sync-versions.py`
+#### 2. `scripts/set-package-version.py`
 
-**Purpose:** Synchronize version numbers across package artifacts
+**Purpose:** Set package versions and regenerate all registry files
 
-**Location:** `/Users/randlee/Documents/github/synaptic-canvas/scripts/sync-versions.py`
+**Location:** `/Users/randlee/Documents/github/synaptic-canvas/scripts/set-package-version.py`
 
 **Usage:**
 ```bash
-python3 scripts/sync-versions.py [OPTIONS]
-
-Required:
-  --version VERSION    Target version (SemVer: X.Y.Z)
-
-Scope (choose one):
-  --package NAME       Update version for specific package
-  --marketplace        Update marketplace platform version (version.yaml)
-  --all                Update all packages to same version
+python3 scripts/set-package-version.py <package> <version>
+python3 scripts/set-package-version.py --all <version>
+python3 scripts/set-package-version.py --all --marketplace <version>
 
 Options:
-  --commit             Create git commit after update
   --dry-run            Show changes without applying
+  --force              Allow version decrement (use with caution)
 ```
 
 **Examples:**
 
 **Update single package:**
 ```bash
-# Update sc-delay-tasks to version 0.5.0
-python3 scripts/sync-versions.py --package sc-delay-tasks --version 0.5.0
+# Update sc-delay-tasks to version 0.9.0
+python3 scripts/set-package-version.py sc-delay-tasks 0.9.0
 
 # Output:
-Syncing sc-delay-tasks to version 0.5.0...
-  ✓ Updated: /path/to/packages/sc-delay-tasks/manifest.yaml
-  ✓ Updated: /path/to/packages/sc-delay-tasks/commands/delay.md
-  ✓ Updated: /path/to/packages/sc-delay-tasks/skills/delaying-tasks/SKILL.md
-  ✓ Updated: /path/to/packages/sc-delay-tasks/agents/delay-once.md
-  ✓ Updated: /path/to/packages/sc-delay-tasks/agents/delay-poll.md
-  ✓ Updated: /path/to/packages/sc-delay-tasks/agents/git-pr-check-delay.md
-Updated 6 file(s) in sc-delay-tasks
+Setting version to 0.9.0
+============================================================
+sc-delay-tasks: 0.8.0 -> 0.9.0
+  ✓ packages/sc-delay-tasks/manifest.yaml
+  ✓ packages/sc-delay-tasks/.claude-plugin/plugin.json
+  ✓ packages/sc-delay-tasks/commands/delay.md
+  ...
+============================================================
+Regenerating registry files...
+  ✓ .claude-plugin/marketplace.json
+  ✓ .claude-plugin/registry.json
+  ✓ docs/registries/nuget/registry.json
 ```
 
-**Update marketplace version:**
+**Update all packages:**
 ```bash
-# Update marketplace platform version
-python3 scripts/sync-versions.py --marketplace --version 0.5.0
-
-# Output:
-Syncing marketplace to version 0.5.0...
-  ✓ Updated: /path/to/version.yaml
+# Update ALL packages to version 1.0.0
+python3 scripts/set-package-version.py --all 1.0.0
 ```
 
-**Update all packages (rare):**
+**Update all packages AND marketplace version:**
 ```bash
-# Update ALL packages to version 1.0.0 (major release)
-python3 scripts/sync-versions.py --all --version 1.0.0
-
-# Output:
-Syncing all packages to version 1.0.0...
-Syncing sc-delay-tasks to version 1.0.0...
-  ✓ Updated: /path/to/packages/sc-delay-tasks/manifest.yaml
-  ...
-Syncing sc-git-worktree to version 1.0.0...
-  ✓ Updated: /path/to/packages/sc-git-worktree/manifest.yaml
-  ...
+# Update all packages and marketplace platform version
+python3 scripts/set-package-version.py --all --marketplace 1.0.0
 ```
 
 **Dry run (preview changes):**
 ```bash
-python3 scripts/sync-versions.py --package sc-delay-tasks --version 0.5.0 --dry-run
+python3 scripts/set-package-version.py --all 0.9.0 --dry-run
 
 # Shows what would be updated without making changes
 ```
 
-**With automatic commit:**
-```bash
-python3 scripts/sync-versions.py --package sc-delay-tasks --version 0.5.0 --commit
-
-# Output:
-Syncing sc-delay-tasks to version 0.5.0...
-  ✓ Updated: ...
-Updated 6 file(s) in sc-delay-tasks
-✓ Created git commit: chore(versioning): sync versions across artifacts
-```
-
 **Exit Codes:**
 - `0` - Success
-- `1` - Validation error or update failure
+- `1` - Validation error or version decrement attempted
 
-**Validation:**
-
-The script validates version format before updating:
-
-```bash
-# Invalid version format
-python3 scripts/sync-versions.py --package sc-delay-tasks --version 1.0
-
-# Error:
-Error: Invalid version format: 1.0
-Must be semantic version (X.Y.Z)
-```
+**Safety Features:**
+- **Version decrement protection**: Errors if you try to set a lower version
+- **Dry-run mode**: Preview all changes before applying
+- **Skip detection**: Packages already at target version are skipped
 
 **What It Updates:**
 
-For package updates:
+For each package:
 - ✅ `packages/<name>/manifest.yaml`
+- ✅ `packages/<name>/.claude-plugin/plugin.json`
 - ✅ `packages/<name>/commands/*.md` (version frontmatter)
 - ✅ `packages/<name>/skills/*/SKILL.md` (version frontmatter)
 - ✅ `packages/<name>/agents/*.md` (version frontmatter)
 
-For marketplace updates:
+Registry files (regenerated automatically):
+- ✅ `.claude-plugin/marketplace.json`
+- ✅ `.claude-plugin/registry.json`
+- ✅ `docs/registries/nuget/registry.json`
+
+If `--marketplace`:
 - ✅ `version.yaml`
 
 **Version Format:**
@@ -306,15 +278,15 @@ Must be semantic version (SemVer):
 
 ---
 
-#### 3. `scripts/compare-versions.sh`
+#### 3. `scripts/compare-versions.py`
 
 **Purpose:** Compare version numbers across packages and display discrepancies
 
-**Location:** `/Users/randlee/Documents/github/synaptic-canvas/scripts/compare-versions.sh`
+**Location:** `/Users/randlee/Documents/github/synaptic-canvapython3 scripts/compare-versions.py`
 
 **Usage:**
 ```bash
-./scripts/compare-versions.sh [OPTIONS]
+python3 scripts/compare-versions.py [OPTIONS]
 
 Options:
   --by-package    Show versions grouped by package (default)
@@ -327,7 +299,7 @@ Options:
 
 **Basic comparison:**
 ```bash
-./scripts/compare-versions.sh
+python3 scripts/compare-versions.py
 
 # Output:
 === Synaptic Canvas Version Comparison ===
@@ -347,7 +319,7 @@ All versions consistent!
 
 **Show only mismatches:**
 ```bash
-./scripts/compare-versions.sh --mismatches
+python3 scripts/compare-versions.py --mismatches
 
 # Output:
 === Synaptic Canvas Version Comparison ===
@@ -361,7 +333,7 @@ Package: sc-delay-tasks (manifest: 0.4.0)
 
 **Verbose output (show all artifacts):**
 ```bash
-./scripts/compare-versions.sh --verbose
+python3 scripts/compare-versions.py --verbose
 
 # Output:
 === Synaptic Canvas Version Comparison ===
@@ -390,7 +362,7 @@ All versions consistent!
 
 **With version mismatches:**
 ```bash
-./scripts/compare-versions.sh --verbose
+python3 scripts/compare-versions.py --verbose
 
 # Output:
 === Synaptic Canvas Version Comparison ===
@@ -410,7 +382,7 @@ Version mismatches found
 
 **JSON output:**
 ```bash
-./scripts/compare-versions.sh --json
+python3 scripts/compare-versions.py --json
 
 # Output:
 {
@@ -898,10 +870,10 @@ delay-run.py  generate.sh  validate-registry.sh
 **Check script execute permissions:**
 ```bash
 # Check audit script
-ls -l scripts/audit-versions.sh
+ls -l scripts/audit-versions.py
 
 # Expected output:
--rwxr-xr-x  1 user  staff  6045 Dec  2 09:22 scripts/audit-versions.sh
+-rwxr-xr-x  1 user  staff  6045 Dec  2 09:22 scripts/audit-versions.py
 #  ^^^  - Should have execute permission (x)
 ```
 
@@ -916,7 +888,7 @@ find scripts/ -name "*.sh" -type f ! -perm -u+x
 **Fix missing execute permissions:**
 ```bash
 # Add execute permission to specific script
-chmod +x scripts/audit-versions.sh
+chmod +x scripts/audit-versions.py
 
 # Add execute permission to all shell scripts
 find scripts/ -name "*.sh" -type f -exec chmod +x {} \;
@@ -924,10 +896,10 @@ find scripts/ -name "*.sh" -type f -exec chmod +x {} \;
 
 **Check Python scripts are readable:**
 ```bash
-ls -l scripts/sync-versions.py
+ls -l scripts/set-package-version.py
 
 # Expected output:
--rwxr-xr-x  1 user  staff  9163 Dec  2 09:23 scripts/sync-versions.py
+-rwxr-xr-x  1 user  staff  9163 Dec  2 09:23 scripts/set-package-version.py
 ```
 
 ---
@@ -1094,7 +1066,7 @@ worktree-create: 0.4.0
 **Verify artifact versions match package versions:**
 ```bash
 # Run comprehensive audit
-./scripts/audit-versions.sh
+./scripts/audit-versions.py
 
 # Or check manually for a specific package
 package_name="sc-delay-tasks"
@@ -1402,7 +1374,7 @@ cat .github/workflows/version-audit.yml
 **Test version audit locally (simulate CI):**
 ```bash
 # Run the same command that CI runs
-./scripts/audit-versions.sh
+./scripts/audit-versions.py
 
 # Check exit code
 if [ $? -eq 0 ]; then
@@ -1491,7 +1463,7 @@ du -sh packages/*
 **Measure audit script performance:**
 ```bash
 # Time the audit script
-time ./scripts/audit-versions.sh
+time ./scripts/audit-versions.py
 
 # Output:
 === Synaptic Canvas Version Audit ===
@@ -1506,7 +1478,7 @@ sys     0m0.198s
 **Measure sync script performance:**
 ```bash
 # Time the sync script (dry run)
-time python3 scripts/sync-versions.py --package sc-delay-tasks --version 0.4.0 --dry-run
+time python3 scripts/set-package-version.py --package sc-delay-tasks --version 0.4.0 --dry-run
 
 # Output:
 Syncing sc-delay-tasks to version 0.4.0...
@@ -1653,7 +1625,7 @@ zsh 5.9 (x86_64-apple-darwin23.0.0)
 **Test POSIX compatibility:**
 ```bash
 # Run script with POSIX sh
-sh scripts/audit-versions.sh
+sh scripts/audit-versions.py
 
 # If it works, scripts are POSIX compatible
 ```
@@ -1664,16 +1636,16 @@ sh scripts/audit-versions.sh
 
 ### Audit Script JSON
 
-Currently, `audit-versions.sh` does not output JSON. Consider using `compare-versions.sh --json` for structured output.
+Currently, `audit-versions.py` does not output JSON. Consider using `compare-versions.py --json` for structured output.
 
-**Feature request:** Add `--json` flag to `audit-versions.sh`
+**Feature request:** Add `--json` flag to `audit-versions.py`
 
 ---
 
 ### Compare Versions JSON
 
 ```bash
-./scripts/compare-versions.sh --json
+python3 scripts/compare-versions.py --json
 ```
 
 **Output:**
@@ -1774,17 +1746,17 @@ python3 docs/registries/nuget/validate-registry.py --json
 
 **Problem:**
 ```bash
-$ ./scripts/audit-versions.sh
--bash: ./scripts/audit-versions.sh: Permission denied
+$ ./scripts/audit-versions.py
+-bash: ./scripts/audit-versions.py: Permission denied
 ```
 
 **Solution:**
 ```bash
 # Add execute permission
-chmod +x scripts/audit-versions.sh
+chmod +x scripts/audit-versions.py
 
 # Run again
-./scripts/audit-versions.sh
+./scripts/audit-versions.py
 ```
 
 ---
@@ -1793,7 +1765,7 @@ chmod +x scripts/audit-versions.sh
 
 **Problem:**
 ```bash
-$ python3 scripts/sync-versions.py
+$ python3 scripts/set-package-version.py
 -bash: python3: command not found
 ```
 
@@ -1811,7 +1783,7 @@ brew install python3
 sudo apt-get install python3
 
 # Try with python instead of python3
-python scripts/sync-versions.py
+python scripts/set-package-version.py
 ```
 
 ---
@@ -1843,17 +1815,17 @@ cd /path/to/synaptic-canvas
 
 **Problem:**
 ```bash
-$ ./scripts/audit-versions.sh
+$ ./scripts/audit-versions.py
 ✗ FAIL Command in sc-delay-tasks: Version mismatch: command=0.3.0, package=0.4.0
 ```
 
 **Solution:**
 ```bash
 # Use sync script to fix
-python3 scripts/sync-versions.py --package sc-delay-tasks --version 0.4.0
+python3 scripts/set-package-version.py --package sc-delay-tasks --version 0.4.0
 
 # Verify fix
-./scripts/audit-versions.sh
+./scripts/audit-versions.py
 ```
 
 ---
@@ -2022,7 +1994,7 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: Check versions
-        run: ./scripts/audit-versions.sh
+        run: ./scripts/audit-versions.py
 
       - name: Check READMEs
         run: ./scripts/check-readmes.sh
@@ -2061,12 +2033,12 @@ jobs:
 ### Diagnostic Checklists
 
 **Pre-Commit Checklist:**
-- [ ] Run `./scripts/audit-versions.sh`
-- [ ] Run `./scripts/compare-versions.sh`
+- [ ] Run `./scripts/audit-versions.py`
+- [ ] Run `python3 scripts/compare-versions.py`
 - [ ] Check no uncommitted version changes
 
 **Pre-Release Checklist:**
-- [ ] Run `./scripts/audit-versions.sh --verbose`
+- [ ] Run `./scripts/audit-versions.py --verbose`
 - [ ] Run `python3 docs/registries/nuget/validate-registry.py --verbose`
 - [ ] Verify all package versions match
 - [ ] Check all CHANGELOGs are updated
@@ -2104,8 +2076,8 @@ jobs:
 | Exit Code | Meaning | Tools |
 |-----------|---------|-------|
 | 0 | Success | All |
-| 1 | Validation failure | audit-versions.sh, compare-versions.sh, validate-registry.py |
-| 2 | Critical error | audit-versions.sh |
+| 1 | Validation failure | audit-versions.py, compare-versions.py, validate-registry.py |
+| 2 | Critical error | audit-versions.py |
 
 ---
 

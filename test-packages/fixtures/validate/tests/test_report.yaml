@@ -1,0 +1,41 @@
+# P2 Test: Report generation
+# Component Type: COMMAND
+# Tests: /validate --report
+
+test_id: validate-report-001
+test_name: Report generation creates HTML file
+component_type: command
+description: |
+  Verify /validate --report generates an HTML validation report.
+  Should run validation and then generate HTML report.
+
+execution:
+  prompt: "/validate --quick --report"
+  model: haiku
+  timeout_ms: 180000
+  tools:
+    - Read
+    - Bash
+    - Glob
+
+expectations:
+  - id: exp-generates-report
+    description: Generates HTML report
+    type: tool_call
+    expected:
+      tool: Bash
+      pattern: "generate-validation-report.py"
+
+  - id: exp-report-saved
+    description: Report file is saved
+    type: output_contains
+    expected:
+      pattern: "(report.*saved|saved.*report|\.html)"
+      flags: "i"
+
+  - id: exp-validation-status
+    description: Shows validation status
+    type: output_contains
+    expected:
+      pattern: "(PASSED|FAILED|validation)"
+      flags: "i"

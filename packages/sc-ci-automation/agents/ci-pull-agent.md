@@ -1,6 +1,6 @@
 ---
 name: ci-pull-agent
-version: 0.7.0
+version: 0.8.0
 description: Pull target branch and handle straightforward conflicts.
 ---
 

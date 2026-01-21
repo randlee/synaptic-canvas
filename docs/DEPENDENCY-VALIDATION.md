@@ -167,7 +167,7 @@ Python 3.11.5 (or higher)
 - Wide availability across platforms
 
 **Used By:**
-- `scripts/sync-versions.py` - Version synchronization
+- `scripts/set-package-version.py` - Version management and registry regeneration
 - `docs/registries/nuget/validate-registry.py` - Registry validation
 - Various package scripts
 
@@ -276,8 +276,8 @@ GNU bash, version 5.2.15(1)-release (or higher)
 - Standard on most Unix-like systems
 
 **Used By:**
-- `scripts/audit-versions.sh` - Version auditing
-- `scripts/compare-versions.sh` - Version comparison
+- `scripts/audit-versions.py` - Version auditing
+- `scripts/compare-versions.py` - Version comparison
 - Various package installation scripts
 
 **Validation Command:**
@@ -289,7 +289,7 @@ echo "Current shell: $SHELL"
 bash --version | head -1
 
 # Check if scripts can run
-./scripts/audit-versions.sh --help 2>/dev/null && echo "✓ Scripts can execute" || echo "✗ Scripts cannot execute"
+./scripts/audit-versions.py --help 2>/dev/null && echo "✓ Scripts can execute" || echo "✗ Scripts cannot execute"
 ```
 
 **Check POSIX Compatibility:**
@@ -298,7 +298,7 @@ bash --version | head -1
 sh -c "echo 'POSIX shell available'" && echo "✓ POSIX shell works"
 
 # Check if scripts work with sh
-sh scripts/audit-versions.sh 2>&1 | grep -q "not found" && echo "⚠ Scripts may need Bash" || echo "✓ Scripts POSIX compatible"
+sh scripts/audit-versions.py 2>&1 | grep -q "not found" && echo "⚠ Scripts may need Bash" || echo "✓ Scripts POSIX compatible"
 ```
 
 **Installation:**
@@ -897,8 +897,8 @@ if command -v bash > /dev/null 2>&1; then
     echo "  ✓ Bash installed: $bash_version"
 
     # Test if scripts can execute
-    if [[ -f "scripts/audit-versions.sh" ]]; then
-        bash scripts/audit-versions.sh --help > /dev/null 2>&1
+    if [[ -f "scripts/audit-versions.py" ]]; then
+        bash scripts/audit-versions.py --help > /dev/null 2>&1
         if [ $? -ne 127 ]; then
             echo "  ✓ Scripts can execute"
         else
@@ -1267,7 +1267,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: '3.14'
 
       - name: Verify Python
         run: |
@@ -1295,8 +1295,8 @@ jobs:
 
       - name: Run version audit
         run: |
-          chmod +x scripts/audit-versions.sh
-          ./scripts/audit-versions.sh
+          chmod +x scripts/audit-versions.py
+          ./scripts/audit-versions.py
 ```
 
 ---
@@ -1354,7 +1354,7 @@ docker run -it --rm -v $(pwd):/workspace synaptic-canvas
 
 # Inside container, verify
 ./check-all-deps.sh
-./scripts/audit-versions.sh
+./scripts/audit-versions.py
 ```
 
 ---
@@ -1584,11 +1584,11 @@ if ! command -v python3 > /dev/null 2>&1; then
 fi
 
 # Check if scripts can run
-if [[ -f "scripts/audit-versions.sh" ]]; then
-    ./scripts/audit-versions.sh > /dev/null
+if [[ -f "scripts/audit-versions.py" ]]; then
+    ./scripts/audit-versions.py > /dev/null
     if [ $? -ne 0 ]; then
         echo "Warning: Version audit failed"
-        echo "Run './scripts/audit-versions.sh' for details"
+        echo "Run './scripts/audit-versions.py' for details"
         # Don't block commit, just warn
     fi
 fi
@@ -1637,7 +1637,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: '3.14'
 
       - name: Set up Node.js
         uses: actions/setup-node@v3

@@ -225,7 +225,7 @@ Each package maintains independent versioning:
 
 - **Current**: All packages at 0.6.0 (beta)
 - **Policy**: Synchronized within marketplace during beta
-- **Bumping**: Use `python3 scripts/sync-versions.py --package NAME --version X.Y.Z`
+- **Bumping**: Use `python3 scripts/set-package-version.py NAME X.Y.Z`
 
 ### Marketplace Version
 

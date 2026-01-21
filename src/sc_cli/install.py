@@ -8,6 +8,8 @@ Commands:
   install <package> --dest <path/to/.claude> [--force] [--no-expand]
   install <package> --global [--force] [--no-expand]
   install <package> --local [--force] [--no-expand]
+  install <package> --user [--force] [--no-expand]
+  install <package> --project [--force] [--no-expand]
   uninstall <package> --dest <path/to/.claude>
   registry add <name> <url> [--path <path>]
   registry list
@@ -926,31 +928,33 @@ def _parse_frontmatter_simple(md_path: Path) -> Dict[str, str]:
 def _resolve_install_dest(
     global_flag: bool = False,
     local_flag: bool = False,
+    user_flag: bool = False,
+    project_flag: bool = False,
     dest: Optional[str] = None,
 ) -> Optional[Path]:
-    """Resolve installation destination from --global/--local/--dest flags.
+    """Resolve installation destination from --global/--local/--user/--project/--dest flags.
 
-    Phase 1: Support for --global and --local flags
+    Phase 1: Support for --global, --local, --user, and --project flags
 
     Returns:
         Path to .claude directory, or None if invalid combination
     """
     # Count how many flags are set
-    flags_set = sum([global_flag, local_flag, dest is not None])
+    flags_set = sum([global_flag, local_flag, user_flag, project_flag, dest is not None])
 
     if flags_set == 0:
-        error("Must specify one of: --global, --local, or --dest")
+        error("Must specify one of: --global, --local, --user, --project, or --dest")
         return None
 
     if flags_set > 1:
-        error("Cannot combine --global, --local, and --dest flags")
+        error("Cannot combine --global, --local, --user, --project, and --dest flags")
         return None
 
-    if global_flag:
+    if global_flag or user_flag:
         return Path.home() / ".claude"
 
-    if local_flag:
-        return Path.cwd() / ".claude-local"
+    if local_flag or project_flag:
+        return Path.cwd() / ".claude"
 
     # dest flag
     if dest:
@@ -1034,6 +1038,8 @@ def cmd_install(
     expand: bool = True,
     global_flag: bool = False,
     local_flag: bool = False,
+    user_flag: bool = False,
+    project_flag: bool = False,
     registry: Optional[str] = None,
 ) -> int:
     """Install a package to a .claude directory.
@@ -1049,7 +1055,9 @@ def cmd_install(
         force: Overwrite existing files
         expand: Perform token expansion
         global_flag: Install to ~/.claude
-        local_flag: Install to ./.claude-local
+        local_flag: Install to ./.claude
+        user_flag: Alias for --global
+        project_flag: Alias for --local
         registry: Optional registry name to install from
     """
     # Check local package first (backward compatible)
@@ -1092,8 +1100,8 @@ def cmd_install(
         error(f"Package not found: {pkg}")
         return 1
 
-    # Resolve destination (Phase 1: Support --global and --local)
-    dest_path = _resolve_install_dest(global_flag, local_flag, dest)
+    # Resolve destination (Phase 1: Support --global/--local/--user/--project)
+    dest_path = _resolve_install_dest(global_flag, local_flag, user_flag, project_flag, dest)
     if dest_path is None:
         return 1
 
@@ -1203,7 +1211,9 @@ def build_parser() -> argparse.ArgumentParser:
     dest_group = p_install.add_mutually_exclusive_group(required=True)
     dest_group.add_argument("--dest")
     dest_group.add_argument("--global", dest="global_flag", action="store_true")
+    dest_group.add_argument("--user", dest="user_flag", action="store_true")
     dest_group.add_argument("--local", dest="local_flag", action="store_true")
+    dest_group.add_argument("--project", dest="project_flag", action="store_true")
     p_install.add_argument("--force", action="store_true")
     p_install.add_argument("--no-expand", action="store_true")
     p_install.add_argument("--registry", help="Install from remote registry")
@@ -1257,6 +1267,8 @@ def main(argv: Optional[list[str]] = None) -> int:
             expand=not args.no_expand,
             global_flag=getattr(args, 'global_flag', False),
             local_flag=getattr(args, 'local_flag', False),
+            user_flag=getattr(args, 'user_flag', False),
+            project_flag=getattr(args, 'project_flag', False),
             registry=getattr(args, 'registry', None),
         )
     

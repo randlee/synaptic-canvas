@@ -1,6 +1,6 @@
 ---
 name: sc-kanban
-version: 0.7.0
+version: 0.8.0
 description: Interact with the kanban state machine (backlog → board → done)
 ---
 

@@ -1,5 +1,5 @@
 name: sc-delay-tasks
-version: 0.7.0
+version: 0.8.0
 description: >
   Schedule delayed one-shot or bounded polling actions with minimal heartbeats.
   Useful for waiting before running checks (e.g., CI status) or polling with stop-on-success.
@@ -16,7 +16,7 @@ tags:
 # Files to install (relative to package root)
 artifacts:
   commands:
-    - commands/sc-delay.md
+    - commands/delay.md
   skills:
     - skills/sc-delaying-tasks/SKILL.md
   agents:
@@ -30,5 +30,4 @@ artifacts:
 
 # Runtime requirements
 requires:
-  - bash
   - python3

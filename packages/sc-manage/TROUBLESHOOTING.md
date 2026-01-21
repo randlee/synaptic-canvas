@@ -11,8 +11,8 @@ Run these commands to verify your setup:
 python3 --version
 
 # Check if sc-manage is installed (global)
-ls -la ~/Documents/.claude/commands/sc-manage.md
-ls -la ~/Documents/.claude/agents/sc-*.md
+ls -la ~/.claude/commands/sc-manage.md
+ls -la ~/.claude/agents/sc-*.md
 
 # Check if sc-manage is installed (local)
 ls -la .claude/commands/sc-manage.md
@@ -48,7 +48,7 @@ Unknown command: /sc-manage
 1. Verify installation location:
 ```bash
 # For global use (recommended)
-ls ~/Documents/.claude/commands/sc-manage.md
+ls ~/.claude/commands/sc-manage.md
 
 # For local use (inside repo)
 ls .claude/commands/sc-manage.md
@@ -56,7 +56,7 @@ ls .claude/commands/sc-manage.md
 
 2. Install globally (recommended):
 ```bash
-python3 tools/sc-install.py install sc-manage --dest ~/Documents/.claude
+python3 tools/sc-install.py install sc-manage --dest ~/.claude
 ```
 
 3. Or install locally (if in a repo):
@@ -68,7 +68,7 @@ python3 tools/sc-install.py install sc-manage --dest ./.claude
 
 **Prevention:**
 - Install globally for package management from anywhere
-- Verify `~/Documents/.claude` exists and is writable
+- Verify `~/.claude` exists and is writable
 
 ---
 
@@ -134,7 +134,7 @@ python3 tools/sc-install.py list
 
 **Symptoms:**
 ```
-Permission denied: '/Users/username/Documents/.claude'
+Permission denied: '~/.claude'
 PermissionError: [Errno 13] Permission denied
 ```
 
@@ -147,26 +147,26 @@ PermissionError: [Errno 13] Permission denied
 
 1. Check directory permissions:
 ```bash
-ls -la ~/Documents/.claude
+ls -la ~/.claude
 ```
 
 2. If directory doesn't exist, create it:
 ```bash
-mkdir -p ~/Documents/.claude
+mkdir -p ~/.claude
 ```
 
 3. If permission denied, fix ownership:
 ```bash
 # Check ownership
-ls -la ~/Documents/ | grep .claude
+ls -la ~ | grep .claude
 
 # Fix if needed (replace 'username' with your username)
-sudo chown -R username:staff ~/Documents/.claude
+sudo chown -R username:staff ~/.claude
 ```
 
 4. Ensure write permissions:
 ```bash
-chmod u+rwX ~/Documents/.claude
+chmod u+rwX ~/.claude
 ```
 
 5. For local installs, verify repo permissions:
@@ -208,7 +208,7 @@ cat version.yaml
 2. Verify installed agent versions:
 ```bash
 # Global
-grep "version:" ~/Documents/.claude/agents/*.md
+grep "version:" ~/.claude/agents/*.md
 
 # Local
 grep "version:" .claude/agents/*.md
@@ -217,20 +217,20 @@ grep "version:" .claude/agents/*.md
 3. Uninstall and reinstall to sync versions:
 ```bash
 # Uninstall old version
-python3 tools/sc-install.py uninstall sc-delay-tasks --dest ~/Documents/.claude
+python3 tools/sc-install.py uninstall sc-delay-tasks --dest ~/.claude
 
 # Pull latest changes
 cd /path/to/synaptic-canvas
 git pull origin main
 
 # Reinstall
-python3 tools/sc-install.py install sc-delay-tasks --dest ~/Documents/.claude
+python3 tools/sc-install.py install sc-delay-tasks --dest ~/.claude
 ```
 
 4. Force reinstall (overwrites existing):
 ```bash
 python3 tools/sc-install.py install sc-delay-tasks \
-  --dest ~/Documents/.claude --force
+  --dest ~/.claude --force
 ```
 
 **Prevention:**
@@ -338,7 +338,7 @@ Package not found in current scope
 2. **For sc-git-worktree (local-only):**
 ```bash
 # WRONG - sc-git-worktree cannot be global
-python3 tools/sc-install.py install sc-git-worktree --dest ~/Documents/.claude
+python3 tools/sc-install.py install sc-git-worktree --dest ~/.claude
 # Error: sc-git-worktree is local-only
 
 # CORRECT
@@ -349,13 +349,13 @@ python3 tools/sc-install.py install sc-git-worktree --dest ./.claude
 3. **For global packages:**
 ```bash
 # Install to global .claude
-python3 tools/sc-install.py install sc-manage --dest ~/Documents/.claude
+python3 tools/sc-install.py install sc-manage --dest ~/.claude
 ```
 
 4. **Check where package is installed:**
 ```bash
 # Global
-ls ~/Documents/.claude/commands/
+ls ~/.claude/commands/
 
 # Local (from repo root)
 ls .claude/commands/
@@ -406,7 +406,7 @@ cd /path/to/your/repo
 python3 tools/sc-install.py install sc-git-worktree --dest ./.claude
 
 # For global packages
-python3 tools/sc-install.py install sc-manage --dest ~/Documents/.claude
+python3 tools/sc-install.py install sc-manage --dest ~/.claude
 ```
 
 3. If you need functionality globally:
@@ -636,7 +636,7 @@ grep -r "{{REPO_NAME}}" .claude/
 1. Understand destination paths:
 ```bash
 # Global (user-level)
-~/Documents/.claude
+~/.claude
 
 # Local (repo-level)
 /path/to/repo/.claude
@@ -645,7 +645,7 @@ grep -r "{{REPO_NAME}}" .claude/
 2. Verify where you want packages:
 ```bash
 # For sc-manage (global recommended)
---dest ~/Documents/.claude
+--dest ~/.claude
 
 # For sc-git-worktree (local required)
 --dest ./.claude  # (from repo root)
@@ -663,7 +663,7 @@ find ~ -name "sc-manage.md" -type f
 python3 tools/sc-install.py uninstall sc-manage --dest /wrong/path/.claude
 
 # Install to correct location
-python3 tools/sc-install.py install sc-manage --dest ~/Documents/.claude
+python3 tools/sc-install.py install sc-manage --dest ~/.claude
 ```
 
 ---
@@ -712,15 +712,15 @@ cd ~/synaptic-canvas-dev
 git checkout develop
 
 # Install from different versions
-python3 ~/synaptic-canvas-stable/tools/sc-install.py install sc-delay-tasks --dest ~/Documents/.claude
+python3 ~/synaptic-canvas-stable/tools/sc-install.py install sc-delay-tasks --dest ~/.claude
 # vs
-python3 ~/synaptic-canvas-dev/tools/sc-install.py install sc-delay-tasks --dest ~/Documents/.claude
+python3 ~/synaptic-canvas-dev/tools/sc-install.py install sc-delay-tasks --dest ~/.claude
 ```
 
 3. Or use local vs global:
 ```bash
 # Stable version globally
-python3 tools/sc-install.py install sc-delay-tasks --dest ~/Documents/.claude
+python3 tools/sc-install.py install sc-delay-tasks --dest ~/.claude
 
 # Dev version locally in test repo
 cd ~/test-repo
@@ -856,12 +856,12 @@ python3 tools/sc-install.py list
 python3 tools\sc-install.py install sc-delay-tasks --dest C:\Users\username\Documents\.claude
 
 # CORRECT
-python3 tools/sc-install.py install sc-delay-tasks --dest C:/Users/username/Documents/.claude
+python3 tools/sc-install.py install sc-delay-tasks --dest C:~/.claude
 ```
 
 2. Or use WSL:
 ```bash
-wsl python3 tools/sc-install.py install sc-delay-tasks --dest /mnt/c/Users/username/Documents/.claude
+wsl python3 tools/sc-install.py install sc-delay-tasks --dest /mnt/c~/.claude
 ```
 
 ---
@@ -915,15 +915,15 @@ echo $HOME
 2. **Installation attempt:**
 ```bash
 # Full command and output
-python3 tools/sc-install.py install sc-delay-tasks --dest ~/Documents/.claude
+python3 tools/sc-install.py install sc-delay-tasks --dest ~/.claude
 ```
 
 3. **Current state:**
 ```bash
 # Show installed files
-ls -la ~/Documents/.claude/commands/
-ls -la ~/Documents/.claude/agents/
-cat ~/Documents/.claude/agents/registry.yaml
+ls -la ~/.claude/commands/
+ls -la ~/.claude/agents/
+cat ~/.claude/agents/registry.yaml
 ```
 
 4. **Repository info:**
@@ -953,8 +953,8 @@ git --version
 which git
 
 # Filesystem
-ls -la ~/Documents/
-ls -la ~/Documents/.claude/
+ls -la ~
+ls -la ~/.claude/
 ls -la .claude/  # If in repo
 
 # Repository structure
@@ -1003,7 +1003,7 @@ with open('.claude/agents/registry.yaml') as f:
 
 **A:**
 
-**Global installation** (`~/Documents/.claude`):
+**Global installation** (`~/.claude`):
 - Available in all projects and contexts
 - Suitable for utility packages (sc-delay-tasks, sc-manage)
 - Shared across all repositories
@@ -1019,7 +1019,7 @@ with open('.claude/agents/registry.yaml') as f:
 
 **A:** Yes, but local takes precedence:
 - Claude checks local `.claude/` first
-- Then checks global `~/Documents/.claude/`
+- Then checks global `~/.claude/`
 - Useful for testing new versions locally
 
 ---
@@ -1029,7 +1029,7 @@ with open('.claude/agents/registry.yaml') as f:
 **A:**
 ```bash
 # Global
-ls ~/Documents/.claude/commands/
+ls ~/.claude/commands/
 
 # Local
 ls .claude/commands/
@@ -1098,12 +1098,12 @@ Claude Code uses this for:
 python3 tools/sc-install.py list
 
 # Uninstall each (no bulk uninstall)
-python3 tools/sc-install.py uninstall sc-delay-tasks --dest ~/Documents/.claude
-python3 tools/sc-install.py uninstall sc-manage --dest ~/Documents/.claude
+python3 tools/sc-install.py uninstall sc-delay-tasks --dest ~/.claude
+python3 tools/sc-install.py uninstall sc-manage --dest ~/.claude
 python3 tools/sc-install.py uninstall sc-git-worktree --dest ./.claude
 
 # Or remove directory (nuclear option)
-rm -rf ~/Documents/.claude
+rm -rf ~/.claude
 rm -rf .claude/
 ```
 
@@ -1147,10 +1147,10 @@ cd /path/to/synaptic-canvas
 git pull origin main
 
 # Uninstall old version
-python3 tools/sc-install.py uninstall sc-manage --dest ~/Documents/.claude
+python3 tools/sc-install.py uninstall sc-manage --dest ~/.claude
 
 # Reinstall
-python3 tools/sc-install.py install sc-manage --dest ~/Documents/.claude
+python3 tools/sc-install.py install sc-manage --dest ~/.claude
 ```
 
 ---

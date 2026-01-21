@@ -1,5 +1,5 @@
 name: sc-startup
-version: 0.7.0
+version: 0.8.0
 description: >
   Startup runner for Synaptic Canvas: read startup prompt, sync master checklist, optional PR triage, worktree hygiene, and CI pull,
   then emit a concise status with next steps. Supports read-only mode.
@@ -21,6 +21,8 @@ artifacts:
   agents:
     - agents/sc-checklist-status.md
     - agents/sc-startup-init.md
+    - agents/sc_checklist_status.py
+    - agents/sc_startup_init.py
   plugin:
     - .claude-plugin/plugin.json
 
@@ -29,6 +31,9 @@ install:
 
 requires:
   - git >= 2.20
+  - python3
+  - PyYAML
+  - pydantic
 
 dependencies:
   - "sc-ci-automation >= 0.7.0"

@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["description", "prompt", "subagent_type"],
+  "properties": {
+    "description": {
+      "type": "string",
+      "description": "A short (3-5 word) description of the task"
+    },
+    "prompt": {
+      "type": "string",
+      "description": "The task for the agent to perform"
+    },
+    "subagent_type": {
+      "type": "string",
+      "description": "The type of specialized agent to use for this task"
+    },
+    "model": {
+      "type": "string",
+      "enum": [
+        "sonnet",
+        "opus",
+        "haiku",
+        "codex",
+        "gpt-5.2-codex",
+        "codex-max",
+        "max",
+        "gpt-5.1-codex-max",
+        "codex-mini",
+        "mini",
+        "gpt-5.1-codex-mini",
+        "gpt-5",
+        "gpt-5.2",
+        "gtp-5"
+      ],
+      "description": "Optional model to use for this agent. If not specified, inherits from parent. Claude models: sonnet, opus, haiku. Codex models: codex, max/codex-max, mini/codex-mini, gpt-5, or full model names."
+    },
+    "run_in_background": {
+      "type": "boolean",
+      "description": "Set to true to run this agent in the background. The tool result will include an output_file path - use Read tool or Bash tail to check on output."
+    },
+    "max_turns": {
+      "type": "integer",
+      "exclusiveMinimum": 0,
+      "maximum": 9007199254740991,
+      "description": "Maximum number of agentic turns (API round-trips) before stopping. Used internally for warmup."
+    },
+    "resume": {
+      "type": "string",
+      "description": "Optional agent ID to resume from. If provided, the agent will continue from the previous execution transcript."
+    }
+  },
+  "$comment": "Output schemas are documented in task_tool.output.schema.json"
+}
