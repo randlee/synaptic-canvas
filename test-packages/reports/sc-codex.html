@@ -1,0 +1,3884 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Report: Tests for sc-codex slash command and skill Test Suite</title>
+  <style>
+:root {
+  --pass: #059669;
+  --pass-bg: #d1fae5;
+  --fail: #dc2626;
+  --fail-bg: #fee2e2;
+  --partial: #d97706;
+  --partial-bg: #fef3c7;
+  --skipped: #6b7280;
+  --skipped-bg: #f3f4f6;
+  --border: #e5e7eb;
+  --bg-subtle: #f9fafb;
+  --text: #111827;
+  --text-muted: #6b7280;
+  --tab-active-bg: #ffffff;
+  --tab-inactive-bg: #f3f4f6;
+}
+
+* { box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.6;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+  color: var(--text);
+}
+
+/* Normalize whitespace for copy/paste - prevents excessive newlines when copying text.
+   Block elements collapse HTML source whitespace so copied text is clean.
+   Pre tags are excluded to preserve intentional code formatting. */
+div, p, li, span, h1, h2, h3, h4, h5, h6, td, th, label, summary, button, a {
+  white-space: normal;
+}
+
+/* Ensure pre and code blocks preserve whitespace for code display */
+pre {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+code {
+  white-space: pre;
+}
+
+.fixture-header {
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+  color: white;
+  padding: 24px;
+  border-radius: 12px;
+  margin-bottom: 24px;
+}
+.fixture-header h1 {
+  margin: 0 0 16px 0;
+  font-size: 1.5rem;
+}
+.fixture-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  font-size: 0.9rem;
+}
+.fixture-meta-item {
+  display: flex;
+  flex-direction: column;
+}
+.fixture-meta-item.wide {
+  grid-column: 1 / -1;
+}
+.fixture-meta-item.wide .fixture-meta-value {
+  white-space: nowrap;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+.fixture-meta-label {
+  color: #94a3b8;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.fixture-meta-value {
+  color: #f1f5f9;
+  font-weight: 500;
+}
+
+/* File links in header */
+.fixture-meta-value a.file-link {
+  color: #93c5fd;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.fixture-meta-value a.file-link:hover {
+  color: #bfdbfe;
+  text-decoration: underline;
+}
+.fixture-meta-value a.file-link .link-icon {
+  font-size: 0.8em;
+  opacity: 0.7;
+}
+
+a.file-link {
+  color: #3b82f6;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+a.file-link:hover {
+  color: #2563eb;
+  text-decoration: underline;
+}
+a.file-link .link-icon {
+  font-size: 0.85em;
+  opacity: 0.6;
+}
+a.file-link.pycharm .link-icon {
+  color: #21d789;
+}
+a.file-link.vscode .link-icon {
+  color: #007acc;
+}
+
+.tabs-container {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.tabs-header {
+  display: flex;
+  background: var(--tab-inactive-bg);
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+}
+.tab-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  border-bottom: 3px solid transparent;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+.tab-button:hover {
+  background: rgba(255,255,255,0.5);
+}
+.tab-button.active {
+  background: var(--tab-active-bg);
+  color: var(--text);
+  border-bottom-color: #3b82f6;
+}
+.tab-icon {
+  font-size: 1rem;
+}
+.tab-icon.pass { color: var(--pass); }
+.tab-icon.fail { color: var(--fail); }
+.tab-icon.partial { color: var(--partial); }
+.tab-icon.skipped { color: var(--skipped); }
+.tab-content {
+  display: none;
+  padding: 24px;
+  background: white;
+}
+.tab-content.active {
+  display: block;
+}
+
+.status-banner {
+  padding: 20px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.status-banner.pass { background: var(--pass-bg); border: 2px solid var(--pass); }
+.status-banner.fail { background: var(--fail-bg); border: 2px solid var(--fail); }
+.status-banner.partial { background: var(--partial-bg); border: 2px solid var(--partial); }
+.status-banner.skipped { background: var(--skipped-bg); border: 2px solid var(--skipped); }
+.status-badge {
+  font-size: 1.5rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.status-banner.pass .status-badge { color: var(--pass); }
+.status-banner.fail .status-badge { color: var(--fail); }
+.status-banner.partial .status-badge { color: var(--partial); }
+.status-banner.skipped .status-badge { color: var(--skipped); }
+.status-meta {
+  text-align: right;
+  color: var(--text-muted);
+}
+.status-meta .duration { font-size: 1.1rem; font-weight: 600; color: var(--text); }
+
+.token-section {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.token-summary {
+  display: flex;
+  gap: 16px;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+  font-size: 0.9rem;
+}
+.token-details {
+  margin-top: 8px;
+  border: none;
+}
+.token-details summary {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px 0;
+  background: transparent;
+  border: none;
+  font-weight: normal;
+}
+.token-details summary:hover {
+  color: var(--text);
+}
+.token-detail {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: var(--bg-subtle);
+  border-radius: 4px;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+  font-size: 0.85rem;
+}
+.token-detail > div {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+}
+.token-detail dt {
+  color: var(--text-muted);
+}
+.token-detail dd {
+  font-weight: 500;
+  margin-left: 8px;
+}
+
+.test-metadata {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+.test-metadata-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+.test-metadata-item {
+  display: flex;
+  flex-direction: column;
+}
+.test-metadata-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.test-metadata-value {
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+/* Section headers with copy buttons */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 28px 0 16px 0;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--border);
+}
+.section-header h2 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+h1 { margin: 0 0 8px 0; font-size: 1.3rem; }
+.description { color: var(--text-muted); margin-bottom: 20px; font-size: 0.95rem; }
+
+/* Cards */
+.card {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.card-title {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+/* Reproduce Section */
+.reproduce-section {
+  background: #1e293b;
+  color: #e2e8f0;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+.reproduce-section .section-header {
+  border-bottom-color: #475569;
+  margin-top: 0;
+}
+.reproduce-section .section-header h2 {
+  color: #f8fafc;
+}
+.reproduce-section pre {
+  background: #0f172a;
+  padding: 12px;
+  border-radius: 6px;
+  overflow-x: auto;
+  margin: 8px 0;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+  font-size: 0.85rem;
+}
+.reproduce-step {
+  margin-bottom: 16px;
+}
+.reproduce-step-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.reproduce-step-label {
+  color: #94a3b8;
+  font-weight: 600;
+}
+.reproduce-section .copy-icon-btn {
+  border-color: #475569;
+  color: #94a3b8;
+}
+.reproduce-section .copy-icon-btn:hover {
+  background: #334155;
+  color: #f1f5f9;
+}
+
+.copy-icon-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 4px 6px;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  line-height: 1;
+  transition: all 0.2s;
+  position: relative;
+}
+.copy-icon-btn:hover {
+  background: var(--bg-subtle);
+  color: var(--text);
+  border-color: #94a3b8;
+}
+.copy-icon-btn:active {
+  transform: scale(0.95);
+}
+.copy-icon-btn.copied {
+  color: var(--pass);
+  border-color: var(--pass);
+}
+.copy-icon-btn svg {
+  width: 14px;
+  height: 14px;
+  vertical-align: middle;
+}
+.copy-icon-btn .checkmark {
+  display: none;
+}
+.copy-icon-btn.copied .clipboard {
+  display: none;
+}
+.copy-icon-btn.copied .checkmark {
+  display: inline;
+}
+
+/* Tooltip */
+[data-tooltip] {
+  position: relative;
+}
+[data-tooltip]:hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 8px;
+  background: #1e293b;
+  color: white;
+  font-size: 0.75rem;
+  border-radius: 4px;
+  white-space: nowrap;
+  z-index: 100;
+  margin-bottom: 4px;
+}
+
+.expectations-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.expectations-section > summary {
+  list-style: none;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  padding: 8px 0;
+  cursor: pointer;
+  gap: 8px;
+}
+.expectations-section > summary .copy-icon-btn {
+  margin-left: auto;
+}
+.expectations-section > summary .summary-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text);
+}
+.expectations-section > summary::before {
+  content: "▸";
+  color: var(--text-muted);
+  margin-right: 8px;
+  font-size: 1.1rem;
+  width: 12px;
+  display: inline-block;
+  text-align: center;
+}
+.expectations-section > summary::marker {
+  content: "";
+}
+.expectations-section[open] > summary::before {
+  content: "▾";
+}
+.expectations-section > summary::-webkit-details-marker {
+  display: none;
+}
+.expectations-section[open] > summary {
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 12px;
+}
+.expectation-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  margin-bottom: 8px;
+  background: white;
+}
+.expectation-icon {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+  width: 24px;
+  text-align: center;
+}
+.expectation-content { flex: 1; }
+.expectation-label { font-weight: 500; }
+.expectation-details {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+.expectation-actions {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+.expectation-toggle {
+  background: none;
+  border: 1px solid var(--border);
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+.expectation-toggle:hover { background: var(--bg-subtle); }
+.expectation-toggle.no-content {
+  opacity: 0.4;
+  cursor: default;
+}
+.expectation-toggle.no-content:hover {
+  background: transparent;
+}
+.expectation-toggle.has-content {
+  color: #3b82f6;
+  border-color: #93c5fd;
+}
+.expectation-expanded {
+  margin-top: 12px;
+  padding: 12px;
+  background: var(--bg-subtle);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  display: none;
+}
+.expectation-expanded.show { display: block; }
+.expected-actual {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.expected-actual h4 {
+  margin: 0 0 8px 0;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+.expected-actual pre {
+  background: white;
+  padding: 8px;
+  border-radius: 4px;
+  margin: 0;
+  font-size: 0.8rem;
+  overflow-x: auto;
+}
+
+/* Pass/Fail counts */
+.pass-count { color: var(--pass); font-weight: 600; }
+.fail-count { color: var(--fail); font-weight: 600; }
+
+.plugin-verification-section {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+.plugin-verification-section > summary {
+  padding: 12px 16px;
+  cursor: pointer;
+  font-weight: 600;
+  background: var(--bg-subtle);
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.plugin-verification-section[open] > summary {
+  border-bottom: 1px solid var(--border);
+  border-radius: 8px 8px 0 0;
+}
+.plugin-summary {
+  font-size: 0.85rem;
+  padding: 4px 10px;
+  border-radius: 4px;
+  margin-left: auto;
+  margin-right: 8px;
+}
+.plugin-summary.pass {
+  background: var(--pass-bg);
+  color: var(--pass);
+}
+.plugin-summary.fail {
+  background: var(--fail-bg);
+  color: var(--fail);
+}
+.plugin-expected {
+  margin-bottom: 16px;
+}
+.plugin-expected code {
+  background: #e2e8f0;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+.plugin-results {
+  margin-top: 12px;
+}
+.plugin-list {
+  margin-top: 8px;
+}
+.plugin-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  margin-bottom: 8px;
+  background: white;
+}
+.plugin-item.pass {
+  border-left: 3px solid var(--pass);
+}
+.plugin-item.fail {
+  border-left: 3px solid var(--fail);
+}
+.plugin-status {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+.plugin-name {
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+  font-weight: 500;
+}
+.plugin-result {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+.plugin-item.pass .plugin-result {
+  color: var(--pass);
+}
+.plugin-item.fail .plugin-result {
+  color: var(--fail);
+}
+.plugin-output {
+  width: 100%;
+  margin-top: 8px;
+  border: none;
+  background: transparent;
+}
+.plugin-output summary {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px 0;
+}
+.plugin-output pre {
+  background: #1e293b;
+  color: #e2e8f0;
+  padding: 12px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  overflow-x: auto;
+  margin: 8px 0 0 0;
+}
+
+.log-issues-section {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+.log-issues-section > summary {
+  padding: 12px 16px;
+  cursor: pointer;
+  font-weight: 600;
+  background: var(--bg-subtle);
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.log-issues-section[open] > summary {
+  border-bottom: 1px solid var(--border);
+  border-radius: 8px 8px 0 0;
+}
+
+/* Severity-based section borders */
+.log-issues-section.log-severity-error {
+  border-color: var(--fail);
+  border-width: 2px;
+}
+.log-issues-section.log-severity-warning {
+  border-color: #d97706;
+  border-width: 2px;
+}
+.log-issues-section.log-severity-clean {
+  border-color: var(--border);
+}
+
+/* Summary badges */
+.log-badges {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+  margin-right: 12px;
+}
+.log-count-badge {
+  font-size: 0.8rem;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-weight: 600;
+}
+.log-error-badge {
+  background: var(--fail-bg);
+  color: var(--fail);
+}
+.log-warning-badge {
+  background: #fef3c7;
+  color: #b45309;
+}
+.log-clean-badge {
+  background: var(--pass-bg);
+  color: var(--pass);
+}
+
+/* Issue list */
+.log-issues-list {
+  padding: 8px 0;
+}
+
+.log-raw-context {
+  margin: 12px 12px 0;
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+}
+.log-raw-context > summary {
+  padding: 8px 12px;
+  cursor: pointer;
+  font-weight: 600;
+  background: var(--bg-subtle);
+  border-radius: 6px;
+}
+.log-raw-context .content {
+  padding: 8px 12px 12px;
+}
+.log-raw-context pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 320px;
+  overflow: auto;
+  background: var(--bg-muted);
+  border-radius: 6px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+.log-line {
+  display: block;
+}
+.log-line-warning {
+  color: #b45309;
+  background: #fef3c7;
+}
+.log-line-error {
+  color: var(--fail);
+  background: var(--fail-bg);
+}
+
+/* Individual issue items */
+.log-issue-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  margin-bottom: 8px;
+  background: white;
+}
+.log-issue-item.log-warning {
+  border-left: 4px solid #d97706;
+  background: #fffbeb;
+}
+.log-issue-item.log-error {
+  border-left: 4px solid var(--fail);
+  background: #fef2f2;
+}
+
+/* Issue icon */
+.log-issue-icon {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+  width: 20px;
+  text-align: center;
+}
+.log-issue-item.log-warning .log-issue-icon {
+  color: #d97706;
+}
+.log-issue-item.log-error .log-issue-icon {
+  color: var(--fail);
+}
+
+/* Issue level label */
+.log-issue-level {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+.log-issue-item.log-warning .log-issue-level {
+  background: #fef3c7;
+  color: #b45309;
+}
+.log-issue-item.log-error .log-issue-level {
+  background: var(--fail-bg);
+  color: var(--fail);
+}
+
+/* Source badge */
+.log-source-badge {
+  font-size: 0.75rem;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: var(--bg-subtle);
+  color: var(--text-muted);
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+}
+
+/* Issue message */
+.log-issue-message {
+  flex: 1;
+  min-width: 200px;
+  font-size: 0.9rem;
+  word-break: break-word;
+}
+
+/* Issue metadata row */
+.log-issue-meta {
+  width: 100%;
+  display: flex;
+  gap: 16px;
+  margin-top: 4px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+.log-line-number {
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+}
+.log-timestamp {
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+}
+
+/* Override notice */
+.log-override-notice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  border-radius: 6px;
+  margin-bottom: 12px;
+  font-size: 0.85rem;
+  color: #92400e;
+}
+.log-override-icon {
+  font-size: 1rem;
+  color: #d97706;
+}
+.log-override-notice code {
+  background: rgba(217, 119, 6, 0.15);
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+  font-size: 0.8rem;
+}
+
+/* Clean message */
+.log-clean-message {
+  color: var(--text-muted);
+  font-style: italic;
+  margin: 0;
+  padding: 8px 0;
+}
+
+.timeline {
+  position: relative;
+  padding-left: 24px;
+}
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 8px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--border);
+}
+.timeline-item {
+  position: relative;
+  padding: 12px 0 12px 24px;
+  border-bottom: 1px solid var(--border);
+}
+.timeline-item:last-child { border-bottom: none; }
+.timeline-dot {
+  position: absolute;
+  left: -20px;
+  top: 16px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: white;
+  border: 2px solid var(--border);
+}
+.timeline-item.prompt .timeline-dot { background: #3b82f6; border-color: #3b82f6; }
+.timeline-item.tool_call .timeline-dot { background: #8b5cf6; border-color: #8b5cf6; }
+.timeline-item.response .timeline-dot { background: #10b981; border-color: #10b981; }
+.timeline-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.timeline-type {
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.timeline-item.prompt .timeline-type { color: #3b82f6; }
+.timeline-item.tool_call .timeline-type { color: #8b5cf6; }
+.timeline-item.response .timeline-type { color: #10b981; }
+.timeline-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.timeline-elapsed {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-family: 'SF Mono', Monaco, monospace;
+}
+.timeline-seq {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  background: var(--bg-subtle);
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+.timeline-content {
+  margin-top: 8px;
+}
+.timeline-content pre {
+  background: var(--bg-subtle);
+  padding: 10px;
+  border-radius: 6px;
+  margin: 8px 0 0 0;
+  font-size: 0.85rem;
+  overflow-x: auto;
+}
+.timeline-intent {
+  font-style: italic;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+.timeline-meta {
+  font-family: monospace;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  background: var(--bg-subtle);
+  padding: 2px 6px;
+  border-radius: 3px;
+  margin-bottom: 4px;
+  display: inline-block;
+}
+
+/* Timeline tree depth indentation */
+.timeline-item.depth-0 { margin-left: 0; }
+.timeline-item.depth-1 { margin-left: 24px; border-left: 2px solid #8b5cf6; padding-left: 12px; }
+.timeline-item.depth-2 { margin-left: 48px; border-left: 2px solid #a78bfa; padding-left: 12px; }
+.timeline-item.depth-3 { margin-left: 72px; border-left: 2px solid #c4b5fd; padding-left: 12px; }
+.timeline-item.depth-4 { margin-left: 96px; border-left: 2px solid #ddd6fe; padding-left: 12px; }
+.timeline-item.depth-5 { margin-left: 120px; border-left: 2px solid #ede9fe; padding-left: 12px; }
+
+/* Subagent section collapsible */
+.subagent-section {
+  margin: 8px 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-subtle);
+}
+.subagent-section > summary {
+  padding: 8px 12px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 500;
+}
+.subagent-section > summary:hover {
+  background: rgba(139, 92, 246, 0.1);
+}
+.agent-badge {
+  background: #8b5cf6;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.tool-count {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+.subagent-duration {
+  font-family: monospace;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* Timeline item dot colors for subagent context */
+.timeline-item.depth-1 .timeline-dot,
+.timeline-item.depth-2 .timeline-dot,
+.timeline-item.depth-3 .timeline-dot {
+  border-color: #8b5cf6;
+}
+
+/* Highlighted path for debugging */
+.timeline-item.highlighted {
+  background: rgba(59, 130, 246, 0.1);
+  border-left-color: #3b82f6 !important;
+}
+
+/* Agent filter dropdown */
+.agent-filter-select {
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.85rem;
+}
+
+
+details {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+details summary {
+  padding: 12px 16px;
+  cursor: pointer;
+  font-weight: 600;
+  background: var(--bg-subtle);
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+details summary::marker {
+  display: none;
+}
+details summary::-webkit-details-marker {
+  display: none;
+}
+details[open] summary {
+  border-bottom: 1px solid var(--border);
+  border-radius: 8px 8px 0 0;
+}
+details .content {
+  padding: 16px;
+}
+.summary-text {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.summary-text::before {
+  content: '\25B6';
+  font-size: 0.7rem;
+  transition: transform 0.2s;
+}
+details[open] .summary-text::before {
+  transform: rotate(90deg);
+}
+
+.response-preview {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+.response-preview pre {
+  margin: 0;
+  white-space: pre-wrap;
+  font-size: 0.9rem;
+}
+
+.debug-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.debug-table td {
+  padding: 8px;
+  border: 1px solid var(--border);
+}
+.debug-table td:first-child {
+  font-weight: 600;
+  width: 150px;
+}
+.debug-table a.file-link {
+  word-break: break-all;
+}
+
+.agent-assessment-section {
+  display: none;
+}
+.agent-assessment-section.visible {
+  display: block;
+}
+.agent-assessment {
+  background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+  border-radius: 8px;
+  padding: 20px;
+  color: #e0e7ff;
+}
+.agent-assessment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #4338ca;
+}
+.agent-assessment-header h3 {
+  margin: 0;
+  color: #c7d2fe;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.agent-assessment-header .ai-badge {
+  background: #4338ca;
+  color: #c7d2fe;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.agent-assessment-meta {
+  font-size: 0.75rem;
+  color: #a5b4fc;
+}
+.agent-assessment-content {
+  line-height: 1.7;
+  font-size: 0.9rem;
+}
+.agent-assessment-content h1,
+.agent-assessment-content h2,
+.agent-assessment-content h3,
+.agent-assessment-content h4 {
+  color: #e0e7ff;
+  margin-top: 16px;
+  margin-bottom: 8px;
+}
+.agent-assessment-content h1 { font-size: 1.3rem; }
+.agent-assessment-content h2 { font-size: 1.1rem; }
+.agent-assessment-content h3 { font-size: 1rem; }
+.agent-assessment-content h4 { font-size: 0.9rem; }
+.agent-assessment-content p {
+  margin: 8px 0;
+}
+.agent-assessment-content ul,
+.agent-assessment-content ol {
+  margin: 8px 0;
+  padding-left: 24px;
+}
+.agent-assessment-content li {
+  margin: 4px 0;
+}
+.agent-assessment-content code {
+  background: rgba(99, 102, 241, 0.3);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+  font-size: 0.85em;
+}
+.agent-assessment-content pre {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 12px;
+  border-radius: 6px;
+  overflow-x: auto;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+  font-size: 0.85rem;
+  margin: 12px 0;
+}
+.agent-assessment-content pre code {
+  background: none;
+  padding: 0;
+}
+.agent-assessment-content blockquote {
+  border-left: 3px solid #6366f1;
+  margin: 12px 0;
+  padding-left: 16px;
+  color: #c7d2fe;
+  font-style: italic;
+}
+.agent-assessment-content strong {
+  color: #f0f0ff;
+}
+.agent-assessment-content a {
+  color: #818cf8;
+}
+.agent-assessment-content a:hover {
+  color: #a5b4fc;
+}
+.agent-assessment-content hr {
+  border: none;
+  border-top: 1px solid #4338ca;
+  margin: 16px 0;
+}
+.agent-assessment .copy-icon-btn {
+  border-color: #4338ca;
+  color: #a5b4fc;
+}
+.agent-assessment .copy-icon-btn:hover {
+  background: #4338ca;
+  color: #e0e7ff;
+}
+.agent-assessment-loading {
+  color: #a5b4fc;
+  font-style: italic;
+}
+.agent-assessment-error {
+  color: #fca5a5;
+  font-style: italic;
+}
+  </style>
+</head>
+<body>
+  <div class="fixture-header">
+  <h1>Tests for sc-codex slash command and skill Test Suite</h1>
+  <div class="fixture-meta">
+    <div class="fixture-meta-item">
+      <span class="fixture-meta-label">Package</span>
+      <span class="fixture-meta-value">sc-codex@synaptic-canvas</span>
+    </div>
+    <div class="fixture-meta-item">
+      <span class="fixture-meta-label">Agent/Skill</span>
+      <span class="fixture-meta-value"><a href="vscode://file//Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/codex-task-tool/packages/sc-codex/skills/codex-agent/SKILL.md" class="file-link vscode" title="Open in VS Code">SKILL<span class="link-icon">&#8599;</span></a></span>
+    </div>
+    <div class="fixture-meta-item">
+      <span class="fixture-meta-label">Fixture</span>
+      <span class="fixture-meta-value"><a href="pycharm://open?file=/Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/codex-task-tool/test-packages/fixtures/sc-codex/fixture.yaml" class="file-link pycharm" title="Open in PyCharm">fixture<span class="link-icon">&#8599;</span></a></span>
+    </div>
+    <div class="fixture-meta-item">
+      <span class="fixture-meta-label">Total Tests</span>
+      <span class="fixture-meta-value">3 tests (3 passed)</span>
+    </div>
+    <div class="fixture-meta-item">
+      <span class="fixture-meta-label">Report Generated</span>
+      <span class="fixture-meta-value">2026-01-20 16:31:24</span>
+    </div>
+    <div class="fixture-meta-item wide">
+      <span class="fixture-meta-label">Report Path</span>
+      <span class="fixture-meta-value" style="font-family: monospace; font-size: 0.8rem;"><a href="vscode://file//Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/codex-task-tool/test-packages/reports/sc-codex.html" class="file-link vscode" title="Open in VS Code">/Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/codex-task-tool/test-packages/reports/sc-codex.html<span class="link-icon">&#8599;</span></a></span>
+    </div>
+  </div>
+</div>
+
+  <div class="tabs-container"><div class="tabs-header">
+    <button class="tab-button active" onclick="switchTab('test-1')">
+      <span class="tab-icon pass">&#10003;</span>
+      <span>Basic /sc-codex invo</span>
+    </button><button class="tab-button" onclick="switchTab('test-2')">
+      <span class="tab-icon pass">&#10003;</span>
+      <span>Two mini runs in one</span>
+    </button><button class="tab-button" onclick="switchTab('test-3')">
+      <span class="tab-icon pass">&#10003;</span>
+      <span>Resume a Codex task</span>
+    </button>
+  </div><div id="test-1" class="tab-content active">
+<h1>Basic /sc-codex invocation</h1>
+<p class="description">Verify /sc-codex runs and returns JSON with output/agentId.</p>
+
+<div class="status-banner pass">
+  <div class="status-badge">
+    <span>PASS</span>
+    <span style="font-size: 0.9rem; font-weight: normal;">3 of 3 expectations passed</span>
+  </div>
+  <div class="status-meta">
+    <div class="duration">7.00s</div>
+    <div>2026-01-21 00:30:13</div>
+  <div class="token-section">
+    <details class="token-details">
+      <summary>Tokens: 35,829 total</summary>
+      <dl class="token-detail">
+        <div><dt>Input tokens</dt><dd>21</dd></div>
+        <div><dt>Output tokens</dt><dd>6</dd></div>
+        <div><dt>Cache creation tokens</dt><dd>15,003</dd></div>
+        <div><dt>Cache read tokens</dt><dd>20,799</dd></div>
+        <div><dt>Subagent tokens</dt><dd>0</dd></div>
+        <div><dt>Total billable</dt><dd>15,030</dd></div>
+        <div><dt>Total all</dt><dd>35,829</dd></div>
+      </dl>
+    </details>
+  </div>
+  </div>
+</div>
+
+<details class="log-issues-section log-severity-clean">
+  <summary>
+    <span class="summary-text">Log Warnings &amp; Errors</span>
+    <span class="log-count-badge log-clean-badge">No issues</span>
+  </summary>
+  <div class="content" id="log-issues-1">
+    <p class="log-clean-message">No warnings or errors were captured during test execution.</p>
+    
+  </div>
+</details>
+
+<div class="test-metadata">
+  <div class="test-metadata-grid">
+    <div class="test-metadata-item">
+      <span class="test-metadata-label">Test ID</span>
+      <span class="test-metadata-value">sc-codex-001</span>
+    </div>
+    <div class="test-metadata-item">
+      <span class="test-metadata-label">Test Name</span>
+      <span class="test-metadata-value">Basic /sc-codex invocation</span>
+    </div>
+    <div class="test-metadata-item">
+      <span class="test-metadata-label">Fixture</span>
+      <span class="test-metadata-value">sc-codex</span>
+    </div>
+    <div class="test-metadata-item">
+      <span class="test-metadata-label">Package</span>
+      <span class="test-metadata-value">sc-codex@synaptic-canvas</span>
+    </div>
+    <div class="test-metadata-item">
+      <span class="test-metadata-label">Model</span>
+      <span class="test-metadata-value">haiku</span>
+    </div>
+    <div class="test-metadata-item">
+      <span class="test-metadata-label">Session ID</span>
+      <span class="test-metadata-value" style="font-family: monospace;">da18c7da-a622-4795-bd27-bcf337778158</span>
+    </div>
+  </div>
+</div>
+
+<div class="reproduce-section"><div class="section-header"><h2>Reproduce This Test</h2><button class="copy-icon-btn" data-tooltip="Copy all reproduction steps" onclick="copySection('reproduce-1', 'Reproduce This Test')">
+      <svg class="clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+      <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    </button></div><p style="color: #94a3b8; margin-bottom: 16px;">Copy and run these commands to reproduce this test exactly:</p><div id="reproduce-1"><div class="reproduce-step"><div class="reproduce-step-header"><span class="reproduce-step-label">1. Setup</span><button class="copy-icon-btn" data-tooltip="Copy setup commands" onclick="copyElement('setup-commands-1')">
+      <svg class="clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+      <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    </button></div><pre id="setup-commands-1">claude plugin install sc-codex@synaptic-canvas --scope project
+python3 - &lt;&lt;&#x27;PY&#x27;
+import json
+from pathlib import Path
+
+settings = Path(&quot;.claude/settings.json&quot;)
+data = json.loads(settings.read_text(encoding=&quot;utf-8&quot;))
+enabled = data.setdefault(&quot;enabledPlugins&quot;, {})
+enabled[&quot;sc-codex@synaptic-canvas&quot;] = True
+settings.write_text(json.dumps(data, indent=2) + &quot;\n&quot;, encoding=&quot;utf-8&quot;)
+PY
+</pre></div><div class="reproduce-step"><div class="reproduce-step-header"><span class="reproduce-step-label">2. Run Test</span><button class="copy-icon-btn" data-tooltip="Copy test command" onclick="copyElement('test-command-1')">
+      <svg class="clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+      <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    </button></div><pre id="test-command-1">claude -p &#x27;/sc-codex --background write a short haiku about rain.
+Wait up to 8 seconds for Codex to finish. If it completes, return the haiku and a line `Grade: N` (N is 1-10).
+If it is still running after 8 seconds, reply only with `STILL RUNNING` and the output_file path.
+&#x27; --model haiku --tools Bash --dangerously-skip-permissions --setting-sources project</pre></div></div></div>
+
+<details class="plugin-verification-section" open>
+  <summary>
+    <span class="summary-text">Plugin Verification</span>
+    <span class="plugin-summary pass">&#9989; 1/1 plugins installed</span>
+    <button class="copy-icon-btn" data-tooltip="Copy plugin info" onclick="event.stopPropagation(); copySection('plugin-verification-1', 'Plugin Verification')">
+      <svg class="clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+      <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    </button>
+  </summary>
+  <div class="content" id="plugin-verification-1">
+    <div class="plugin-expected">
+      <strong>Expected Plugins:</strong> <code>sc-codex@synaptic-canvas</code>
+    </div>
+    <div class="plugin-results">
+      <strong>Installation Results:</strong>
+      <div class="plugin-list">
+        <div class="plugin-item pass">
+      <span class="plugin-status">&#9989;</span>
+      <span class="plugin-name">sc-codex@synaptic-canvas</span>
+      <span class="plugin-result">Installed</span>
+      
+      <details class="plugin-output">
+        <summary>CLI Output (return code: 0)</summary>
+        <pre><strong>STDOUT:</strong>
+[0;32m✓[0m Installing sc-codex to /Users/randlee/Documents/github/sc-test-harness/.claude
+[0;32m✓[0m Installed: commands/sc-codex.md
+[0;32m✓[0m Installed: skills/codex-agent/SKILL.md
+[0;32m✓[0m Installed: agents/sc-codex.md
+[0;32m✓[0m Installed: scripts/sc_codex_task.py
+[0;32m✓[0m Installed: scripts/ai_cli/__init__.py
+[0;32m✓[0m Installed: scripts/ai_cli/__main__.py
+[0;32m✓[0m Installed: scripts/ai_cli/cli.py
+[0;32m✓[0m Installed: scripts/ai_cli/logging.py
+[0;32m✓[0m Installed: scripts/ai_cli/task_runner.py
+[0;32m✓[0m Installed: scripts/ai_cli/task_tool.py
+[0;32m✓[0m Installed: scripts/ai_cli/README.md
+[0;32m✓[0m Updated registry: /Users/randlee/Documents/github/sc-test-harness/.claude/agents/registry.yaml
+[0;32m✓[0m Done installing sc-codex
+</pre>
+      </details>
+    </div>
+      </div>
+    </div>
+  </div>
+</details>
+
+<details class="expectations-section" open>
+<summary class="section-header">
+  <span class="summary-text">Expectations <span class="pass-count">(3 passed)</span> <span class="fail-count">(0 failed)</span></span>
+  <button class="copy-icon-btn" data-tooltip="Copy expectations summary" onclick="copySection('expectations-1', 'Expectations')">
+      <svg class="clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+      <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    </button>
+</summary>
+<ul class="expectations-list" id="expectations-1">
+  <li class="expectation-item" data-exp-id="exp-001">
+    <span class="expectation-icon">&#9989;</span>
+    <div class="expectation-content">
+      <div class="expectation-label">sc-codex command invokes Python runner</div>
+      <div class="expectation-details">Type: tool_call</div>
+      <div class="expectation-expanded" id="exp-001">
+        <div class="expected-actual">
+          <div class="expected-block">
+            <h4>Expected</h4>
+            <pre>{
+  &quot;pattern&quot;: &quot;sc_codex_task.py&quot;,
+  &quot;tool&quot;: &quot;Bash&quot;
+}</pre>
+          </div>
+          <div class="actual-block">
+            <h4>Actual</h4>
+            <pre>{
+  &quot;command&quot;: &quot;python3 .claude/scripts/sc_codex_task.py --json &#x27;{\&quot;description\&quot;: \&quot;Write a short haiku about rain\&quot;, \&quot;prompt\&quot;: \&quot;write a short haiku about rain\&quot;, \&quot;subagent_type\&quot;: \&quot;sc-codex\&quot;, \&quot;run_in_background\&quot;: true}&#x27;&quot;,
+  &quot;output_preview&quot;: &quot;{\n  \&quot;output\&quot;: \&quot;Async agent launched successfully.\&quot;,\n  \&quot;agentId\&quot;: \&quot;07f1cadc-8544-46c0-b874-b914ad08d1...&quot;,
+  &quot;tool&quot;: &quot;Bash&quot;
+}</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="expectation-actions">
+      <button class="copy-icon-btn" data-tooltip="Copy expectation" onclick="copyExpectation('exp-001')">
+      <svg class="clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+      <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    </button>
+      <button class="expectation-toggle has-content" onclick="toggleExpectation('exp-001')">Details</button>
+    </div>
+  </li><li class="expectation-item" data-exp-id="exp-002">
+    <span class="expectation-icon">&#9989;</span>
+    <div class="expectation-content">
+      <div class="expectation-label">Output includes grade</div>
+      <div class="expectation-details">Type: output_contains</div>
+      <div class="expectation-expanded" id="exp-002">
+        <div class="expected-actual">
+          <div class="expected-block">
+            <h4>Expected</h4>
+            <pre>{
+  &quot;flags&quot;: &quot;i&quot;,
+  &quot;pattern&quot;: &quot;Grade:\\s*(10|[1-9])\\b&quot;
+}</pre>
+          </div>
+          <div class="actual-block">
+            <h4>Actual</h4>
+            <pre>{
+  &quot;context&quot;: &quot;with silver light\nEarth breathes in and sleeps\n\n**Grade: 9**\n\nThis is a well-crafted haiku with vivid imager&quot;,
+  &quot;matched_text&quot;: &quot;Grade: 9&quot;
+}</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="expectation-actions">
+      <button class="copy-icon-btn" data-tooltip="Copy expectation" onclick="copyExpectation('exp-002')">
+      <svg class="clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+      <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    </button>
+      <button class="expectation-toggle has-content" onclick="toggleExpectation('exp-002')">Details</button>
+    </div>
+  </li><li class="expectation-item" data-exp-id="implicit-no-warnings">
+    <span class="expectation-icon">&#9989;</span>
+    <div class="expectation-content">
+      <div class="expectation-label">No warnings or errors in logs</div>
+      <div class="expectation-details">Type: hook_event</div>
+      <div class="expectation-expanded" id="implicit-no-warnings">
+        <div class="expected-actual">
+          <div class="expected-block">
+            <h4>Expected</h4>
+            <pre>{
+  &quot;allow_warnings&quot;: false,
+  &quot;no_errors&quot;: true,
+  &quot;no_warnings&quot;: true
+}</pre>
+          </div>
+          <div class="actual-block">
+            <h4>Actual</h4>
+            <pre>{
+  &quot;error_count&quot;: 0,
+  &quot;has_issues&quot;: false,
+  &quot;warning_count&quot;: 0
+}</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="expectation-actions">
+      <button class="copy-icon-btn" data-tooltip="Copy expectation" onclick="copyExpectation('implicit-no-warnings')">
+      <svg class="clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+      <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    </button>
+      <button class="expectation-toggle has-content" onclick="toggleExpectation('implicit-no-warnings')">Details</button>
+    </div>
+  </li>
+</ul>
+</details>
+
+<details>
+  <summary>
+    <span class="summary-text">Timeline (2 tool calls)</span>
+    <button class="copy-icon-btn" data-tooltip="Copy entire timeline" onclick="event.stopPropagation(); copyTimeline('timeline-1')">
+      <svg class="clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+      <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    </button>
+  </summary>
+  <div class="content">
+    <div class="timeline" id="timeline-1">
+      <div class="timeline-item prompt depth-0"
+        data-seq="1"
+        data-elapsed="0ms"
+        
+        
+        >
+        <div class="timeline-dot"></div>
+        <div class="timeline-header">
+          <span class="timeline-type">Prompt</span>
+          <div class="timeline-right">
+            <span class="timeline-elapsed">+0ms</span>
+            <span class="timeline-seq">#1</span>
+            <button class="copy-icon-btn" data-tooltip="Copy this step" onclick="copyTimelineItem(this)">
+      <svg class="clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+      <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    </button>
+          </div>
+        </div>
+        <div class="timeline-content">
+          
+          
+          <pre>/sc-codex --background write a short haiku about rain.
+Wait up to 8 seconds for Codex to finish. If it completes, return the haiku and a line `Grade: N` (N is 1-10).
+If it is still running after 8 seconds, reply only with `STILL RUNNING` and the output_file path.
+</pre>
+        </div>
+      </div><div class="timeline-item response depth-0"
+        data-seq="2"
+        data-elapsed="0ms"
+        
+        
+        >
+        <div class="timeline-dot"></div>
+        <div class="timeline-header">
+          <span class="timeline-type">Response</span>
+          <div class="timeline-right">
+            <span class="timeline-elapsed">+0ms</span>
+            <span class="timeline-seq">#2</span>
+            <button class="copy-icon-btn" data-tooltip="Copy this step" onclick="copyTimelineItem(this)">
+      <svg class="clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+      <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    </button>
+          </div>
+        </div>
+        <div class="timeline-content">
+          
+          
+          <pre>I&#x27;ll run the Codex task to write a haiku about rain in background mode.</pre>
+        </div>
+      </div><div class="timeline-item response depth-0"
+        data-seq="3"
+        data-elapsed="0ms"
+        
+        
+        >
+        <div class="timeline-dot"></div>
+        <div class="timeline-header">
+          <span class="timeline-type">Response</span>
+          <div class="timeline-right">
+            <span class="timeline-elapsed">+0ms</span>
+            <span class="timeline-seq">#3</span>
+            <button class="copy-icon-btn" data-tooltip="Copy this step" onclick="copyTimelineItem(this)">
+      <svg class="clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+      <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    </button>
+          </div>
+        </div>
+        <div class="timeline-content">
+          
+          
+          <pre>Now I&#x27;ll poll the output file for up to 8 seconds to wait for completion:</pre>
+        </div>
+      </div><div class="timeline-item response depth-0"
+        data-seq="4"
+        data-elapsed="0ms"
+        
+        
+        >
+        <div class="timeline-dot"></div>
+        <div class="timeline-header">
+          <span class="timeline-type">Response</span>
+          <div class="timeline-right">
+            <span class="timeline-elapsed">+0ms</span>
+            <span class="timeline-seq">#4</span>
+            <button class="copy-icon-btn" data-tooltip="Copy this step" onclick="copyTimelineItem(this)">
+      <svg class="clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+      <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    </button>
+          </div>
+        </div>
+        <div class="timeline-content">
+          
+          
+          <pre>Perfect! The Codex task completed successfully within 8 seconds.
+
+**Haiku:**
+
+Soft rain taps the leaves
+Puddles bloom with silver light
+Earth breathes in and sleeps
+
+**Grade: 9**
+
+This is a well-crafted haiku with vivid imagery, strong sensory details (the tapping sound, visual bloom of light), and a poetic personification of the earth. The structure follows the 5-7-5 syllable pattern correctly.</pre>
+        </div>
+      </div><div class="timeline-item tool_call depth-0"
+        data-seq="5"
+        data-elapsed="2000ms"
+        
+        
+        >
+        <div class="timeline-dot"></div>
+        <div class="timeline-header">
+          <span class="timeline-type">Bash</span>
+          <div class="timeline-right">
+            <span class="timeline-elapsed">+2.00s</span>
+            <span class="timeline-seq">#5</span>
+            <button class="copy-icon-btn" data-tooltip="Copy this step" onclick="copyTimelineItem(this)">
+      <svg class="clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+      <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    </button>
+          </div>
+        </div>
+        <div class="timeline-content">
+          <div class="timeline-meta">pid:42763 | id:toolu_01</div>
+          <div class="timeline-intent">Launch Codex task to write a haiku about rain</div>
+          <pre>$ python3 .claude/scripts/sc_codex_task.py --json &#x27;{&quot;description&quot;: &quot;Write a short haiku about rain&quot;, &quot;prompt&quot;: &quot;write a short haiku about rain&quot;, &quot;subagent_type&quot;: &quot;sc-codex&quot;, &quot;run_in_background&quot;: true}&#x27;
+
+{
+  &quot;output&quot;: &quot;Async agent launched successfully.&quot;,
+  &quot;agentId&quot;: &quot;07f1cadc-8544-46c0-b874-b914ad08d18b&quot;,
+  &quot;output_file&quot;: &quot;/Users/randlee/Documents/github/sc-test-harness/.sc/sessions/07f1cadc-8544-46c0-b874-b914ad08d18b.jsonl&quot;
+}</pre>
+        </div>
+      </div><div class="timeline-item tool_call depth-0"
+        data-seq="6"
+        data-elapsed="4000ms"
+        
+        
+        >
+        <div class="timeline-dot"></div>
+        <div class="timeline-header">
+          <span class="timeline-type">Bash</span>
+          <div class="timeline-right">
+            <span class="timeline-elapsed">+4.00s</span>
+            <span class="timeline-seq">#6</span>
+            <button class="copy-icon-btn" data-tooltip="Copy this step" onclick="copyTimelineItem(this)">
+      <svg class="clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+      <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    </button>
+          </div>
+        </div>
+        <div class="timeline-content">
+          <div class="timeline-meta">pid:42839 | id:toolu_01</div>
+          <div class="timeline-intent">Poll output file for task completion within 8 seconds</div>
+          <pre>$ python3 - &lt;&lt;&#x27;PY&#x27;
+import json, time
+from pathlib import Path
+
+path = Path(&quot;/Users/randlee/Documents/github/sc-test-harness/.sc/sessions/07f1cadc-8544-46c0-b874-b914ad08d18b.jsonl&quot;)
+deadline = time.time() + 8
+while time.time() &lt; deadline:
+    if path.exists():
+        lines = [line for line in path.read_text(encoding=&quot;utf-8&quot;).splitlines() if line.strip()]
+        if any(&#x27;&quot;type&quot;: &quot;assistant&quot;&#x27; in line for line in lines):
+            print(path.read_text(encoding=&quot;utf-8&quot;))
+            break
+    time.sleep(0.5)
+else:
+    print(&quot;STILL RUNNING&quot;)
+PY
+
+
+{
+  &quot;parentUuid&quot;: null,
+  &quot;isSidechain&quot;: false,
+  &quot;userType&quot;: &quot;user&quot;,
+  &quot;cwd&quot;: &quot;/Users/randlee/Documents/github/sc-test-harness&quot;,
+  &quot;sessionId&quot;: &quot;07f1cadc-8544-46c0-b874-b914ad08d18b&quot;,
+  &quot;version&quot;: &quot;ai_cli-0.1&quot;,
+  &quot;gitBranch&quot;: &quot;main&quot;,
+  &quot;agentId&quot;: &quot;07f1cadc-8544-46c0-b874-b914ad08d18b&quot;,
+  &quot;type&quot;: &quot;user&quot;,
+  &quot;message&quot;: {
+    &quot;role&quot;: &quot;user&quot;,
+    &quot;content&quot;: &quot;write a short haiku about rain&quot;
+  },
+  &quot;uuid&quot;: &quot;8f088265-c172-427a-bd91-f3185ac877df&quot;,
+  &quot;timestamp&quot;: &quot;2026-01-21T00:30:15.515058+00:00&quot;,
+  &quot;slug&quot;: &quot;&quot;,
+  &quot;requestId&quot;: &quot;&quot;
+}
+{
+  &quot;parentUuid&quot;: null,
+  &quot;isSidechain&quot;: false,
+  &quot;userType&quot;: &quot;user&quot;,
+  &quot;cwd&quot;: &quot;/Users/randlee/Documents/github/sc-test-harness&quot;,
+  &quot;sessionId&quot;: &quot;07f1cadc-8544-46c0-b874-b914ad08d18b&quot;,
+  &quot;version&quot;: &quot;ai_cli-0.1&quot;,
+  &quot;gitBranch&quot;: &quot;main&quot;,
+  &quot;agentId&quot;: &quot;07f1cadc-8544-46c0-b874-b914ad08d18b&quot;,
+  &quot;type&quot;: &quot;assistant&quot;,
+  &quot;message&quot;: {
+    &quot;role&quot;: &quot;assistant&quot;,
+    &quot;content&quot;: &quot;Soft rain taps the leaves\nPuddles bloom with silver light\nEarth breathes in and sleeps&quot;
+  },
+  &quot;uuid&quot;: &quot;6cdceed6-313f-426f-94bc-b7c1c6e64736&quot;,
+  &quot;timestamp&quot;: &quot;2026-01-21T00:30:17.068611+00:00&quot;,
+  &quot;slug&quot;: &quot;final&quot;,
+  &quot;requestId&quot;: &quot;6cdceed6-313f-426f-94bc-b7c1c6e64736&quot;
+}</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</details>
+
+<details>
+  <summary>
+    <span class="summary-text">Claude's Full Response</span>
+    <button class="copy-icon-btn" data-tooltip="Copy full response" onclick="event.stopPropagation(); copySection('response-1', 'Claude Response')">
+      <svg class="clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+      <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    </button>
+  </summary>
+  <div class="content">
+    <div class="response-preview" id="response-1">
+      <pre>Perfect! The Codex task completed successfully within 8 seconds.
+
+**Haiku:**
+
+Soft rain taps the leaves
+Puddles bloom with silver light
+Earth breathes in and sleeps
+
+**Grade: 9**
+
+This is a well-crafted haiku with vivid imagery, strong sensory details (the tapping sound, visual bloom of light), and a poetic personification of the earth. The structure follows the 5-7-5 syllable pattern correctly.</pre>
+    </div>
+  </div>
+</details>
+
+<details>
+  <summary>
+    <span class="summary-text">Debug Information</span>
+    <button class="copy-icon-btn" data-tooltip="Copy debug info" onclick="event.stopPropagation(); copySection('debug-1', 'Debug Information')">
+      <svg class="clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+      <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    </button>
+  </summary>
+  <div class="content" id="debug-1">
+    
+
+    <h3>Test Metadata</h3>
+    <table class="debug-table">
+      <tr><td>Package</td><td>sc-codex@synaptic-canvas</td></tr><tr><td>Session ID</td><td>da18c7da-a622-4795-bd27-bcf337778158</td></tr>
+    </table>
+
+    <h3>Side Effects</h3>
+    <p style="color: var(--pass);">No files were created, modified, or deleted.</p>
+
+    <h3>Raw Trace File</h3>
+    <p><a href="vscode://file//Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/codex-task-tool/test-packages/reports/sc-codex/sc-codex-001-trace.jsonl" class="file-link vscode" title="Open in VS Code">/Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/codex-task-tool/test-packages/reports/sc-codex/sc-codex-001-trace.jsonl<span class="link-icon">&#8599;</span></a></p>
+  </div>
+</details>
+
+<details class="agent-assessment-section"
+         id="agent-assessment-section-1"
+         data-test-id="sc-codex-001">
+  <summary>
+    <span class="summary-text">Agent Assessment</span>
+    <button class="copy-icon-btn" data-tooltip="Copy assessment" onclick="event.stopPropagation(); copyAssessment('agent-assessment-1')">
+      <svg class="clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+      <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    </button>
+  </summary>
+  <div class="content">
+    <div class="agent-assessment" id="agent-assessment-1">
+      <div class="agent-assessment-header">
+        <h3>
+          Agent Assessment
+          <span class="ai-badge">AI Review</span>
+        </h3>
+        <span class="agent-assessment-meta" id="agent-assessment-meta-1"></span>
+      </div>
+      <div class="agent-assessment-content" id="agent-assessment-content-1">
+        <p class="agent-assessment-loading">Loading assessment...</p>
+      </div>
+    </div>
+  </div>
+</details>
+</div>
+<div id="test-2" class="tab-content">
+<h1>Two mini runs in one prompt</h1>
+<p class="description">Launch two codex-mini runs back-to-back and grade both results.</p>
+
+<div class="status-banner pass">
+  <div class="status-badge">
+    <span>PASS</span>
+    <span style="font-size: 0.9rem; font-weight: normal;">4 of 4 expectations passed</span>
+  </div>
+  <div class="status-meta">
+    <div class="duration">11.00s</div>
+    <div>2026-01-21 00:30:20</div>
+  <div class="token-section">
+    <details class="token-details">
+      <summary>Tokens: 44,645 total</summary>
+      <dl class="token-detail">
+        <div><dt>Input tokens</dt><dd>29</dd></div>
+        <div><dt>Output tokens</dt><dd>15</dd></div>
+        <div><dt>Cache creation tokens</dt><dd>6,802</dd></div>
+        <div><dt>Cache read tokens</dt><dd>37,799</dd></div>
+        <div><dt>Subagent tokens</dt><dd>0</dd></div>
+        <div><dt>Total billable</dt><dd>6,846</dd></div>
+        <div><dt>Total all</dt><dd>44,645</dd></div>
+      </dl>
+    </details>
+  </div>
+  </div>
+</div>
+
+<details class="log-issues-section log-severity-clean">
+  <summary>
+    <span class="summary-text">Log Warnings &amp; Errors</span>
+    <span class="log-count-badge log-clean-badge">No issues</span>
+  </summary>
+  <div class="content" id="log-issues-2">
+    <p class="log-clean-message">No warnings or errors were captured during test execution.</p>
+    
+  </div>
+</details>
+
+<div class="test-metadata">
+  <div class="test-metadata-grid">
+    <div class="test-metadata-item">
+      <span class="test-metadata-label">Test ID</span>
+      <span class="test-metadata-value">sc-codex-002</span>
+    </div>
+    <div class="test-metadata-item">
+      <span class="test-metadata-label">Test Name</span>
+      <span class="test-metadata-value">Two mini runs in one prompt</span>
+    </div>
+    <div class="test-metadata-item">
+      <span class="test-metadata-label">Fixture</span>
+      <span class="test-metadata-value">sc-codex</span>
+    </div>
+    <div class="test-metadata-item">
+      <span class="test-metadata-label">Package</span>
+      <span class="test-metadata-value">sc-codex@synaptic-canvas</span>
+    </div>
+    <div class="test-metadata-item">
+      <span class="test-metadata-label">Model</span>
+      <span class="test-metadata-value">haiku</span>
+    </div>
+    <div class="test-metadata-item">
+      <span class="test-metadata-label">Session ID</span>
+      <span class="test-metadata-value" style="font-family: monospace;">ba6814cf-3d18-40ff-bfd6-0888e4eb7410</span>
+    </div>
+  </div>
+</div>
+
+<div class="reproduce-section"><div class="section-header"><h2>Reproduce This Test</h2><button class="copy-icon-btn" data-tooltip="Copy all reproduction steps" onclick="copySection('reproduce-2', 'Reproduce This Test')">
+      <svg class="clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+      <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    </button></div><p style="color: #94a3b8; margin-bottom: 16px;">Copy and run these commands to reproduce this test exactly:</p><div id="reproduce-2"><div class="reproduce-step"><div class="reproduce-step-header"><span class="reproduce-step-label">1. Setup</span><button class="copy-icon-btn" data-tooltip="Copy setup commands" onclick="copyElement('setup-commands-2')">
+      <svg class="clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+      <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    </button></div><pre id="setup-commands-2">claude plugin install sc-codex@synaptic-canvas --scope project
+python3 - &lt;&lt;&#x27;PY&#x27;
+import json
+from pathlib import Path
+
+settings = Path(&quot;.claude/settings.json&quot;)
+data = json.loads(settings.read_text(encoding=&quot;utf-8&quot;))
+enabled = data.setdefault(&quot;enabledPlugins&quot;, {})
+enabled[&quot;sc-codex@synaptic-canvas&quot;] = True
+settings.write_text(json.dumps(data, indent=2) + &quot;\n&quot;, encoding=&quot;utf-8&quot;)
+PY
+</pre></div><div class="reproduce-step"><div class="reproduce-step-header"><span class="reproduce-step-label">2. Run Test</span><button class="copy-icon-btn" data-tooltip="Copy test command" onclick="copyElement('test-command-2')">
+      <svg class="clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+      <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    </button></div><pre id="test-command-2">claude -p &#x27;/sc-codex Launch two background Codex mini runs: (1) write a short haiku about sunrise, (2) write a short haiku about the ocean.
+Start both runs before waiting. Wait up to 8 seconds for each to finish. If they complete, return both haikus and two lines
+`Grade: N` (one per haiku) where N is a numeric score from 1-10. If either is still running after 8 seconds, reply only with
+`STILL RUNNING` and both output_file paths.
+&#x27; --model haiku --tools Bash --dangerously-skip-permissions --setting-sources project</pre></div></div></div>
+
+<details class="plugin-verification-section" open>
+  <summary>
+    <span class="summary-text">Plugin Verification</span>
+    <span class="plugin-summary pass">&#9989; 1/1 plugins installed</span>
+    <button class="copy-icon-btn" data-tooltip="Copy plugin info" onclick="event.stopPropagation(); copySection('plugin-verification-2', 'Plugin Verification')">
+      <svg class="clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+      <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    </button>
+  </summary>
+  <div class="content" id="plugin-verification-2">
+    <div class="plugin-expected">
+      <strong>Expected Plugins:</strong> <code>sc-codex@synaptic-canvas</code>
+    </div>
+    <div class="plugin-results">
+      <strong>Installation Results:</strong>
+      <div class="plugin-list">
+        <div class="plugin-item pass">
+      <span class="plugin-status">&#9989;</span>
+      <span class="plugin-name">sc-codex@synaptic-canvas</span>
+      <span class="plugin-result">Installed</span>
+      
+      <details class="plugin-output">
+        <summary>CLI Output (return code: 0)</summary>
+        <pre><strong>STDOUT:</strong>
+[0;32m✓[0m Installing sc-codex to /Users/randlee/Documents/github/sc-test-harness/.claude
+[0;32m✓[0m Installed: commands/sc-codex.md
+[0;32m✓[0m Installed: skills/codex-agent/SKILL.md
+[0;32m✓[0m Installed: agents/sc-codex.md
+[0;32m✓[0m Installed: scripts/sc_codex_task.py
+[0;32m✓[0m Installed: scripts/ai_cli/__init__.py
+[0;32m✓[0m Installed: scripts/ai_cli/__main__.py
+[0;32m✓[0m Installed: scripts/ai_cli/cli.py
+[0;32m✓[0m Installed: scripts/ai_cli/logging.py
+[0;32m✓[0m Installed: scripts/ai_cli/task_runner.py
+[0;32m✓[0m Installed: scripts/ai_cli/task_tool.py
+[0;32m✓[0m Installed: scripts/ai_cli/README.md
+[0;32m✓[0m Updated registry: /Users/randlee/Documents/github/sc-test-harness/.claude/agents/registry.yaml
+[0;32m✓[0m Done installing sc-codex
+</pre>
+      </details>
+    </div>
+      </div>
+    </div>
+  </div>
+</details>
+
+<details class="expectations-section" open>
+<summary class="section-header">
+  <span class="summary-text">Expectations <span class="pass-count">(4 passed)</span> <span class="fail-count">(0 failed)</span></span>
+  <button class="copy-icon-btn" data-tooltip="Copy expectations summary" onclick="copySection('expectations-2', 'Expectations')">
+      <svg class="clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+      <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    </button>
+</summary>
+<ul class="expectations-list" id="expectations-2">
+  <li class="expectation-item" data-exp-id="exp-001">
+    <span class="expectation-icon">&#9989;</span>
+    <div class="expectation-content">
+      <div class="expectation-label">Runs codex mini for sunrise</div>
+      <div class="expectation-details">Type: tool_call</div>
+      <div class="expectation-expanded" id="exp-001">
+        <div class="expected-actual">
+          <div class="expected-block">
+            <h4>Expected</h4>
+            <pre>{
+  &quot;pattern&quot;: &quot;sc_codex_task.py.*sunrise&quot;,
+  &quot;tool&quot;: &quot;Bash&quot;
+}</pre>
+          </div>
+          <div class="actual-block">
+            <h4>Actual</h4>
+            <pre>{
+  &quot;command&quot;: &quot;python3 .claude/scripts/sc_codex_task.py --json &#x27;{\&quot;description\&quot;:\&quot;Write a short haiku about sunrise\&quot;,\&quot;prompt\&quot;:\&quot;write a short haiku about sunrise\&quot;,\&quot;subagent_type\&quot;:\&quot;sc-codex\&quot;,\&quot;run_in_background\&quot;:true}&#x27; 2&gt;&amp;1 | grep -o &#x27;\&quot;output_file\&quot;:\&quot;[^\&quot;]*\&quot;&#x27; | head -1&quot;,
+  &quot;output_preview&quot;: &quot;&quot;,
+  &quot;tool&quot;: &quot;Bash&quot;
+}</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="expectation-actions">
+      <button class="copy-icon-btn" data-tooltip="Copy expectation" onclick="copyExpectation('exp-001')">
+      <svg class="clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+      <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    </button>
+      <button class="expectation-toggle has-content" onclick="toggleExpectation('exp-001')">Details</button>
+    </div>
+  </li><li class="expectation-item" data-exp-id="exp-002">
+    <span class="expectation-icon">&#9989;</span>
+    <div class="expectation-content">
+      <div class="expectation-label">Runs codex mini for ocean</div>
+      <div class="expectation-details">Type: tool_call</div>
+      <div class="expectation-expanded" id="exp-002">
+        <div class="expected-actual">
+          <div class="expected-block">
+            <h4>Expected</h4>
+            <pre>{
+  &quot;pattern&quot;: &quot;sc_codex_task.py.*ocean&quot;,
+  &quot;tool&quot;: &quot;Bash&quot;
+}</pre>
+          </div>
+          <div class="actual-block">
+            <h4>Actual</h4>
+            <pre>{
+  &quot;command&quot;: &quot;python3 .claude/scripts/sc_codex_task.py --json &#x27;{\&quot;description\&quot;:\&quot;Write a short haiku about the ocean\&quot;,\&quot;prompt\&quot;:\&quot;write a short haiku about the ocean\&quot;,\&quot;subagent_type\&quot;:\&quot;sc-codex\&quot;,\&quot;run_in_background\&quot;:true}&#x27; 2&gt;&amp;1 | grep -o &#x27;\&quot;output_file\&quot;:\&quot;[^\&quot;]*\&quot;&#x27; | head -1&quot;,
+  &quot;output_preview&quot;: &quot;&quot;,
+  &quot;tool&quot;: &quot;Bash&quot;
+}</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="expectation-actions">
+      <button class="copy-icon-btn" data-tooltip="Copy expectation" onclick="copyExpectation('exp-002')">
+      <svg class="clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+      <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    </button>
+      <button class="expectation-toggle has-content" onclick="toggleExpectation('exp-002')">Details</button>
+    </div>
+  </li><li class="expectation-item" data-exp-id="exp-003">
+    <span class="expectation-icon">&#9989;</span>
+    <div class="expectation-content">
+      <div class="expectation-label">Output includes grade</div>
+      <div class="expectation-details">Type: output_contains</div>
+      <div class="expectation-expanded" id="exp-003">
+        <div class="expected-actual">
+          <div class="expected-block">
+            <h4>Expected</h4>
+            <pre>{
+  &quot;flags&quot;: &quot;is&quot;,
+  &quot;pattern&quot;: &quot;Grade:\\s*(10|[1-9])\\b.*Grade:\\s*(10|[1-9])\\b&quot;
+}</pre>
+          </div>
+          <div class="actual-block">
+            <h4>Actual</h4>
+            <pre>{
+  &quot;context&quot;: &quot;e\nHills wake in soft amber\nDay breathes into sky\n\nGrade: 8\n\n**Ocean Haiku:**\nTide breathes in moonlight\nSalt whispers on quiet shores\nBlue heart, endless calm\n\nGrade: 9&quot;,
+  &quot;matched_text&quot;: &quot;Grade: 8\n\n**Ocean Haiku:**\nTide breathes in moonlight\nSalt whispers on quiet shores\nBlue heart, endless calm\n\nGrade: 9&quot;
+}</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="expectation-actions">
+      <button class="copy-icon-btn" data-tooltip="Copy expectation" onclick="copyExpectation('exp-003')">
+      <svg class="clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+      <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    </button>
+      <button class="expectation-toggle has-content" onclick="toggleExpectation('exp-003')">Details</button>
+    </div>
+  </li><li class="expectation-item" data-exp-id="implicit-no-warnings">
+    <span class="expectation-icon">&#9989;</span>
+    <div class="expectation-content">
+      <div class="expectation-label">No warnings or errors in logs</div>
+      <div class="expectation-details">Type: hook_event</div>
+      <div class="expectation-expanded" id="implicit-no-warnings">
+        <div class="expected-actual">
+          <div class="expected-block">
+            <h4>Expected</h4>
+            <pre>{
+  &quot;allow_warnings&quot;: false,
+  &quot;no_errors&quot;: true,
+  &quot;no_warnings&quot;: true
+}</pre>
+          </div>
+          <div class="actual-block">
+            <h4>Actual</h4>
+            <pre>{
+  &quot;error_count&quot;: 0,
+  &quot;has_issues&quot;: false,
+  &quot;warning_count&quot;: 0
+}</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="expectation-actions">
+      <button class="copy-icon-btn" data-tooltip="Copy expectation" onclick="copyExpectation('implicit-no-warnings')">
+      <svg class="clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+      <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    </button>
+      <button class="expectation-toggle has-content" onclick="toggleExpectation('implicit-no-warnings')">Details</button>
+    </div>
+  </li>
+</ul>
+</details>
+
+<details>
+  <summary>
+    <span class="summary-text">Timeline (5 tool calls)</span>
+    <button class="copy-icon-btn" data-tooltip="Copy entire timeline" onclick="event.stopPropagation(); copyTimeline('timeline-2')">
+      <svg class="clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+      <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    </button>
+  </summary>
+  <div class="content">
+    <div class="timeline" id="timeline-2">
+      <div class="timeline-item response depth-0"
+        data-seq="1"
+        data-elapsed="0ms"
+        
+        
+        >
+        <div class="timeline-dot"></div>
+        <div class="timeline-header">
+          <span class="timeline-type">Response</span>
+          <div class="timeline-right">
+            <span class="timeline-elapsed">+0ms</span>
+            <span class="timeline-seq">#1</span>
+            <button class="copy-icon-btn" data-tooltip="Copy this step" onclick="copyTimelineItem(this)">
+      <svg class="clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+      <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    </button>
+          </div>
+        </div>
+        <div class="timeline-content">
+          
+          
+          <pre>I&#x27;ll launch two background Codex mini runs - one for a sunrise haiku and one for an ocean haiku. Let me start both tasks first, then wait for their results.</pre>
+        </div>
+      </div><div class="timeline-item response depth-0"
+        data-seq="2"
+        data-elapsed="0ms"
+        
+        
+        >
+        <div class="timeline-dot"></div>
+        <div class="timeline-header">
+          <span class="timeline-type">Response</span>
+          <div class="timeline-right">
+            <span class="timeline-elapsed">+0ms</span>
+            <span class="timeline-seq">#2</span>
+            <button class="copy-icon-btn" data-tooltip="Copy this step" onclick="copyTimelineItem(this)">
+      <svg class="clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+      <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    </button>
+          </div>
+        </div>
+        <div class="timeline-content">
+          
+          
+          <pre>Let me try a different approach to capture the full JSON output:</pre>
+        </div>
+      </div><div class="timeline-item response depth-0"
+        data-seq="3"
+        data-elapsed="0ms"
+        
+        
+        >
+        <div class="timeline-dot"></div>
+        <div class="timeline-header">
+          <span class="timeline-type">Response</span>
+          <div class="timeline-right">
+            <span class="timeline-elapsed">+0ms</span>
+            <span class="timeline-seq">#3</span>
+            <button class="copy-icon-btn" data-tooltip="Copy this step" onclick="copyTimelineItem(this)">
+      <svg class="clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+      <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    </button>
+          </div>
+        </div>
+        <div class="timeline-content">
+          
+          
+          <pre>Great! Both tasks are now running. Now I&#x27;ll wait up to 8 seconds for each to complete and fetch their outputs:</pre>
+        </div>
+      </div><div class="timeline-item response depth-0"
+        data-seq="4"
+        data-elapsed="0ms"
+        
+        
+        >
+        <div class="timeline-dot"></div>
+        <div class="timeline-header">
+          <span class="timeline-type">Response</span>
+          <div class="timeline-right">
+            <span class="timeline-elapsed">+0ms</span>
+            <span class="timeline-seq">#4</span>
+            <button class="copy-icon-btn" data-tooltip="Copy this step" onclick="copyTimelineItem(this)">
+      <svg class="clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+      <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    </button>
+          </div>
+        </div>
+        <div class="timeline-content">
+          
+          
+          <pre>Perfect! Both tasks completed within 8 seconds. Here are the results:
+
+**Sunrise Haiku:**
+First light spills wide
+Hills wake in soft amber
+Day breathes into sky
+
+Grade: 8
+
+**Ocean Haiku:**
+Tide breathes in moonlight
+Salt whispers on quiet shores
+Blue heart, endless calm
+
+Grade: 9</pre>
+        </div>
+      </div><div class="timeline-item prompt depth-0"
+        data-seq="5"
+        data-elapsed="1000ms"
+        
+        
+        >
+        <div class="timeline-dot"></div>
+        <div class="timeline-header">
+          <span class="timeline-type">Prompt</span>
+          <div class="timeline-right">
+            <span class="timeline-elapsed">+1.00s</span>
+            <span class="timeline-seq">#5</span>
+            <button class="copy-icon-btn" data-tooltip="Copy this step" onclick="copyTimelineItem(this)">
+      <svg class="clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+      <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    </button>
+          </div>
+        </div>
+        <div class="timeline-content">
+          
+          
+          <pre>/sc-codex Launch two background Codex mini runs: (1) write a short haiku about sunrise, (2) write a short haiku about the ocean.
+Start both runs before waiting. Wait up to 8 seconds for each to finish. If they complete, return both haikus and two lines
+`Grade: N` (one per haiku) where N is a numeric score from 1-10. If either is still running after 8 seconds, reply only with
+`STILL RUNNING` and both output_file paths.
+</pre>
+        </div>
+      </div><div class="timeline-item tool_call depth-0"
+        data-seq="6"
+        data-elapsed="3000ms"
+        
+        
+        >
+        <div class="timeline-dot"></div>
+        <div class="timeline-header">
+          <span class="timeline-type">Bash</span>
+          <div class="timeline-right">
+            <span class="timeline-elapsed">+3.00s</span>
+            <span class="timeline-seq">#6</span>
+            <button class="copy-icon-btn" data-tooltip="Copy this step" onclick="copyTimelineItem(this)">
+      <svg class="clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+      <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    </button>
+          </div>
+        </div>
+        <div class="timeline-content">
+          <div class="timeline-meta">pid:42948 | id:toolu_01</div>
+          <div class="timeline-intent">Launch first Codex task for sunrise haiku</div>
+          <pre>$ python3 .claude/scripts/sc_codex_task.py --json &#x27;{&quot;description&quot;:&quot;Write a short haiku about sunrise&quot;,&quot;prompt&quot;:&quot;write a short haiku about sunrise&quot;,&quot;subagent_type&quot;:&quot;sc-codex&quot;,&quot;run_in_background&quot;:true}&#x27; 2&gt;&amp;1 | grep -o &#x27;&quot;output_file&quot;:&quot;[^&quot;]*&quot;&#x27; | head -1</pre>
+        </div>
+      </div><div class="timeline-item tool_call depth-0"
+        data-seq="7"
+        data-elapsed="3000ms"
+        
+        
+        >
+        <div class="timeline-dot"></div>
+        <div class="timeline-header">
+          <span class="timeline-type">Bash</span>
+          <div class="timeline-right">
+            <span class="timeline-elapsed">+3.00s</span>
+            <span class="timeline-seq">#7</span>
+            <button class="copy-icon-btn" data-tooltip="Copy this step" onclick="copyTimelineItem(this)">
+      <svg class="clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+      <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    </button>
+          </div>
+        </div>
+        <div class="timeline-content">
+          <div class="timeline-meta">pid:42963 | id:toolu_01</div>
+          <div class="timeline-intent">Launch second Codex task for ocean haiku</div>
+          <pre>$ python3 .claude/scripts/sc_codex_task.py --json &#x27;{&quot;description&quot;:&quot;Write a short haiku about the ocean&quot;,&quot;prompt&quot;:&quot;write a short haiku about the ocean&quot;,&quot;subagent_type&quot;:&quot;sc-codex&quot;,&quot;run_in_background&quot;:true}&#x27; 2&gt;&amp;1 | grep -o &#x27;&quot;output_file&quot;:&quot;[^&quot;]*&quot;&#x27; | head -1</pre>
+        </div>
+      </div><div class="timeline-item tool_call depth-0"
+        data-seq="8"
+        data-elapsed="5000ms"
+        
+        
+        >
+        <div class="timeline-dot"></div>
+        <div class="timeline-header">
+          <span class="timeline-type">Bash</span>
+          <div class="timeline-right">
+            <span class="timeline-elapsed">+5.00s</span>
+            <span class="timeline-seq">#8</span>
+            <button class="copy-icon-btn" data-tooltip="Copy this step" onclick="copyTimelineItem(this)">
+      <svg class="clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+      <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    </button>
+          </div>
+        </div>
+        <div class="timeline-content">
+          <div class="timeline-meta">pid:43084 | id:toolu_01</div>
+          <div class="timeline-intent">Launch first Codex task for sunrise haiku</div>
+          <pre>$ python3 .claude/scripts/sc_codex_task.py --json &#x27;{&quot;description&quot;:&quot;Write a short haiku about sunrise&quot;,&quot;prompt&quot;:&quot;write a short haiku about sunrise&quot;,&quot;subagent_type&quot;:&quot;sc-codex&quot;,&quot;run_in_background&quot;:true}&#x27;
+
+{
+  &quot;output&quot;: &quot;Async agent launched successfully.&quot;,
+  &quot;agentId&quot;: &quot;3c43358e-d2c0-43ab-92a4-a5c97f4ca751&quot;,
+  &quot;output_file&quot;: &quot;/Users/randlee/Documents/github/sc-test-harness/.sc/sessions/3c43358e-d2c0-43ab-92a4-a5c97f4ca751.jsonl&quot;
+}</pre>
+        </div>
+      </div><div class="timeline-item tool_call depth-0"
+        data-seq="9"
+        data-elapsed="5000ms"
+        
+        
+        >
+        <div class="timeline-dot"></div>
+        <div class="timeline-header">
+          <span class="timeline-type">Bash</span>
+          <div class="timeline-right">
+            <span class="timeline-elapsed">+5.00s</span>
+            <span class="timeline-seq">#9</span>
+            <button class="copy-icon-btn" data-tooltip="Copy this step" onclick="copyTimelineItem(this)">
+      <svg class="clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+      <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    </button>
+          </div>
+        </div>
+        <div class="timeline-content">
+          <div class="timeline-meta">pid:43094 | id:toolu_01</div>
+          <div class="timeline-intent">Launch second Codex task for ocean haiku</div>
+          <pre>$ python3 .claude/scripts/sc_codex_task.py --json &#x27;{&quot;description&quot;:&quot;Write a short haiku about the ocean&quot;,&quot;prompt&quot;:&quot;write a short haiku about the ocean&quot;,&quot;subagent_type&quot;:&quot;sc-codex&quot;,&quot;run_in_background&quot;:true}&#x27;
+
+{
+  &quot;output&quot;: &quot;Async agent launched successfully.&quot;,
+  &quot;agentId&quot;: &quot;ca3bd595-afbc-4c08-a8ba-4c36966bd3e3&quot;,
+  &quot;output_file&quot;: &quot;/Users/randlee/Documents/github/sc-test-harness/.sc/sessions/ca3bd595-afbc-4c08-a8ba-4c36966bd3e3.jsonl&quot;
+}</pre>
+        </div>
+      </div><div class="timeline-item tool_call depth-0"
+        data-seq="10"
+        data-elapsed="10000ms"
+        
+        
+        >
+        <div class="timeline-dot"></div>
+        <div class="timeline-header">
+          <span class="timeline-type">Bash</span>
+          <div class="timeline-right">
+            <span class="timeline-elapsed">+10.00s</span>
+            <span class="timeline-seq">#10</span>
+            <button class="copy-icon-btn" data-tooltip="Copy this step" onclick="copyTimelineItem(this)">
+      <svg class="clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+      <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    </button>
+          </div>
+        </div>
+        <div class="timeline-content">
+          <div class="timeline-meta">pid:43227 | id:toolu_01</div>
+          <div class="timeline-intent">Wait up to 8 seconds for both Codex tasks to complete</div>
+          <pre>$ python3 - &lt;&lt;&#x27;PY&#x27;
+import json, time
+from pathlib import Path
+
+path1 = Path(&quot;/Users/randlee/Documents/github/sc-test-harness/.sc/sessions/3c43358e-d2c0-43ab-92a4-a5c97f4ca751.jsonl&quot;)
+path2 = Path(&quot;/Users/randlee/Documents/github/sc-test-harness/.sc/sessions/ca3bd595-afbc-4c08-a8ba-4c36966bd3e3.jsonl&quot;)
+
+deadline = time.time() + 8
+result1 = None
+result2 = None
+
+while time.time() &lt; deadline:
+    if result1 is None and path1.exists():
+        lines = [line for line in path1.read_text(encoding=&quot;utf-8&quot;).splitlines() if line.strip()]
+        if any(&#x27;&quot;type&quot;: &quot;assistant&quot;&#x27; in line for line in lines):
+            result1 = path1.read_text(encoding=&quot;utf-8&quot;)
+    
+    if result2 is None and path2.exists():
+        lines = [line for line in path2.read_text(encoding=&quot;utf-8&quot;).splitlines() if line.strip()]
+        if any(&#x27;&quot;type&quot;: &quot;assistant&quot;&#x27; in line for line in lines):
+            result2 = path2.read_text(encoding=&quot;utf-8&quot;)
+    
+    if result1 is not None and result2 is not None:
+        print(json.dumps({&quot;sunrise&quot;: result1, &quot;ocean&quot;: result2}))
+        exit(0)
+    
+    time.sleep(0.5)
+
+# If we get here, at least one is still running
+if result1 is None or result2 is None:
+    print(json.dumps({
+        &quot;status&quot;: &quot;STILL_RUNNING&quot;,
+        &quot;output_file_1&quot;: str(path1),
+        &quot;output_file_2&quot;: str(path2)
+    }))
+PY
+
+
+{
+  &quot;sunrise&quot;: &quot;{\&quot;parentUuid\&quot;: null, \&quot;isSidechain\&quot;: false, \&quot;userType\&quot;: \&quot;user\&quot;, \&quot;cwd\&quot;: \&quot;/Users/randlee/Documents/github/sc-test-harness\&quot;, \&quot;sessionId\&quot;: \&quot;3c43358e-d2c0-43ab-92a4-a5c97f4ca751\&quot;, \&quot;version\&quot;: \&quot;ai_cli-0.1\&quot;, \&quot;gitBranch\&quot;: \&quot;main\&quot;, \&quot;agentId\&quot;: \&quot;3c43358e-d2c0-43ab-92a4-a5c97f4ca751\&quot;, \&quot;type\&quot;: \&quot;user\&quot;, \&quot;message\&quot;: {\&quot;role\&quot;: \&quot;user\&quot;, \&quot;content\&quot;: \&quot;write a short haiku about sunrise\&quot;}, \&quot;uuid\&quot;: \&quot;cf06bf7e-57a0-4b30-a354-5f2ffeb55da4\&quot;, \&quot;timestamp\&quot;: \&quot;2026-01-21T00:30:25.523380+00:00\&quot;, \&quot;slug\&quot;: \&quot;\&quot;, \&quot;requestId\&quot;: \&quot;\&quot;}\n{\&quot;parentUuid\&quot;: null, \&quot;isSidechain\&quot;: false, \&quot;userType\&quot;: \&quot;user\&quot;, \&quot;cwd\&quot;: \&quot;/Users/randlee/Documents/github/sc-test-harness\&quot;, \&quot;sessionId\&quot;: \&quot;3c43358e-d2c0-43ab-92a4-a5c97f4ca751\&quot;, \&quot;version\&quot;: \&quot;ai_cli-0.1\&quot;, \&quot;gitBranch\&quot;: \&quot;main\&quot;, \&quot;agentId\&quot;: \&quot;3c43358e-d2c0-43ab-92a4-a5c97f4ca751\&quot;, \&quot;type\&quot;: \&quot;assistant\&quot;, \&quot;message\&quot;: {\&quot;role\&quot;: \&quot;assistant\&quot;, \&quot;content\&quot;: \&quot;First light spills wide  \\nHills wake in soft amber  \\nDay breathes into sky\&quot;}, \&quot;uuid\&quot;: \&quot;99dbe6d9-e32b-4df2-9d2c-562d89fd2934\&quot;, \&quot;timestamp\&quot;: \&quot;2026-01-21T00:30:27.324332+00:00\&quot;, \&quot;slug\&quot;: \&quot;final\&quot;, \&quot;requestId\&quot;: \&quot;99dbe6d9-e32b-4df2-9d2c-562d89fd2934\&quot;}\n&quot;,
+  &quot;ocean&quot;: &quot;{\&quot;parentUuid\&quot;: null, \&quot;isSidechain\&quot;: false, \&quot;userType\&quot;: \&quot;user\&quot;, \&quot;cwd\&quot;: \&quot;/Users/randlee/Documents/github/sc-test-harness\&quot;, \&quot;sessionId\&quot;: \&quot;ca3bd595-afbc-4c08-a8ba-4c36966bd3e3\&quot;, \&quot;version\&quot;: \&quot;ai_cli-0.1\&quot;, \&quot;gitBranch\&quot;: \&quot;main\&quot;, \&quot;agentId\&quot;: \&quot;ca3bd595-afbc-4c08-a8ba-4c36966bd3e3\&quot;, \&quot;type\&quot;: \&quot;user\&quot;, \&quot;message\&quot;: {\&quot;role\&quot;: \&quot;user\&quot;, \&quot;content\&quot;: \&quot;write a short haiku about the ocean\&quot;}, \&quot;uuid\&quot;: \&quot;05c4509b-1bb2-4903-bca0-db9803a80d75\&quot;, \&quot;timestamp\&quot;: \&quot;2026-01-21T00:30:25.718106+00:00\&quot;, \&quot;slug\&quot;: \&quot;\&quot;, \&quot;requestId\&quot;: \&quot;\&quot;}\n{\&quot;parentUuid\&quot;: null, \&quot;isSidechain\&quot;: false, \&quot;userType\&quot;: \&quot;user\&quot;, \&quot;cwd\&quot;: \&quot;/Users/randlee/Documents/github/sc-test-harness\&quot;, \&quot;sessionId\&quot;: \&quot;ca3bd595-afbc-4c08-a8ba-4c36966bd3e3\&quot;, \&quot;version\&quot;: \&quot;ai_cli-0.1\&quot;, \&quot;gitBranch\&quot;: \&quot;main\&quot;, \&quot;agentId\&quot;: \&quot;ca3bd595-afbc-4c08-a8ba-4c36966bd3e3\&quot;, \&quot;type\&quot;: \&quot;assistant\&quot;, \&quot;message\&quot;: {\&quot;role\&quot;: \&quot;assistant\&quot;, \&quot;content\&quot;: \&quot;Tide breathes in moonlight  \\nSalt whispers on quiet shores  \\nBlue heart, endless calm\&quot;}, \&quot;uuid\&quot;: \&quot;893e10c7-8a1d-445f-b3a8-2eea7478574a\&quot;, \&quot;timestamp\&quot;: \&quot;2026-01-21T00:30:27.752885+00:00\&quot;, \&quot;slug\&quot;: \&quot;final\&quot;, \&quot;requestId\&quot;: \&quot;893e10c7-8a1d-445f-b3a8-2eea7478574a\&quot;}\n&quot;
+}</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</details>
+
+<details>
+  <summary>
+    <span class="summary-text">Claude's Full Response</span>
+    <button class="copy-icon-btn" data-tooltip="Copy full response" onclick="event.stopPropagation(); copySection('response-2', 'Claude Response')">
+      <svg class="clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+      <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    </button>
+  </summary>
+  <div class="content">
+    <div class="response-preview" id="response-2">
+      <pre>Perfect! Both tasks completed within 8 seconds. Here are the results:
+
+**Sunrise Haiku:**
+First light spills wide
+Hills wake in soft amber
+Day breathes into sky
+
+Grade: 8
+
+**Ocean Haiku:**
+Tide breathes in moonlight
+Salt whispers on quiet shores
+Blue heart, endless calm
+
+Grade: 9</pre>
+    </div>
+  </div>
+</details>
+
+<details>
+  <summary>
+    <span class="summary-text">Debug Information</span>
+    <button class="copy-icon-btn" data-tooltip="Copy debug info" onclick="event.stopPropagation(); copySection('debug-2', 'Debug Information')">
+      <svg class="clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+      <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    </button>
+  </summary>
+  <div class="content" id="debug-2">
+    
+
+    <h3>Test Metadata</h3>
+    <table class="debug-table">
+      <tr><td>Package</td><td>sc-codex@synaptic-canvas</td></tr><tr><td>Session ID</td><td>ba6814cf-3d18-40ff-bfd6-0888e4eb7410</td></tr>
+    </table>
+
+    <h3>Side Effects</h3>
+    <p style="color: var(--pass);">No files were created, modified, or deleted.</p>
+
+    <h3>Raw Trace File</h3>
+    <p><a href="vscode://file//Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/codex-task-tool/test-packages/reports/sc-codex/sc-codex-002-trace.jsonl" class="file-link vscode" title="Open in VS Code">/Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/codex-task-tool/test-packages/reports/sc-codex/sc-codex-002-trace.jsonl<span class="link-icon">&#8599;</span></a></p>
+  </div>
+</details>
+
+<details class="agent-assessment-section"
+         id="agent-assessment-section-2"
+         data-test-id="sc-codex-002">
+  <summary>
+    <span class="summary-text">Agent Assessment</span>
+    <button class="copy-icon-btn" data-tooltip="Copy assessment" onclick="event.stopPropagation(); copyAssessment('agent-assessment-2')">
+      <svg class="clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+      <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    </button>
+  </summary>
+  <div class="content">
+    <div class="agent-assessment" id="agent-assessment-2">
+      <div class="agent-assessment-header">
+        <h3>
+          Agent Assessment
+          <span class="ai-badge">AI Review</span>
+        </h3>
+        <span class="agent-assessment-meta" id="agent-assessment-meta-2"></span>
+      </div>
+      <div class="agent-assessment-content" id="agent-assessment-content-2">
+        <p class="agent-assessment-loading">Loading assessment...</p>
+      </div>
+    </div>
+  </div>
+</details>
+</div>
+<div id="test-3" class="tab-content">
+<h1>Resume a Codex task</h1>
+<p class="description">Run a Codex task, then resume using the agentId from the first run.</p>
+
+<div class="status-banner pass">
+  <div class="status-badge">
+    <span>PASS</span>
+    <span style="font-size: 0.9rem; font-weight: normal;">4 of 4 expectations passed</span>
+  </div>
+  <div class="status-meta">
+    <div class="duration">51.00s</div>
+    <div>2026-01-21 00:30:32</div>
+  <div class="token-section">
+    <details class="token-details">
+      <summary>Tokens: 51,988 total</summary>
+      <dl class="token-detail">
+        <div><dt>Input tokens</dt><dd>30</dd></div>
+        <div><dt>Output tokens</dt><dd>17</dd></div>
+        <div><dt>Cache creation tokens</dt><dd>4,487</dd></div>
+        <div><dt>Cache read tokens</dt><dd>47,454</dd></div>
+        <div><dt>Subagent tokens</dt><dd>0</dd></div>
+        <div><dt>Total billable</dt><dd>4,534</dd></div>
+        <div><dt>Total all</dt><dd>51,988</dd></div>
+      </dl>
+    </details>
+  </div>
+  </div>
+</div>
+
+<details class="log-issues-section log-severity-clean">
+  <summary>
+    <span class="summary-text">Log Warnings &amp; Errors</span>
+    <span class="log-count-badge log-clean-badge">No issues</span>
+  </summary>
+  <div class="content" id="log-issues-3">
+    <p class="log-clean-message">No warnings or errors were captured during test execution.</p>
+    
+  </div>
+</details>
+
+<div class="test-metadata">
+  <div class="test-metadata-grid">
+    <div class="test-metadata-item">
+      <span class="test-metadata-label">Test ID</span>
+      <span class="test-metadata-value">sc-codex-003</span>
+    </div>
+    <div class="test-metadata-item">
+      <span class="test-metadata-label">Test Name</span>
+      <span class="test-metadata-value">Resume a Codex task</span>
+    </div>
+    <div class="test-metadata-item">
+      <span class="test-metadata-label">Fixture</span>
+      <span class="test-metadata-value">sc-codex</span>
+    </div>
+    <div class="test-metadata-item">
+      <span class="test-metadata-label">Package</span>
+      <span class="test-metadata-value">sc-codex@synaptic-canvas</span>
+    </div>
+    <div class="test-metadata-item">
+      <span class="test-metadata-label">Model</span>
+      <span class="test-metadata-value">haiku</span>
+    </div>
+    <div class="test-metadata-item">
+      <span class="test-metadata-label">Session ID</span>
+      <span class="test-metadata-value" style="font-family: monospace;">0565292d-ea15-462c-becc-c4ae685839f1</span>
+    </div>
+  </div>
+</div>
+
+<div class="reproduce-section"><div class="section-header"><h2>Reproduce This Test</h2><button class="copy-icon-btn" data-tooltip="Copy all reproduction steps" onclick="copySection('reproduce-3', 'Reproduce This Test')">
+      <svg class="clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+      <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    </button></div><p style="color: #94a3b8; margin-bottom: 16px;">Copy and run these commands to reproduce this test exactly:</p><div id="reproduce-3"><div class="reproduce-step"><div class="reproduce-step-header"><span class="reproduce-step-label">1. Setup</span><button class="copy-icon-btn" data-tooltip="Copy setup commands" onclick="copyElement('setup-commands-3')">
+      <svg class="clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+      <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    </button></div><pre id="setup-commands-3">claude plugin install sc-codex@synaptic-canvas --scope project
+python3 - &lt;&lt;&#x27;PY&#x27;
+import json
+from pathlib import Path
+
+settings = Path(&quot;.claude/settings.json&quot;)
+data = json.loads(settings.read_text(encoding=&quot;utf-8&quot;))
+enabled = data.setdefault(&quot;enabledPlugins&quot;, {})
+enabled[&quot;sc-codex@synaptic-canvas&quot;] = True
+settings.write_text(json.dumps(data, indent=2) + &quot;\n&quot;, encoding=&quot;utf-8&quot;)
+PY
+</pre></div><div class="reproduce-step"><div class="reproduce-step-header"><span class="reproduce-step-label">2. Run Test</span><button class="copy-icon-btn" data-tooltip="Copy test command" onclick="copyElement('test-command-3')">
+      <svg class="clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+      <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    </button></div><pre id="test-command-3">claude -p &#x27;/sc-codex --background --model mini write a short haiku about rain. Capture the agentId and output_file, but do not tail the log.
+Verify the output_file exists, then derive &lt;agentId&gt; from the output_file filename (basename without .jsonl).
+Immediately run /sc-codex --json {&quot;description&quot;:&quot;Refine haiku&quot;,&quot;prompt&quot;:&quot;Refine the previous haiku and improve imagery.&quot;,&quot;subagent_type&quot;:&quot;sc-codex&quot;,&quot;model&quot;:&quot;mini&quot;,&quot;resume&quot;:&quot;&lt;agentId&gt;&quot;,&quot;run_in_background&quot;:false}.
+Replace &lt;agentId&gt; with the derived value, and return the refined haiku with a line `Grade: N` (N is 1-10).
+Do not run any other Codex tasks. If the resume call fails, report the error and stop.
+&#x27; --model haiku --tools Bash --dangerously-skip-permissions --setting-sources project</pre></div></div></div>
+
+<details class="plugin-verification-section" open>
+  <summary>
+    <span class="summary-text">Plugin Verification</span>
+    <span class="plugin-summary pass">&#9989; 1/1 plugins installed</span>
+    <button class="copy-icon-btn" data-tooltip="Copy plugin info" onclick="event.stopPropagation(); copySection('plugin-verification-3', 'Plugin Verification')">
+      <svg class="clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+      <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    </button>
+  </summary>
+  <div class="content" id="plugin-verification-3">
+    <div class="plugin-expected">
+      <strong>Expected Plugins:</strong> <code>sc-codex@synaptic-canvas</code>
+    </div>
+    <div class="plugin-results">
+      <strong>Installation Results:</strong>
+      <div class="plugin-list">
+        <div class="plugin-item pass">
+      <span class="plugin-status">&#9989;</span>
+      <span class="plugin-name">sc-codex@synaptic-canvas</span>
+      <span class="plugin-result">Installed</span>
+      
+      <details class="plugin-output">
+        <summary>CLI Output (return code: 0)</summary>
+        <pre><strong>STDOUT:</strong>
+[0;32m✓[0m Installing sc-codex to /Users/randlee/Documents/github/sc-test-harness/.claude
+[0;32m✓[0m Installed: commands/sc-codex.md
+[0;32m✓[0m Installed: skills/codex-agent/SKILL.md
+[0;32m✓[0m Installed: agents/sc-codex.md
+[0;32m✓[0m Installed: scripts/sc_codex_task.py
+[0;32m✓[0m Installed: scripts/ai_cli/__init__.py
+[0;32m✓[0m Installed: scripts/ai_cli/__main__.py
+[0;32m✓[0m Installed: scripts/ai_cli/cli.py
+[0;32m✓[0m Installed: scripts/ai_cli/logging.py
+[0;32m✓[0m Installed: scripts/ai_cli/task_runner.py
+[0;32m✓[0m Installed: scripts/ai_cli/task_tool.py
+[0;32m✓[0m Installed: scripts/ai_cli/README.md
+[0;32m✓[0m Updated registry: /Users/randlee/Documents/github/sc-test-harness/.claude/agents/registry.yaml
+[0;32m✓[0m Done installing sc-codex
+</pre>
+      </details>
+    </div>
+      </div>
+    </div>
+  </div>
+</details>
+
+<details class="expectations-section" open>
+<summary class="section-header">
+  <span class="summary-text">Expectations <span class="pass-count">(4 passed)</span> <span class="fail-count">(0 failed)</span></span>
+  <button class="copy-icon-btn" data-tooltip="Copy expectations summary" onclick="copySection('expectations-3', 'Expectations')">
+      <svg class="clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+      <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    </button>
+</summary>
+<ul class="expectations-list" id="expectations-3">
+  <li class="expectation-item" data-exp-id="exp-001">
+    <span class="expectation-icon">&#9989;</span>
+    <div class="expectation-content">
+      <div class="expectation-label">Initial run launches codex task</div>
+      <div class="expectation-details">Type: tool_call</div>
+      <div class="expectation-expanded" id="exp-001">
+        <div class="expected-actual">
+          <div class="expected-block">
+            <h4>Expected</h4>
+            <pre>{
+  &quot;pattern&quot;: &quot;sc_codex_task.py.*haiku about rain&quot;,
+  &quot;tool&quot;: &quot;Bash&quot;
+}</pre>
+          </div>
+          <div class="actual-block">
+            <h4>Actual</h4>
+            <pre>{
+  &quot;command&quot;: &quot;python3 .claude/scripts/sc_codex_task.py --json &#x27;{\&quot;description\&quot;:\&quot;write a short haiku about rain\&quot;,\&quot;prompt\&quot;:\&quot;write a short haiku about rain\&quot;,\&quot;subagent_type\&quot;:\&quot;sc-codex\&quot;,\&quot;model\&quot;:\&quot;mini\&quot;,\&quot;run_in_background\&quot;:true}&#x27;&quot;,
+  &quot;output_preview&quot;: &quot;{\n  \&quot;output\&quot;: \&quot;Async agent launched successfully.\&quot;,\n  \&quot;agentId\&quot;: \&quot;6a64511e-fa07-403b-aba8-e879542b70...&quot;,
+  &quot;tool&quot;: &quot;Bash&quot;
+}</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="expectation-actions">
+      <button class="copy-icon-btn" data-tooltip="Copy expectation" onclick="copyExpectation('exp-001')">
+      <svg class="clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+      <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    </button>
+      <button class="expectation-toggle has-content" onclick="toggleExpectation('exp-001')">Details</button>
+    </div>
+  </li><li class="expectation-item" data-exp-id="exp-002">
+    <span class="expectation-icon">&#9989;</span>
+    <div class="expectation-content">
+      <div class="expectation-label">Resume run uses resume field</div>
+      <div class="expectation-details">Type: tool_call</div>
+      <div class="expectation-expanded" id="exp-002">
+        <div class="expected-actual">
+          <div class="expected-block">
+            <h4>Expected</h4>
+            <pre>{
+  &quot;pattern&quot;: &quot;resume&quot;,
+  &quot;tool&quot;: &quot;Bash&quot;
+}</pre>
+          </div>
+          <div class="actual-block">
+            <h4>Actual</h4>
+            <pre>{
+  &quot;command&quot;: &quot;python3 .claude/scripts/sc_codex_task.py --json &#x27;{\&quot;description\&quot;:\&quot;Refine haiku\&quot;,\&quot;prompt\&quot;:\&quot;Refine the previous haiku and improve imagery.\&quot;,\&quot;subagent_type\&quot;:\&quot;sc-codex\&quot;,\&quot;model\&quot;:\&quot;mini\&quot;,\&quot;resume\&quot;:\&quot;6a64511e-fa07-403b-aba8-e879542b70d7\&quot;,\&quot;run_in_background\&quot;:false}&#x27;&quot;,
+  &quot;output_preview&quot;: &quot;{\n  \&quot;output\&quot;: \&quot;Soft rain strings lanterns  \\nPetals gulp amber dusk’s glow  \\nStill lake mirrors hus...&quot;,
+  &quot;tool&quot;: &quot;Bash&quot;
+}</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="expectation-actions">
+      <button class="copy-icon-btn" data-tooltip="Copy expectation" onclick="copyExpectation('exp-002')">
+      <svg class="clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+      <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    </button>
+      <button class="expectation-toggle has-content" onclick="toggleExpectation('exp-002')">Details</button>
+    </div>
+  </li><li class="expectation-item" data-exp-id="exp-003">
+    <span class="expectation-icon">&#9989;</span>
+    <div class="expectation-content">
+      <div class="expectation-label">Output includes grade</div>
+      <div class="expectation-details">Type: output_contains</div>
+      <div class="expectation-expanded" id="exp-003">
+        <div class="expected-actual">
+          <div class="expected-block">
+            <h4>Expected</h4>
+            <pre>{
+  &quot;flags&quot;: &quot;i&quot;,
+  &quot;pattern&quot;: &quot;Grade:\\s*(10|[1-9])\\b&quot;
+}</pre>
+          </div>
+          <div class="actual-block">
+            <h4>Actual</h4>
+            <pre>{
+  &quot;context&quot;: &quot;ls gulp amber dusk&#x27;s glow\nStill lake mirrors hush\nGrade: 9\n```\n\nThe refined haiku improves upon the original&quot;,
+  &quot;matched_text&quot;: &quot;Grade: 9&quot;
+}</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="expectation-actions">
+      <button class="copy-icon-btn" data-tooltip="Copy expectation" onclick="copyExpectation('exp-003')">
+      <svg class="clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+      <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    </button>
+      <button class="expectation-toggle has-content" onclick="toggleExpectation('exp-003')">Details</button>
+    </div>
+  </li><li class="expectation-item" data-exp-id="implicit-no-warnings">
+    <span class="expectation-icon">&#9989;</span>
+    <div class="expectation-content">
+      <div class="expectation-label">No warnings or errors in logs</div>
+      <div class="expectation-details">Type: hook_event</div>
+      <div class="expectation-expanded" id="implicit-no-warnings">
+        <div class="expected-actual">
+          <div class="expected-block">
+            <h4>Expected</h4>
+            <pre>{
+  &quot;allow_warnings&quot;: false,
+  &quot;no_errors&quot;: true,
+  &quot;no_warnings&quot;: true
+}</pre>
+          </div>
+          <div class="actual-block">
+            <h4>Actual</h4>
+            <pre>{
+  &quot;error_count&quot;: 0,
+  &quot;has_issues&quot;: false,
+  &quot;warning_count&quot;: 0
+}</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="expectation-actions">
+      <button class="copy-icon-btn" data-tooltip="Copy expectation" onclick="copyExpectation('implicit-no-warnings')">
+      <svg class="clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+      <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    </button>
+      <button class="expectation-toggle has-content" onclick="toggleExpectation('implicit-no-warnings')">Details</button>
+    </div>
+  </li>
+</ul>
+</details>
+
+<details>
+  <summary>
+    <span class="summary-text">Timeline (3 tool calls)</span>
+    <button class="copy-icon-btn" data-tooltip="Copy entire timeline" onclick="event.stopPropagation(); copyTimeline('timeline-3')">
+      <svg class="clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+      <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    </button>
+  </summary>
+  <div class="content">
+    <div class="timeline" id="timeline-3">
+      <div class="timeline-item prompt depth-0"
+        data-seq="1"
+        data-elapsed="0ms"
+        
+        
+        >
+        <div class="timeline-dot"></div>
+        <div class="timeline-header">
+          <span class="timeline-type">Prompt</span>
+          <div class="timeline-right">
+            <span class="timeline-elapsed">+0ms</span>
+            <span class="timeline-seq">#1</span>
+            <button class="copy-icon-btn" data-tooltip="Copy this step" onclick="copyTimelineItem(this)">
+      <svg class="clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+      <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    </button>
+          </div>
+        </div>
+        <div class="timeline-content">
+          
+          
+          <pre>/sc-codex --background --model mini write a short haiku about rain. Capture the agentId and output_file, but do not tail the log.
+Verify the output_file exists, then derive &lt;agentId&gt; from the output_file filename (basename without .jsonl).
+Immediately run /sc-codex --json {&quot;description&quot;:&quot;Refine haiku&quot;,&quot;prompt&quot;:&quot;Refine the previous haiku and improve imagery.&quot;,&quot;subagent_type&quot;:&quot;sc-codex&quot;,&quot;model&quot;:&quot;mini&quot;,&quot;resume&quot;:&quot;&lt;agentId&gt;&quot;,&quot;run_in_background&quot;:false}.
+Replace &lt;agentId&gt; with the derived value, and return the refined haiku with a line `Grade: N` (N is 1-10).
+Do not run any other Codex tasks. If the resume call fails, report the error and stop.
+</pre>
+        </div>
+      </div><div class="timeline-item response depth-0"
+        data-seq="2"
+        data-elapsed="0ms"
+        
+        
+        >
+        <div class="timeline-dot"></div>
+        <div class="timeline-header">
+          <span class="timeline-type">Response</span>
+          <div class="timeline-right">
+            <span class="timeline-elapsed">+0ms</span>
+            <span class="timeline-seq">#2</span>
+            <button class="copy-icon-btn" data-tooltip="Copy this step" onclick="copyTimelineItem(this)">
+      <svg class="clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+      <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    </button>
+          </div>
+        </div>
+        <div class="timeline-content">
+          
+          
+          <pre>I&#x27;ll execute this step by step.
+
+First, let me run the initial Codex task to write a haiku about rain in background mode:</pre>
+        </div>
+      </div><div class="timeline-item response depth-0"
+        data-seq="3"
+        data-elapsed="0ms"
+        
+        
+        >
+        <div class="timeline-dot"></div>
+        <div class="timeline-header">
+          <span class="timeline-type">Response</span>
+          <div class="timeline-right">
+            <span class="timeline-elapsed">+0ms</span>
+            <span class="timeline-seq">#3</span>
+            <button class="copy-icon-btn" data-tooltip="Copy this step" onclick="copyTimelineItem(this)">
+      <svg class="clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+      <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    </button>
+          </div>
+        </div>
+        <div class="timeline-content">
+          
+          
+          <pre>Now let me verify the output file exists and derive the agentId from the filename:</pre>
+        </div>
+      </div><div class="timeline-item response depth-0"
+        data-seq="4"
+        data-elapsed="0ms"
+        
+        
+        >
+        <div class="timeline-dot"></div>
+        <div class="timeline-header">
+          <span class="timeline-type">Response</span>
+          <div class="timeline-right">
+            <span class="timeline-elapsed">+0ms</span>
+            <span class="timeline-seq">#4</span>
+            <button class="copy-icon-btn" data-tooltip="Copy this step" onclick="copyTimelineItem(this)">
+      <svg class="clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+      <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    </button>
+          </div>
+        </div>
+        <div class="timeline-content">
+          
+          
+          <pre>Good! The output file exists. The agentId is `6a64511e-fa07-403b-aba8-e879542b70d7`. Now let me run the refinement task using the resume parameter:</pre>
+        </div>
+      </div><div class="timeline-item response depth-0"
+        data-seq="5"
+        data-elapsed="0ms"
+        
+        
+        >
+        <div class="timeline-dot"></div>
+        <div class="timeline-header">
+          <span class="timeline-type">Response</span>
+          <div class="timeline-right">
+            <span class="timeline-elapsed">+0ms</span>
+            <span class="timeline-seq">#5</span>
+            <button class="copy-icon-btn" data-tooltip="Copy this step" onclick="copyTimelineItem(this)">
+      <svg class="clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+      <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    </button>
+          </div>
+        </div>
+        <div class="timeline-content">
+          
+          
+          <pre>Perfect! The refinement task completed successfully. Here&#x27;s the result:
+
+```
+Soft rain strings lanterns
+Petals gulp amber dusk&#x27;s glow
+Still lake mirrors hush
+Grade: 9
+```
+
+The refined haiku improves upon the original with richer imagery—using vivid verbs like &quot;gulp,&quot; sensory details like &quot;amber dusk&#x27;s glow,&quot; and creating a more cohesive scene that combines rain, nature, and reflection.</pre>
+        </div>
+      </div><div class="timeline-item tool_call depth-0"
+        data-seq="6"
+        data-elapsed="2000ms"
+        
+        
+        >
+        <div class="timeline-dot"></div>
+        <div class="timeline-header">
+          <span class="timeline-type">Bash</span>
+          <div class="timeline-right">
+            <span class="timeline-elapsed">+2.00s</span>
+            <span class="timeline-seq">#6</span>
+            <button class="copy-icon-btn" data-tooltip="Copy this step" onclick="copyTimelineItem(this)">
+      <svg class="clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+      <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    </button>
+          </div>
+        </div>
+        <div class="timeline-content">
+          <div class="timeline-meta">pid:43312 | id:toolu_01</div>
+          <div class="timeline-intent">Launch background Codex task to write haiku</div>
+          <pre>$ python3 .claude/scripts/sc_codex_task.py --json &#x27;{&quot;description&quot;:&quot;write a short haiku about rain&quot;,&quot;prompt&quot;:&quot;write a short haiku about rain&quot;,&quot;subagent_type&quot;:&quot;sc-codex&quot;,&quot;model&quot;:&quot;mini&quot;,&quot;run_in_background&quot;:true}&#x27;
+
+{
+  &quot;output&quot;: &quot;Async agent launched successfully.&quot;,
+  &quot;agentId&quot;: &quot;6a64511e-fa07-403b-aba8-e879542b70d7&quot;,
+  &quot;output_file&quot;: &quot;/Users/randlee/Documents/github/sc-test-harness/.sc/sessions/6a64511e-fa07-403b-aba8-e879542b70d7.jsonl&quot;
+}</pre>
+        </div>
+      </div><div class="timeline-item tool_call depth-0"
+        data-seq="7"
+        data-elapsed="3000ms"
+        
+        
+        >
+        <div class="timeline-dot"></div>
+        <div class="timeline-header">
+          <span class="timeline-type">Bash</span>
+          <div class="timeline-right">
+            <span class="timeline-elapsed">+3.00s</span>
+            <span class="timeline-seq">#7</span>
+            <button class="copy-icon-btn" data-tooltip="Copy this step" onclick="copyTimelineItem(this)">
+      <svg class="clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+      <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    </button>
+          </div>
+        </div>
+        <div class="timeline-content">
+          <div class="timeline-meta">pid:43378 | id:toolu_01</div>
+          <div class="timeline-intent">Verify output file exists</div>
+          <pre>$ ls -la /Users/randlee/Documents/github/sc-test-harness/.sc/sessions/6a64511e-fa07-403b-aba8-e879542b70d7.jsonl
+
+-rw-r--r--@ 1 randlee  staff  487 Jan 20 16:30 /Users/randlee/Documents/github/sc-test-harness/.sc/sessions/6a64511e-fa07-403b-aba8-e879542b70d7.jsonl</pre>
+        </div>
+      </div><div class="timeline-item tool_call depth-0"
+        data-seq="8"
+        data-elapsed="4000ms"
+        
+        
+        >
+        <div class="timeline-dot"></div>
+        <div class="timeline-header">
+          <span class="timeline-type">Bash</span>
+          <div class="timeline-right">
+            <span class="timeline-elapsed">+4.00s</span>
+            <span class="timeline-seq">#8</span>
+            <button class="copy-icon-btn" data-tooltip="Copy this step" onclick="copyTimelineItem(this)">
+      <svg class="clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+      <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    </button>
+          </div>
+        </div>
+        <div class="timeline-content">
+          <div class="timeline-meta">pid:43391 | id:toolu_01</div>
+          <div class="timeline-intent">Run refinement task with resume parameter</div>
+          <pre>$ python3 .claude/scripts/sc_codex_task.py --json &#x27;{&quot;description&quot;:&quot;Refine haiku&quot;,&quot;prompt&quot;:&quot;Refine the previous haiku and improve imagery.&quot;,&quot;subagent_type&quot;:&quot;sc-codex&quot;,&quot;model&quot;:&quot;mini&quot;,&quot;resume&quot;:&quot;6a64511e-fa07-403b-aba8-e879542b70d7&quot;,&quot;run_in_background&quot;:false}&#x27;
+
+{
+  &quot;output&quot;: &quot;Soft rain strings lanterns  \nPetals gulp amber dusk’s glow  \nStill lake mirrors hush  \nGrade: 9&quot;,
+  &quot;agentId&quot;: &quot;2e1451ea-23df-4f66-ae8c-e6695c6fb006&quot;
+}</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</details>
+
+<details>
+  <summary>
+    <span class="summary-text">Claude's Full Response</span>
+    <button class="copy-icon-btn" data-tooltip="Copy full response" onclick="event.stopPropagation(); copySection('response-3', 'Claude Response')">
+      <svg class="clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+      <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    </button>
+  </summary>
+  <div class="content">
+    <div class="response-preview" id="response-3">
+      <pre>Perfect! The refinement task completed successfully. Here&#x27;s the result:
+
+```
+Soft rain strings lanterns
+Petals gulp amber dusk&#x27;s glow
+Still lake mirrors hush
+Grade: 9
+```
+
+The refined haiku improves upon the original with richer imagery—using vivid verbs like &quot;gulp,&quot; sensory details like &quot;amber dusk&#x27;s glow,&quot; and creating a more cohesive scene that combines rain, nature, and reflection.</pre>
+    </div>
+  </div>
+</details>
+
+<details>
+  <summary>
+    <span class="summary-text">Debug Information</span>
+    <button class="copy-icon-btn" data-tooltip="Copy debug info" onclick="event.stopPropagation(); copySection('debug-3', 'Debug Information')">
+      <svg class="clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+      <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    </button>
+  </summary>
+  <div class="content" id="debug-3">
+    
+
+    <h3>Test Metadata</h3>
+    <table class="debug-table">
+      <tr><td>Package</td><td>sc-codex@synaptic-canvas</td></tr><tr><td>Session ID</td><td>0565292d-ea15-462c-becc-c4ae685839f1</td></tr>
+    </table>
+
+    <h3>Side Effects</h3>
+    <p style="color: var(--pass);">No files were created, modified, or deleted.</p>
+
+    <h3>Raw Trace File</h3>
+    <p><a href="vscode://file//Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/codex-task-tool/test-packages/reports/sc-codex/sc-codex-003-trace.jsonl" class="file-link vscode" title="Open in VS Code">/Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/codex-task-tool/test-packages/reports/sc-codex/sc-codex-003-trace.jsonl<span class="link-icon">&#8599;</span></a></p>
+  </div>
+</details>
+
+<details class="agent-assessment-section"
+         id="agent-assessment-section-3"
+         data-test-id="sc-codex-003">
+  <summary>
+    <span class="summary-text">Agent Assessment</span>
+    <button class="copy-icon-btn" data-tooltip="Copy assessment" onclick="event.stopPropagation(); copyAssessment('agent-assessment-3')">
+      <svg class="clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+      <svg class="checkmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    </button>
+  </summary>
+  <div class="content">
+    <div class="agent-assessment" id="agent-assessment-3">
+      <div class="agent-assessment-header">
+        <h3>
+          Agent Assessment
+          <span class="ai-badge">AI Review</span>
+        </h3>
+        <span class="agent-assessment-meta" id="agent-assessment-meta-3"></span>
+      </div>
+      <div class="agent-assessment-content" id="agent-assessment-content-3">
+        <p class="agent-assessment-loading">Loading assessment...</p>
+      </div>
+    </div>
+  </div>
+</details>
+</div></div>
+
+  <script>
+// Get the report path for source attribution
+const reportPath = window.location.pathname || '/path/to/report.html';
+
+/**
+ * Get the appropriate editor URL for a file path.
+ * - .py files open in PyCharm (URL-encoded path)
+ * - All other files open in VS Code
+ * @param {string} filePath - Absolute path to the file
+ * @returns {string} Editor URL
+ */
+function getEditorUrl(filePath) {
+  const ext = filePath.split('.').pop().toLowerCase();
+  if (ext === 'py') {
+    return `pycharm://open?file=${encodeURIComponent(filePath)}`;
+  }
+  return `vscode://file/${filePath}`;
+}
+
+/**
+ * Get the editor type for a file path.
+ * @param {string} filePath - Absolute path to the file
+ * @returns {string} 'pycharm' or 'vscode'
+ */
+function getEditorType(filePath) {
+  const ext = filePath.split('.').pop().toLowerCase();
+  return ext === 'py' ? 'pycharm' : 'vscode';
+}
+
+/**
+ * Create a file link element.
+ * @param {string} filePath - Absolute path to the file
+ * @param {string} displayText - Text to display (optional, defaults to filePath)
+ * @returns {string} HTML string for the link
+ */
+function createFileLink(filePath, displayText) {
+  const url = getEditorUrl(filePath);
+  const editorType = getEditorType(filePath);
+  const editorName = editorType === 'pycharm' ? 'PyCharm' : 'VS Code';
+  const text = displayText || filePath;
+  return `<a href="${url}" class="file-link ${editorType}" title="Open in ${editorName}">${text}<span class="link-icon">&#8599;</span></a>`;
+}
+
+// Tab switching
+function switchTab(tabId) {
+  // Hide all tabs
+  document.querySelectorAll('.tab-content').forEach(tab => {
+    tab.classList.remove('active');
+  });
+  document.querySelectorAll('.tab-button').forEach(btn => {
+    btn.classList.remove('active');
+  });
+
+  // Show selected tab
+  document.getElementById(tabId).classList.add('active');
+  event.target.closest('.tab-button').classList.add('active');
+}
+
+// Copy feedback animation
+function showCopyFeedback(btn) {
+  btn.classList.add('copied');
+  setTimeout(() => {
+    btn.classList.remove('copied');
+  }, 1500);
+}
+
+// Normalize whitespace: trim trailing spaces, collapse multiple empty lines to one
+function normalizeWhitespace(text) {
+  return text
+    .split('\n')
+    .map(line => line.trimEnd())
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+// Copy element text by ID
+function copyElement(elementId) {
+  const element = document.getElementById(elementId);
+  const text = normalizeWhitespace(element.textContent);
+  navigator.clipboard.writeText(text).then(() => {
+    showCopyFeedback(event.target.closest('.copy-icon-btn'));
+  });
+}
+
+// Copy section with title and source attribution
+function copySection(elementId, sectionTitle) {
+  const element = document.getElementById(elementId);
+  const content = normalizeWhitespace(element.textContent);
+  const activeTab = document.querySelector('.tab-content.active');
+  const tabId = activeTab ? activeTab.id : 'test-1';
+  const fragmentId = elementId;
+
+  const markdown = `## ${sectionTitle}
+
+${content}
+
+---
+source: ${reportPath}#${fragmentId}`;
+
+  navigator.clipboard.writeText(normalizeWhitespace(markdown)).then(() => {
+    showCopyFeedback(event.target.closest('.copy-icon-btn'));
+  });
+}
+
+// Copy expectation
+function copyExpectation(expId) {
+  const item = document.querySelector(`[data-exp-id="${expId}"]`);
+  const label = item.querySelector('.expectation-label').textContent.trim();
+  const details = item.querySelector('.expectation-details').textContent.trim();
+  const icon = item.querySelector('.expectation-icon').textContent;
+  const status = icon.includes('\u2705') ? 'PASS' : (icon.includes('\u274C') ? 'FAIL' : 'WARNING');
+
+  let markdown = `### Expectation: ${label}
+
+**Status:** ${status}
+**Details:** ${details}`;
+
+  const expanded = item.querySelector('.expectation-expanded');
+  if (expanded && expanded.innerHTML.trim()) {
+    const expectedPre = expanded.querySelector('.expected-actual > div:first-child pre');
+    const actualPre = expanded.querySelector('.expected-actual > div:last-child pre');
+    if (expectedPre && actualPre) {
+      markdown += `
+
+**Expected:**
+\`\`\`
+${expectedPre.textContent.trim()}
+\`\`\`
+
+**Actual:**
+\`\`\`
+${actualPre.textContent.trim()}
+\`\`\``;
+    }
+  }
+
+  markdown += `
+
+---
+source: ${reportPath}#${expId}`;
+
+  navigator.clipboard.writeText(normalizeWhitespace(markdown)).then(() => {
+    showCopyFeedback(event.target.closest('.copy-icon-btn'));
+  });
+}
+
+// Copy timeline item
+function copyTimelineItem(btn) {
+  const item = btn.closest('.timeline-item');
+  const type = item.querySelector('.timeline-type').textContent.trim();
+  const seq = item.querySelector('.timeline-seq').textContent.trim();
+  const elapsed = item.querySelector('.timeline-elapsed').textContent.trim();
+  const intent = item.querySelector('.timeline-intent');
+  const pre = item.querySelector('.timeline-content pre');
+
+  let markdown = `### Timeline ${seq}: ${type} (${elapsed})`;
+
+  if (intent) {
+    markdown += `\n**Intent:** ${intent.textContent.trim()}`;
+  }
+
+  if (pre) {
+    markdown += `\n\n\`\`\`\n${pre.textContent.trim()}\n\`\`\``;
+  }
+
+  markdown += `
+
+---
+source: ${reportPath}#timeline-item-${item.dataset.seq}`;
+
+  navigator.clipboard.writeText(normalizeWhitespace(markdown)).then(() => {
+    showCopyFeedback(btn);
+  });
+}
+
+// Copy entire timeline
+function copyTimeline(timelineId) {
+  const timeline = document.getElementById(timelineId);
+  const items = timeline.querySelectorAll('.timeline-item');
+
+  let markdown = `## Timeline\n\n`;
+
+  items.forEach(item => {
+    const type = item.querySelector('.timeline-type').textContent.trim();
+    const seq = item.querySelector('.timeline-seq').textContent.trim();
+    const elapsed = item.querySelector('.timeline-elapsed').textContent.trim();
+    const intent = item.querySelector('.timeline-intent');
+    const pre = item.querySelector('.timeline-content pre');
+
+    markdown += `### ${seq}: ${type} (${elapsed})\n`;
+
+    if (intent) {
+      markdown += `**Intent:** ${intent.textContent.trim()}\n`;
+    }
+
+    if (pre) {
+      markdown += `\n\`\`\`\n${pre.textContent.trim()}\n\`\`\`\n`;
+    }
+
+    markdown += `\n`;
+  });
+
+  markdown += `---
+source: ${reportPath}#${timelineId}`;
+
+  navigator.clipboard.writeText(normalizeWhitespace(markdown)).then(() => {
+    showCopyFeedback(event.target.closest('.copy-icon-btn'));
+  });
+}
+
+// Copy assessment content
+function copyAssessment(elementId) {
+  const contentEl = document.getElementById(elementId.replace('agent-assessment', 'agent-assessment-content'));
+  const metaEl = document.getElementById(elementId.replace('agent-assessment', 'agent-assessment-meta'));
+
+  let markdown = `## Agent Assessment\n\n`;
+  if (metaEl && metaEl.textContent) {
+    markdown += `*${metaEl.textContent.trim()}*\n\n`;
+  }
+  // Get the raw markdown if stored, otherwise extract text
+  const rawMarkdown = contentEl.dataset.rawMarkdown || contentEl.textContent;
+  markdown += rawMarkdown;
+
+  markdown += `\n\n---\nsource: ${reportPath}#${elementId}`;
+
+  navigator.clipboard.writeText(normalizeWhitespace(markdown)).then(() => {
+    showCopyFeedback(event.target.closest('.copy-icon-btn'));
+  });
+}
+
+// Toggle expectation details
+function toggleExpectation(id) {
+  const element = document.getElementById(id);
+  if (element) {
+    element.classList.toggle('show');
+  }
+}
+
+/**
+ * Simple markdown to HTML renderer.
+ * Handles common markdown syntax: headers, bold, italic, code, lists, links, blockquotes.
+ * @param {string} markdown - The markdown text to render
+ * @returns {string} HTML string
+ */
+function renderMarkdown(markdown) {
+  let html = markdown;
+
+  // Escape HTML entities first (but not in code blocks)
+  html = html.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  // Code blocks (```...```)
+  html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (match, lang, code) => {
+    return `<pre><code class="language-${lang}">${code.trim()}</code></pre>`;
+  });
+
+  // Inline code (`...`)
+  html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+  // Headers (# through ####)
+  html = html.replace(/^#### (.+)$/gm, '<h4>$1</h4>');
+  html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+  html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+  html = html.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+
+  // Bold (**...**)
+  html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+
+  // Italic (*...*)
+  html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+
+  // Links [text](url)
+  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
+
+  // Horizontal rules (--- or ***)
+  html = html.replace(/^(---|\*\*\*)$/gm, '<hr>');
+
+  // Blockquotes (> ...)
+  html = html.replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>');
+  // Merge consecutive blockquotes
+  html = html.replace(/<\/blockquote>\n<blockquote>/g, '\n');
+
+  // Unordered lists (- item)
+  html = html.replace(/^- (.+)$/gm, '<li>$1</li>');
+  // Wrap consecutive <li> elements in <ul>
+  html = html.replace(/(<li>.*<\/li>\n?)+/g, (match) => {
+    return '<ul>' + match + '</ul>';
+  });
+
+  // Ordered lists (1. item, 2. item, etc.)
+  html = html.replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
+
+  // Paragraphs - wrap text blocks that aren't already wrapped
+  html = html.split('\n\n').map(block => {
+    block = block.trim();
+    if (!block) return '';
+    // Don't wrap if it's already an HTML element
+    if (/^<(h[1-4]|ul|ol|li|pre|blockquote|hr|p)/.test(block)) {
+      return block;
+    }
+    // Wrap in paragraph
+    return '<p>' + block.replace(/\n/g, '<br>') + '</p>';
+  }).join('\n');
+
+  return html;
+}
+
+/**
+ * Load and render assessment markdown files for all assessment sections.
+ * Looks for files named {report-name}.assessment.md or {test-id}.assessment.md
+ */
+function loadAgentAssessments() {
+  // Get the base path for the report
+  const currentPath = window.location.pathname;
+  const basePath = currentPath.substring(0, currentPath.lastIndexOf('/') + 1);
+  const reportName = currentPath.substring(currentPath.lastIndexOf('/') + 1).replace('.html', '');
+
+  // Find all assessment sections
+  const assessmentSections = document.querySelectorAll('.agent-assessment-section');
+
+  assessmentSections.forEach(section => {
+    const testId = section.dataset.testId;
+    const contentEl = section.querySelector('.agent-assessment-content');
+    const metaEl = section.querySelector('.agent-assessment-meta');
+
+    // Try multiple file naming conventions
+    const filesToTry = [
+      `${basePath}${reportName}.assessment.md`,           // {report-name}.assessment.md
+      `${basePath}${testId}.assessment.md`,               // {test-id}.assessment.md
+      `${basePath}assessments/${reportName}.assessment.md`, // assessments/{report-name}.assessment.md
+      `${basePath}assessments/${testId}.assessment.md`    // assessments/{test-id}.assessment.md
+    ];
+
+    // Try each file path until one succeeds
+    tryFetchAssessment(filesToTry, 0, section, contentEl, metaEl);
+  });
+}
+
+/**
+ * Recursively try to fetch assessment files from a list of paths
+ */
+function tryFetchAssessment(paths, index, section, contentEl, metaEl) {
+  if (index >= paths.length) {
+    // No assessment file found via fetch - but check if content is already embedded
+    // Don't hide if content already exists (e.g., embedded for file:// compatibility)
+    if (contentEl.children.length === 0 && !contentEl.textContent.trim()) {
+      section.classList.remove('visible');
+    }
+    return;
+  }
+
+  fetch(paths[index])
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Not found');
+      }
+      return response.text();
+    })
+    .then(markdown => {
+      // Successfully loaded assessment
+      contentEl.dataset.rawMarkdown = markdown;
+      contentEl.innerHTML = renderMarkdown(markdown);
+      section.classList.add('visible');
+
+      // Try to extract metadata from the markdown (look for YAML frontmatter)
+      const frontmatterMatch = markdown.match(/^---\n([\s\S]*?)\n---/);
+      if (frontmatterMatch) {
+        const frontmatter = frontmatterMatch[1];
+        const generatedBy = frontmatter.match(/generated_by:\s*(.+)/);
+        const timestamp = frontmatter.match(/timestamp:\s*(.+)/);
+        if (generatedBy || timestamp) {
+          let metaText = [];
+          if (generatedBy) metaText.push(`Generated by ${generatedBy[1]}`);
+          if (timestamp) metaText.push(timestamp[1]);
+          metaEl.textContent = metaText.join(' | ');
+        }
+      }
+    })
+    .catch(() => {
+      // Try next path
+      tryFetchAssessment(paths, index + 1, section, contentEl, metaEl);
+    });
+}
+
+
+// Filter timeline by agent
+function filterByAgent(agentId) {
+  document.querySelectorAll('.timeline-item').forEach(node => {
+    const nodeAgent = node.dataset.agentId;
+    if (agentId === 'all' || nodeAgent === agentId || !nodeAgent) {
+      node.style.display = 'block';
+    } else {
+      node.style.display = 'none';
+    }
+  });
+  // Persist selection
+  sessionStorage.setItem('timelineAgentFilter', agentId);
+}
+
+// Highlight path from node up to root
+function highlightPath(uuid) {
+  // Clear existing highlights
+  document.querySelectorAll('.highlighted').forEach(el => {
+    el.classList.remove('highlighted');
+  });
+
+  // Highlight path to root
+  let current = document.querySelector(`[data-uuid="${uuid}"]`);
+  while (current) {
+    current.classList.add('highlighted');
+    const parentUuid = current.dataset.parentUuid;
+    current = parentUuid ? document.querySelector(`[data-uuid="${parentUuid}"]`) : null;
+  }
+}
+
+// Collapse/expand all subagent sections
+function toggleAllSubagents(expand) {
+  document.querySelectorAll('.subagent-section').forEach(section => {
+    section.open = expand;
+  });
+}
+
+// Build agent filter dropdown
+function buildAgentFilter(containerId) {
+  const agents = new Set();
+  document.querySelectorAll('[data-agent-id]').forEach(el => {
+    if (el.dataset.agentId) {
+      agents.add(el.dataset.agentId);
+    }
+  });
+
+  if (agents.size === 0) return;
+
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  const select = document.createElement('select');
+  select.className = 'agent-filter-select';
+  select.innerHTML = '<option value="all">All Agents</option>';
+  agents.forEach(agent => {
+    select.innerHTML += `<option value="${agent}">${agent}</option>`;
+  });
+  select.onchange = () => filterByAgent(select.value);
+  container.appendChild(select);
+
+  // Restore persisted selection
+  const saved = sessionStorage.getItem('timelineAgentFilter');
+  if (saved && agents.has(saved)) {
+    select.value = saved;
+    filterByAgent(saved);
+  }
+}
+
+// Initialize timeline tree features on page load
+document.addEventListener('DOMContentLoaded', function() {
+  // Build agent filter if container exists
+  buildAgentFilter('agent-filter-container');
+});
+
+
+// Prevent toggle buttons with no content from doing anything
+document.querySelectorAll('.expectation-toggle.no-content').forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  });
+});
+
+// Load assessments when the page loads
+document.addEventListener('DOMContentLoaded', loadAgentAssessments);
+
+// Also try loading immediately in case DOMContentLoaded already fired
+if (document.readyState === 'complete' || document.readyState === 'interactive') {
+  loadAgentAssessments();
+}
+  </script>
+</body>
+</html>
