@@ -94,7 +94,7 @@ Remove all references to skill versioning. Skills NEVER have a version field. Up
 
 **Issue**:
 While the plan mentions Agent Runner extensively, it lacks critical implementation details:
-1. No mention of the reference implementation in `docs/agent-runner.md` (cited in v0.4 line 696)
+1. No mention of the reference implementation in `docs/agent-runner-comprehensive.md` (cited in v0.4 line 696)
 2. No guidance on whether Agent Runner is a CLI tool, a wrapper function, or integrated into skills
 3. No error handling when Agent Runner itself fails (vs. agent failure)
 4. No specification of how Agent Runner resolves version constraints ("0.x" matching logic)
@@ -103,7 +103,7 @@ While the plan mentions Agent Runner extensively, it lacks critical implementati
 
 **Recommendation**:
 Add a dedicated section "Agent Runner Implementation" that:
-- References `docs/agent-runner.md` as the implementation guide
+- References `docs/agent-runner-comprehensive.md` as the implementation guide
 - Specifies Agent Runner as a wrapper tool/function (not a Claude tool itself)
 - Documents error codes for Agent Runner failures (e.g., `RUNNER.VERSION_MISMATCH`, `RUNNER.AGENT_NOT_FOUND`)
 - Clarifies version constraint resolution algorithm
@@ -113,7 +113,7 @@ Add a dedicated section "Agent Runner Implementation" that:
 ```markdown
 ### Agent Runner Implementation
 
-**Reference**: See `docs/agent-runner.md` for complete implementation guide.
+**Reference**: See `docs/agent-runner-comprehensive.md` for complete implementation guide.
 
 **What Agent Runner Is**:
 - A wrapper function/tool that enforces registry policy before invoking Task tool

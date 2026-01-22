@@ -365,9 +365,318 @@ chmod +x scripts/*.py
 python scripts/validate-all.py
 ```
 
+## Dependency Validation
+
+Synaptic Canvas has a minimal dependency footprint designed for maximum compatibility. This section documents all dependencies, how to validate them, and how to resolve issues.
+
+### Dependency Philosophy
+
+- **Minimal:** Only essential dependencies required
+- **Standard:** Prefer standard tools (Git, Python, Bash)
+- **Optional:** Advanced features have optional dependencies
+- **Portable:** Work across macOS, Linux, and Windows (WSL)
+
+### Dependency Hierarchy
+
+```
+Core (Required for all packages):
+├─ Git >= 2.7.0
+├─ Python 3 >= 3.6
+└─ Bash/POSIX shell
+
+Package-Specific (Optional):
+├─ Node.js >= 18.0 (sc-repomix-nuget only)
+├─ npm >= 8.0 (sc-repomix-nuget only)
+└─ .NET SDK (sc-repomix-nuget, for C# projects)
+```
+
+### Global Dependencies
+
+#### Git
+
+**Purpose:** Version control and repository management
+
+**Minimum Version:** 2.7.0 (for worktree support)
+
+**Validation Command:**
+```bash
+git --version
+# Check if version >= 2.7.0
+
+# Test Git Worktree Support:
+git worktree --help > /dev/null 2>&1 && echo "Worktree support available"
+```
+
+**Installation:**
+- **macOS:** `brew install git`
+- **Linux (Ubuntu/Debian):** `sudo apt-get install git`
+- **Linux (RHEL/Fedora):** `sudo dnf install git`
+- **Windows:** Download from https://git-scm.com/download/win or use WSL
+
+#### Python 3
+
+**Purpose:** Running utility scripts for version management and validation
+
+**Minimum Version:** 3.6
+
+**Used By:**
+- `scripts/set-package-version.py` - Version management and registry regeneration
+- `docs/registries/nuget/validate-registry.py` - Registry validation
+- Various validation scripts
+
+**Validation Command:**
+```bash
+python3 --version
+# Check if version >= 3.6
+
+# Check required modules:
+python3 -c "import sys, os, re, json, pathlib, argparse, subprocess" && echo "Required modules available"
+
+# Check optional modules:
+python3 -c "import yaml" 2>/dev/null && echo "YAML module available"
+python3 -c "import jsonschema" 2>/dev/null && echo "jsonschema module available"
+```
+
+**Installation:**
+- **macOS:** `brew install python3`
+- **Linux (Ubuntu/Debian):** `sudo apt-get install python3 python3-pip`
+- **Linux (RHEL/Fedora):** `sudo dnf install python3 python3-pip`
+- **Windows:** Download from https://python.org/downloads/ or use WSL
+
+#### Bash/POSIX Shell
+
+**Purpose:** Running shell scripts
+
+**Minimum Version:** Bash 4.0 or compatible POSIX shell
+
+**Validation Command:**
+```bash
+bash --version
+echo "Current shell: $SHELL"
+```
+
+### Package-Specific Dependencies
+
+| Package | Git | Python 3 | Bash | Node.js | npm | .NET SDK |
+|---------|-----|----------|------|---------|-----|----------|
+| **sc-delay-tasks** | Optional | Required | Required | - | - | - |
+| **sc-git-worktree** | >= 2.7.0 | Required | Required | - | - | - |
+| **sc-manage** | Required | Required | Required | - | - | - |
+| **sc-repomix-nuget** | Optional | Optional | Required | >= 18 | >= 8 | Optional |
+
+#### sc-git-worktree Dependencies
+
+**Critical:** Requires Git >= 2.7.0 for worktree support.
+
+**Platform Notes:**
+- **Windows:** Worktrees work best in WSL. Git Bash may have path issues.
+
+**Validation:**
+```bash
+git_version=$(git --version | awk '{print $3}')
+required="2.7.0"
+if [[ "$(printf '%s\n' "$required" "$git_version" | sort -V | head -n1)" = "$required" ]]; then
+    echo "Git version sufficient for worktree (>= $required)"
+fi
+
+git worktree --help > /dev/null 2>&1 && echo "Git worktree command available"
+```
+
+#### sc-repomix-nuget Dependencies
+
+**Required:**
+- Node.js >= 18.0.0
+- npm >= 8.0.0
+- Bash or POSIX shell
+
+**Optional:**
+- .NET SDK (for C# projects)
+
+**Validation:**
+```bash
+node --version  # Should be v18.0.0 or higher
+npm --version   # Should be 8.0.0 or higher
+dotnet --version  # Optional, for C# projects
+```
+
+**Node.js Installation (using nvm - Recommended):**
+```bash
+# Install nvm
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
+source ~/.bashrc
+
+# Install and use Node.js 18
+nvm install 18
+nvm use 18
+nvm alias default 18
+```
+
+### Quick Dependency Check Script
+
+**One-command check:**
+
+```bash
+#!/bin/bash
+# quick-dep-check.sh
+
+echo "=== Quick Dependency Check ==="
+
+# Core dependencies
+command -v git > /dev/null 2>&1 && echo "Git: OK" || echo "Git: MISSING"
+command -v python3 > /dev/null 2>&1 && echo "Python 3: OK" || echo "Python 3: MISSING"
+command -v bash > /dev/null 2>&1 && echo "Bash: OK" || echo "Bash: MISSING"
+
+# Optional dependencies
+command -v node > /dev/null 2>&1 && echo "Node.js: OK" || echo "Node.js: (optional)"
+command -v npm > /dev/null 2>&1 && echo "npm: OK" || echo "npm: (optional)"
+command -v dotnet > /dev/null 2>&1 && echo ".NET SDK: OK" || echo ".NET SDK: (optional)"
+```
+
+### Comprehensive Dependency Validation
+
+For detailed validation with version checking:
+
+```bash
+#!/bin/bash
+# check-all-deps.sh
+
+ERRORS=0
+
+# Check Git
+echo "Checking Git..."
+if command -v git > /dev/null 2>&1; then
+    git_version=$(git --version | awk '{print $3}')
+    required="2.7.0"
+    if [[ "$(printf '%s\n' "$required" "$git_version" | sort -V | head -n1)" = "$required" ]]; then
+        echo "  Git version OK: $git_version >= $required"
+    else
+        echo "  Git version too old: $git_version < $required"
+        ERRORS=$((ERRORS + 1))
+    fi
+else
+    echo "  Git not found"
+    ERRORS=$((ERRORS + 1))
+fi
+
+# Check Python 3
+echo "Checking Python 3..."
+if command -v python3 > /dev/null 2>&1; then
+    python_version=$(python3 --version 2>&1 | awk '{print $2}')
+    major=$(echo $python_version | cut -d. -f1)
+    minor=$(echo $python_version | cut -d. -f2)
+    if [[ $major -ge 3 ]] && [[ $minor -ge 6 ]]; then
+        echo "  Python version OK: $python_version >= 3.6"
+    else
+        echo "  Python version too old: $python_version < 3.6"
+        ERRORS=$((ERRORS + 1))
+    fi
+else
+    echo "  Python 3 not found"
+    ERRORS=$((ERRORS + 1))
+fi
+
+# Check Bash
+echo "Checking Bash..."
+if command -v bash > /dev/null 2>&1; then
+    bash_version=$(bash --version | head -1 | awk '{print $4}')
+    echo "  Bash installed: $bash_version"
+else
+    echo "  Bash not found"
+    ERRORS=$((ERRORS + 1))
+fi
+
+exit $ERRORS
+```
+
+### Dependency Conflicts
+
+**Common conflict scenarios and resolutions:**
+
+1. **Multiple Python versions:**
+   ```bash
+   which -a python python3 python3.11
+   # Use pyenv to manage versions
+   pyenv global 3.11
+   ```
+
+2. **Multiple Git installations:**
+   ```bash
+   which -a git
+   # Use PATH priority or absolute paths
+   export PATH="/usr/local/bin:$PATH"
+   ```
+
+3. **Node.js version conflicts:**
+   ```bash
+   # Use nvm to switch versions
+   nvm use 18
+   # Or create .nvmrc file
+   echo "18" > .nvmrc
+   ```
+
+### Pre-Commit Hook for Dependencies
+
+Add to `.git/hooks/pre-commit`:
+
+```bash
+#!/bin/bash
+echo "Running pre-commit dependency check..."
+
+if ! command -v git > /dev/null 2>&1; then
+    echo "Error: Git not found"
+    exit 1
+fi
+
+if ! command -v python3 > /dev/null 2>&1; then
+    echo "Error: Python 3 not found"
+    exit 1
+fi
+
+echo "Dependency check passed"
+exit 0
+```
+
+### Platform-Specific Notes
+
+#### macOS
+- Install Xcode Command Line Tools: `xcode-select --install`
+- System Git may be outdated; use Homebrew: `brew install git`
+- Use `python3` explicitly (macOS may have Python 2 as `python`)
+
+#### Linux
+- **Ubuntu/Debian:** Use `apt-get` or `apt`
+- **RHEL/CentOS/Fedora:** Use `yum` or `dnf`; may need EPEL or NodeSource repos
+- **Arch Linux:** `sudo pacman -S git python bash nodejs npm`
+
+#### Windows
+- **Recommended:** Use Windows Subsystem for Linux (WSL 2)
+- **Alternative:** Git Bash + native Windows tools
+- **WSL Setup:** `wsl --install` then follow Linux instructions
+- **Line endings:** Configure with `git config --global core.autocrlf true`
+- **Worktrees:** WSL 2 strongly recommended for worktree functionality
+
+### Dependency Quick Reference
+
+```bash
+# Quick check
+git --version && python3 --version && bash --version
+
+# Comprehensive check
+./check-all-deps.sh
+
+# Installation (macOS)
+brew install git python3 node
+
+# Installation (Ubuntu/Debian)
+sudo apt-get install git python3 nodejs npm
+
+# Installation (RHEL/CentOS)
+sudo yum install git python3 nodejs npm
+```
+
 ## Related Documentation
 
 - [FRONTMATTER-SCHEMA.md](./FRONTMATTER-SCHEMA.md) - Detailed frontmatter schema documentation
 - [SECURITY-SCANNING-GUIDE.md](./SECURITY-SCANNING-GUIDE.md) - Security scanning deep dive
 - [VERSION-CHECKING-GUIDE.md](./VERSION-CHECKING-GUIDE.md) - Version management guide
-- [DEPENDENCY-VALIDATION.md](./DEPENDENCY-VALIDATION.md) - Dependency validation details
+- [DIAGNOSTIC-TOOLS.md](./DIAGNOSTIC-TOOLS.md) - Diagnostic tools reference and workflows

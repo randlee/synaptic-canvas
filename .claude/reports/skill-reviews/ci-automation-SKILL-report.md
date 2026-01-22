@@ -81,7 +81,7 @@ Lines 25-31 reference "Agent Runner" correctly:
 **Suggestion**:
 ```markdown
 ## Agent Invocation
-All agents invoked via Agent Runner (see `.claude/tools/agent-runner` or `docs/agent-runner.md`).
+All agents invoked via Agent Runner (see `.claude/tools/agent-runner` or `docs/agent-runner-comprehensive.md`).
 Agent Runner ensures registry policy enforcement and audit logging.
 ```
 
@@ -306,7 +306,7 @@ Add after line 10:
 ```markdown
 ## Agent Runner
 All agents invoked via Agent Runner for registry enforcement and audit logging.
-See `docs/agent-runner.md` or `.claude/tools/agent-runner`.
+See `docs/agent-runner-comprehensive.md` or `.claude/tools/agent-runner`.
 ```
 
 **4. Add entry_point to registry skill definition** (Complexity: Trivial, Impact: Low)

@@ -707,7 +707,7 @@ Audit record example:
 
 Why: Ensures the invoked artifact matched policy at runtime without adding tokens to the agent’s prompt.
 
-**Implementation reference**: See `docs/agent-runner.md` in this repository for a working Python implementation of the Agent Runner pattern.
+**Implementation reference**: See `docs/agent-runner-comprehensive.md` in this repository for a working Python implementation of the Agent Runner pattern.
 
 ### Cancellation Semantics
 
