@@ -15,11 +15,19 @@ This is the central hub for all Synaptic Canvas documentation. Use this index to
 - **[Installation Guide](../README.md#installation)** - How to install Synaptic Canvas
 - **[Quick Examples](../README.md#quick-examples)** - Common usage patterns
 
-### For Package Maintainers
-- **[CONTRIBUTING.md](../CONTRIBUTING.md)** - Contribution guidelines and development setup
-- **[Plugin Conventions](./PLUGIN-CONVENTIONS.md)** - Standard directories, shared settings, logging
-- **[Versioning Strategy](./versioning-strategy.md)** - Version management and release process
-- **[Architecture Guidelines](./claude-code-skills-agents-guidelines-0.4.md)** - Best practices for agents/skills/commands
+### For Package Maintainers (Plugin Development)
+
+**PLUGIN DEVELOPMENT PATH** — Use this checklist when building a plugin:
+1. ✓ **[Architecture Guidelines](./claude-code-skills-agents-guidelines-0.4.md)** — Skill/agent design patterns
+2. ✓ **[Plugin Storage Conventions](./PLUGIN-STORAGE-CONVENTIONS.md)** — Logs (`.claude/state/logs/<pkg>/`), settings (`.sc/<pkg>/settings.yaml`), outputs
+3. ✓ **[Security Scanning Guide](./SECURITY-SCANNING-GUIDE.md)** — Validate before release
+4. ✓ **[Versioning Strategy](./versioning-strategy.md)** — Version management
+5. ✓ **[CONTRIBUTING.md](../CONTRIBUTING.md)** — PR process
+
+**Quick Questions?**
+- "Where do I store logs?" → [Storage Conventions](./PLUGIN-STORAGE-CONVENTIONS.md#logs-claudestatelogspacage)
+- "How do I cache settings?" → [Storage Conventions](./PLUGIN-STORAGE-CONVENTIONS.md#settings--cache-scpackagesettingsyaml)
+- "What goes in `manifest.yaml`?" → [Architecture Guidelines](./claude-code-skills-agents-guidelines-0.4.md#file-organization)
 
 ### For Registry Operators
 - **[Marketplace Infrastructure Guide](./MARKETPLACE-INFRASTRUCTURE.md)** - Complete guide to creating and operating Claude Code marketplaces
@@ -39,14 +47,15 @@ This is the central hub for all Synaptic Canvas documentation. Use this index to
 ### Development Documentation
 | Document | Purpose | Audience |
 |----------|---------|----------|
-| [CONTRIBUTING.md](../CONTRIBUTING.md) | Contribution guidelines, dev setup, code standards | Contributors |
+| [Architecture Guidelines](./claude-code-skills-agents-guidelines-0.4.md) | Two-tier pattern, state management, response contracts | Plugin Developers |
+| [Plugin Storage Conventions](./PLUGIN-STORAGE-CONVENTIONS.md) | **Normative:** Logs, settings, outputs paths and formats | Plugin Developers |
 | [Versioning Strategy](./versioning-strategy.md) | Three-layer versioning system, SemVer policy | Maintainers |
-| [Architecture Guidelines](./claude-code-skills-agents-guidelines-0.4.md) | Best practices for agents, skills, commands | Developers |
+| [CONTRIBUTING.md](../CONTRIBUTING.md) | Contribution guidelines, dev setup, code standards | Contributors |
 
 ### Tools and Infrastructure
 | Document | Purpose | Location |
 |----------|---------|----------|
-| [Plugin Conventions](./PLUGIN-CONVENTIONS.md) | Standard directories, shared settings, logs, outputs | `docs/PLUGIN-CONVENTIONS.md` |
+| **[Plugin Storage Conventions](./PLUGIN-STORAGE-CONVENTIONS.md)** | **NORMATIVE:** Logs, settings, outputs paths/formats (all plugins) | `docs/PLUGIN-STORAGE-CONVENTIONS.md` |
 | [Marketplace Infrastructure](./MARKETPLACE-INFRASTRUCTURE.md) | Complete guide to building and operating Claude Code marketplaces | `docs/MARKETPLACE-INFRASTRUCTURE.md` |
 | [Agent Runner](./agent-runner-comprehensive.md) | Complete guide: features, benefits, integration | `docs/agent-runner-comprehensive.md` |
 | [NuGet Integration](./nuget/) | NuGet-specific documentation | `docs/nuget/` |
@@ -162,9 +171,28 @@ The project uses three synchronized version layers:
 
 ### For Developers
 
+**Building a new plugin:**
+1. Start with [Architecture Guidelines](./claude-code-skills-agents-guidelines-0.4.md)
+2. Review [Plugin Storage Conventions](./PLUGIN-STORAGE-CONVENTIONS.md) for where to read/write data
+3. Use the [verification checklist](./PLUGIN-STORAGE-CONVENTIONS.md#verification-checklist)
+
 **Installing a package:**
 ```bash
 python3 tools/sc-install.py install sc-delay-tasks --local
+```
+
+**Debugging plugin storage:**
+```bash
+# Find logs
+ls .claude/state/logs/<package-name>/
+cat .claude/state/logs/<package-name>/*.json | jq .
+
+# Find settings
+ls .sc/<package-name>/settings.yaml
+cat .sc/<package-name>/settings.yaml
+
+# Find outputs
+ls -R .sc/<package-name>/output/
 ```
 
 **Checking version consistency:**
@@ -280,6 +308,7 @@ This documentation is versioned alongside the marketplace platform:
 | Project Overview | ✅ Current | Nov 30, 2025 |
 | Development Setup | ✅ Current | Nov 30, 2025 |
 | Versioning System | ✅ Current | Dec 2, 2025 |
+| **Plugin Storage Conventions** | ✅ **NEW** | **Jan 22, 2026** |
 | Package Documentation | ✅ Current | Dec 1, 2025 |
 | Archive Structure | ✅ Current | Dec 2, 2025 |
 | Tools & Scripts | ✅ Current | Dec 2, 2025 |

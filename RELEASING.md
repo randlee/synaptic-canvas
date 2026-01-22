@@ -218,6 +218,8 @@ When you run `set-package-version.py --all --marketplace <version>`:
 
 ## Related Documentation
 
-- [Versioning Strategy](versioning-strategy.md) - Version numbering philosophy
-- [Dependency Validation](DEPENDENCY-VALIDATION.md) - Validation details
-- [Diagnostic Tools](DIAGNOSTIC-TOOLS.md) - Troubleshooting scripts
+**→ [Documentation Index](docs/DOCUMENTATION-INDEX.md)** - Central hub for all guides
+
+- [Versioning Strategy](docs/versioning-strategy.md) - Version numbering philosophy
+- [Dependency Validation](docs/DEPENDENCY-VALIDATION.md) - Validation details
+- [Diagnostic Tools](docs/DIAGNOSTIC-TOOLS.md) - Troubleshooting scripts
