@@ -24,6 +24,9 @@ artifacts:
     - agents/sc-git-worktree-cleanup.md
     - agents/sc-git-worktree-abort.md
     - agents/sc-git-worktree-update.md
+  scripts:
+    - scripts/envelope.py
+    - scripts/worktree_scan.py
 
 # Token substitution (Tier 1 package)
 variables:
@@ -44,4 +47,6 @@ options:
 
 # Runtime requirements
 requires:
+  - python3
+  - pydantic
   - git >= 2.20

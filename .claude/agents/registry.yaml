@@ -2,18 +2,6 @@ agents:
   skill-planning-agent:
     version: 0.9.0
     path: .claude/agents/skill-planning-agent.md
-  sc-worktree-create:
-    version: 0.7.0
-    path: .claude/agents/sc-worktree-create.md
-  sc-worktree-scan:
-    version: 0.7.0
-    path: .claude/agents/sc-worktree-scan.md
-  sc-worktree-cleanup:
-    version: 0.7.0
-    path: .claude/agents/sc-worktree-cleanup.md
-  sc-worktree-abort:
-    version: 0.7.0
-    path: .claude/agents/sc-worktree-abort.md
   issue-intake-agent:
     version: 0.7.0
     path: .claude/agents/issue-intake-agent.md
@@ -76,12 +64,6 @@ skills:
       skill-implementation-review: 0.x
       skill-metadata-storage-review: 0.x
     entry_point: /skill-plan
-  sc-managing-worktrees:
-    depends_on:
-      sc-worktree-create: 0.x
-      sc-worktree-scan: 0.x
-      sc-worktree-cleanup: 0.x
-      sc-worktree-abort: 0.x
   github-issue:
     depends_on:
       issue-intake-agent: 0.x
@@ -104,8 +86,6 @@ skills:
     depends_on:
       sc-checklist-status: 0.x
       ci-pr-agent: 0.x
-      sc-worktree-scan: 0.x
-      sc-worktree-cleanup: 0.x
       ci-automation: 0.x
       sc-startup-init: 0.x
     entry_point: /sc-startup
