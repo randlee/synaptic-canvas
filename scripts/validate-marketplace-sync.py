@@ -253,7 +253,7 @@ def get_package_dirs(packages_dir: Path) -> list[Path]:
     return [
         d
         for d in packages_dir.iterdir()
-        if d.is_dir() and not d.name.startswith(".")
+        if d.is_dir() and not d.name.startswith(".") and d.name != "shared"
     ]
 
 

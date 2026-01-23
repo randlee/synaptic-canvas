@@ -136,7 +136,14 @@ def _parse_manifest(pkg_dir: Path) -> Manifest:
 def _available_packages() -> Iterable[Path]:
     if not PACKAGES_DIR.exists():
         return []
-    return sorted(p for p in PACKAGES_DIR.iterdir() if p.is_dir())
+    return sorted(
+        p
+        for p in PACKAGES_DIR.iterdir()
+        if p.is_dir()
+        and not p.name.startswith(".")
+        and p.name != "shared"
+        and (p / "manifest.yaml").exists()
+    )
 
 
 # ============================================================================

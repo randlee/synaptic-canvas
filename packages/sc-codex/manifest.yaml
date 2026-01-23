@@ -20,6 +20,7 @@ artifacts:
     - agents/sc-codex.md
   scripts:
     - scripts/sc_codex_task.py
+    - scripts/sc_shared.py
     - scripts/ai_cli/__init__.py
     - scripts/ai_cli/__main__.py
     - scripts/ai_cli/cli.py

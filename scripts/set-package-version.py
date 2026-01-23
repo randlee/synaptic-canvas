@@ -283,11 +283,12 @@ def regenerate_marketplace_json(repo_root: Path, dry_run: bool = False) -> list[
     # Get marketplace version from first package or keep existing
     first_manifest = None
     for pkg_dir in sorted(packages_dir.iterdir()):
-        if pkg_dir.is_dir():
-            manifest = load_manifest(pkg_dir)
-            if manifest:
-                first_manifest = manifest
-                break
+        if not pkg_dir.is_dir() or pkg_dir.name == "shared":
+            continue
+        manifest = load_manifest(pkg_dir)
+        if manifest:
+            first_manifest = manifest
+            break
 
     if first_manifest:
         marketplace['metadata']['version'] = first_manifest.get('version', marketplace['metadata'].get('version'))
@@ -327,7 +328,7 @@ def regenerate_registry_json(repo_root: Path, dry_run: bool = False) -> list[str
     marketplace_version = None
 
     for pkg_dir in sorted(packages_dir.iterdir()):
-        if not pkg_dir.is_dir():
+        if not pkg_dir.is_dir() or pkg_dir.name == "shared":
             continue
 
         manifest = load_manifest(pkg_dir)
@@ -396,7 +397,7 @@ def regenerate_nuget_registry(repo_root: Path, dry_run: bool = False) -> list[st
 
     # Update each package in the registry
     for pkg_dir in sorted(packages_dir.iterdir()):
-        if not pkg_dir.is_dir():
+        if not pkg_dir.is_dir() or pkg_dir.name == "shared":
             continue
 
         manifest = load_manifest(pkg_dir)
@@ -513,7 +514,9 @@ def main():
 
     # Determine packages to update
     if args.all:
-        package_names = [d.name for d in packages_dir.iterdir() if d.is_dir()]
+        package_names = [
+            d.name for d in packages_dir.iterdir() if d.is_dir() and d.name != "shared"
+        ]
     else:
         package_names = [args.package]
 

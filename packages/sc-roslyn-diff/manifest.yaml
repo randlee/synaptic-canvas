@@ -25,6 +25,7 @@ artifacts:
     - agents/sc-diff.md
     - agents/sc-git-diff.md
   scripts:
+    - scripts/sc_shared.py
     - scripts/roslyn_diff_runner.py
     - scripts/sc_diff.py
     - scripts/sc_git_diff.py
@@ -34,3 +35,4 @@ requires:
   - dotnet >= 10
   - git >= 2.20
   - python >= 3.10
+  - pydantic

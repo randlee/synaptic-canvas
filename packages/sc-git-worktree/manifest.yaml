@@ -26,7 +26,12 @@ artifacts:
     - agents/sc-git-worktree-update.md
   scripts:
     - scripts/envelope.py
+    - scripts/sc_shared.py
     - scripts/worktree_scan.py
+    - scripts/worktree_create.py
+    - scripts/worktree_cleanup.py
+    - scripts/worktree_abort.py
+    - scripts/worktree_update.py
 
 # Token substitution (Tier 1 package)
 variables:

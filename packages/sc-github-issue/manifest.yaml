@@ -24,6 +24,8 @@ artifacts:
     - agents/sc-github-issue-mutate.md
     - agents/sc-github-issue-fix.md
     - agents/sc-github-issue-pr.md
+  scripts:
+    - scripts/sc_shared.py
   references:
     - references/github-issue-apis.md
     - references/github-issue-checklists.md
@@ -38,6 +40,8 @@ requires:
     - sc-git-worktree >= 0.7.0
   cli:
     - gh >= 2.0
+  python:
+    - pydantic
 
 # Install-time options
 options:

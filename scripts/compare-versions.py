@@ -324,9 +324,10 @@ def compare_all_packages(repo_root: Path) -> Result[ComparisonData, ComparisonEr
     # Compare each package
     package_results: List[Result[PackageComparison, ComparisonError]] = []
     for package_dir in sorted(packages_dir.iterdir()):
-        if package_dir.is_dir():
-            result = compare_package_versions(package_dir.name, repo_root)
-            package_results.append(result)
+        if not package_dir.is_dir() or package_dir.name == "shared":
+            continue
+        result = compare_package_versions(package_dir.name, repo_root)
+        package_results.append(result)
 
     # Collect results
     collected = collect_results(package_results)

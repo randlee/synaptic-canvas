@@ -23,6 +23,7 @@ artifacts:
     - agents/sc-package-uninstall.md
     - agents/sc-package-docs.md
   scripts:
+    - scripts/sc_shared.py
     - scripts/sc_manage_common.py
     - scripts/sc_manage_list.py
     - scripts/sc_manage_install.py
@@ -35,3 +36,4 @@ artifacts:
 requires:
   - python3
   - git
+  - pydantic

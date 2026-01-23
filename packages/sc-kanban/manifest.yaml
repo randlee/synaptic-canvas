@@ -28,6 +28,7 @@ artifacts:
     - agents/checklist_agent.py
     - agents/kanban_card.py
   scripts:
+    - scripts/sc_shared.py
     - scripts/kanban_board.py
     - scripts/validate_worktrees.py
     - scripts/validate_pr_state.py

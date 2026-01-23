@@ -139,7 +139,13 @@ def find_packages(packages_dir: Path) -> list[Path]:
     """Find all package directories."""
     if not packages_dir.exists():
         return []
-    return sorted([d for d in packages_dir.iterdir() if d.is_dir()])
+    return sorted(
+        [
+            d
+            for d in packages_dir.iterdir()
+            if d.is_dir() and not d.name.startswith(".") and d.name != "shared"
+        ]
+    )
 
 
 def extract_package_info(manifest: dict[str, Any], package_dir: Path) -> dict[str, Any]:
@@ -219,6 +225,7 @@ def update_registry(
         package_dirs = find_packages(packages_dir)
 
     # Update package information
+    allowed_names = set()
     for package_dir in package_dirs:
         manifest_result = load_manifest(package_dir)
         if isinstance(manifest_result, Failure):
@@ -228,6 +235,7 @@ def update_registry(
         manifest = manifest_result.value
         pkg_info = extract_package_info(manifest, package_dir)
         pkg_name = pkg_info["name"]
+        allowed_names.add(pkg_name)
 
         # Find existing package or add new one
         existing = None
@@ -242,6 +250,11 @@ def update_registry(
         else:
             registry["packages"].append(pkg_info)
             print(f"Added package: {pkg_name}")
+
+    if not package_name:
+        registry["packages"] = [
+            pkg for pkg in registry.get("packages", []) if pkg.get("name") in allowed_names
+        ]
 
     # Update metadata
     registry["metadata"] = calculate_metadata(registry.get("packages", []))

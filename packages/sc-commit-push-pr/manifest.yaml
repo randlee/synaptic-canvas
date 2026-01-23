@@ -19,6 +19,7 @@ artifacts:
     - agents/create-pr.md
   scripts:
     - scripts/envelope.py
+    - scripts/sc_shared.py
     - scripts/provider_detect.py
     - scripts/pr_provider.py
     - scripts/preflight_utils.py

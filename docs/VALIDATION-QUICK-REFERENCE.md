@@ -26,6 +26,7 @@ All validation scripts are located in the `scripts/` directory and follow consis
 | `validate-agents.py` | Validate agent registry entries and configurations | 0=pass, 1=fail |
 | `security-scan.py` | Security scanning for vulnerabilities and sensitive data | 0=pass, 1=warn, 2=fail |
 | `validate-manifest-artifacts.py` | Verify manifest artifacts match declared files | 0=pass, 1=fail |
+| `validate-shared-scripts.py` | Validate shared scripts are identical across packages | 0=pass, 1=fail |
 | `validate-marketplace-sync.py` | Check marketplace synchronization status | 0=pass, 1=fail |
 | `validate-frontmatter-schema.py` | Validate frontmatter against JSON schemas | 0=pass, 1=fail |
 | `validate-script-references.py` | Check that script references resolve correctly | 0=pass, 1=fail |
@@ -91,6 +92,16 @@ python scripts/validate-manifest-artifacts.py [--manifest PATH]
 
 **Options:**
 - `--manifest`: Path to manifest file (default: auto-detect)
+
+#### validate-shared-scripts.py
+Ensures the canonical shared script matches every package copy; can sync before checking.
+
+```bash
+python scripts/validate-shared-scripts.py [--check]
+```
+
+**Options:**
+- `--check`: Validate only; do not sync
 
 #### validate-marketplace-sync.py
 Checks that marketplace entries are synchronized with local artifacts.
