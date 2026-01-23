@@ -5,10 +5,10 @@ Design for `/sc-commit-push-pr` and `/sc-create-pr` with explicit primary-agent 
 ## Scope
 
 - Python-first implementation with Pydantic validation.
-- Minimal, deterministic API calls with caching and hooks.
+- Minimal, deterministic API calls with auto-detection and hooks.
 - Commit/push pipeline is handled by a background agent (`commit-push.md`).
 - PR creation is handled by a separate background agent (`create-pr.md`).
-- Support GitHub and Azure DevOps; detect provider and cache settings in `.sc/shared-settings.yml` (Azure only).
+- Support GitHub and Azure DevOps; auto-detect provider from git remote (no caching needed).
 
 ## Non-Goals
 
@@ -22,15 +22,15 @@ Design for `/sc-commit-push-pr` and `/sc-create-pr` with explicit primary-agent 
 
 - Treat as a function-style slash command.
 - Stages important files (ask if unclear).
-- Invokes `commit-push.md` agent.
+- Uses Agent Runner to invoke `commit-push` agent (per registry.yaml).
 - If PR already exists, return success with PR URL.
-- If PR is required, request PR text from the primary agent and then invoke `create-pr.md` agent.
+- If PR is required, request PR text from the primary agent and then invoke `create-pr` agent via Agent Runner.
 
 ### `/sc-create-pr`
 
 - Standalone slash command.
 - Accepts PR title/body from user input.
-- Invokes `create-pr.md` agent directly.
+- Uses Agent Runner to invoke `create-pr` agent directly.
 
 ## Agent Roles
 
@@ -40,11 +40,66 @@ Design for `/sc-commit-push-pr` and `/sc-create-pr` with explicit primary-agent 
 
 ## Hook Usage
 
-- Start hooks are defined in each agent frontmatter (same hook file per agent).
-- Hooks do preflight only:
-  - Provider detection from remotes.
-  - Azure settings cache in `.sc/shared-settings.yml`.
-- Preflight state write (no pipeline execution).
+- Start hooks are defined in each agent frontmatter (SubAgentStart hook per agent).
+- Hooks do preflight validation:
+  - Detect protected branches from git-flow or `.sc/shared-settings.yaml`
+  - Auto-populate `.sc/shared-settings.yaml` if git-flow detected
+  - Fail with error if protected branches not configured
+  - Validate git authentication
+  - Log preflight status to `.claude/state/logs/sc-commit-push-pr/`
+
+## Configuration
+
+### Protected Branches
+
+Required for workflow logic (worktree vs direct push decision).
+
+**Auto-detection (first run):**
+- Hook checks for git-flow config
+- If found, creates `.sc/shared-settings.yaml` automatically
+
+**Manual configuration:**
+```yaml
+# .sc/shared-settings.yaml
+git:
+  protected_branches:
+    - main
+    - develop
+```
+
+**Field name:** `git.protected_branches` (normative from storage conventions)
+
+### Provider Detection
+
+No configuration needed - auto-detected from git remote every run:
+```python
+# Parse git remote URL
+remote_url = subprocess.run(["git", "remote", "get-url", "origin"], ...)
+
+if "dev.azure.com" in remote_url:
+    # Parse: https://dev.azure.com/org/project/_git/repo
+    provider = "azuredevops"
+    org, project, repo = parse_azure_url(remote_url)
+
+elif "github.com" in remote_url:
+    # Parse: https://github.com/org/repo
+    provider = "github"
+    org, repo = parse_github_url(remote_url)
+```
+
+### Credentials
+
+Standard environment variable names (no configuration):
+- GitHub: `GITHUB_TOKEN`
+- Azure DevOps: `AZURE_DEVOPS_PAT`
+
+### Settings Fallback Chain
+
+Per storage conventions, settings are resolved in this order:
+1. Package settings: `.sc/sc-commit-push-pr/settings.yaml` (optional, for package-specific prefs)
+2. Shared settings: `.sc/shared-settings.yaml` (protected branches live here)
+3. User settings: `~/.sc/shared-settings.yaml` (user-global fallback)
+4. Defaults: Built-in defaults in scripts
 
 ## Pipeline Summary (Commit-Push Agent)
 
@@ -66,19 +121,112 @@ If merge conflicts occur, the Python script returns `GIT.MERGE_CONFLICT` and the
   - `create_pr.py`
 - This Python script creates a PR using provided title/body and returns PR info.
 
-## Script Inventory (plugin/scripts/)
+## Script Inventory
 
-All scripts live in `plugin/scripts/` and are flattened to `.claude/scripts/` on deploy.
+All scripts live in `packages/sc-commit-push-pr/.claude/scripts/`. Hook paths in agent frontmatter are relative to the package directory.
 
 - `commit_pull_merge_commit_push.py` (commit/pull/merge/push + PR status)
 - `create_pr.py` (create PR from title/body)
-- `repo_detect.py` (provider detection + Azure cache)
-- `pr_provider.py` (GitHub/Azure abstraction)
+- `provider_detect.py` (parse git remote URL for GitHub/Azure)
+- `pr_provider.py` (GitHub/Azure API abstraction)
+- `commit_push_agent_start_hook.py` (preflight: protected branches + auth)
+- `create_pr_agent_start_hook.py` (preflight: protected branches + permissions)
+
+## Package Dependencies (manifest.yaml)
+
+All Python dependencies must be declared in `manifest.yaml` per Tool Use Best Practices:
+
+```yaml
+# packages/sc-commit-push-pr/manifest.yaml
+name: sc-commit-push-pr
+version: 0.1.0
+description: Commit, push, and create PRs for GitHub and Azure DevOps
+
+requires:
+  python:
+    - pydantic
+    - pyyaml
+  cli:
+    - python3
+    - git
+    - gh  # GitHub CLI (optional, for GitHub provider)
+
+tier: 2  # Runtime dependencies required
+```
+
+## Registry Schema (registry.yaml)
+
+Agents must be registered for Agent Runner invocation per Architecture Guidelines v0.5:
+
+```yaml
+# packages/sc-commit-push-pr/.claude/agents/registry.yaml
+version: "1.0"
+
+agents:
+  commit-push:
+    path: .claude/agents/commit-push.md
+    version: "0.1.0"
+    description: Background agent for commit/pull/merge/push and PR status lookup
+
+  create-pr:
+    path: .claude/agents/create-pr.md
+    version: "0.1.0"
+    description: Background agent for creating PRs from title/body
+
+skills:
+  sc-commit-push-pr:
+    path: .claude/skills/sc-commit-push-pr/SKILL.md
+    version: "0.1.0"
+    depends_on:
+      - commit-push@0.1.x
+      - create-pr@0.1.x
+```
+
+## SKILL.md Specification
+
+The skill file orchestrates the two-tier pattern per Architecture Guidelines v0.5:
+
+```yaml
+# packages/sc-commit-push-pr/.claude/skills/sc-commit-push-pr/SKILL.md
+---
+name: sc-commit-push-pr
+version: 0.1.0
+description: Commit staged changes, push to remote, and create PRs
+---
+```
+
+### Capabilities
+
+| Command | Description |
+|---------|-------------|
+| `/sc-commit-push-pr` | Full pipeline: commit, push, and create PR if needed |
+| `/sc-create-pr` | Create PR from title/body (standalone) |
+
+### Agent Delegation
+
+| Step | Agent | Input | Output |
+|------|-------|-------|--------|
+| Commit & Push | `commit-push` | source/destination branches | PR status, URL, or conflict list |
+| Create PR | `create-pr` | title, body, source, destination | PR info |
+
+### Orchestration Logic
+
+1. **On `/sc-commit-push-pr`:**
+   - Stage important files (prompt user if unclear)
+   - Invoke `commit-push` agent via Agent Runner
+   - Parse fenced JSON response
+   - If `pr_exists: true` → return PR URL to user
+   - If `needs_pr_text: true` → prompt user for title/body, then invoke `create-pr`
+   - If `error.code == "GIT.MERGE_CONFLICT"` → guide user through resolution
+
+2. **On `/sc-create-pr`:**
+   - Accept title/body from user
+   - Invoke `create-pr` agent via Agent Runner
+   - Return PR URL to user
 
 ## Agent Frontmatter Schema
 
 Agent markdown files must include YAML frontmatter with versioning and hook definition.
-Hooks are defined in frontmatter and call Python scripts (flattened to `.claude/scripts/`).
 
 Example: `commit-push.md`
 
@@ -96,6 +244,22 @@ hooks:
 ---
 ```
 
+**What the hook does:**
+1. Check for protected branches in `.sc/shared-settings.yaml`
+2. If not found, try git-flow detection (`gitflow.branch.master`, `gitflow.branch.develop`)
+3. If found via git-flow, auto-create `.sc/shared-settings.yaml`
+4. If not found anywhere, fail with error:
+   ```
+   ERROR: Protected branches not configured.
+
+   Create .sc/shared-settings.yaml with:
+   git:
+     protected_branches: [main, develop]
+   ```
+5. Validate git authentication
+6. Log preflight to `.claude/state/logs/sc-commit-push-pr/`
+7. Exit 0 (allow) or Exit 2 (block)
+
 Example: `create-pr.md`
 
 ```yaml
@@ -111,6 +275,9 @@ hooks:
           command: "python3 .claude/scripts/create_pr_agent_start_hook.py"
 ---
 ```
+
+**What the hook does:**
+Same as commit-push hook (checks protected branches, validates permissions).
 
 ## Output Contract
 
@@ -271,7 +438,84 @@ This project’s authoritative flow diagram is a CSV for easy editing:
 
 If changes are made to flow logic, update that CSV first, then sync this document.
 
+## Logs
+
+Runtime events, hook executions, and audit trails:
+- **Location:** `.claude/state/logs/sc-commit-push-pr/`
+- **Format:** JSON (one file per operation or newline-delimited)
+- **Retention:** 14 days (per storage conventions)
+- **Never log:** Git credentials, API tokens, PR bodies with secrets
+- **Gitignore:** `.claude/state/logs/` should be excluded from version control
+
+Example log entry (includes standard fields per storage conventions):
+```json
+{
+  "timestamp": "2026-01-22T15:30:00Z",
+  "level": "info",
+  "message": "Commit and push completed successfully",
+  "context": {
+    "operation": "commit-push",
+    "provider": "azuredevops",
+    "source_branch": "feature-x",
+    "destination_branch": "main",
+    "protected": true
+  },
+  "outcome": "success",
+  "pr_id": "123"
+}
+```
+
+## README Requirements
+
+Per Plugin Storage Conventions verification checklist, the package README.md must include:
+
+### Required Sections
+
+1. **Logs Section:**
+   ```markdown
+   ## Logs
+
+   Runtime logs are written to `.claude/state/logs/sc-commit-push-pr/`.
+   - Format: JSON (newline-delimited)
+   - Retention: 14 days
+   - Contains: Operation outcomes, branch info, PR IDs
+   - Never contains: Credentials, tokens, secrets
+   ```
+
+2. **Configuration Section:**
+   ```markdown
+   ## Configuration
+
+   ### Protected Branches (Required)
+   Create `.sc/shared-settings.yaml`:
+   ```yaml
+   git:
+     protected_branches:
+       - main
+       - develop
+   ```
+
+   Or let the skill auto-detect from git-flow configuration.
+
+   ### Credentials
+   Set environment variables:
+   - GitHub: `GITHUB_TOKEN`
+   - Azure DevOps: `AZURE_DEVOPS_PAT`
+   ```
+
+3. **Storage Locations Summary:**
+   | Type | Path | Purpose |
+   |------|------|---------|
+   | Logs | `.claude/state/logs/sc-commit-push-pr/` | Runtime events |
+   | Shared Settings | `.sc/shared-settings.yaml` | Protected branches |
+   | Package Settings | `.sc/sc-commit-push-pr/settings.yaml` | Optional preferences |
+
 ## Notes
 
-- No changes should be made under `.claude/`; plugin agents/commands/skills live under `packages/`.
-- The commit-push agent should return PR status + URL in its fenced JSON.
+- Package lives in `packages/sc-commit-push-pr/` with standard structure
+- Provider info (Azure org/project, GitHub org) auto-detected from git remote (not stored)
+- Protected branches in `.sc/shared-settings.yaml` (auto-detected from git-flow or manual)
+- The commit-push agent should return PR status + URL in its fenced JSON
+- Hooks check protected branches at SubAgentStart, fail fast if not configured
+- Agent Runner is used for all agent invocations (registry validation, audit logging)
+- All agents return fenced JSON only (no prose outside code blocks)
