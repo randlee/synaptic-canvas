@@ -1,10 +1,7 @@
 agents:
   skill-planning-agent:
-    version: 0.7.0
+    version: 0.8.0
     path: .claude/agents/skill-planning-agent.md
-  skill-review-agent:
-    version: 0.7.0
-    path: .claude/agents/skill-review-agent.md
   sc-worktree-create:
     version: 0.7.0
     path: .claude/agents/sc-worktree-create.md
@@ -75,7 +72,7 @@ skills:
   skill-creation:
     depends_on:
       skill-planning-agent: 0.x
-      skill-review-agent: 0.x
+    entry_point: /skill-plan
   sc-managing-worktrees:
     depends_on:
       sc-worktree-create: 0.x
@@ -116,6 +113,7 @@ skills:
     entry_point: /sc-diff
   skill-reviewing:
     depends_on:
-      skill-metadata-storage-review: 0.1.0
-      skill-implementation-review: 0.1.0
-      skill-architecture-review: 0.1.0
+      skill-metadata-storage-review: 0.x
+      skill-implementation-review: 0.x
+      skill-architecture-review: 0.x
+    entry_point: /skill-review
