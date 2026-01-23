@@ -1,0 +1,19 @@
+# sc-commit-push-pr package manifest
+name: sc-commit-push-pr
+version: 0.1.0
+description: Commit, push, and create PRs for GitHub and Azure DevOps
+
+requires:
+  python:
+    - pydantic
+    - pyyaml
+  cli:
+    - python3
+    - git
+    - gh  # GitHub CLI (optional, for GitHub provider)
+
+tier: 2  # Runtime dependencies required
+
+author: randlee
+repository: https://github.com/randlee/synaptic-canvas
+license: MIT
