@@ -7,7 +7,7 @@ hooks:
     - matcher: "Bash"
       hooks:
         - type: command
-          command: "python3 scripts/create_pr_agent_start_hook.py"
+          command: "python3 .claude/scripts/create_pr_agent_start_hook.py"
 ---
 
 # Create-PR Agent
