@@ -20,7 +20,7 @@ import pytest
 
 # Add the scripts directory to path for imports
 import sys
-sys.path.insert(0, str(__file__).replace("/tests/test_commit_push.py", "/.claude/scripts"))
+sys.path.insert(0, str(__file__).replace("/tests/test_commit_push.py", "/scripts"))
 
 from commit_pull_merge_commit_push import (
     CommitPushInput,

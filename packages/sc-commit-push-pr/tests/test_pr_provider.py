@@ -19,7 +19,7 @@ import requests
 
 # Add the scripts directory to path for imports
 import sys
-sys.path.insert(0, str(__file__).replace("/tests/test_pr_provider.py", "/.claude/scripts"))
+sys.path.insert(0, str(__file__).replace("/tests/test_pr_provider.py", "/scripts"))
 
 from pr_provider import (
     PullRequestInfo,
