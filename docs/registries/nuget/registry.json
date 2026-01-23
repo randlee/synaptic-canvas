@@ -363,21 +363,59 @@
       "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-startup/CHANGELOG.md",
       "lastUpdated": "2026-01-21",
       "dependents": []
+    },
+    "sc-commit-push-pr": {
+      "name": "sc-commit-push-pr",
+      "version": "0.1.0",
+      "status": "beta",
+      "tier": 2,
+      "description": "Commit, push, and create PRs for GitHub and Azure DevOps with auto-detection, protected branch awareness, and conflict handling.\n",
+      "github": "randlee/synaptic-canvas",
+      "repo": "https://github.com/randlee/synaptic-canvas",
+      "path": "packages/sc-commit-push-pr",
+      "readme": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-commit-push-pr/README.md",
+      "license": "MIT",
+      "author": "randlee",
+      "tags": [
+        "git",
+        "pr",
+        "github",
+        "azure-devops",
+        "workflow",
+        "automation"
+      ],
+      "artifacts": {
+        "commands": 0,
+        "skills": 1,
+        "agents": 2,
+        "scripts": 8,
+        "schemas": 0
+      },
+      "dependencies": [
+        "pydantic",
+        "pyyaml",
+        "git",
+        "gh"
+      ],
+      "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-commit-push-pr/CHANGELOG.md",
+      "lastUpdated": "2026-01-22",
+      "dependents": []
     }
   },
   "metadata": {
     "registryVersion": "2.0.0",
     "schemaVersion": "1.0.0",
-    "totalPackages": 8,
+    "totalPackages": 9,
     "totalCommands": 8,
-    "totalSkills": 8,
-    "totalAgents": 31,
-    "totalScripts": 6,
+    "totalSkills": 9,
+    "totalAgents": 33,
+    "totalScripts": 14,
     "categories": {
       "automation": [
         "sc-delay-tasks",
         "sc-ci-automation",
-        "sc-startup"
+        "sc-startup",
+        "sc-commit-push-pr"
       ],
       "development-tools": [
         "sc-git-worktree",
@@ -417,9 +455,10 @@
         "sc-repomix-nuget",
         "sc-github-issue",
         "sc-kanban",
-        "sc-startup"
+        "sc-startup",
+        "sc-commit-push-pr"
       ],
-      "total_packages": 8
+      "total_packages": 9
     }
   }
 }
