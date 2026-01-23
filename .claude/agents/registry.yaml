@@ -109,6 +109,14 @@ skills:
       skill-metadata-storage-review: 0.x
       skill-planning-agent: 0.x
     entry_point: /skill-plan
+  sc-managing-worktrees:
+    depends_on:
+      sc-git-worktree-create: 0.x
+      sc-git-worktree-scan: 0.x
+      sc-git-worktree-cleanup: 0.x
+      sc-git-worktree-abort: 0.x
+      sc-git-worktree-update: 0.x
+    entry_point: /sc-git-worktree
   skill-reviewing:
     depends_on:
       skill-architecture-review: 0.x

@@ -5,6 +5,7 @@ description: >
   Use when working on multiple branches simultaneously, isolating experiments, updating protected branches (main/develop),
   or when user mentions "worktree", "parallel branches", "feature isolation", "branch cleanup", "worktree status", or "update main/develop".
 version: 0.8.0
+entry_point: /sc-git-worktree
 ---
 
 # Managing Git Worktrees
