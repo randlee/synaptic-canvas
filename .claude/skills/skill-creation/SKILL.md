@@ -66,10 +66,10 @@ If plan incomplete, include open questions and next actions; otherwise provide s
 
 ## Storage
 
-| Purpose | Location |
-|---------|----------|
-| Plans | `plans/<name>.md` |
-| Scratch | `.claude/.prompts/` (transient)
+| Purpose | Location | Notes |
+|---------|----------|-------|
+| Plans | `plans/<name>.md` | User-managed, version controlled |
+| Scratch | `.claude/state/skill-creation/` | Transient session data, 24h TTL |
 
 ## Safety
 - Creation of plan files is allowed; avoid destructive repo changes.

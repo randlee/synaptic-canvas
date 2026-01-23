@@ -24,3 +24,12 @@ Purpose: Collect minimal inputs and launch the skill planner. Keep logic thin—
 - If `--template` is provided, load it as the initial plan skeleton; otherwise use the default sections in the skill.
 - Always show concise `--help` output when requested.
 - Do not embed business logic; just validate inputs and invoke the skill with gathered parameters.
+
+## Errors
+
+| Error | Cause | Resolution |
+|-------|-------|------------|
+| Plan not found | Path argument doesn't exist | Create new plan or check path |
+| Invalid template | `--template` file malformed | Fix template YAML/markdown structure |
+| Artifact not found | `--from` references missing file | Verify path exists |
+| Agent failure | Planning agent returned error | Check agent error message, retry |
