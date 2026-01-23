@@ -21,7 +21,7 @@ import pytest
 import yaml
 
 # Add scripts directory to path for imports
-SCRIPTS_DIR = Path(__file__).parent.parent / "scripts"
+SCRIPTS_DIR = Path(__file__).parent.parent / "packages" / "sc-commit-push-pr" / "scripts"
 sys.path.insert(0, str(SCRIPTS_DIR))
 
 from preflight_utils import (
