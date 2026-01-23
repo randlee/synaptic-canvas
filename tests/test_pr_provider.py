@@ -19,7 +19,9 @@ import requests
 
 # Add the scripts directory to path for imports
 import sys
-sys.path.insert(0, str(__file__).replace("/tests/test_pr_provider.py", "/scripts"))
+from pathlib import Path
+scripts_dir = Path(__file__).parent.parent / "packages" / "sc-commit-push-pr" / "scripts"
+sys.path.insert(0, str(scripts_dir))
 
 from pr_provider import (
     PullRequestInfo,

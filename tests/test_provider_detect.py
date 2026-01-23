@@ -11,7 +11,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 # Add scripts directory to path for imports
-scripts_dir = Path(__file__).parent.parent / "scripts"
+scripts_dir = Path(__file__).parent.parent / "packages" / "sc-commit-push-pr" / "scripts"
 sys.path.insert(0, str(scripts_dir))
 
 from envelope import ErrorCodes
