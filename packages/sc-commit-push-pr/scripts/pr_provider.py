@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """PR provider abstraction for GitHub and Azure DevOps.
 
 Provides a unified interface for PR operations across different git hosting providers.

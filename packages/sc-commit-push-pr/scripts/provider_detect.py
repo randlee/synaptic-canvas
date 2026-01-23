@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """Provider detection for sc-commit-push-pr.
 
 Parses git remote URLs to detect GitHub vs Azure DevOps and extract

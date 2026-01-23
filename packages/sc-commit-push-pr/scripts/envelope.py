@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """Common response envelope for sc-commit-push-pr agents.
 
 All scripts return fenced JSON using this standard envelope format.

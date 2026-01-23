@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """Create PR script for sc-commit-push-pr.
 
 Creates a pull request using the appropriate provider (GitHub or Azure DevOps)
