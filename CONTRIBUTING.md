@@ -276,7 +276,7 @@ Synaptic Canvas uses a three-layer versioning system based on semantic versionin
 2. **Package Versions** (`manifest.yaml` in each package) - Per-package releases
 3. **Artifact Versions** (YAML frontmatter in `.md` files) - Individual commands, skills, and agents
 
-For details, see [Versioning Strategy](docs/versioning-strategy.md).
+For complete guidance on all plugin development tasks (storage, security, testing, and more), see the [Plugin Development Path in the Documentation Index](docs/DOCUMENTATION-INDEX.md#for-package-maintainers-plugin-development). For versioning details specifically, see [Versioning Strategy](docs/versioning-strategy.md).
 
 ### Semantic Versioning
 

@@ -1,15 +1,7 @@
-# Agent registry - source of truth for agent paths and versions
-# Populate with your actual agents before running validation or Agent Runner.
-
 agents:
   skill-planning-agent:
-    version: 0.7.0
+    version: 0.8.0
     path: .claude/agents/skill-planning-agent.md
-  skill-review-agent:
-    version: 0.7.0
-    path: .claude/agents/skill-review-agent.md
-
-  # Worktree management agents
   sc-worktree-create:
     version: 0.7.0
     path: .claude/agents/sc-worktree-create.md
@@ -22,8 +14,6 @@ agents:
   sc-worktree-abort:
     version: 0.7.0
     path: .claude/agents/sc-worktree-abort.md
-
-  # GitHub issue management agents
   issue-intake-agent:
     version: 0.7.0
     path: .claude/agents/issue-intake-agent.md
@@ -36,8 +26,6 @@ agents:
   issue-pr-agent:
     version: 0.7.0
     path: .claude/agents/issue-pr-agent.md
-
-  # CI automation agents
   ci-validate-agent:
     version: 0.7.0
     path: .claude/agents/ci-validate-agent.md
@@ -59,38 +47,38 @@ agents:
   ci-pr-agent:
     version: 0.7.0
     path: .claude/agents/ci-pr-agent.md
-
-  # Startup checklist
   sc-checklist-status:
     version: 0.7.0
     path: .claude/agents/sc-checklist-status.md
-
   sc-startup-init:
     version: 0.7.0
     path: .claude/agents/sc-startup-init.md
-
-  # Roslyn diff agents
   sc-diff:
-    version: 0.7.0
+    version: 0.8.0
     path: .claude/agents/sc-diff.md
   sc-git-diff:
-    version: 0.7.0
+    version: 0.8.0
     path: .claude/agents/sc-git-diff.md
-
-# Optional: express skill -> agent dependency constraints
+  skill-metadata-storage-review:
+    version: 0.1.0
+    path: .claude/agents/skill-metadata-storage-review.md
+  skill-implementation-review:
+    version: 0.1.0
+    path: .claude/agents/skill-implementation-review.md
+  skill-architecture-review:
+    version: 0.1.0
+    path: .claude/agents/skill-architecture-review.md
 skills:
   skill-creation:
     depends_on:
       skill-planning-agent: 0.x
-      skill-review-agent: 0.x
-
+    entry_point: /skill-plan
   sc-managing-worktrees:
     depends_on:
       sc-worktree-create: 0.x
       sc-worktree-scan: 0.x
       sc-worktree-cleanup: 0.x
       sc-worktree-abort: 0.x
-
   github-issue:
     depends_on:
       issue-intake-agent: 0.x
@@ -98,7 +86,6 @@ skills:
       issue-fix-agent: 0.x
       issue-pr-agent: 0.x
       sc-managing-worktrees: 0.x
-
   ci-automation:
     depends_on:
       ci-validate-agent: 0.x
@@ -110,7 +97,6 @@ skills:
       ci-pr-agent: 0.x
       sc-managing-worktrees: 0.x
     entry_point: /ci-automation
-
   sc-startup:
     depends_on:
       sc-checklist-status: 0.x
@@ -120,9 +106,14 @@ skills:
       ci-automation: 0.x
       sc-startup-init: 0.x
     entry_point: /sc-startup
-
   sc-diff:
     depends_on:
       sc-diff: 0.x
       sc-git-diff: 0.x
     entry_point: /sc-diff
+  skill-reviewing:
+    depends_on:
+      skill-metadata-storage-review: 0.x
+      skill-implementation-review: 0.x
+      skill-architecture-review: 0.x
+    entry_point: /skill-review

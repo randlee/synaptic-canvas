@@ -60,3 +60,16 @@ Notes:
 
 - Add optional integration tests that use `claude --plugin-dir` (skips if CLI is unavailable, `ANTHROPIC_API_KEY` is missing, or CLI times out).
 - Add a packaging validation check to enforce runtime files (e.g., agent `.py`) are bundled.
+
+---
+
+## Documentation & Resources
+
+**For comprehensive testing and plugin validation guidance:**
+- **[Documentation Index](docs/DOCUMENTATION-INDEX.md)** - Central hub for all development, testing, and deployment guides
+- **[Plugin Quality Assurance (PQA)](pm/PQA.md)** - Test harness maintenance, plugin validation, and observability
+- **[Plugin Test Creation Guidelines](test-packages/docs/plugin-test-creation-guidelines.md)** - How to create valid test fixtures
+
+**For plugin development:**
+- **[Architecture Guidelines](docs/claude-code-skills-agents-guidelines-0.4.md)** - Design patterns and best practices
+- **[Storage Conventions](docs/PLUGIN-STORAGE-CONVENTIONS.md)** - Where logs, settings, and outputs go
