@@ -1,6 +1,6 @@
 ---
 name: skill-create
-version: 0.8.0
+version: 0.9.0
 description: Generate command/skill/agent/reference stubs from an approved plan.
 options:
   - name: --help

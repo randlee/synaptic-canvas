@@ -13,7 +13,9 @@ All Synaptic Canvas plugins follow standardized storage conventions to ensure co
 | Purpose | Location | Format | Scope | TTL |
 |---------|----------|--------|-------|-----|
 | **Runtime Logs** | `.claude/state/logs/<package>/` | JSON | Per-project | 14 days |
-| **Settings/Cache** | `.sc/<package>/settings.yaml` | YAML | Per-project | Persistent |
+| **Shared Settings** | `.sc/shared-settings.yaml` | YAML | Per-repo (all packages) | Persistent |
+| **Package Settings** | `.sc/<package>/settings.yaml` | YAML | Per-package | Persistent |
+| **User Settings** | `~/.sc/<package>/settings.yaml` | YAML | User-global | Persistent |
 | **Generated Output** | `.sc/<package>/output/` | Varied | Per-project | Persistent |
 
 ---
@@ -63,54 +65,341 @@ Runtime events, hook executions, validation errors, and audit trails for trouble
 
 ---
 
-## Settings & Cache: `.sc/<package>/settings.yaml`
+## Shared Settings: `.sc/shared-settings.yaml`
 
 ### Purpose
-Repository-specific configuration, cached values, and runtime state that persists across invocations.
+Repository-wide configuration shared across all packages. Used for provider information, protected branches, and repository policies that should be configured once and used everywhere.
+
+### Format
+- **Type:** YAML (single file for entire repo)
+- **Content:** Provider config (Azure/GitHub), protected branches, credential references
+- **Scope:** Repository-wide (all packages read from this)
+
+### Normative Schema
+
+All packages MUST use these standardized field names when reading from shared settings:
+
+| Field Path | Type | Required | Auto-detect from | Fallback |
+|------------|------|----------|------------------|----------|
+| `git.protected_branches` | array[string] | Yes | Git-flow config (`gitflow.branch.master`, `gitflow.branch.develop`) | Fail with error - user must define |
+
+**Important:** Field names are case-sensitive and use snake_case.
+
+### Auto-Detected Values (Do NOT Store)
+
+These values are auto-detected on every run and should NOT be stored in shared-settings:
+
+| What | How to Detect |
+|------|---------------|
+| **Provider type** (GitHub/Azure) | Parse `git remote get-url origin` |
+| **Azure org/project/repo** | Parse from remote URL: `dev.azure.com/org/project/_git/repo` |
+| **GitHub org/repo** | Parse from remote URL: `github.com/org/repo` |
+| **Credentials** | Standard env vars: `GITHUB_TOKEN`, `AZURE_DEVOPS_PAT` |
+
+### Protected Branches Detection Logic
+
+Packages that need protected branch info should use this pattern in hooks:
+
+```python
+def get_protected_branches(repo_root: Path) -> list[str]:
+    """Get protected branches with detection and caching."""
+    import subprocess
+    import yaml
+
+    # 1. Check if already in shared settings
+    shared_path = repo_root / ".sc" / "shared-settings.yaml"
+    if shared_path.exists():
+        settings = yaml.safe_load(shared_path.read_text())
+        if branches := settings.get("git", {}).get("protected_branches"):
+            return branches
+
+    # 2. Try git-flow detection
+    protected = []
+    try:
+        master = subprocess.run(
+            ["git", "config", "--get", "gitflow.branch.master"],
+            cwd=repo_root, capture_output=True, text=True, check=False
+        ).stdout.strip()
+        develop = subprocess.run(
+            ["git", "config", "--get", "gitflow.branch.develop"],
+            cwd=repo_root, capture_output=True, text=True, check=False
+        ).stdout.strip()
+
+        if master:
+            protected.append(master)
+        if develop:
+            protected.append(develop)
+    except Exception:
+        pass
+
+    # 3. Auto-populate if found
+    if protected:
+        shared_path.parent.mkdir(parents=True, exist_ok=True)
+        shared_path.write_text(yaml.dump({"git": {"protected_branches": protected}}))
+        return protected
+
+    # 4. Not found - fail with instructions
+    raise ValueError(
+        "Protected branches not configured.\n\n"
+        "Please create .sc/shared-settings.yaml with:\n"
+        "git:\n"
+        "  protected_branches: [main, develop]\n\n"
+        "List all branches that require PR workflow (no direct push)."
+    )
+```
+
+### What Goes in Shared Settings
+
+**Use shared settings for:**
+- Protected branch lists (workflow-critical)
+- Repository-wide policies that can't be auto-detected
+
+**Don't store (auto-detect instead):**
+- Provider info (parse from git remote)
+- Credential env var names (use standard names)
+- Default branches (query from git-flow or provider API)
+
+**Example:**
+```yaml
+# .sc/shared-settings.yaml
+git:
+  protected_branches:
+    - main
+    - develop
+```
+
+That's it. Everything else is auto-detected.
+
+### Extending the Schema
+
+Most things should be auto-detected, not stored. Before adding a new shared setting:
+
+1. **Can it be auto-detected?** (from git config, remote URL, or API)
+2. **Is it truly repository-scoped?** (same value for all packages and users)
+3. **Is it workflow-critical?** (like protected branches)
+
+If yes to all three, propose addition to normative schema table.
+
+**Do NOT add to shared settings:**
+- Anything that can be parsed from git remote or git config
+- Package-specific thresholds (use package settings)
+- Cached runtime state (use package settings)
+- User preferences (use user-global settings)
+
+### Reading Shared Settings
+
+Packages read shared settings using a **fallback chain**:
+
+```python
+# Priority order:
+# 1. Package-specific settings (.sc/<package>/settings.yaml)
+# 2. Shared settings (.sc/shared-settings.yaml)  ← NEW
+# 3. User-global settings (~/.sc/<package>/settings.yaml)
+# 4. Hardcoded defaults
+
+def get_setting(key: str, package: str, default=None):
+    # Try package-specific first
+    package_path = f".sc/{package}/settings.yaml"
+    if value := deep_get(load_yaml(package_path), key):
+        return value
+
+    # Try shared settings
+    if value := deep_get(load_yaml(".sc/shared-settings.yaml"), key):
+        return value
+
+    # Try user-global
+    user_path = f"~/.sc/{package}/settings.yaml"
+    if value := deep_get(load_yaml(user_path), key):
+        return value
+
+    return default
+
+# Usage
+azure_org = get_setting("provider.azure_devops.org", "sc-commit-push-pr")
+protected = get_setting("git.protected_branches", "sc-commit-push-pr", ["main"])
+```
+
+### Writing Shared Settings
+
+**Auto-population from hooks is ALLOWED** for git-flow detection only.
+
+**From SubAgentStart hooks (allowed):**
+```python
+# ✓ CORRECT: Auto-populate from git-flow in hooks
+if git_flow_branches := detect_from_gitflow():
+    Path(".sc/shared-settings.yaml").write_text(
+        yaml.dump({"git": {"protected_branches": git_flow_branches}})
+    )
+```
+
+**From agents/commands (not allowed):**
+```python
+# ✗ WRONG: Don't write from agent execution
+def commit_push_agent():
+    # Don't do this inside agent:
+    write_shared_settings(...)  # NO!
+```
+
+**Manual user editing (encouraged):**
+```yaml
+# User can edit .sc/shared-settings.yaml directly
+git:
+  protected_branches: [main, staging, production]
+```
+
+### Hook Pattern for Auto-Population
+
+Packages should detect and populate protected branches in SubAgentStart hooks:
+
+**When hook runs:**
+1. Check if `.sc/shared-settings.yaml` exists with `git.protected_branches`
+2. If not, try git-flow detection
+3. If found via git-flow, auto-create `.sc/shared-settings.yaml`
+4. If not found, fail with clear error message
+
+**Example hook (commit_push_agent_start_hook.py):**
+```python
+#!/usr/bin/env python3
+import sys
+from pathlib import Path
+import subprocess
+import yaml
+
+repo_root = Path.cwd()
+shared_path = repo_root / ".sc" / "shared-settings.yaml"
+
+# Check for protected branches
+protected = None
+
+if shared_path.exists():
+    settings = yaml.safe_load(shared_path.read_text())
+    protected = settings.get("git", {}).get("protected_branches")
+
+if not protected:
+    # Try git-flow
+    try:
+        master = subprocess.run(
+            ["git", "config", "--get", "gitflow.branch.master"],
+            capture_output=True, text=True, check=False
+        ).stdout.strip()
+        develop = subprocess.run(
+            ["git", "config", "--get", "gitflow.branch.develop"],
+            capture_output=True, text=True, check=False
+        ).stdout.strip()
+
+        protected = [b for b in [master, develop] if b]
+    except Exception:
+        pass
+
+if protected:
+    # Auto-populate
+    shared_path.parent.mkdir(parents=True, exist_ok=True)
+    shared_path.write_text(yaml.dump({"git": {"protected_branches": protected}}))
+    sys.exit(0)  # Allow
+
+# Not found - fail with instructions
+print("ERROR: Protected branches not configured.", file=sys.stderr)
+print("", file=sys.stderr)
+print("Create .sc/shared-settings.yaml with:", file=sys.stderr)
+print("git:", file=sys.stderr)
+print("  protected_branches: [main, develop]", file=sys.stderr)
+sys.exit(2)  # Block
+```
+
+### Retention Policy
+
+- **Default TTL:** Persistent
+- **Version Control:** Usually committed to git (team-wide config)
+- **Never store:** Actual credentials/tokens (only env var references)
+
+---
+
+## Package Settings: `.sc/<package>/settings.yaml`
+
+### Purpose
+Package-specific configuration, cached values, and runtime state. Used for settings that are unique to one package or override shared settings.
 
 ### Format
 - **Type:** YAML (single file per package)
-- **Content:** Configuration, cached resolutions, defaults
-- **Scope:** Project-local (not global)
+- **Content:** Package-specific config, feature flags, cached state
+- **Scope:** Per-package (not shared)
+
+### What Goes in Package Settings
+
+**Use package settings for:**
+- Package-specific thresholds, limits, timeouts
+- Feature flags specific to this package
+- Cached state unique to this package
+- Overrides of shared settings (rare)
+
+**Don't duplicate shared settings here** - use the fallback chain to read from shared settings.
 
 ### Examples
 
 ```yaml
 # .sc/sc-roslyn-diff/settings.yaml
-azure_devops:
-  org: "myorg"
-  project: "myproject"
-  repo: "myrepo"
+# Package-specific settings only (provider info comes from shared)
 files_per_agent: 15
+max_file_size_kb: 1024
+enable_html_reports: true
 
 # .sc/sc-ci-automation/settings.yaml
+# Package-specific build/test config
 build_command: "dotnet build"
 test_command: "pytest"
 allowed_agents:
   - ci-validate-agent
   - ci-build-agent
 
-# .sc/sc-startup/settings.yaml
-checklist_path: ".claude/master-checklist.md"
-config_path: ".claude/sc-startup.yaml"
+# .sc/sc-commit-push-pr/settings.yaml
+# Package-specific commit/PR preferences
+commit:
+  auto_stage_important_files: true
+pr:
+  draft_by_default: false
 ```
 
 ### Read/Write Patterns
 
 **Reading (with fallback chain):**
 ```python
-# 1. Project-local settings
-paths = [
-    Path(repo_root) / ".sc" / package_name / "settings.yaml",
-    Path(repo_root) / ".sc" / package_name / "config.yaml",  # legacy
-]
-# 2. Use defaults if not found
-settings = load_settings(paths) or defaults()
+def get_setting(key: str, package_name: str, repo_root: Path, default=None):
+    """Read setting with fallback: package → shared → user → default"""
+
+    # 1. Package-specific (highest priority)
+    package_path = repo_root / ".sc" / package_name / "settings.yaml"
+    if package_path.exists():
+        if value := deep_get(yaml.safe_load(package_path.read_text()), key):
+            return value
+
+    # 2. Shared repository settings
+    shared_path = repo_root / ".sc" / "shared-settings.yaml"
+    if shared_path.exists():
+        if value := deep_get(yaml.safe_load(shared_path.read_text()), key):
+            return value
+
+    # 3. User-global settings
+    user_path = Path.home() / ".sc" / package_name / "settings.yaml"
+    if user_path.exists():
+        if value := deep_get(yaml.safe_load(user_path.read_text()), key):
+            return value
+
+    # 4. Default
+    return default
+
+def deep_get(d: dict, key: str):
+    """Get nested key using dot notation: 'provider.azure_devops.org'"""
+    for k in key.split('.'):
+        if isinstance(d, dict) and k in d:
+            d = d[k]
+        else:
+            return None
+    return d
 ```
 
-**Writing:**
+**Writing (package settings only):**
 ```python
-# Always write to primary location
+# Packages write to their own settings, never to shared
 settings_path = Path(repo_root) / ".sc" / package_name / "settings.yaml"
 settings_path.parent.mkdir(parents=True, exist_ok=True)
 settings_path.write_text(yaml.dump(settings))
@@ -125,13 +414,15 @@ settings_path.write_text(yaml.dump(settings))
 
 ### Implementation Checklist
 
-- [ ] Settings stored in `.sc/<package>/settings.yaml` (not `.claude/`)
+- [ ] Read settings using fallback chain (package → shared → user → default)
+- [ ] Package settings in `.sc/<package>/settings.yaml`
+- [ ] Shared settings in `.sc/shared-settings.yaml` (if using provider/repo config)
 - [ ] Format is YAML (not JSON)
 - [ ] Includes sensible defaults for unconfigured installations
-- [ ] No credentials or secrets in defaults
-- [ ] Documentation shows example configuration
+- [ ] No credentials or secrets in settings (only env var references)
+- [ ] Documentation shows shared vs package settings clearly
 - [ ] Code handles missing settings gracefully
-- [ ] `.gitignore` excludes `.sc/` directory (optional but recommended)
+- [ ] Provide initialization command if shared settings required
 
 ---
 
@@ -184,20 +475,19 @@ Generated artifacts, reports, and temporary files produced during plugin executi
 
 ## Special Cases
 
-### Global/User-Level Configuration
+### Settings Fallback Summary
 
-Some packages support global settings in `~/.sc/`:
+Settings are resolved in this priority order:
+1. **Package settings** (`.sc/<package>/settings.yaml`) - Highest priority
+2. **Shared settings** (`.sc/shared-settings.yaml`) - Repository-wide
+3. **User settings** (`~/.sc/<package>/settings.yaml`) - User-global
+4. **Defaults** - Hardcoded in package code
 
-```yaml
-# ~/.sc/sc-github-issue/settings.yaml
-github_token: <env var reference>
-default_labels: ["bug", "enhancement"]
-```
-
-**Policy:**
-- Use `.sc/<package>/settings.yaml` as primary (project-local)
-- Fall back to `~/.sc/<package>/settings.yaml` (user-global)
-- Never check credentials into git
+**Guidelines:**
+- Read from all tiers using the fallback chain
+- Write package settings freely
+- Write shared settings only during initialization (with user confirmation)
+- Never store actual credentials (only env var references)
 
 ### Temporary/Session Data
 
@@ -286,69 +576,84 @@ Use this checklist when creating or updating a package:
 - [ ] **Logs documented** in README under "Logs" section
   - Location: `.claude/state/logs/<package>/`
   - Example commands provided
-- [ ] **Settings documented** in README or TROUBLESHOOTING
-  - Location: `.sc/<package>/settings.yaml`
+- [ ] **Settings documented** in README
+  - Shared settings usage (`.sc/shared-settings.yaml`) if applicable
+  - Package settings location (`.sc/<package>/settings.yaml`)
   - Example configuration shown
-  - Default values documented
+  - Fallback chain explained
 - [ ] **Code follows conventions**
-  - Logs written to `.claude/state/logs/`
-  - Settings read/written to `.sc/<package>/`
+  - Logs written to `.claude/state/logs/<package>/`
+  - Settings read using fallback chain (package → shared → user → default)
+  - Package settings written to `.sc/<package>/settings.yaml`
+  - Shared settings only written during initialization
   - Outputs written to `.sc/<package>/output/`
 - [ ] **No hardcoded paths** in source code
   - Derive package name programmatically
   - Use `Path.cwd()` as repo root reference
 - [ ] **.gitignore configured**
   - `.claude/state/logs/` ignored
-  - `.sc/` directory handling documented
+  - `.sc/<package>/settings.yaml` ignored (cached state)
+  - `.sc/shared-settings.yaml` usually committed
 - [ ] **Error handling**
   - Graceful fallback if settings missing
-  - Clear error messages when directories can't be created
+  - Clear error messages when shared settings required but missing
+  - Suggest initialization command if shared settings needed
 
 ---
 
 ## Examples by Package
 
-### sc-codex (Logs)
-```markdown
-## Logs
-
-Runtime and hook events are written to:
-- `.claude/state/logs/sc-codex/`
-
-View recent events:
-```bash
-cat .claude/state/logs/sc-codex/latest.json | jq .
-```
-```
-
-### sc-roslyn-diff (Settings + Output)
+### sc-commit-push-pr (Shared + Package Settings)
 ```markdown
 ## Configuration
 
-Repository-specific settings are cached in:
-```
-.sc/sc-roslyn-diff/settings.yaml
+This package reads protected branches from:
+```yaml
+.sc/shared-settings.yaml  # Protected branches (auto-detected from git-flow or manual)
 ```
 
-Generated HTML reports are written to:
+Package-specific settings:
+```yaml
+.sc/sc-commit-push-pr/settings.yaml  # Commit/PR preferences (optional)
+```
+
+Provider info (Azure/GitHub org/project/repo) is auto-detected from git remote.
+
+## Logs
+```
+.claude/state/logs/sc-commit-push-pr/
+```
+```
+
+### sc-roslyn-diff (Package + Output)
+```markdown
+## Configuration
+
+Provider info auto-detected from git remote (no storage needed).
+
+Package settings:
+```yaml
+.sc/sc-roslyn-diff/settings.yaml  # files_per_agent, etc.
+```
+
+Generated HTML reports:
 ```
 .sc/sc-roslyn-diff/output/
 ```
 ```
 
-### sc-startup (Settings + Logs)
+### sc-codex (Logs only)
 ```markdown
-## Configuration
+## Logs
 
-Project settings:
-```yaml
-.claude/sc-startup.yaml       # Project config (created during init)
-.sc/sc-startup/settings.yaml  # Cached resolved settings
+Runtime and hook events:
+```
+.claude/state/logs/sc-codex/
 ```
 
-Logs:
+View recent events:
 ```bash
-.claude/state/logs/sc-startup/
+cat .claude/state/logs/sc-codex/latest.json | jq .
 ```
 ```
 
@@ -359,17 +664,29 @@ Logs:
 **Q: Why `.sc/` instead of `.claude/`?**
 A: Separates user-managed CLI configuration (`.claude/`) from plugin-specific data (`.sc/`). Easier to manage, backup, and clean up.
 
+**Q: When should I use shared settings vs package settings?**
+A: Use shared settings (`.sc/shared-settings.yaml`) only for workflow-critical repository-wide config (currently just protected branches). Most things should be auto-detected. Use package settings (`.sc/<package>/settings.yaml`) for package-specific config like thresholds, feature flags.
+
 **Q: Can I use JSON for settings instead of YAML?**
 A: No. All plugins use YAML for consistency with the CLI ecosystem. JSON can be internal format, but persisted settings are YAML.
 
 **Q: Where do I store secrets?**
-A: Never in `.sc/` or `.claude/state/`. Use environment variables, `.claude/config.yaml` (user-only), or platform secret management. Document in troubleshooting guide.
+A: Never in `.sc/` files. Use environment variables and reference them by name in settings (e.g., `github_token: GITHUB_TOKEN`). Document in troubleshooting guide.
+
+**Q: Should I commit `.sc/shared-settings.yaml` to git?**
+A: Yes - it only contains protected branches. No secrets, no provider-specific info (that's auto-detected).
 
 **Q: How often should I clean up logs?**
 A: Implement a background agent or document manual cleanup. 14-day default is reasonable for local development; adjust for your use case.
 
-**Q: Can I use global settings (`~/.sc/`)?**
-A: Yes, as a fallback. But primary location is always project-local `.sc/<package>/`. Document the fallback chain clearly.
+**Q: Can packages write to shared settings automatically?**
+A: Only from SubAgentStart hooks when auto-detecting git-flow configuration. Not from agent execution itself.
+
+**Q: How do I add a new field to shared settings?**
+A: First verify it can't be auto-detected and is truly workflow-critical for all packages. Then submit a PR updating the normative schema table. Most things should be auto-detected, not stored.
+
+**Q: What if I don't use git-flow?**
+A: Create `.sc/shared-settings.yaml` manually with your protected branches. Hooks will find it and use it.
 
 ---
 
