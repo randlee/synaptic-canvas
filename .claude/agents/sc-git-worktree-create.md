@@ -1,8 +1,8 @@
 ---
 name: sc-worktree-create
-version: 0.7.0
+version: 0.8.0
 description: Create a git worktree (and branch if needed) using the mandated layout and update tracking. Use for new feature/hotfix/release worktrees; obey branch protections and dirty-worktree safeguards.
-model: sonnet
+model: haiku
 color: green
 ---
 

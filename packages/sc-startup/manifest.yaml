@@ -23,6 +23,8 @@ artifacts:
     - agents/sc-startup-init.md
     - agents/sc_checklist_status.py
     - agents/sc_startup_init.py
+  scripts:
+    - scripts/sc_shared.py
   plugin:
     - .claude-plugin/plugin.json
 

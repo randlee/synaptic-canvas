@@ -1,8 +1,8 @@
 ---
 name: sc-worktree-scan
-version: 0.7.0
+version: 0.8.0
 description: Scan git worktrees vs tracking; report status (clean/dirty), missing/stale tracking rows, and recommended actions. No mutations.
-model: sonnet
+model: haiku
 color: cyan
 ---
 
@@ -23,6 +23,15 @@ List worktrees, cross-check the tracking doc, and report issues. Do not modify a
 - tracking_path (optional): defaults to `<worktree_base>/worktree-tracking.md` when tracking is enabled.
 
 ## Steps
+
+**Preferred:** Run the batch scan script for efficiency:
+```bash
+python3 packages/sc-git-worktree/scripts/worktree_scan.py [--worktree-base PATH] [--tracking-path PATH] [--no-tracking]
+```
+
+The script handles all steps below in a single invocation with proper error handling.
+
+**Manual steps (if script unavailable):**
 1) If tracking enabled, ensure tracking doc exists; if missing, report the issue.
 2) `git worktree list --porcelain`.
 3) For each worktree, run `git -C <path> status --short` to determine clean/dirty.

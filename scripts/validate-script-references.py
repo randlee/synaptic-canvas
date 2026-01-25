@@ -780,13 +780,15 @@ def find_packages(base_path: str, package_name: Optional[str] = None) -> List[st
         return []
 
     if package_name:
+        if package_name == "shared":
+            return []
         package_path = packages_dir / package_name
         return [str(package_path)] if package_path.exists() else []
 
     return [
         str(p)
         for p in packages_dir.iterdir()
-        if p.is_dir() and not p.name.startswith(".")
+        if p.is_dir() and not p.name.startswith(".") and p.name != "shared"
     ]
 
 

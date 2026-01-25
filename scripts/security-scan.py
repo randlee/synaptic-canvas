@@ -688,7 +688,9 @@ class SecurityScanner:
             return []
 
         return [
-            p.name for p in packages_dir.iterdir() if p.is_dir() and not p.name.startswith(".")
+            p.name
+            for p in packages_dir.iterdir()
+            if p.is_dir() and not p.name.startswith(".") and p.name != "shared"
         ]
 
     def _grep_pattern(

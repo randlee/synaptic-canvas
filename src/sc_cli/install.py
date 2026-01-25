@@ -136,7 +136,14 @@ def _parse_manifest(pkg_dir: Path) -> Manifest:
 def _available_packages() -> Iterable[Path]:
     if not PACKAGES_DIR.exists():
         return []
-    return sorted(p for p in PACKAGES_DIR.iterdir() if p.is_dir())
+    return sorted(
+        p
+        for p in PACKAGES_DIR.iterdir()
+        if p.is_dir()
+        and not p.name.startswith(".")
+        and p.name != "shared"
+        and (p / "manifest.yaml").exists()
+    )
 
 
 # ============================================================================
@@ -966,18 +973,51 @@ def _resolve_install_dest(
     return None
 
 
-def _update_registry(dest_path: Path, agent_rel_paths: List[str]) -> int:
-    """Create or merge .claude/agents/registry.yaml with installed agents and versions.
-    Returns 0 on success, 1 on hard validation error.
+def _parse_skill_metadata(skill_md_path: Path) -> Dict[str, any]:
+    """Parse skill metadata from SKILL.md frontmatter.
+
+    Returns dict with keys: name, entry_point, depends_on (optional), version
     """
-    if not agent_rel_paths:
+    fm = _parse_frontmatter_simple(skill_md_path)
+    metadata: Dict[str, any] = {
+        "name": fm.get("name", ""),
+        "entry_point": fm.get("entry_point", ""),
+        "version": fm.get("version", ""),
+    }
+
+    # Parse depends_on if present (would be in YAML as nested dict)
+    depends_str = fm.get("depends_on", "")
+    if depends_str:
+        # Simple parsing for "key: value, key: value" format
+        metadata["depends_on"] = {}
+        for item in depends_str.split(","):
+            item = item.strip()
+            if ":" in item:
+                k, v = item.split(":", 1)
+                metadata["depends_on"][k.strip()] = v.strip()
+
+    return metadata
+
+
+def _update_registry(dest_path: Path, artifact_rel_paths: List[str]) -> int:
+    """Create or merge .claude/agents/registry.yaml with installed agents and skills.
+
+    Args:
+        dest_path: Path to .claude directory
+        artifact_rel_paths: List of installed artifact paths (agents/, skills/)
+
+    Returns:
+        0 on success, 1 on hard validation error
+    """
+    if not artifact_rel_paths:
         return 0
+
     registry_dir = dest_path / "agents"
     registry_dir.mkdir(parents=True, exist_ok=True)
     registry_path = registry_dir / "registry.yaml"
 
     # Load existing registry
-    registry: Dict[str, Dict[str, Dict[str, str]]] = {"agents": {}}
+    registry: Dict[str, any] = {"agents": {}, "skills": {}}
     if registry_path.exists():
         try:
             if yaml is not None:
@@ -990,10 +1030,14 @@ def _update_registry(dest_path: Path, agent_rel_paths: List[str]) -> int:
         except Exception:
             warn(f"Could not parse registry: {registry_path}")
 
+    # Ensure both sections exist
+    registry.setdefault("agents", {})
+    registry.setdefault("skills", {})
+
     root_version = _read_repo_version()
 
-    # Merge entries
-    for rel in agent_rel_paths:
+    # Process agents
+    for rel in artifact_rel_paths:
         if not rel.startswith("agents/"):
             continue
         name = Path(rel).stem
@@ -1005,23 +1049,71 @@ def _update_registry(dest_path: Path, agent_rel_paths: List[str]) -> int:
                 f"version mismatch for agent {name}: frontmatter={ver} repo={root_version}"
             )
             return 1
-        registry.setdefault("agents", {})[name] = {
+        registry["agents"][name] = {
             "version": ver or (root_version or ""),
             "path": f".claude/{rel}",
         }
 
+    # Process skills
+    for rel in artifact_rel_paths:
+        if not rel.startswith("skills/"):
+            continue
+        # Skill path is typically skills/<skill-name>/SKILL.md
+        parts = Path(rel).parts
+        if len(parts) >= 3 and parts[-1].upper() == "SKILL.MD":
+            skill_name = parts[1]
+            skill_md = dest_path / rel
+            if skill_md.exists():
+                metadata = _parse_skill_metadata(skill_md)
+                skill_entry = {
+                    "version": metadata.get("version") or (root_version or ""),
+                }
+
+                # Add entry_point if present
+                if metadata.get("entry_point"):
+                    skill_entry["entry_point"] = metadata["entry_point"]
+
+                # Add depends_on if present
+                if metadata.get("depends_on"):
+                    skill_entry["depends_on"] = metadata["depends_on"]
+
+                registry["skills"][skill_name] = skill_entry
+
     # Write registry
     try:
         if yaml is not None:
-            content = yaml.safe_dump(registry, sort_keys=True)
+            content = yaml.safe_dump(registry, sort_keys=False, default_flow_style=False)
         else:
             # minimal YAML emit
-            lines = ["agents:"]
-            for k, v in sorted(registry.get("agents", {}).items()):
-                lines.append(f"  {k}:")
-                lines.append(f"    version: {v.get('version','')}")
-                lines.append(f"    path: {v.get('path','')}")
-            content = "\n".join(lines) + "\n"
+            lines = []
+
+            # Agents section
+            if registry.get("agents"):
+                lines.append("agents:")
+                for k, v in sorted(registry["agents"].items()):
+                    lines.append(f"  {k}:")
+                    lines.append(f"    version: {v.get('version','')}")
+                    lines.append(f"    path: {v.get('path','')}")
+
+            # Skills section
+            if registry.get("skills"):
+                if lines:
+                    lines.append("skills:")
+                else:
+                    lines.append("skills:")
+                for k, v in sorted(registry["skills"].items()):
+                    lines.append(f"  {k}:")
+                    if v.get("version"):
+                        lines.append(f"    version: {v.get('version')}")
+                    if v.get("entry_point"):
+                        lines.append(f"    entry_point: {v.get('entry_point')}")
+                    if v.get("depends_on"):
+                        lines.append(f"    depends_on:")
+                        for dep_k, dep_v in sorted(v["depends_on"].items()):
+                            lines.append(f"      {dep_k}: {dep_v}")
+
+            content = "\n".join(lines) + "\n" if lines else ""
+
         registry_path.write_text(content, encoding="utf-8")
         info(f"Updated registry: {registry_path}")
     except Exception as ex:
@@ -1105,8 +1197,8 @@ def cmd_install(
     if dest_path is None:
         return 1
 
-    # track installed agent files relative to dest_path
-    installed_agents: List[str] = []
+    # track installed artifact files relative to dest_path
+    installed_artifacts: List[str] = []
     dest_path.mkdir(parents=True, exist_ok=True)
 
     manifest = _parse_manifest(pkg_dir)
@@ -1133,10 +1225,10 @@ def cmd_install(
         # executable for scripts/*
         if rel_file.startswith("scripts/"):
             _ensure_executable(dst)
-        # track agents for registry
-        if rel_file.startswith("agents/"):
+        # track agents and skills for registry
+        if rel_file.startswith("agents/") or rel_file.startswith("skills/"):
             # store relative to .claude (dest_path)
-            installed_agents.append(rel_file)
+            installed_artifacts.append(rel_file)
         # token expansion
         if expand and repo_name:
             try:
@@ -1151,8 +1243,8 @@ def cmd_install(
     for rel in _iter_artifacts(manifest):
         install_one(rel)
 
-    # Update registry.yaml (agents only)
-    rc = _update_registry(dest_path, installed_agents)
+    # Update registry.yaml (agents and skills)
+    rc = _update_registry(dest_path, installed_artifacts)
     if rc != 0:
         return rc
 

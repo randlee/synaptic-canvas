@@ -1,7 +1,7 @@
 # Plugin Storage Conventions
 
 **Status:** Normative (enforced across all packages)
-**Last Updated:** January 22, 2026
+**Last Updated:** January 24, 2026
 **Audience:** Plugin developers, package maintainers
 
 All Synaptic Canvas plugins follow standardized storage conventions to ensure consistent behavior, troubleshooting, and observability across the ecosystem.
@@ -17,6 +17,7 @@ All Synaptic Canvas plugins follow standardized storage conventions to ensure co
 | **Package Settings** | `.sc/<package>/settings.yaml` | YAML | Per-package | Persistent |
 | **User Settings** | `~/.sc/<package>/settings.yaml` | YAML | User-global | Persistent |
 | **Generated Output** | `.sc/<package>/output/` | Varied | Per-project | Persistent |
+| **Session Start Scripts** | `scripts/<plugin>_session_start.py` | Python | Per-package | N/A |
 
 ---
 
@@ -525,6 +526,97 @@ For long-running operations that produce async results:
 
 ---
 
+## Session Start Hooks
+
+Plugins installed globally (`~/.claude/`) often need per-session initialization when Claude Code launches in a new folder. The **session-start hook** system provides this capability.
+
+**Full specification:** [Session Start Hook Design](./design/sc-session-start-design.md)
+
+### Overview
+
+When Claude Code starts a session, the `sc-manage` orchestrator:
+1. Discovers all `sc-*` plugins (global and local)
+2. Deduplicates (local takes precedence over global)
+3. Fires each plugin's `session_start` script asynchronously
+4. Exits immediately (non-blocking)
+
+A detached watchdog enforces a 30-second timeout on all plugin scripts.
+
+### Manifest Declaration
+
+```yaml
+# manifest.yaml
+hooks:
+  # Script MUST be named <plugin>_session_start.py to avoid conflicts
+  session_start: scripts/sc_git_worktree_session_start.py
+
+requires:
+  packages:
+    - sc-manage   # Required dependency
+```
+
+### Script Contract
+
+| Argument | Description |
+|----------|-------------|
+| `--session-path` | Folder Claude was launched from (may not be a git repo) |
+| `--plugin-path` | Plugin installation path |
+| `--scope` | `global` or `local` |
+
+**Required behavior:**
+1. **Fast check first**: If `.sc/<package>/settings.yaml` exists, exit immediately
+2. **Idempotent**: Safe to run every session
+3. **Handle non-git folders**: Check for `.git`; record `git: "none"` if absent
+4. **Self-logging**: Write to `.claude/state/logs/<package>/session-start.log`
+5. **Complete within 10 seconds** or background heavy work
+
+### Example Pattern
+
+```python
+#!/usr/bin/env python3
+"""scripts/sc_example_session_start.py"""
+
+import sys
+from pathlib import Path
+
+def main():
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--session-path", required=True, type=Path)
+    parser.add_argument("--plugin-path", required=True, type=Path)
+    parser.add_argument("--scope", required=True, choices=["global", "local"])
+    args = parser.parse_args()
+
+    # 1. Quick check: already initialized?
+    settings_path = args.session_path / ".sc" / "sc-example" / "settings.yaml"
+    if settings_path.exists():
+        sys.exit(0)  # Already done
+
+    # 2. Detect environment (git or not)
+    is_git = (args.session_path / ".git").exists()
+
+    # 3. Initialize settings
+    settings_path.parent.mkdir(parents=True, exist_ok=True)
+    import yaml
+    from datetime import datetime
+    settings = {
+        "initialized_at": datetime.now().isoformat(),
+        "git": {"detected": True} if is_git else "none",
+    }
+    settings_path.write_text(yaml.dump(settings))
+
+    sys.exit(0)
+
+if __name__ == "__main__":
+    main()
+```
+
+### Prerequisite
+
+The `sc-manage` package must be installed **globally** to register the `SessionStart` hook in `~/.claude/hooks/hooks.json`. Plugins using session-start hooks should declare `sc-manage` as a dependency.
+
+---
+
 ## Migration Guide
 
 If your package currently uses non-standard locations:
@@ -598,6 +690,12 @@ Use this checklist when creating or updating a package:
   - Graceful fallback if settings missing
   - Clear error messages when shared settings required but missing
   - Suggest initialization command if shared settings needed
+- [ ] **Session start hook** (if per-session initialization needed)
+  - Script named `scripts/<plugin>_session_start.py`
+  - Declared in `manifest.yaml` under `hooks.session_start`
+  - Fast initialization check (exit if already initialized)
+  - Handles non-git folders (`git: "none"`)
+  - Depends on `sc-manage`
 
 ---
 

@@ -390,7 +390,11 @@ def audit_version_consistency(
         )
 
     for package_dir in packages_dir.iterdir():
-        if not package_dir.is_dir() or package_dir.name.startswith("."):
+        if (
+            not package_dir.is_dir()
+            or package_dir.name.startswith(".")
+            or package_dir.name == "shared"
+        ):
             continue
 
         package_name = package_dir.name
@@ -486,7 +490,11 @@ def audit_changelogs(repo_root: Path, verbose: bool = False) -> Result[list[Chec
         )
 
     for package_dir in packages_dir.iterdir():
-        if not package_dir.is_dir() or package_dir.name.startswith("."):
+        if (
+            not package_dir.is_dir()
+            or package_dir.name.startswith(".")
+            or package_dir.name == "shared"
+        ):
             continue
 
         package_name = package_dir.name

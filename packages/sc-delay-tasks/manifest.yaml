@@ -24,6 +24,7 @@ artifacts:
     - agents/sc-delay-poll.md
     - agents/sc-git-pr-check-delay.md
   scripts:
+    - scripts/sc_shared.py
     - scripts/sc-delay-run.py
 
 # No variables — Tier 0 package (direct copy)
@@ -31,3 +32,4 @@ artifacts:
 # Runtime requirements
 requires:
   - python3
+  - pydantic

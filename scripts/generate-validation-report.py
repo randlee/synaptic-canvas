@@ -644,7 +644,11 @@ def collect_package_versions(
     warnings = []
 
     for package_dir in sorted(packages_dir.iterdir()):
-        if not package_dir.is_dir() or package_dir.name.startswith("."):
+        if (
+            not package_dir.is_dir()
+            or package_dir.name.startswith(".")
+            or package_dir.name == "shared"
+        ):
             continue
 
         manifest_path = package_dir / "manifest.yaml"

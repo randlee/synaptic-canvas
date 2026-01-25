@@ -542,12 +542,16 @@ def validate_dependencies(
     # Get list of valid packages
     valid_packages = set()
     for pkg_dir in packages_dir.iterdir():
-        if pkg_dir.is_dir() and (pkg_dir / "manifest.yaml").exists():
+        if (
+            pkg_dir.is_dir()
+            and pkg_dir.name != "shared"
+            and (pkg_dir / "manifest.yaml").exists()
+        ):
             valid_packages.add(pkg_dir.name)
 
     # Check each package's dependencies
     for pkg_dir in packages_dir.iterdir():
-        if not pkg_dir.is_dir():
+        if not pkg_dir.is_dir() or pkg_dir.name == "shared":
             continue
 
         manifest_path = pkg_dir / "manifest.yaml"
@@ -708,7 +712,7 @@ def validate_all(
 
     # Validate individual packages
     for pkg_dir in packages_dir.iterdir():
-        if not pkg_dir.is_dir():
+        if not pkg_dir.is_dir() or pkg_dir.name == "shared":
             continue
 
         if package_filter and pkg_dir.name != package_filter:

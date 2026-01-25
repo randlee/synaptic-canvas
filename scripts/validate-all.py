@@ -127,6 +127,10 @@ DEFAULT_VALIDATORS: list[ValidatorConfig] = [
         command=["python3", "scripts/validate-manifest-artifacts.py"],
     ),
     ValidatorConfig(
+        name="Shared Scripts",
+        command=["python3", "scripts/validate-shared-scripts.py"],
+    ),
+    ValidatorConfig(
         name="Marketplace Sync",
         command=["python3", "scripts/validate-marketplace-sync.py"],
     ),

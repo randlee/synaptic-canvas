@@ -29,6 +29,8 @@ artifacts:
     - agents/ci-fix-agent.md
     - agents/ci-root-cause-agent.md
     - agents/ci-pr-agent.md
+  scripts:
+    - scripts/sc_shared.py
 
 # Installation policy/metadata
 install:
@@ -37,3 +39,4 @@ install:
 # Runtime requirements
 requires:
   - git >= 2.20
+  - pydantic
