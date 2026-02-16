@@ -1,6 +1,6 @@
 ---
 name: sc-commit-push-pr
-version: 0.1.0
+version: 0.9.0
 description: Commit staged changes, push to remote, and create PRs for GitHub and Azure DevOps
 ---
 

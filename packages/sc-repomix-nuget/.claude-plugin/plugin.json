@@ -1,12 +1,18 @@
 {
   "name": "sc-repomix-nuget",
   "description": "Generate comprehensive NuGet repository context for AI analysis. Extracts package metadata, assembly information, and documentation for enhanced code understanding.",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "author": {
     "name": "randlee"
   },
   "license": "MIT",
-  "keywords": ["nuget", "dotnet", "analysis", "context", "repository"],
+  "keywords": [
+    "nuget",
+    "dotnet",
+    "analysis",
+    "context",
+    "repository"
+  ],
   "commands": [
     "./commands/sc-repomix-nuget.md"
   ],

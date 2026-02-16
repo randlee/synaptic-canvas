@@ -1,6 +1,6 @@
 ---
 name: commit-push
-version: 0.1.0
+version: 0.9.0
 description: Background agent for commit/pull/merge/push and PR status lookup.
 hooks:
   SubAgentStart:

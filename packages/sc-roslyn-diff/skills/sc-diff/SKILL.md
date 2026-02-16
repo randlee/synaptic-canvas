@@ -1,6 +1,6 @@
 ---
 name: sc-diff
-version: 0.8.0
+version: 0.9.0
 description: >
   Semantic diffing for .NET source using roslyn-diff. Supports file/folder diffs,
   HTML reports, and git/PR-aware comparisons (GitHub + Azure DevOps).

@@ -1,6 +1,6 @@
 ---
 name: sc-codex
-version: 0.8.0
+version: 0.9.0
 description: Codex agent placeholder for Task Tool execution and hook resolution.
 model: codex
 color: blue

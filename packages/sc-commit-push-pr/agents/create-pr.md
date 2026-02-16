@@ -1,6 +1,6 @@
 ---
 name: create-pr
-version: 0.1.0
+version: 0.9.0
 description: Background agent for creating PRs from title/body.
 hooks:
   SubAgentStart:
