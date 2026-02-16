@@ -12,6 +12,10 @@ color: blue
 
 This agent is invoked via the Claude Task tool by a skill or command. Do not invoke directly.
 
+## Input Protocol
+
+Read inputs from `<input_json>` (JSON object). If omitted, treat as `{}`.
+
 ## Purpose
 
 Safely update protected branches (main, develop, master) in their worktrees by pulling latest changes from remote. Return control to caller if merge conflicts occur.
@@ -22,7 +26,8 @@ Safely update protected branches (main, develop, master) in their worktrees by p
 - worktree_base (optional): defaults to `../{{REPO_NAME}}-worktrees`
 - protected_branches: list of protected branch names (required for validation)
 - tracking_enabled: true/false (default true)
-- tracking_path (optional): defaults to `<worktree_base>/worktree-tracking.md` when tracking is enabled
+- tracking_path (optional): defaults to `<worktree_base>/worktree-tracking.jsonl` when tracking is enabled
+- cache_protected_branches (optional): defaults to `true`. When `false`, do not write `.sc/shared-settings.yaml`.
 
 ## Rules
 - **Only operates on protected branches** - error if requested branch not in protected_branches list. If branch is omitted, iterate all protected branches with existing worktrees.
@@ -31,27 +36,15 @@ Safely update protected branches (main, develop, master) in their worktrees by p
 - On merge conflicts, return detailed error for caller to coordinate resolution
 - If tracking enabled, update last_checked timestamp on successful pull
 
-## Steps
-1) **Validate protected_branches input**:
-   - If protected_branches is missing or empty, return error: "protected_branches list required but not provided"
-   - Suggest: Derive from git_flow config (main_branch + develop_branch if enabled) or provide explicit list
-2) Determine targets:
-   - If `branch` provided: target = [branch]; verify it is in protected_branches or return error.
-   - If `branch` omitted: target = protected_branches (only those with existing worktrees at expected path).
-3) For each target branch:
-   - Check if worktree exists at path; error if missing.
-   - In worktree: `git status --short`; if dirty, stop and report for that branch.
-   - Fetch remote: `git fetch origin <branch>`.
-   - Attempt pull: `git pull origin <branch>`.
-   - If merge conflicts occur:
-     - Collect conflicted files: `git diff --name-only --diff-filter=U`
-     - Collect merge status: `git status --short`
-     - Return control with conflict details (recoverable=true) for caller to coordinate resolution.
-   - If clean pull succeeds:
-     - Count commits pulled: `git rev-list --count HEAD@{1}..HEAD` (if HEAD moved)
-     - If tracking enabled, update last_checked timestamp.
-4) Aggregate per-branch results (commits_pulled, conflicts, messages) into output.
-5) Return success with per-branch results; include conflicts if any.
+## Execution
+
+Run the update script once with the input JSON:
+
+```bash
+python3 .claude/scripts/worktree_update.py '<input_json>'
+```
+
+The script handles validation, protected branch resolution, update logic, and tracking updates.
 
 ## Output Format
 
@@ -158,12 +151,15 @@ Return fenced JSON with minimal envelope:
 ```
 ````
 
+## Output Protocol
+
+Wrap the script output in `<output_json>` tags with a fenced JSON block. Do not add prose outside the tags.
+
 ## Constraints
 
 - Do NOT proceed if branch is not in protected_branches list
 - Do NOT proceed if worktree is dirty
-- Return JSON only; no prose outside fenced block
-- On conflicts, return control immediately with detailed error
+- Do NOT run manual git commands; use the script only
 ### Success (multi-branch aggregate)
 
 ````markdown

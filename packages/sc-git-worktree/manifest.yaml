@@ -26,7 +26,7 @@ artifacts:
     - agents/sc-git-worktree-update.md
   scripts:
     - scripts/envelope.py
-    - scripts/sc_shared.py
+    - scripts/worktree_shared.py
     - scripts/worktree_scan.py
     - scripts/worktree_create.py
     - scripts/worktree_cleanup.py

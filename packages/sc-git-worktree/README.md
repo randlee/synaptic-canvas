@@ -37,11 +37,24 @@ Create, scan, clean up, and abort worktrees using predictable paths and safe def
 
 Defaults
 - Worktree base: `../{{REPO_NAME}}-worktrees/<branch>`
-- Tracking doc (optional): `../{{REPO_NAME}}-worktrees/worktree-tracking.md`
+- Tracking file: `../{{REPO_NAME}}-worktrees/worktree-tracking.jsonl`
 
 Safety
+- Never delete unmerged branches without explicit approval
+- Never delete remote branches that are ahead of local (unpulled commits)
+- Never delete protected branches (main, master, develop)
 - Never modify dirty worktrees without explicit approval
-- Respect branch protections/hooks (no direct commits to protected branches)
+
+Shared Settings
+- Protected branches are read from `.sc/shared-settings.yaml` (`git.protected_branches`)
+- If missing, protected branches are auto-detected from git-flow and cached to `.sc/shared-settings.yaml`
+- Use `--no-cache` with scan to avoid writing shared settings in dry-run contexts
+
+## Design
+See [DESIGN.md](DESIGN.md) for detailed requirements including:
+- JSONL tracking schema and lifecycle
+- Safety guards (protected branches, remote-ahead check)
+- Scan reconciliation logic
 
 ## Install / Uninstall
 - Install (local-only):

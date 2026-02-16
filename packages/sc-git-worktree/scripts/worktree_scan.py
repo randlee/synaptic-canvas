@@ -25,9 +25,29 @@ from typing import Any, Dict, List, Optional, Tuple
 
 # Support both relative import (when used as package) and absolute import (when used standalone)
 try:
-    from .envelope import Envelope, ErrorCodes
+    from .envelope import Envelope, ErrorCodes, Transcript
+    from .worktree_shared import (
+        TrackingEntry,
+        get_default_tracking_path,
+        get_protected_branches,
+        get_repo_name,
+        get_repo_root,
+        load_tracking_jsonl,
+        reconcile_tracking,
+        run_git,
+    )
 except ImportError:
-    from envelope import Envelope, ErrorCodes
+    from envelope import Envelope, ErrorCodes, Transcript
+    from worktree_shared import (
+        TrackingEntry,
+        get_default_tracking_path,
+        get_protected_branches,
+        get_repo_name,
+        get_repo_root,
+        load_tracking_jsonl,
+        reconcile_tracking,
+        run_git,
+    )
 
 
 # =============================================================================
@@ -64,50 +84,11 @@ class WorktreeStatus:
     issues: List[str] = field(default_factory=list)
 
 
-@dataclass
-class TrackingRow:
-    """A row from the tracking document."""
-
-    branch: str
-    path: str
-    base: Optional[str] = None
-    purpose: Optional[str] = None
-    owner: Optional[str] = None
-    created: Optional[str] = None
-    status: Optional[str] = None
-    last_checked: Optional[str] = None
-    notes: Optional[str] = None
 
 
 # =============================================================================
 # Git Operations
 # =============================================================================
-
-
-def get_repo_root() -> Path:
-    """Get the repository root directory.
-
-    Returns:
-        Path to the repository root
-
-    Raises:
-        RuntimeError: If not in a git repository
-    """
-    try:
-        result = subprocess.run(
-            ["git", "rev-parse", "--show-toplevel"],
-            capture_output=True,
-            text=True,
-            check=True,
-        )
-        return Path(result.stdout.strip())
-    except subprocess.CalledProcessError as e:
-        raise RuntimeError(f"Not in a git repository: {e.stderr}") from e
-
-
-def get_repo_name() -> str:
-    """Get the repository name from the root directory."""
-    return get_repo_root().name
 
 
 def parse_worktree_list_porcelain(output: str) -> List[WorktreeInfo]:
@@ -267,91 +248,6 @@ def batch_get_worktree_statuses(worktrees: List[WorktreeInfo]) -> Dict[str, Tupl
     return results
 
 
-# =============================================================================
-# Tracking Document Operations
-# =============================================================================
-
-
-def parse_tracking_document(content: str) -> List[TrackingRow]:
-    """Parse the markdown tracking document.
-
-    Expected format is a markdown table with headers:
-    | Branch | Path | Base | Purpose | Owner | Created | Status | LastChecked | Notes |
-
-    Args:
-        content: Raw content of the tracking document
-
-    Returns:
-        List of TrackingRow objects
-    """
-    rows = []
-    lines = content.strip().split("\n")
-
-    # Find the table (look for | at start of line)
-    in_table = False
-    headers: List[str] = []
-
-    for line in lines:
-        line = line.strip()
-
-        if not line.startswith("|"):
-            in_table = False
-            continue
-
-        # Parse table row
-        cells = [c.strip() for c in line.split("|")[1:-1]]  # Remove first/last empty cells
-
-        if not in_table:
-            # This is the header row
-            headers = [h.lower().replace(" ", "_") for h in cells]
-            in_table = True
-            continue
-
-        # Skip separator row (contains only dashes and colons)
-        if all(re.match(r"^[-:]+$", c) for c in cells):
-            continue
-
-        # Data row - map cells to headers
-        row_data = {}
-        for i, cell in enumerate(cells):
-            if i < len(headers):
-                row_data[headers[i]] = cell if cell else None
-
-        if row_data.get("branch"):
-            rows.append(
-                TrackingRow(
-                    branch=row_data.get("branch", ""),
-                    path=row_data.get("path", ""),
-                    base=row_data.get("base"),
-                    purpose=row_data.get("purpose"),
-                    owner=row_data.get("owner"),
-                    created=row_data.get("created"),
-                    status=row_data.get("status"),
-                    last_checked=row_data.get("lastchecked") or row_data.get("last_checked"),
-                    notes=row_data.get("notes"),
-                )
-            )
-
-    return rows
-
-
-def load_tracking_document(tracking_path: Path) -> Optional[List[TrackingRow]]:
-    """Load and parse the tracking document.
-
-    Args:
-        tracking_path: Path to the tracking document
-
-    Returns:
-        List of TrackingRow objects, or None if file doesn't exist
-    """
-    if not tracking_path.exists():
-        return None
-
-    try:
-        content = tracking_path.read_text(encoding="utf-8")
-        return parse_tracking_document(content)
-    except Exception:
-        return None
 
 
 # =============================================================================
@@ -363,26 +259,42 @@ def scan_worktrees(
     worktree_base: Optional[str] = None,
     tracking_enabled: bool = True,
     tracking_path: Optional[str] = None,
+    discover_all: bool = False,
+    owner_filter: Optional[str] = None,
+    cache_protected_branches: bool = True,
 ) -> Envelope:
-    """Scan all worktrees and cross-check against tracking document.
+    """Scan all worktrees and reconcile tracking with git state.
 
     Args:
         worktree_base: Base directory for worktrees (default: ../<repo-name>-worktrees)
         tracking_enabled: Whether to check tracking document
-        tracking_path: Path to tracking document (default: <worktree_base>/worktree-tracking.md)
+        tracking_path: Path to tracking document (default: <worktree_base>/worktree-tracking.jsonl)
+        discover_all: If True, also discover untracked remote branches
+        owner_filter: If set, only show branches by this owner
 
     Returns:
         Envelope with scan results
     """
+    transcript = Transcript()
+
     try:
         repo_root = get_repo_root()
         repo_name = repo_root.name
+        transcript.step_ok(
+            step="git rev-parse --show-toplevel",
+            message=str(repo_root),
+        )
     except RuntimeError as e:
+        transcript.step_failed(
+            step="git rev-parse --show-toplevel",
+            error=str(e),
+        )
         return Envelope.error_response(
             code=ErrorCodes.GIT_NOT_REPO,
             message=str(e),
             recoverable=False,
             suggested_action="Run this command from within a git repository",
+            transcript=transcript,
         )
 
     # Resolve worktree base path
@@ -391,23 +303,32 @@ def scan_worktrees(
     else:
         wt_base = repo_root.parent / f"{repo_name}-worktrees"
 
-    # Resolve tracking path
+    # Resolve tracking path (JSONL format)
     if tracking_enabled:
         if tracking_path:
             track_path = Path(tracking_path)
         else:
-            track_path = wt_base / "worktree-tracking.md"
+            track_path = get_default_tracking_path(wt_base)
     else:
         track_path = None
 
     # Get worktree list
     try:
         worktrees = get_worktree_list()
+        transcript.step_ok(
+            step="git worktree list --porcelain",
+            message=f"{len(worktrees)} worktree(s)",
+        )
     except RuntimeError as e:
+        transcript.step_failed(
+            step="git worktree list --porcelain",
+            error=str(e),
+        )
         return Envelope.error_response(
             code=ErrorCodes.GIT_ERROR,
             message=str(e),
             recoverable=False,
+            transcript=transcript,
         )
 
     # Filter to non-bare worktrees (exclude main repo)
@@ -415,49 +336,99 @@ def scan_worktrees(
 
     # Batch get statuses
     statuses = batch_get_worktree_statuses(non_bare_worktrees)
+    clean_count = sum(1 for s in statuses.values() if s[0] == "clean")
+    dirty_count = sum(1 for s in statuses.values() if s[0] == "dirty")
+    transcript.step_ok(
+        step="git status --porcelain (batch)",
+        message=f"clean={clean_count} dirty={dirty_count}",
+    )
 
-    # Load tracking document if enabled
-    tracking_rows: List[TrackingRow] = []
-    tracking_missing_rows: List[Dict[str, str]] = []
-    tracking_extra_rows: List[Dict[str, str]] = []
+    # Reconcile tracking with git state
+    tracking_entries: List[TrackingEntry] = []
+    reconcile_result: Dict[str, Any] = {}
+    remote_warnings: List[Dict[str, Any]] = []
+    discovered_branches: List[Dict[str, Any]] = []
+    removed_branches: List[str] = []
 
     if tracking_enabled and track_path:
-        loaded_rows = load_tracking_document(track_path)
-        if loaded_rows is None:
-            # Tracking doc doesn't exist - report but don't fail
-            tracking_missing_rows.append({
-                "issue": "tracking_document_missing",
-                "path": str(track_path),
-            })
-        else:
-            tracking_rows = loaded_rows
+        # Get protected branches for reconciliation
+        try:
+            protected = get_protected_branches(
+                repo_root,
+                cache_shared=cache_protected_branches,
+                log_fn=lambda msg: transcript.step_ok(step="protected branches", message=msg),
+            )
+        except ValueError as e:
+            transcript.step_failed(
+                step="resolve protected branches",
+                error=str(e),
+            )
+            return Envelope.error_response(
+                code=ErrorCodes.CONFIG_PROTECTED_BRANCH_NOT_SET,
+                message=str(e),
+                recoverable=False,
+                suggested_action="Configure git.protected_branches in .sc/shared-settings.yaml",
+                transcript=transcript,
+            )
 
-    # Build worktree path set for cross-reference
-    worktree_paths = {wt.path for wt in non_bare_worktrees}
+        # Reconcile tracking with git (always runs fetch)
+        reconcile_result = reconcile_tracking(
+            tracking_path=track_path,
+            repo_root=repo_root,
+            discover_all=discover_all,
+            protected_branches=protected,
+        )
+
+        transcript.step_ok(
+            step="git fetch --all --prune",
+            message=f"reconciled {reconcile_result['total']} entries",
+        )
+
+        if reconcile_result.get("removed"):
+            removed_branches = reconcile_result["removed"]
+            transcript.step_ok(
+                step="prune tracking",
+                message=f"removed {len(removed_branches)} stale entries",
+            )
+
+        if reconcile_result.get("discovered"):
+            discovered_branches = reconcile_result["discovered"]
+            transcript.step_ok(
+                step="discover branches",
+                message=f"found {len(discovered_branches)} new branches",
+            )
+
+        remote_warnings = reconcile_result.get("warnings", [])
+
+        # Load reconciled entries
+        tracking_entries = load_tracking_jsonl(track_path)
+
+        # Apply owner filter if specified
+        if owner_filter:
+            tracking_entries = [e for e in tracking_entries if e.owner == owner_filter]
+            transcript.step_ok(
+                step=f"filter owner={owner_filter}",
+                message=f"{len(tracking_entries)} entries match",
+            )
+    else:
+        transcript.step_skipped(step="reconcile_tracking", message="disabled")
+
+    # Build sets for cross-reference
     worktree_branches = {wt.branch for wt in non_bare_worktrees}
+    tracked_branches = {entry.branch for entry in tracking_entries}
 
-    # Cross-reference tracking with actual worktrees
-    tracked_branches = set()
-    for row in tracking_rows:
-        tracked_branches.add(row.branch)
-        # Check if tracked worktree actually exists
-        if row.branch not in worktree_branches:
-            tracking_extra_rows.append({
-                "branch": row.branch,
-                "path": row.path or "",
-                "issue": "tracking_row_has_no_worktree",
-            })
+    # Find orphaned remotes (tracked but no local worktree)
+    orphaned_remotes = [
+        {"branch": e.branch, "owner": e.owner, "remote_exists": e.remote_exists}
+        for e in tracking_entries
+        if not e.local_worktree and e.remote_exists
+    ]
 
-    # Check for worktrees not in tracking
-    for wt in non_bare_worktrees:
-        if tracking_enabled and wt.branch not in tracked_branches:
-            # Skip main repo worktree (usually the first one)
-            if wt.path != str(repo_root):
-                tracking_missing_rows.append({
-                    "branch": wt.branch,
-                    "path": wt.path,
-                    "issue": "worktree_not_tracked",
-                })
+    # Find untracked local worktrees
+    untracked_worktrees = [
+        wt.branch for wt in non_bare_worktrees
+        if wt.branch not in tracked_branches and wt.path != str(repo_root)
+    ]
 
     # Build results
     worktree_results: List[Dict[str, Any]] = []
@@ -466,21 +437,26 @@ def scan_worktrees(
     for wt in non_bare_worktrees:
         status, dirty_files, error_msg = statuses.get(wt.path, ("error", [], "Status not found"))
 
-        # Find matching tracking row
-        tracking_row_data = None
-        for row in tracking_rows:
-            if row.branch == wt.branch:
-                tracking_row_data = {
-                    "branch": row.branch,
-                    "path": row.path,
-                    "base": row.base,
-                    "purpose": row.purpose,
-                    "owner": row.owner,
-                    "created": row.created,
-                    "status": row.status,
-                    "last_checked": row.last_checked,
-                    "notes": row.notes,
+        # Find matching tracking entry
+        tracking_entry_data = None
+        remote_ahead = 0
+        for entry in tracking_entries:
+            if entry.branch == wt.branch:
+                tracking_entry_data = {
+                    "branch": entry.branch,
+                    "path": entry.path,
+                    "base": entry.base,
+                    "purpose": entry.purpose,
+                    "owner": entry.owner,
+                    "created": entry.created,
+                    "status": entry.status,
+                    "last_checked": entry.last_checked,
+                    "notes": entry.notes,
+                    "remote_exists": entry.remote_exists,
+                    "local_worktree": entry.local_worktree,
+                    "remote_ahead": entry.remote_ahead,
                 }
+                remote_ahead = entry.remote_ahead
                 break
 
         issues = []
@@ -492,6 +468,8 @@ def scan_worktrees(
             issues.append(f"locked: {wt.lock_reason or 'no reason given'}")
         if wt.prunable:
             issues.append(f"prunable: {wt.prunable_reason or 'worktree may be stale'}")
+        if remote_ahead > 0:
+            issues.append(f"remote_ahead: {remote_ahead} commit(s)")
 
         worktree_results.append({
             "branch": wt.branch,
@@ -500,11 +478,12 @@ def scan_worktrees(
             "status": status,
             "dirty_files": dirty_files if dirty_files else None,
             "tracked": wt.branch in tracked_branches,
-            "tracking_row": tracking_row_data,
+            "tracking_entry": tracking_entry_data,
             "issues": issues if issues else None,
             "is_detached": wt.is_detached,
             "is_locked": wt.is_locked,
             "prunable": wt.prunable,
+            "remote_ahead": remote_ahead if remote_ahead > 0 else None,
         })
 
     # Generate recommendations
@@ -512,37 +491,48 @@ def scan_worktrees(
     if dirty_count > 0:
         recommendations.append(f"commit or stash changes in {dirty_count} dirty worktree(s)")
 
-    if tracking_extra_rows:
-        recommendations.append(f"remove {len(tracking_extra_rows)} stale tracking row(s)")
+    if orphaned_remotes:
+        recommendations.append(f"run cleanup to delete {len(orphaned_remotes)} orphaned remote branch(es)")
 
-    if tracking_missing_rows:
-        missing_wt_count = sum(1 for r in tracking_missing_rows if r.get("issue") == "worktree_not_tracked")
-        if missing_wt_count > 0:
-            recommendations.append(f"add tracking for {missing_wt_count} untracked worktree(s)")
+    if untracked_worktrees:
+        recommendations.append(f"{len(untracked_worktrees)} worktree(s) not in tracking")
 
     prunable_count = sum(1 for wt in non_bare_worktrees if wt.prunable)
     if prunable_count > 0:
         recommendations.append(f"run 'git worktree prune' to clean {prunable_count} stale reference(s)")
 
-    return Envelope.success_response({
-        "action": "scan",
-        "repo_root": str(repo_root),
-        "worktree_base": str(wt_base),
-        "worktrees": worktree_results,
-        "tracking_enabled": tracking_enabled,
-        "tracking_path": str(track_path) if track_path else None,
-        "tracking_missing_rows": tracking_missing_rows if tracking_missing_rows else None,
-        "tracking_extra_rows": tracking_extra_rows if tracking_extra_rows else None,
-        "recommendations": recommendations if recommendations else None,
-        "summary": {
-            "total_worktrees": len(non_bare_worktrees),
-            "clean": sum(1 for wt in worktree_results if wt["status"] == "clean"),
-            "dirty": dirty_count,
-            "errors": sum(1 for wt in worktree_results if wt["status"] == "error"),
-            "tracked": sum(1 for wt in worktree_results if wt["tracked"]),
-            "untracked": sum(1 for wt in worktree_results if not wt["tracked"]),
+    # Warn about remote-ahead branches
+    remote_ahead_count = sum(1 for wt in worktree_results if wt.get("remote_ahead"))
+    if remote_ahead_count > 0:
+        recommendations.append(f"pull changes in {remote_ahead_count} branch(es) where remote is ahead")
+
+    return Envelope.success_response(
+        data={
+            "action": "scan",
+            "repo_root": str(repo_root),
+            "worktree_base": str(wt_base),
+            "worktrees": worktree_results,
+            "tracking_enabled": tracking_enabled,
+            "tracking_path": str(track_path) if track_path else None,
+            "orphaned_remotes": orphaned_remotes if orphaned_remotes else None,
+            "untracked_worktrees": untracked_worktrees if untracked_worktrees else None,
+            "discovered_branches": discovered_branches if discovered_branches else None,
+            "removed_entries": removed_branches if removed_branches else None,
+            "remote_warnings": remote_warnings if remote_warnings else None,
+            "recommendations": recommendations if recommendations else None,
+            "summary": {
+                "total_worktrees": len(non_bare_worktrees),
+                "clean": sum(1 for wt in worktree_results if wt["status"] == "clean"),
+                "dirty": dirty_count,
+                "errors": sum(1 for wt in worktree_results if wt["status"] == "error"),
+                "tracked": sum(1 for wt in worktree_results if wt["tracked"]),
+                "untracked": len(untracked_worktrees),
+                "orphaned_remotes": len(orphaned_remotes),
+                "remote_ahead": remote_ahead_count,
+            },
         },
-    })
+        transcript=transcript,
+    )
 
 
 # =============================================================================
@@ -565,12 +555,28 @@ def main() -> int:
         "--tracking-path",
         type=str,
         default=None,
-        help="Path to tracking document (default: <worktree-base>/worktree-tracking.md)",
+        help="Path to tracking document (default: <worktree-base>/worktree-tracking.jsonl)",
     )
     parser.add_argument(
         "--no-tracking",
         action="store_true",
         help="Disable tracking document cross-check",
+    )
+    parser.add_argument(
+        "--all",
+        action="store_true",
+        help="Discover all remote branches (feature/*, hotfix/*, etc.) and add to tracking",
+    )
+    parser.add_argument(
+        "--owner",
+        type=str,
+        default=None,
+        help="Filter results to branches created by this owner",
+    )
+    parser.add_argument(
+        "--no-cache",
+        action="store_true",
+        help="Do not cache protected branches to shared settings",
     )
 
     args = parser.parse_args()
@@ -579,6 +585,9 @@ def main() -> int:
         worktree_base=args.worktree_base,
         tracking_enabled=not args.no_tracking,
         tracking_path=args.tracking_path,
+        discover_all=args.all,
+        owner_filter=args.owner,
+        cache_protected_branches=not args.no_cache,
     )
 
     # Output fenced JSON

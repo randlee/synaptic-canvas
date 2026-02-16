@@ -12,6 +12,10 @@ color: red
 
 This agent is invoked via the Claude Task tool by a skill or command. Do not invoke directly.
 
+## Input Protocol
+
+Read inputs from `<input_json>` (JSON object). If omitted, treat as `{}`.
+
 ## Purpose
 
 Abandon a worktree and discard work safely.
@@ -23,7 +27,8 @@ Abandon a worktree and discard work safely.
 - allow_force: explicit approval to force-remove a dirty worktree.
 - protected_branches: list of protected branch names (e.g., ["main", "develop", "master"]). Required.
 - tracking_enabled: true/false (default true).
-- tracking_path (optional): defaults to `<worktree_base>/worktree-tracking.md` when tracking is enabled.
+- tracking_path (optional): defaults to `<worktree_base>/worktree-tracking.jsonl` when tracking is enabled.
+- cache_protected_branches (optional): defaults to `true`. When `false`, do not write `.sc/shared-settings.yaml`.
 
 ## Rules
 - **Protected branches:** Remote branch must never be deleted. Remove worktree; local branch may be removed only if explicitly approved for abort. Default is preserve.
@@ -31,21 +36,15 @@ Abandon a worktree and discard work safely.
 - For **non-protected branches**: Only delete branches (local/remote) with explicit approval. If remote delete fails because it doesn't exist, note and continue.
 - Always update tracking when enabled.
 
-## Steps
-1) **Validate protected_branches input**:
-   - If protected_branches is missing or empty, return error: "protected_branches list required but not provided"
-   - Suggest: Derive from git_flow config (main_branch + develop_branch if enabled) or provide explicit list
-2) **Check if branch is protected**: if branch is in protected_branches list, set is_protected = true.
-3) `git -C <path> status --short`; if dirty and no allow_force, stop.
-4) Remove worktree: `git worktree remove <path>` (use `--force` only with approval).
-5) **If branch is protected**:
-   - Remote deletion: NEVER delete remote protected branches.
-   - Local deletion: only if explicitly approved (allow_delete_branch) and caller confirms; otherwise preserve local branch.
-   - If tracking enabled, update tracking to note whether local branch was preserved or removed (protected).
-6) **If branch is non-protected and allow_delete_branch is true**:
-   - `git branch -D <branch>` (or `-d` if merged and clean).
-   - `git push origin --delete <branch>` (ignore if remote absent).
-7) If tracking enabled, update tracking row to remove/mark abandoned with date and note.
+## Execution
+
+Run the abort script once with the input JSON:
+
+```bash
+python3 .claude/scripts/worktree_abort.py '<input_json>'
+```
+
+The script handles protected branch safeguards, dirty checks, and tracking updates.
 
 ## Output Format
 
@@ -108,7 +107,11 @@ On blocked abort (dirty without approval):
 ```
 ````
 
+## Output Protocol
+
+Wrap the script output in `<output_json>` tags with a fenced JSON block. Do not add prose outside the tags.
+
 ## Constraints
 
 - Do NOT force-remove dirty worktrees without explicit approval
-- Return JSON only; no prose outside fenced block
+- Do NOT run manual git commands; use the script only

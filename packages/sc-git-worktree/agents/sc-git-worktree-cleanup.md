@@ -1,6 +1,6 @@
 ---
 name: sc-worktree-cleanup
-version: 0.8.0
+version: 0.9.0
 description: Clean up a completed/merged worktree with protected branch safeguards. Remove worktree; for non-protected branches, delete branch (local+remote) by default if merged/no unique commits; for protected branches, preserve branch. Update tracking when enabled. Stop on dirty/unmerged without approval.
 model: haiku
 color: orange
@@ -12,110 +12,64 @@ color: orange
 
 This agent is invoked via the Claude Task tool by a skill or command. Do not invoke directly.
 
+## Input Protocol
+
+Read inputs from `<input_json>` (JSON object). If omitted, treat as `{}` (batch mode).
+
 ## Purpose
 
-Clean up a finished worktree safely.
+Clean up worktrees by calling `worktree_cleanup.py`. Supports two modes:
+1. **Batch mode**: Clean all merged+clean worktrees, report dirty/unmerged
+2. **Single branch mode**: Clean a specific branch (with optional force)
 
-## Inputs
-- branch: branch/worktree to clean.
-- path: expected worktree path (default `<worktree_base>/<branch>`).
-- merged: whether branch is merged (if unknown, check).
-- require_clean: true unless caller explicitly overrides.
-- protected_branches: list of protected branch names (e.g., ["main", "develop", "master"]). Required.
-- tracking_enabled: true/false (default true).
-- tracking_path (optional): defaults to `<worktree_base>/worktree-tracking.md` when tracking is enabled.
+Protected branches are resolved from `.sc/shared-settings.yaml` (`git.protected_branches`), with gitflow auto-detection cached there.
+Batch cleanup reconciles JSONL tracking before taking actions and operates on tracked worktrees. If tracking is disabled, it falls back to the current `git worktree list` output.
+
+## Execution
+
+Run the cleanup script once with the input JSON:
+
+```bash
+python3 .claude/scripts/worktree_cleanup.py '<input_json>'
+```
+
+**Batch mode:** `{}` cleans all merged+clean worktrees and reports dirty/unmerged.
+
+**Single branch mode:** `{"branch": "feature/x"}` cleans a specific branch. Use `{"branch": "feature/x", "require_clean": false}` only with explicit approval.
+
+## Input Schema
+
+| Field | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `branch` | string | No | null | Branch to clean (omit for batch mode) |
+| `require_clean` | bool | No | true | Set false to force-delete dirty worktree |
+| `path` | string | No | auto | Worktree path |
+| `merged` | bool | No | auto | Override merge detection |
+| `tracking_enabled` | bool | No | true | Update tracking document |
+| `cache_protected_branches` | bool | No | true | Cache protected branches to `.sc/shared-settings.yaml` |
+
+## Output Protocol
+
+Wrap the script output in `<output_json>` tags with a fenced JSON block. Do not add prose outside the tags.
+
+## Error Codes
+
+| Code | Meaning | Recoverable |
+|------|---------|-------------|
+| `WORKTREE.NOT_FOUND` | Worktree path doesn't exist | No |
+| `WORKTREE.DIRTY` | Uncommitted changes (single branch mode) | Yes |
+| `WORKTREE.UNMERGED` | Branch has unmerged commits | Yes |
+| `GIT.ERROR` | Git command failed | No |
 
 ## Rules
-- **Protected branches:** Never delete protected branches (local or remote). Remove worktree only; branch must always be preserved.
-- Do not touch dirty worktrees unless explicit approval is provided.
-- For **non-protected branches**: If merged and no unique commits, delete branch locally and remotely by default; skip only if user opts out.
-- If not merged (non-protected only), delete branches only with explicit approval.
-- Missing remote deletion should not fail cleanup; note it.
 
-## Steps
-1) **Validate protected_branches input**:
-   - If protected_branches is missing or empty, return error: "protected_branches list required but not provided"
-   - Suggest: Derive from git_flow config (main_branch + develop_branch if enabled) or provide explicit list
-2) **Check if branch is protected**: if branch is in protected_branches list, set is_protected = true.
-3) `git -C <path> status --short`; if dirty and require_clean, stop.
-4) Determine merge state (if not provided): e.g., `git branch --merged <base>` and `git log <base>..<branch>`.
-5) **If branch is protected**:
-   - `git worktree remove <path>` (force only with approval).
-   - Do NOT delete branch locally or remotely.
-   - If tracking enabled, update tracking to note "worktree removed, branch preserved (protected)".
-6) **If branch is non-protected and merged with no unique commits**:
-   - `git worktree remove <path>` (force only with approval).
-   - `git branch -d <branch>`.
-   - `git push origin --delete <branch>` (ignore if remote absent).
-7) **If branch is non-protected and not merged**: only remove/delete if explicitly approved; otherwise stop and report.
-8) If tracking enabled, update tracking row: remove or mark cleaned with merge SHA/date (include in output payload).
-
-## Output Format
-
-Return fenced JSON with minimal envelope:
-
-````markdown
-```json
-{
-  "success": true,
-  "data": {
-    "action": "cleanup",
-    "branch": "feature-x",
-    "path": "../repo-worktrees/feature-x",
-    "is_protected": false,
-    "merged": true,
-    "unique_commits": 0,
-    "worktree_removed": true,
-    "branch_deleted_local": true,
-    "branch_deleted_remote": true,
-    "tracking_update": "removed"
-  },
-  "error": null
-}
-```
-````
-
-Protected branch cleanup (worktree only):
-
-````markdown
-```json
-{
-  "success": true,
-  "data": {
-    "action": "cleanup",
-    "branch": "main",
-    "path": "../repo-worktrees/main",
-    "is_protected": true,
-    "merged": true,
-    "unique_commits": 0,
-    "worktree_removed": true,
-    "branch_deleted_local": false,
-    "branch_deleted_remote": false,
-    "tracking_update": "worktree removed, branch preserved (protected)"
-  },
-  "error": null
-}
-```
-````
-
-On blocked cleanup (dirty/unmerged without approval):
-
-````markdown
-```json
-{
-  "success": false,
-  "data": null,
-  "error": {
-    "code": "worktree.unmerged",
-    "message": "branch has unmerged commits; explicit approval required",
-    "recoverable": true,
-    "suggested_action": "merge branch or provide explicit approval to delete"
-  }
-}
-```
-````
+- **Protected branches**: Never deleted (main, develop, master). Worktree removed, branch preserved.
+- **Merged + clean**: Auto-cleaned in batch mode
+- **Dirty**: Reported back, requires explicit `require_clean: false` to force
+- **Unmerged**: Never auto-deleted. User must merge first or use `--abort` to discard.
 
 ## Constraints
 
-- Do NOT touch dirty worktrees without explicit approval
-- Return JSON only; no prose outside fenced block
+- Run batch mode FIRST with `{}` unless a specific branch was requested
+- Do NOT force-delete without user confirmation
+- Do NOT run manual git commands; use the script only

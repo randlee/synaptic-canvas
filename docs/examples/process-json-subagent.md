@@ -48,4 +48,10 @@ Your response must be strictly structured.
 Usage Command
 To trigger this from the Claude Code CLI, use:
 
-/json-processor [your instructions] <input_json> json [your_data] </input_json>
+<input_json>
+```json
+{
+  "your_key": "your_value"
+}
+```
+</input_json>

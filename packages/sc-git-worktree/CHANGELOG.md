@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Shared protected-branches settings via `.sc/shared-settings.yaml` (`git.protected_branches`), with git-flow auto-detection and caching.
+- `--no-cache` flag for scan to avoid writing shared settings in dry-run contexts.
+- Clean-all now reconciles JSONL before cleanup and captures untracked local worktrees as `discovered`.
+
+### Changed
+- Merge detection now uses a protected merge base (not `HEAD`) and fails closed if no protected branch is configured.
+- Tracking entries are preserved until both local worktree and remote branch are gone.
+
+### Breaking
+- Cleanup/scan/update/abort now fail if protected branches are not configured and git-flow detection is unavailable.
+
 ### Planned
 - Interactive branch selection and auto-completion
 - Graphical worktree status dashboard

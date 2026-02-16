@@ -23,9 +23,25 @@ from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field, field_validator
 
 try:
-    from .envelope import Envelope, ErrorCodes
+    from .envelope import Envelope, ErrorCodes, Transcript
+    from .worktree_shared import (
+        get_default_tracking_path,
+        get_protected_branches,
+        get_repo_root,
+        get_worktree_status,
+        run_git,
+        update_tracking_entry,
+    )
 except ImportError:
-    from envelope import Envelope, ErrorCodes
+    from envelope import Envelope, ErrorCodes, Transcript
+    from worktree_shared import (
+        get_default_tracking_path,
+        get_protected_branches,
+        get_repo_root,
+        get_worktree_status,
+        run_git,
+        update_tracking_entry,
+    )
 
 
 # =============================================================================
@@ -36,62 +52,32 @@ except ImportError:
 class UpdateInput(BaseModel):
     """Input schema for worktree update."""
 
-    protected_branches: List[str] = Field(..., description="List of protected branch names")
+    protected_branches: Optional[List[str]] = Field(None, description="List of protected branch names (auto-detected if omitted)")
     branch: Optional[str] = Field(None, description="Specific branch to update (or all if omitted)")
     path: Optional[str] = Field(None, description="Worktree path")
     repo_root: Optional[str] = Field(None, description="Repo root directory")
     tracking_enabled: bool = Field(True, description="Whether to update tracking doc")
     tracking_path: Optional[str] = Field(None, description="Path to tracking document")
     worktree_base: Optional[str] = Field(None, description="Base directory for worktrees")
+    cache_protected_branches: bool = Field(True, description="Cache protected branches to shared settings")
 
     @field_validator("protected_branches")
     @classmethod
-    def validate_protected_branches(cls, v: List[str]) -> List[str]:
-        if not v:
-            raise ValueError("protected_branches list required but not provided")
+    def validate_protected_branches(cls, v: Optional[List[str]]) -> Optional[List[str]]:
+        if v is None:
+            return None
         return [b.strip() for b in v if b.strip()]
 
 
 # =============================================================================
-# Git Operations
+# Git Operations (update-specific)
 # =============================================================================
-
-
-def run_git(args: List[str], cwd: Optional[Path] = None, check: bool = True) -> subprocess.CompletedProcess:
-    """Execute a git command."""
-    return subprocess.run(
-        ["git"] + args,
-        cwd=cwd,
-        capture_output=True,
-        text=True,
-        check=check,
-    )
-
-
-def get_repo_root(cwd: Optional[Path] = None) -> Path:
-    """Get the repository root directory."""
-    result = run_git(["rev-parse", "--show-toplevel"], cwd=cwd)
-    return Path(result.stdout.strip())
-
-
-def get_repo_name(repo_root: Path) -> str:
-    """Get the repository name from its root path."""
-    return repo_root.name
 
 
 def get_current_commit(cwd: Path) -> str:
     """Get the current commit SHA."""
     result = run_git(["rev-parse", "--short", "HEAD"], cwd=cwd, check=False)
     return result.stdout.strip() if result.returncode == 0 else ""
-
-
-def get_worktree_status(path: Path) -> tuple[bool, List[str]]:
-    """Check if worktree is clean."""
-    result = run_git(["status", "--short"], cwd=path, check=False)
-    if result.returncode != 0:
-        return False, [f"git status failed: {result.stderr}"]
-    dirty_files = [line.strip() for line in result.stdout.strip().split("\n") if line.strip()]
-    return len(dirty_files) == 0, dirty_files
 
 
 def fetch_branch(branch: str, cwd: Path) -> bool:
@@ -128,35 +114,6 @@ def count_commits_between(old_commit: str, new_commit: str, cwd: Path) -> int:
         return 0
 
 
-# =============================================================================
-# Tracking Document
-# =============================================================================
-
-
-def update_tracking_timestamp(tracking_path: Path, branch: str) -> bool:
-    """Update the last_checked timestamp for a branch in tracking."""
-    if not tracking_path.exists():
-        return False
-
-    content = tracking_path.read_text()
-    lines = content.split("\n")
-    now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    updated = False
-
-    for i, line in enumerate(lines):
-        if line.startswith("|") and (f"| {branch} |" in line or f"|{branch}|" in line):
-            # Parse and update the table row
-            parts = line.split("|")
-            if len(parts) >= 9:  # Should have at least 9 parts for our table
-                parts[8] = f" {now} "  # Last Checked column
-                lines[i] = "|".join(parts)
-                updated = True
-                break
-
-    if updated:
-        tracking_path.write_text("\n".join(lines))
-
-    return updated
 
 
 # =============================================================================
@@ -169,6 +126,7 @@ def update_single_branch(
     worktree_path: Path,
     repo_root: Path,
     tracking_path: Optional[Path],
+    transcript: Transcript,
 ) -> Dict[str, Any]:
     """Update a single branch and return result."""
     result = {
@@ -186,10 +144,24 @@ def update_single_branch(
     if not worktree_path.exists():
         result["error_code"] = ErrorCodes.WORKTREE_NOT_FOUND
         result["message"] = f"Worktree not found at: {worktree_path}"
+        transcript.step_failed(
+            step=f"check_worktree_{branch}",
+            error=f"Worktree not found at: {worktree_path}",
+        )
         return result
+
+    transcript.step_ok(
+        step=f"test -d {worktree_path}",
+        message="exists",
+    )
 
     # Check if worktree is clean
     is_clean, dirty_files = get_worktree_status(worktree_path)
+    transcript.step_ok(
+        step=f"git -C {worktree_path} status --porcelain",
+        message="clean" if is_clean else "\n".join(dirty_files),
+    )
+
     if not is_clean:
         result["error_code"] = ErrorCodes.WORKTREE_DIRTY
         result["message"] = "Worktree has uncommitted changes"
@@ -199,15 +171,27 @@ def update_single_branch(
     # Get current commit
     old_commit = get_current_commit(worktree_path)
     result["old_commit"] = old_commit
+    transcript.step_ok(
+        step=f"git -C {worktree_path} rev-parse --short HEAD",
+        message=old_commit,
+    )
 
     # Fetch
-    if not fetch_branch(branch, worktree_path):
-        result["error_code"] = ErrorCodes.GIT_ERROR
-        result["message"] = f"Failed to fetch branch {branch}"
-        return result
+    with transcript.timed_step(f"git -C {worktree_path} fetch origin {branch}") as t:
+        if not fetch_branch(branch, worktree_path):
+            result["error_code"] = ErrorCodes.GIT_ERROR
+            result["message"] = f"Failed to fetch branch {branch}"
+            t.status = "failed"
+            t.error = f"fetch failed"
+            return result
 
     # Pull
-    success, message, conflicted_files = pull_branch(branch, worktree_path)
+    with transcript.timed_step(f"git -C {worktree_path} pull origin {branch}") as t:
+        success, message, conflicted_files = pull_branch(branch, worktree_path)
+        t.message = message
+        if not success:
+            t.status = "failed"
+            t.error = message
 
     if not success and conflicted_files:
         result["error_code"] = ErrorCodes.MERGE_CONFLICTS
@@ -231,12 +215,17 @@ def update_single_branch(
     if commits_pulled == 0:
         result["message"] = "already up to date"
     else:
-        result["message"] = f"pulled {commits_pulled} commits"
+        result["message"] = f"pulled {commits_pulled} commits ({old_commit}..{new_commit})"
 
-    # Update tracking
+    # Update tracking (JSONL)
     if tracking_path and tracking_path.exists():
-        update_tracking_timestamp(tracking_path, branch)
+        now = datetime.now(timezone.utc).isoformat()
+        update_tracking_entry(tracking_path, branch, {"last_checked": now})
         result["tracking_updated"] = True
+        transcript.step_ok(
+            step=f"update {tracking_path.name}",
+            message=branch,
+        )
 
     result["success"] = True
     return result
@@ -244,6 +233,8 @@ def update_single_branch(
 
 def update_worktree_main(input_data: UpdateInput) -> Envelope:
     """Main worktree update logic."""
+    transcript = Transcript()
+
     try:
         # Determine repo root
         if input_data.repo_root:
@@ -251,7 +242,37 @@ def update_worktree_main(input_data: UpdateInput) -> Envelope:
         else:
             repo_root = get_repo_root()
 
-        repo_name = get_repo_name(repo_root)
+        repo_name = repo_root.name
+        transcript.step_ok(
+            step="git rev-parse --show-toplevel",
+            message=str(repo_root),
+        )
+
+        # Get protected branches (auto-detect if not provided)
+        try:
+            protected_branches = get_protected_branches(
+                repo_root,
+                user_provided=input_data.protected_branches,
+                cache_shared=input_data.cache_protected_branches,
+                log_fn=lambda msg: transcript.step_ok(step="protected branches", message=msg),
+            )
+        except ValueError as e:
+            transcript.step_failed(
+                step="resolve protected branches",
+                error=str(e),
+            )
+            return Envelope.error_response(
+                code=ErrorCodes.CONFIG_PROTECTED_BRANCH_NOT_SET,
+                message=str(e),
+                recoverable=False,
+                suggested_action="Configure git.protected_branches in .sc/shared-settings.yaml",
+                transcript=transcript,
+            )
+
+        transcript.step_ok(
+            step="git config --get gitflow.branch.*",
+            message=str(protected_branches),
+        )
 
         # Determine worktree base
         if input_data.worktree_base:
@@ -259,29 +280,30 @@ def update_worktree_main(input_data: UpdateInput) -> Envelope:
         else:
             worktree_base = repo_root.parent / f"{repo_name}-worktrees"
 
-        # Determine tracking path
+        # Determine tracking path (JSONL format)
         tracking_path = None
         if input_data.tracking_enabled:
             if input_data.tracking_path:
                 tracking_path = Path(input_data.tracking_path).resolve()
             else:
-                tracking_path = worktree_base / "worktree-tracking.md"
+                tracking_path = get_default_tracking_path(worktree_base)
 
         # Determine which branches to update
         if input_data.branch:
             # Single branch specified
-            if input_data.branch not in input_data.protected_branches:
+            if input_data.branch not in protected_branches:
                 return Envelope.error_response(
                     code=ErrorCodes.BRANCH_NOT_PROTECTED,
                     message=f"Branch '{input_data.branch}' is not a protected branch",
                     recoverable=False,
                     suggested_action="Use --cleanup or --abort for non-protected branches. --update is only for protected branches.",
+                    transcript=transcript,
                 )
             target_branches = [input_data.branch]
         else:
             # Update all protected branches that have worktrees
             target_branches = [
-                b for b in input_data.protected_branches
+                b for b in protected_branches
                 if (worktree_base / b).exists()
             ]
 
@@ -290,7 +312,13 @@ def update_worktree_main(input_data: UpdateInput) -> Envelope:
                 code=ErrorCodes.WORKTREE_NOT_FOUND,
                 message="No protected branch worktrees found to update",
                 recoverable=False,
+                transcript=transcript,
             )
+
+        transcript.step_ok(
+            step="git worktree list",
+            message=str(target_branches),
+        )
 
         # Update each branch
         results = {}
@@ -303,7 +331,7 @@ def update_worktree_main(input_data: UpdateInput) -> Envelope:
             else:
                 worktree_path = worktree_base / branch
 
-            result = update_single_branch(branch, worktree_path, repo_root, tracking_path)
+            result = update_single_branch(branch, worktree_path, repo_root, tracking_path, transcript)
             results[branch] = result
 
             if not result["success"]:
@@ -329,7 +357,8 @@ def update_worktree_main(input_data: UpdateInput) -> Envelope:
                         "new_commit": result["new_commit"],
                         "message": result["message"],
                         "tracking_updated": result.get("tracking_updated", False),
-                    }
+                    },
+                    transcript=transcript,
                 )
             else:
                 error_data = {
@@ -346,6 +375,7 @@ def update_worktree_main(input_data: UpdateInput) -> Envelope:
                     recoverable=bool(result.get("conflicted_files") or result.get("dirty_files")),
                     suggested_action="Resolve conflicts or commit/stash changes, then retry",
                     data=error_data,
+                    transcript=transcript,
                 )
         else:
             # Multi-branch aggregate response
@@ -363,7 +393,8 @@ def update_worktree_main(input_data: UpdateInput) -> Envelope:
                         },
                         "conflicts": {},
                         "tracking_updated": True,
-                    }
+                    },
+                    transcript=transcript,
                 )
             else:
                 return Envelope.error_response(
@@ -374,19 +405,25 @@ def update_worktree_main(input_data: UpdateInput) -> Envelope:
                         "results": results,
                         "conflicts": conflicts,
                     },
+                    transcript=transcript,
                 )
 
     except subprocess.CalledProcessError as e:
+        cmd = " ".join(e.cmd) if isinstance(e.cmd, list) else str(e.cmd)
+        transcript.step_failed(step=cmd, error=e.stderr or e.stdout or str(e))
         return Envelope.error_response(
             code=ErrorCodes.GIT_ERROR,
             message=f"Git command failed: {e.stderr or e.stdout or str(e)}",
             recoverable=False,
+            transcript=transcript,
         )
     except Exception as e:
+        transcript.step_failed(step="unexpected", error=str(e))
         return Envelope.error_response(
             code=ErrorCodes.GIT_ERROR,
             message=f"Unexpected error: {str(e)}",
             recoverable=False,
+            transcript=transcript,
         )
 
 
