@@ -27,26 +27,139 @@ All Synaptic Canvas plugins follow standardized storage conventions to ensure co
 Runtime events, hook executions, validation errors, and audit trails for troubleshooting and observability.
 
 ### Format
-- **Type:** JSON (newline-delimited or individual files)
-- **Content:** Events with timestamp, level, context, and structured data
-- **Searchability:** All fields queryable for post-execution analysis
+- **Type:** JSONL (newline-delimited JSON) preferred for append-friendly logging
+- **Structure:** Pydantic-validated with base schema (extendable per package)
+- **Searchability:** All fields queryable via jq/grep for post-execution analysis
 
-### Examples
+### Standard Location Pattern
 
-```yaml
-# sc-codex
-.claude/state/logs/sc-codex/
-  ├── 2026-01-22-15-30-45-abc123.json
-  └── 2026-01-22-15-35-12-def456.json
+**Convention:** `.claude/state/logs/<package>/<event-type>.jsonl`
 
-# sc-ci-automation
-.claude/state/logs/ci-automation/
-  ├── validation-2026-01-22.json
-  └── build-2026-01-22.json
+```
+.claude/state/logs/sc-git-worktree/
+  ├── agent-spawn-gate.jsonl
+  ├── preflight-check.jsonl
+  └── worktree-create.jsonl
 
-# sc-startup
-.claude/state/logs/sc-startup/
-  └── checklist-2026-01-22.json
+.claude/state/logs/sc-github-issue/
+  ├── issue-intake.jsonl
+  └── issue-fix.jsonl
+```
+
+**Benefits:**
+- Package isolation (each package has own directory)
+- Event type files (easy filtering/grep)
+- JSONL format (append-friendly, line-by-line processing)
+
+### Structured Logging Library (Jenga Template)
+
+**Template:** `templates/sc-logging.jenga.py`
+
+All packages MUST use structured logging via the Pydantic-based template:
+
+```python
+# 1. Copy template to your package
+cp templates/sc-logging.jenga.py packages/your-pkg/scripts/sc_logging.py
+
+# 2. Expand Jenga variables in your copy
+PACKAGE_NAME = "your-package"  # {{PACKAGE_NAME}}
+
+# 3. Extend with package-specific fields
+class LogEntry(BaseLogEntry):
+    session_id: Optional[str] = None
+    custom_field: Optional[str] = None
+```
+
+**Why local copies?** Packages can't import shared modules, so template expands into each package with customizations.
+
+### Base Schema (Pydantic)
+
+All log entries MUST include these fields:
+
+```python
+class BaseLogEntry(BaseModel):
+    timestamp: str   # ISO 8601 with timezone (UTC)
+    event: str       # Event type identifier
+    package: str     # Package name
+    level: str       # debug|info|warning|error|critical
+```
+
+**Example log entry:**
+```json
+{
+  "timestamp": "2026-02-11T10:30:45.123456Z",
+  "event": "agent_spawn_allowed",
+  "package": "sc-git-worktree",
+  "level": "info",
+  "session_id": "abc123",
+  "agent_type": "scrum-master"
+}
+```
+
+### Extension Patterns
+
+#### Simple Fields
+```python
+class LogEntry(BaseLogEntry):
+    session_id: Optional[str] = None
+    agent_type: Optional[str] = None
+```
+
+#### Nested Models
+```python
+class Decision(BaseModel):
+    allowed: bool
+    reason: Optional[str] = None
+
+class LogEntry(BaseLogEntry):
+    decision: Optional[Decision] = None
+```
+
+#### Union Types
+```python
+from typing import Literal
+
+class LogEntry(BaseLogEntry):
+    outcome: Literal["success", "error", "blocked"]
+```
+
+### Usage
+
+```python
+from .sc_logging import log_event
+
+log_event(
+    event="my_event",
+    level="info",
+    session_id="abc123",
+    custom_field="value"
+)
+```
+
+**Hook logging pattern:**
+```python
+import json
+from .sc_logging import log_hook_event
+
+data = json.load(sys.stdin)
+log_hook_event(
+    event="my_hook",
+    hook_data=data,
+    decision={"allowed": True}
+)
+```
+
+### Querying Logs
+
+```bash
+# View all events
+cat .claude/state/logs/sc-git-worktree/*.jsonl | jq .
+
+# Filter by level
+jq 'select(.level == "error")' .claude/state/logs/*/*.jsonl
+
+# Count by event type
+jq -r '.event' .claude/state/logs/*/*.jsonl | sort | uniq -c
 ```
 
 ### Retention Policy
@@ -58,9 +171,12 @@ Runtime events, hook executions, validation errors, and audit trails for trouble
 
 ### Implementation Checklist
 
-- [ ] Package documents logs location in README under "Logs" section
+- [ ] Copy `templates/sc-logging.jenga.py` to `packages/<pkg>/scripts/sc_logging.py`
+- [ ] Expand {{PACKAGE_NAME}} with your package name
+- [ ] Extend `LogEntry` with package-specific Pydantic fields
+- [ ] Use `log_event()` for all logging operations
+- [ ] Package documents logs location in README
 - [ ] Implementation writes to `.claude/state/logs/<package>/`
-- [ ] Each event includes: `timestamp`, `level`, `message`, `context`
 - [ ] No secrets are logged (audit code for hardcoded values)
 - [ ] `.gitignore` excludes `.claude/state/logs/`
 

@@ -1,11 +1,13 @@
 # Agent Tool Use Best Practices
 
-This guide captures learned patterns for using fenced JSON, tool calls, and PreToolUse hooks to validate and gate agent behavior.
+This guide captures learned patterns for using fenced JSON, tool calls, and hooks to validate and gate agent behavior.
+
+**Scope:** Primarily focused on **Claude Code**. Codex users see "Hooks: Where They Actually Work" section for ai_cli differences.
 
 ## Key Principles
 
 - Use fenced JSON for all agent inputs and outputs.
-- Validate inputs early (PreToolUse hooks) before a tool runs.
+- Validate inputs early with hooks before a tool runs (via settings.json in Claude Code).
 - Use Python hooks for cross-platform compatibility.
 - Prefer schema validation (pydantic) over ad-hoc parsing.
 - Keep tool outputs machine-readable; avoid mixed prose + JSON.
@@ -194,11 +196,77 @@ except ValidationError as exc:
 sys.exit(0)
 ```
 
-## Slash Commands vs Agents
+## Hooks: Where They Actually Work
 
-**Agents:** Hooks in frontmatter are supported and can validate tool calls before they run.
+### Critical Clarification
 
-**Slash commands:** Frontmatter hooks are **not** supported. Use `!` pre-exec lines in the command body to run scripts before the model prompt, and `allowed-tools` to permit those commands.
+**Agent frontmatter hooks are NOT supported in Claude Code.** They are designed for **Codex integration via ai_cli** (see below).
+
+For Claude Code, use **settings.json hooks** to validate agent spawns (see "Gating Agents" section).
+
+### Claude Code
+
+**Supported:** PreToolUse hooks in `settings.json` (or `~/.claude/settings.json`)
+```json
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Task",
+        "hooks": [{"type": "command", "command": "python3 .claude/scripts/validate.py"}]
+      }
+    ]
+  }
+}
+```
+
+**NOT Supported:** PreToolUse or SubAgentStart hooks in agent frontmatter
+```yaml
+---
+name: my-agent
+hooks:
+  PreToolUse:  # ❌ This does NOT fire in Claude Code
+    - matcher: "Bash"
+      hooks: [...]
+---
+```
+
+### Codex Integration (ai_cli)
+
+Agent frontmatter hooks **are** supported in Codex via the `ai_cli` runner:
+
+```yaml
+---
+name: my-agent
+hooks:
+  PreToolUse:  # ✅ This DOES fire in Codex via ai_cli
+    - matcher: "Bash"
+      hooks:
+        - type: command
+          command: "python3 ./scripts/validate_hook.py"
+---
+```
+
+**How ai_cli processes hooks:**
+1. Parses agent frontmatter `hooks: PreToolUse`
+2. Before agent execution, runs `type: command` hooks with stdin JSON
+3. Exit 0 = allow agent to proceed
+4. Exit 2 = block agent execution
+5. Logs hook execution with `hook_start`/`hook_end` events
+
+**Agent resolution order (Codex):**
+1. If `subagent_type` is a file path → use directly
+2. Search upward: `.claude/agents/<name>.md`
+3. Fallback: `~/.claude/agents/<name>.md`
+4. Not found:
+   - **Codex**: Error (fail fast)
+   - **Claude Code**: Skip hooks (assumes built-in agent)
+
+See: `packages/sc-codex/scripts/ai_cli/README.md` (lines 103-118)
+
+### Slash Commands
+
+**Frontmatter hooks are NOT supported.** Use `!` pre-exec lines in the command body to run scripts before the model prompt, and `allowed-tools` to permit those commands.
 
 ### Example: `/git-pr` with `!` pre-exec
 
@@ -292,6 +360,466 @@ Example error message:
 ```
 Count value too high; must be < 10. Try count=9.
 ```
+
+## Robust Hook Paths: Avoiding CWD Pitfalls
+
+**Critical Issue:** Relative paths in hooks fail when Claude Code changes the current working directory (CWD) during a session.
+
+### Why This Happens
+
+Hooks execute when subagents enter subdirectories or when the working context shifts. A relative path like `./scripts/validate.py` works if the hook runs from the project root but **fails** if CWD has changed to a subdirectory.
+
+### Recommended: Use Environment Variables
+
+Always use absolute paths via environment variables:
+
+```python
+#!/usr/bin/env python3
+import os
+import subprocess
+import sys
+
+# ✅ CORRECT: Use environment variables
+project_root = os.getenv("CLAUDE_PROJECT_DIR") or os.getcwd()
+hook_script = os.path.join(project_root, ".claude", "scripts", "validate.py")
+
+result = subprocess.run(["python3", hook_script], ...)
+```
+
+**Available Environment Variables:**
+- `$CLAUDE_PROJECT_DIR` - Project root (where Claude Code was launched)
+- `$CLAUDE_PLUGIN_ROOT` - Plugin's root directory (for bundled scripts)
+- `$CODEX_PROJECT_DIR` - Codex equivalent (if using Codex)
+
+### Bad Pattern (Relative Paths)
+
+```bash
+# ❌ WRONG: Fails if CWD changes
+command: "python3 .claude/scripts/validate.py"
+
+# ❌ WRONG: Relative paths are fragile
+command: "./scripts/validate.py"
+```
+
+### Good Pattern (Absolute Paths)
+
+```bash
+# ✅ CORRECT: Uses project root
+command: "python3 ${CLAUDE_PROJECT_DIR}/.claude/scripts/validate.py"
+```
+
+In Python hooks:
+```python
+#!/usr/bin/env python3
+import os
+from pathlib import Path
+
+# Resolve to absolute path using project root
+project_dir = Path(os.getenv("CLAUDE_PROJECT_DIR") or os.getcwd()).resolve()
+script = project_dir / ".claude" / "scripts" / "validate.py"
+
+# Use absolute path
+subprocess.run(["python3", str(script)], ...)
+```
+
+## Environment Variables: Availability by Context
+
+**Critical Finding:** Claude Code environment variables are NOT available in all contexts. Understanding where they work is essential for writing portable code.
+
+### Availability Matrix
+
+| Context Type | CLAUDE_PROJECT_DIR | CLAUDE_PLUGIN_ROOT | Evidence | Fallback Pattern |
+|--------------|-------------------|-------------------|----------|------------------|
+| **PreToolUse Hook** | ✅ YES | ✅ YES | [test-hook-env-vars.py](../.claude/scripts/tests/test-hook-env-vars.py) | Direct access via `os.getenv()` |
+| **PostToolUse Hook** | ✅ YES | ✅ YES | Same as PreToolUse | Direct access via `os.getenv()` |
+| **Bash Tool** | ❌ NO | ❌ NO | [test-shell-env-vars.sh](../.claude/scripts/tests/test-shell-env-vars.sh) | Use `Path.cwd()` or pass via args |
+| **Background Agent** | ❌ NO | ❌ NO | [test-bg-agent-env-vars.md](../.claude/agents/test-bg-agent-env-vars.md) | Use `get_project_dir()` fallback |
+| **Frontmatter Hook** | ❓ UNTESTED | ❓ UNTESTED | Needs testing | Assume NO, use fallback |
+| **Named Teammate** | ❓ UNTESTED | ❓ UNTESTED | Needs testing | Assume NO, use fallback |
+
+**Key Insight:** Only **hook contexts** (PreToolUse, PostToolUse) have access to Claude Code environment variables. All other contexts require fallback patterns.
+
+### Recommended Helper Function Pattern
+
+Use this pattern in all package scripts for maximum compatibility:
+
+```python
+#!/usr/bin/env python3
+import os
+from pathlib import Path
+from typing import Optional
+
+def _normalize_path(value: Optional[str | Path]) -> Optional[Path]:
+    """Normalize path by expanding user and resolving to absolute."""
+    if value is None:
+        return None
+    return Path(value).expanduser().resolve()
+
+def find_project_root(start: Optional[Path] = None) -> Optional[Path]:
+    """Find project root by searching upward for marker files/directories.
+
+    Args:
+        start: Starting directory (default: Path.cwd())
+
+    Returns:
+        Project root Path or None if not found
+
+    Searches upward for:
+        - .git directory (git repository)
+        - .claude directory (Claude Code project)
+        - .sc directory (Synaptic Canvas project)
+    """
+    current = Path(start or Path.cwd()).resolve()
+
+    # Search upward through parent directories
+    for parent in [current, *current.parents]:
+        # Check for project markers
+        if any([
+            (parent / ".git").exists(),
+            (parent / ".claude").exists(),
+            (parent / ".sc").exists(),
+        ]):
+            return parent
+
+    return None
+
+
+def get_project_dir() -> Path:
+    """Get project directory with robust fallback chain.
+
+    Returns:
+        Project directory Path (never None)
+
+    Fallback order:
+        1. CLAUDE_PROJECT_DIR (Claude Code hook context)
+        2. CODEX_PROJECT_DIR (Codex compatibility)
+        3. Search upward for .git/.claude/.sc markers
+        4. Path.cwd() (last resort)
+
+    Note:
+        Environment variables are ONLY available in hook contexts.
+        Background agents, Bash tool, and teammates use marker search fallback.
+    """
+    # Try environment variables first (available in hook contexts)
+    project_dir = os.getenv("CLAUDE_PROJECT_DIR") or os.getenv("CODEX_PROJECT_DIR")
+    if project_dir:
+        return _normalize_path(project_dir)
+
+    # Try to find project root by searching for markers
+    found_root = find_project_root()
+    if found_root:
+        return found_root
+
+    # Last resort: current working directory
+    return Path.cwd()
+
+def get_plugin_root() -> Path:
+    """Get plugin root directory with fallback.
+
+    Returns:
+        Plugin root Path (never None)
+
+    Environment Variable:
+        - CLAUDE_PLUGIN_ROOT (Claude Code hook context)
+        - Fallback: Derive from current file location
+    """
+    plugin_root = os.getenv("CLAUDE_PLUGIN_ROOT")
+    if plugin_root:
+        return _normalize_path(plugin_root)
+    # Fallback: assume we're in packages/<package>/scripts/
+    return Path(__file__).parent.parent.parent
+
+# Usage in logging configuration
+LOGS_DIR = get_project_dir() / ".claude" / "state" / "logs" / "my-package"
+```
+
+### Context-Specific Patterns
+
+#### 1. PreToolUse/PostToolUse Hooks (Variables Available)
+
+```python
+#!/usr/bin/env python3
+import os
+from pathlib import Path
+
+# ✅ Direct access works in hook context
+project_dir = Path(os.getenv("CLAUDE_PROJECT_DIR")).resolve()
+plugin_root = Path(os.getenv("CLAUDE_PLUGIN_ROOT")).resolve()
+
+# Validate they exist (defensive programming)
+if not project_dir:
+    raise ValueError("CLAUDE_PROJECT_DIR not set (hook context required)")
+```
+
+#### 2. Background Agents & Bash Tool (Variables NOT Available)
+
+```python
+#!/usr/bin/env python3
+import os
+from pathlib import Path
+
+# ❌ These will be None in background agent context
+project_dir_raw = os.getenv("CLAUDE_PROJECT_DIR")  # None
+plugin_root_raw = os.getenv("CLAUDE_PLUGIN_ROOT")  # None
+
+# ✅ Use fallback pattern
+def get_project_dir():
+    return Path(os.getenv("CLAUDE_PROJECT_DIR") or os.getcwd())
+
+project_dir = get_project_dir()  # Falls back to Path.cwd()
+```
+
+#### 3. Agent Scripts (Unknown Context)
+
+Agent scripts may run in ANY context (hook, background, teammate), so always use fallback:
+
+```python
+#!/usr/bin/env python3
+from pathlib import Path
+import os
+
+# ✅ Works in ALL contexts
+def get_project_dir():
+    """Get project directory with fallback for all contexts."""
+    return Path(os.getenv("CLAUDE_PROJECT_DIR") or
+                os.getenv("CODEX_PROJECT_DIR") or
+                os.getcwd())
+
+# Use the helper
+LOGS_DIR = get_project_dir() / ".claude" / "state" / "logs" / "my-package"
+SETTINGS_FILE = get_project_dir() / ".sc" / "my-package" / "settings.yaml"
+```
+
+### Testing Environment Variable Availability
+
+To test if env vars are available in a new context:
+
+```python
+#!/usr/bin/env python3
+import os
+import json
+
+def test_env_vars():
+    """Capture environment variables for testing."""
+    result = {
+        "CLAUDE_PROJECT_DIR": os.getenv("CLAUDE_PROJECT_DIR"),
+        "CLAUDE_PLUGIN_ROOT": os.getenv("CLAUDE_PLUGIN_ROOT"),
+        "CODEX_PROJECT_DIR": os.getenv("CODEX_PROJECT_DIR"),
+        "PWD": os.getenv("PWD"),
+        "cwd": str(Path.cwd())
+    }
+    print(json.dumps(result, indent=2))
+
+    # Conclusion
+    has_vars = result["CLAUDE_PROJECT_DIR"] or result["CLAUDE_PLUGIN_ROOT"]
+    print(f"\nEnvironment variables: {'AVAILABLE' if has_vars else 'NOT AVAILABLE'}")
+
+if __name__ == "__main__":
+    test_env_vars()
+```
+
+Run this in different contexts:
+- ✅ PreToolUse hook: Variables present
+- ❌ Bash tool: Variables absent (null)
+- ❌ Background agent: Variables absent (null)
+
+### Security Considerations
+
+1. **Never hardcode project paths** - Always use environment variables or fallbacks
+2. **Validate paths exist** - Check `path.exists()` before using
+3. **Use Path.resolve()** - Convert to absolute paths to avoid CWD issues
+4. **Test fallback logic** - Ensure code works when env vars are missing
+
+### Template Integration
+
+The `sc-logging.jenga.py` and `sc-shared.jenga.py` templates include these helper functions by default. When expanding templates:
+
+```python
+# templates/sc-logging.jenga.py includes:
+def get_project_dir() -> Path:
+    """Get project directory with fallback."""
+    project_dir = os.getenv("CLAUDE_PROJECT_DIR") or os.getenv("CODEX_PROJECT_DIR")
+    return _normalize_path(project_dir) or Path.cwd()
+
+# Used automatically in LOGS_DIR initialization
+LOGS_DIR = get_project_dir() / ".claude" / "state" / "logs" / PACKAGE_NAME
+```
+
+This ensures all packages using Jenga templates have consistent, portable environment variable handling.
+
+## Gating Agents with PreToolUse Hooks
+
+Use PreToolUse hooks on the **Task** tool to enforce agent constraints at runtime. This pattern is useful for:
+- Blocking agents from running in certain contexts (e.g., background execution)
+- Enforcing naming conventions (e.g., named teammates only)
+- Restricting agent types by directory or permission mode
+- Validating preconditions before agent spawn
+
+### Configuration
+
+Define the hook in **`settings.json`** (preferred for project-wide policy):
+
+```json
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Task",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/scripts/gate-agents.py"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+**Alternative locations** (same schema):
+- **`~/.claude/settings.json`** - Global user-level policy
+- **`.claude/settings.local.json`** - Repository-specific override (for testing)
+
+### Task Tool Input Schema
+
+The PreToolUse hook receives a JSON payload on stdin with the following structure:
+
+```json
+{
+  "session_id": "8f47703d-9317-4270-a13a-3c2ae3c02670",
+  "transcript_path": "/Users/user/.claude/projects/.../transcript.jsonl",
+  "cwd": "/path/to/project",
+  "permission_mode": "bypassPermissions",
+  "hook_event_name": "PreToolUse",
+  "tool_name": "Task",
+  "tool_input": {
+    "description": "Task description text",
+    "prompt": "Full task prompt",
+    "subagent_type": "Explore",
+    "name": "optional-teammate-name",
+    "run_in_background": true,
+    "team_name": "optional-team-name"
+  },
+  "tool_use_id": "toolu_..."
+}
+```
+
+### Available Fields for Gating Decisions
+
+| Field | Type | Purpose |
+|-------|------|---------|
+| `tool_input.subagent_type` | string | Agent type (e.g., `"Explore"`, `"rust-developer"`, `"scrum-master"`) |
+| `tool_input.name` | string | Named teammate identifier (optional) |
+| `tool_input.run_in_background` | boolean | Whether spawned as background agent |
+| `tool_input.team_name` | string | Team context (for orchestration) |
+| `permission_mode` | string | Execution mode (e.g., `"bypassPermissions"`, `"default"`) |
+| `cwd` | string | Current working directory |
+
+### Example: Enforce Named Teammates
+
+Block agents like `scrum-master` from running in background without a name:
+
+```python
+#!/usr/bin/env python3
+"""Enforce named teammates for certain agent types.
+
+Blocks agents that MUST be launched as named teammates within a team context.
+Allows them to run standalone or with a name parameter.
+
+Exit codes:
+- 0: Allow
+- 2: Block
+"""
+
+import json
+import sys
+
+# Agent types that MUST be launched as named teammates
+GATED_AGENTS = {"scrum-master", "rust-developer"}
+
+def main() -> int:
+    try:
+        data = json.load(sys.stdin)
+    except Exception:
+        return 0
+
+    tool_input = data.get("tool_input", {})
+    agent_type = tool_input.get("subagent_type", "")
+    name = tool_input.get("name", "")
+    run_in_background = tool_input.get("run_in_background", False)
+
+    # Only gate if running in background without a name
+    if agent_type not in GATED_AGENTS:
+        return 0
+
+    if name or not run_in_background:
+        # Named teammates or foreground execution allowed
+        return 0
+
+    # Block: gated agent in background with no name
+    sys.stderr.write(
+        f"BLOCKED: '{agent_type}' must be launched as a named teammate.\n"
+        f"\n"
+        f"Correct (with team and name):\n"
+        f'  Task(subagent_type="{agent_type}", name="sm-sprint-1", team_name="dev-team", run_in_background=true)\n'
+        f"\n"
+        f"Also allowed (standalone):\n"
+        f'  Task(subagent_type="{agent_type}")  # foreground, no team needed\n'
+        f"\n"
+        f"Not allowed:\n"
+        f'  Task(subagent_type="{agent_type}", run_in_background=true)  # no name, no team\n'
+    )
+
+    return 2
+
+
+if __name__ == "__main__":
+    sys.exit(main())
+```
+
+### Use Cases
+
+**1. Prevent sidechain execution:**
+```python
+# Block spawn without team_name for orchestrator agents
+if agent_type == "scrum-master" and not tool_input.get("team_name"):
+    return 2
+```
+
+**2. Restrict by directory:**
+```python
+# Allow rust-developer only in /projects/rust-*
+if agent_type == "rust-developer":
+    cwd = data.get("cwd", "")
+    if "/rust-" not in cwd:
+        return 2
+```
+
+**3. Block from certain permission modes:**
+```python
+# Dangerous agents only allowed with explicit permissions
+if agent_type == "system-admin" and data.get("permission_mode") != "bypassPermissions":
+    return 2
+```
+
+**4. Log all Task spawns (allow everything):**
+```python
+# Always allow, but log for audit
+log_entry = {
+    "timestamp": datetime.now().isoformat(),
+    "agent": tool_input.get("subagent_type"),
+    "name": tool_input.get("name"),
+    "cwd": data.get("cwd")
+}
+# Write to audit log
+return 0
+```
+
+### Exit Codes
+
+- **0** = Allow the Task tool call (agent spawn proceeds)
+- **2** = Block the Task tool call (agent is not spawned)
 
 ## Notes
 
