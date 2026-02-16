@@ -4,7 +4,7 @@ description:
   Create, manage, scan, update, and clean up git worktrees for parallel development with protected branch safeguards.
   Use when working on multiple branches simultaneously, isolating experiments, updating protected branches (main/develop),
   or when user mentions "worktree", "parallel branches", "feature isolation", "branch cleanup", "worktree status", or "update main/develop".
-version: 0.8.0
+version: 0.9.0
 entry_point: /sc-git-worktree
 ---
 

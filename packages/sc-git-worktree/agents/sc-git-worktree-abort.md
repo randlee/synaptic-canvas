@@ -1,6 +1,6 @@
 ---
 name: sc-worktree-abort
-version: 0.8.0
+version: 0.9.0
 description: Abandon a worktree and discard work with protected branch safeguards. Remove worktree; for non-protected branches, delete branch (local/remote) only with explicit approval; for protected branches, never delete branch. Update tracking when enabled.
 model: haiku
 color: red
