@@ -1,7 +1,7 @@
 ---
 name: sc-git-worktree
 description: Manage git worktrees for this repo (create, list/status, update, cleanup, abort) while enforcing the repo's worktree/tracking rules and protected branch safeguards.
-version: 0.8.0
+version: 0.9.0
 options:
   - name: --list
     description: List worktrees and show status/notes.
@@ -35,96 +35,72 @@ options:
 
 # /sc-git-worktree command
 
-Use this command to manage worktrees following the repo's layout and tracking rules.
+Use this command to manage worktrees following the repo's layout and tracking rules. You MUST invoke the appropriate subagent via the Task tool; do not run manual git commands in the primary session.
+
+Defaults:
 - Repo root: current directory.
-- Default worktree path: `../{{REPO_NAME}}-worktrees/<branch>` (override in skill/agent config if needed).
-- Default tracking doc: `../{{REPO_NAME}}-worktrees/worktree-tracking.md` (toggle off or override if the repo doesn't track worktrees).
-- Branch strategy: configure per repo (e.g., master for release, develop/integration, feature off integration, hotfix off master).
-- Safety: never alter dirty worktrees without explicit approval; respect branch protections/hooks (no direct commits to protected branches).
+- Worktree base: `../{{REPO_NAME}}-worktrees/<branch>`.
+- Tracking file: `../{{REPO_NAME}}-worktrees/worktree-tracking.jsonl` (disable or override if tracking is not used).
 
 ## Protected Branches Configuration
 
 Protected branches (main, develop, master) require special handling to prevent accidental deletion. Configure using:
 
 ```yaml
-git_flow:
-  enabled: true  # boolean: whether git-flow workflow is used
-  main_branch: "main"  # or "master" - the primary production branch
-  develop_branch: "develop"  # only if git_flow.enabled = true
-
-protected_branches:
-  - "main"
-  - "develop"
-  - "master"
+git:
+  protected_branches:
+    - "main"
+    - "develop"
+    - "master"
 ```
 
 **Protected Branch Rules:**
 - Cleanup/abort operations NEVER delete protected branches (local or remote)
 - Protected branches can only be removed from worktrees, never deleted
 - Use `--update` to safely pull changes for protected branches in worktrees
-- If git_flow.enabled is false, only main_branch is protected (default: "main")
-- If git_flow.enabled is true, both main_branch and develop_branch are protected
-- **Required**: All operations involving branch deletion must provide protected_branches list; operations fail if missing
+- Protected branches are read from `.sc/shared-settings.yaml` (`git.protected_branches`)
+- If not configured, protected branches are auto-detected from git-flow and cached to `.sc/shared-settings.yaml`
+- **Required**: Operations fail if protected branches cannot be determined
 
 If run with no options or `--help`: print a concise list of options (no git status) and prompt with a numbered choice for list/status, create, cleanup, or abort; then gather required inputs.
 
 ## Behavior
 
-### Common steps
-- Ensure scaffolding: `<worktree_base>` exists; create if missing. Ensure tracking doc exists with headers if tracking is enabled.
-- `git fetch --all --prune` before create/cleanup decisions.
-- Keep tracking doc in sync on every operation when enabled.
+## Task Tool Invocation (Required)
+
+Use the Task tool with `<input_json>` and consume `<output_json>` from the subagent response. No manual git commands in the primary session.
+
+### Template
+
+```xml
+<invoke name="Task">
+<parameter name="subagent_type">$SUBAGENT</parameter>
+<parameter name="description">$DESCRIPTION</parameter>
+<parameter name="prompt">Run $SUBAGENT with this input:
+
+<input_json>
+```json
+$INPUT_JSON
+```
+</input_json>
+</parameter>
+</invoke>
+```
 
 ### --list / --status
-- `git worktree list --porcelain`.
-- Cross-check tracking doc; report missing/stale entries and dirty states via `git -C <path> status --short`.
-- Agent option: call `sc-worktree-scan` and render its JSON as a table and bullet recommendations.
+MUST invoke `sc-worktree-scan` and render its `<output_json>` summary and recommendations.
 
 ### --create
-- Inputs: branch, base.
-- Path: `../{{REPO_NAME}}-worktrees/<branch>` by default.
-- If branch exists: `git worktree add <path> <branch>`; else `git worktree add -b <branch> <path> <base>`.
-- Verify hooks/branch protections apply; confirm `git status` clean.
-- Update tracking row (branch, path, base, purpose, owner, created, status, last checked, notes) when tracking is enabled.
-- Agent option: call `sc-worktree-create`; render as a table plus warnings/errors.
+MUST invoke `sc-worktree-create` with `branch`, `base`, `purpose`, `owner`, and optional tracking inputs. Render the `<output_json>` summary.
 
 ### --update
-- **Protected branches only** - verify branch is in protected_branches list before proceeding.
-- Inputs: branch name (required). Must be a protected branch (main, develop, master, etc.).
-- Derive protected_branches list from git_flow config (main_branch + develop_branch if enabled) or fail with clear error if config missing.
-- Check if worktree exists for the branch; error if missing.
-- Check `git -C <path> status`; if dirty, stop and report uncommitted changes.
-- Fetch and pull: `git fetch origin <branch>` then `git pull origin <branch>`.
-- **If merge conflicts occur:**
-  - Report conflicted files to user
-  - Return control to main session for user to resolve conflicts
-  - User navigates to worktree, resolves conflicts, and commits
-  - After resolution, user can re-run --update to verify
-- **If clean pull succeeds:**
-  - Report commits pulled count
-  - Update tracking with last_checked timestamp when tracking is enabled
-- Agent option: call `sc-worktree-update`; render success or handle conflicts interactively.
+MUST invoke `sc-worktree-update` for protected branches only. Render conflicts or success from `<output_json>`.
 
 ### --cleanup
-- **Check if branch is protected first** - derive protected_branches list from git_flow config or fail if missing.
-- If branch is in protected_branches list, ONLY remove worktree, NEVER delete the branch.
-- Check `git -C <path> status`; if dirty, stop and request explicit approval/coordination.
-- Confirm branch merged/approved for removal.
-- `git worktree remove <path>` (force only with approval).
-- For **non-protected branches**: If merged and has no unique commits, delete the branch locally (`git branch -d <branch>`) and remotely (`git push origin --delete <branch>`) by default. Only retain the branch if the user explicitly opts out. If the remote branch is already gone, continue without error. If not merged, only delete branches (local/remote) with explicit approval.
-- For **protected branches**: Only remove worktree, preserve branch locally and remotely. Update tracking to note "worktree removed, branch preserved (protected)".
-- Update tracking (remove or mark cleaned with merge SHA/date) when tracking is enabled.
-- Agent option: call `sc-worktree-cleanup` with protected_branches list; render its JSON as a short summary list.
+MUST invoke `sc-worktree-cleanup`. Batch cleanup reconciles JSONL first, captures untracked local worktrees, then cleans tracked worktrees only. Render the `<output_json>` summary.
 
 ### --abort
-- **Check if branch is protected first** - derive protected_branches list from git_flow config or fail if missing.
-- If branch is in protected_branches list, ONLY remove worktree, NEVER delete the branch.
-- Check `git -C <path> status`; if dirty, stop and request explicit approval/coordination.
-- `git worktree remove <path>` (force only with approval).
-- For **non-protected branches**: If requested, delete branch locally (`git branch -D <branch>`) and remotely (`git push origin --delete <branch>`).
-- For **protected branches**: Only remove worktree, preserve branch locally and remotely. Require confirmation: "Branch is protected. Remove worktree but preserve branch?"
-- Update tracking to remove the entry and note abandonment when tracking is enabled.
-- Agent option: call `sc-worktree-abort` with protected_branches list; render its JSON as a short summary list.
+MUST invoke `sc-worktree-abort` and render the `<output_json>` summary.
 
 ### --help
-- Show options and remind about base branches, paths, tracking toggles, and dirty-worktree safeguards. Keep output concise (no tool traces).
+Show options and remind about base branches, paths, tracking toggles, and dirty-worktree safeguards. Keep output concise (no tool traces).

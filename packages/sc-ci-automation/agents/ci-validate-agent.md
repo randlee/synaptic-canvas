@@ -1,6 +1,6 @@
 ---
 name: ci-validate-agent
-version: 0.8.0
+version: 0.9.0
 description: Pre-flight checks for CI automation (clean repo, config, auth).
 ---
 

@@ -1,5 +1,5 @@
 name: sc-roslyn-diff
-version: 0.8.0
+version: 0.9.0
 description: >
   Semantic diffing for .NET source using roslyn-diff with JSON-first outputs,
   HTML reports, and git/PR-aware comparisons.

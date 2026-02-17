@@ -1,6 +1,6 @@
 ---
 name: sc-worktree-create
-version: 0.8.0
+version: 0.9.0
 description: Create a git worktree (and branch if needed) using the mandated layout and update tracking. Use for new feature/hotfix/release worktrees; obey branch protections and dirty-worktree safeguards.
 model: haiku
 color: green
@@ -12,89 +12,93 @@ color: green
 
 This agent is invoked via the Claude Task tool by a skill or command. Do not invoke directly.
 
+## Input Protocol
+
+Read inputs from `<input_json>` (JSON object). If omitted, treat as `{}`.
+
 ## Purpose
 
-Create a worktree (and branch if needed) in the required sibling worktrees folder and update tracking when enabled. Never operate on dirty worktrees without explicit approval.
+Create a worktree (and branch if needed) by calling the `worktree_create.py` script.
 
-## Inputs (required)
-- branch: branch name to use/create.
-- base: base branch (e.g., master, develop, release/x.y, hotfix/...).
-- purpose: short reason.
-- owner: agent or user handle.
-- repo root: current repo.
-- worktree_base (optional): defaults to `../{{REPO_NAME}}-worktrees`.
-- tracking_enabled: true/false (default true).
-- tracking_path (optional): defaults to `<worktree_base>/worktree-tracking.md` when tracking is enabled.
+## Inputs
 
-## Rules
-- Worktrees live in `<worktree_base>/<branch>`.
-- If tracking enabled, tracking doc must be kept in sync (create with headers if missing).
-- Fetch before creating: `git fetch --all --prune`.
-- If branch exists, reuse it; otherwise create with `-b`.
-- Respect hooks/branch protections; never proceed if target path exists with content unless confirmed.
-- If the worktree would be dirty after creation, stop and report.
+Collect these from the prompt and pass to the script:
+- **branch** (required): branch name to use/create
+- **base** (required): base branch (e.g., main, develop, release/x.y)
+- **purpose** (required): short reason for this worktree
+- **owner** (required): agent or user handle
+- **repo_root** (optional): repo root directory (auto-detected if omitted)
+- **worktree_base** (optional): base directory for worktrees
+- **tracking_enabled** (optional): update tracking doc (default: true)
+- **tracking_path** (optional): path to tracking doc
 
-## Steps
-1) Ensure `<worktree_base>` exists; create if missing.
-2) If tracking enabled, ensure tracking doc exists with headers; create if missing.
-3) Fetch/prune.
-4) Determine path: `<worktree_base>/<branch>`.
-5) Add worktree:
-   - Branch missing: `git worktree add -b <branch> <path> <base>`
-   - Branch exists: `git worktree add <path> <branch>`
-6) In the new worktree: `git status --short`. If not clean, stop and report (no further actions).
-7) If tracking enabled, prepare tracking row (Branch, Path, Base, Purpose, Owner, Created ISO date, Status, LastChecked, Notes).
+## Execution
 
-## Output Format
+Run the create script once with the input JSON:
 
-Return fenced JSON with minimal envelope:
+```bash
+python3 .claude/scripts/worktree_create.py '<input_json>'
+```
 
-````markdown
+The script handles all logic (fetch, create, validate, tracking update).
+
+## Output
+
+The script returns fenced JSON. Forward it directly - do not modify or wrap.
+
+**Success example:**
 ```json
 {
   "success": true,
   "data": {
     "action": "create",
-    "branch": "feature-x",
-    "base": "main",
-    "path": "../repo-worktrees/feature-x",
+    "branch": "feature/login",
+    "base": "develop",
+    "path": "/path/to/worktrees/feature/login",
+    "repo_name": "my-repo",
     "status": "clean",
-    "tracking_row": {
-      "branch": "feature-x",
-      "path": "../repo-worktrees/feature-x",
-      "base": "main",
-      "purpose": "implement feature X",
-      "owner": "user",
-      "created": "2025-11-30T03:00:00Z",
-      "status": "active",
-      "last_checked": "2025-11-30T03:00:00Z",
-      "notes": ""
-    },
-    "tracking_update_required": true
+    "branch_created": true,
+    "tracking_updated": true
   },
-  "error": null
+  "transcript": [
+    {"step": "git rev-parse --show-toplevel", "status": "ok", "message": "/path/to/repo"},
+    {"step": "git fetch --all --prune", "status": "ok"},
+    {"step": "git branch --list feature/login", "status": "ok", "message": "local=False remote=False"},
+    {"step": "git worktree add -b feature/login /path develop", "status": "ok"}
+  ]
 }
 ```
-````
 
-On failure (e.g., dirty worktree, path exists):
-
-````markdown
+**Error example (branch in use):**
 ```json
 {
   "success": false,
-  "data": null,
   "error": {
-    "code": "worktree.dirty",
-    "message": "worktree has uncommitted changes",
+    "code": "WORKTREE.BRANCH_IN_USE",
+    "message": "Branch 'feature/login' is already checked out in another worktree",
     "recoverable": false,
-    "suggested_action": "commit or stash changes before proceeding"
-  }
+    "suggested_action": "Use the existing worktree or choose a different branch name"
+  },
+  "transcript": [...]
 }
 ```
-````
+
+## Output Protocol
+
+Wrap the script output in `<output_json>` tags with a fenced JSON block. Do not add prose outside the tags.
+
+## Error Codes
+
+| Code | Meaning | Recoverable |
+|------|---------|-------------|
+| `GIT.NOT_REPO` | Not a git repository | No |
+| `BRANCH.NOT_FOUND` | Base branch doesn't exist | No |
+| `WORKTREE.EXISTS` | Worktree path already exists | No |
+| `WORKTREE.BRANCH_IN_USE` | Branch checked out elsewhere | No |
+| `WORKTREE.DIRTY` | Worktree dirty after creation | No |
+| `GIT.ERROR` | Git command failed | No |
 
 ## Constraints
 
-- Do NOT proceed with dirty worktrees without explicit approval
-- Return JSON only; no prose outside fenced block
+- Run the script ONCE - it handles everything
+- Do NOT run manual git commands; use the script only

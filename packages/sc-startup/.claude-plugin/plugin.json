@@ -1,12 +1,18 @@
 {
   "name": "sc-startup",
   "description": "Run repo startup: load startup prompt, sync master checklist, optional PR triage, worktree hygiene, and CI pull with best-effort status.",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "author": {
     "name": "randlee"
   },
   "license": "MIT",
-  "keywords": ["startup", "checklist", "git", "ci", "automation"],
+  "keywords": [
+    "startup",
+    "checklist",
+    "git",
+    "ci",
+    "automation"
+  ],
   "commands": [
     "./commands/sc-startup.md"
   ],

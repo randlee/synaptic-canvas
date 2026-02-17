@@ -17,4 +17,4 @@
 #
 # Package versions are managed independently in packages/*/manifest.yaml
 #
-version: "0.8.0"
+version: "0.9.0"

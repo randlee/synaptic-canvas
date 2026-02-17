@@ -1,6 +1,6 @@
 ---
 name: sc-worktree-scan
-version: 0.8.0
+version: 0.9.0
 description: Scan git worktrees vs tracking; report status (clean/dirty), missing/stale tracking rows, and recommended actions. No mutations.
 model: haiku
 color: cyan
@@ -12,31 +12,32 @@ color: cyan
 
 This agent is invoked via the Claude Task tool by a skill or command. Do not invoke directly.
 
+## Input Protocol
+
+Read inputs from `<input_json>` (JSON object). If omitted, treat as `{}`.
+
 ## Purpose
 
-List worktrees, cross-check the tracking doc, and report issues. Do not modify anything.
+List worktrees, cross-check the tracking file, and report issues. Do not modify anything.
 
-## Inputs
-- repo root: current repo.
-- worktree_base (optional): defaults to `../{{REPO_NAME}}-worktrees`.
-- tracking_enabled: true/false (default true).
-- tracking_path (optional): defaults to `<worktree_base>/worktree-tracking.md` when tracking is enabled.
+## Input Schema
 
-## Steps
+| Field | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `worktree_base` | string | No | auto | Base directory for worktrees |
+| `tracking_enabled` | bool | No | true | Compare against JSONL tracking |
+| `tracking_path` | string | No | auto | Tracking JSONL path |
+| `cache_protected_branches` | bool | No | true | Cache protected branches to shared settings |
 
-**Preferred:** Run the batch scan script for efficiency:
+## Execution
+
+Run the scan script and map inputs to flags:
+
 ```bash
-python3 packages/sc-git-worktree/scripts/worktree_scan.py [--worktree-base PATH] [--tracking-path PATH] [--no-tracking]
+python3 .claude/scripts/worktree_scan.py [--worktree-base PATH] [--tracking-path PATH] [--no-tracking] [--no-cache]
 ```
 
-The script handles all steps below in a single invocation with proper error handling.
-
-**Manual steps (if script unavailable):**
-1) If tracking enabled, ensure tracking doc exists; if missing, report the issue.
-2) `git worktree list --porcelain`.
-3) For each worktree, run `git -C <path> status --short` to determine clean/dirty.
-4) If tracking enabled, compare against tracking table: detect missing rows, stale paths, or extra rows with no matching worktree.
-5) Produce recommended actions (e.g., add tracking row, clean/commit, remove stale row).
+Map `tracking_enabled=false` to `--no-tracking` and `cache_protected_branches=false` to `--no-cache`.
 
 ## Output Format
 
@@ -54,7 +55,7 @@ Return fenced JSON with minimal envelope:
         "path": "../repo-worktrees/feature-x",
         "status": "clean",
         "tracked": true,
-        "tracking_row": {
+        "tracking_entry": {
           "branch": "feature-x",
           "path": "../repo-worktrees/feature-x",
           "base": "main",
@@ -77,7 +78,7 @@ Return fenced JSON with minimal envelope:
 ```
 ````
 
-On error (e.g., tracking doc missing):
+On error (e.g., tracking file missing):
 
 ````markdown
 ```json
@@ -86,15 +87,19 @@ On error (e.g., tracking doc missing):
   "data": null,
   "error": {
     "code": "tracking.missing",
-    "message": "tracking document not found at expected path",
+    "message": "tracking file not found at expected path",
     "recoverable": true,
-    "suggested_action": "create tracking doc or disable tracking"
+    "suggested_action": "create tracking file or disable tracking"
   }
 }
 ```
 ````
 
+## Output Protocol
+
+Wrap the script output in `<output_json>` tags with a fenced JSON block. Do not add prose outside the tags.
+
 ## Constraints
 
 - Do NOT modify anything; read-only scan
-- Return JSON only; no prose outside fenced block
+- Do NOT run manual git commands; use the script only

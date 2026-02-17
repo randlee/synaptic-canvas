@@ -37,9 +37,33 @@ from pydantic import BaseModel, Field, field_validator
 
 # Support both relative import (when used as package) and absolute import (when used standalone)
 try:
-    from .envelope import Envelope, ErrorCodes
+    from .envelope import Envelope, ErrorCodes, Transcript
+    from .worktree_shared import (
+        TrackingEntry,
+        add_tracking_entry,
+        check_branch_exists_local,
+        check_branch_exists_remote,
+        check_remote_branch_exists,
+        create_tracking_branch,
+        get_default_tracking_path,
+        get_repo_root,
+        get_worktree_status,
+        run_git,
+    )
 except ImportError:
-    from envelope import Envelope, ErrorCodes
+    from envelope import Envelope, ErrorCodes, Transcript
+    from worktree_shared import (
+        TrackingEntry,
+        add_tracking_entry,
+        check_branch_exists_local,
+        check_branch_exists_remote,
+        check_remote_branch_exists,
+        create_tracking_branch,
+        get_default_tracking_path,
+        get_repo_root,
+        get_worktree_status,
+        run_git,
+    )
 
 
 # =============================================================================
@@ -81,161 +105,6 @@ class CreateInput(BaseModel):
         return v.strip()
 
 
-class TrackingRow(BaseModel):
-    """A row in the tracking document."""
-
-    branch: str
-    path: str
-    base: str
-    purpose: str
-    owner: str
-    created: str
-    status: str = "active"
-    last_checked: str
-    notes: str = ""
-
-
-# =============================================================================
-# Git Operations
-# =============================================================================
-
-
-def run_git(args: List[str], cwd: Optional[Path] = None, check: bool = True) -> subprocess.CompletedProcess:
-    """Execute a git command.
-
-    Args:
-        args: Git command arguments (without 'git' prefix)
-        cwd: Working directory for the command
-        check: Whether to raise on non-zero exit
-
-    Returns:
-        CompletedProcess with stdout/stderr
-
-    Raises:
-        subprocess.CalledProcessError: If check=True and command fails
-    """
-    return subprocess.run(
-        ["git"] + args,
-        cwd=cwd,
-        capture_output=True,
-        text=True,
-        check=check,
-    )
-
-
-def get_repo_root(cwd: Optional[Path] = None) -> Path:
-    """Get the repository root directory."""
-    result = run_git(["rev-parse", "--show-toplevel"], cwd=cwd)
-    return Path(result.stdout.strip())
-
-
-def get_repo_name(repo_root: Path) -> str:
-    """Get the repository name from its root path."""
-    return repo_root.name
-
-
-def branch_exists(branch: str, cwd: Optional[Path] = None) -> bool:
-    """Check if a branch exists locally or remotely."""
-    # Check local
-    result = run_git(["branch", "--list", branch], cwd=cwd, check=False)
-    if result.stdout.strip():
-        return True
-
-    # Check remote
-    result = run_git(["branch", "-r", "--list", f"origin/{branch}"], cwd=cwd, check=False)
-    return bool(result.stdout.strip())
-
-
-def fetch_all(cwd: Optional[Path] = None) -> None:
-    """Fetch all remotes and prune."""
-    run_git(["fetch", "--all", "--prune"], cwd=cwd)
-
-
-def create_worktree(
-    branch: str,
-    path: Path,
-    base: Optional[str] = None,
-    create_branch: bool = False,
-    cwd: Optional[Path] = None,
-) -> None:
-    """Create a git worktree.
-
-    Args:
-        branch: Branch name
-        path: Path for the worktree
-        base: Base branch (required if create_branch=True)
-        create_branch: Whether to create a new branch
-        cwd: Working directory
-    """
-    args = ["worktree", "add"]
-    if create_branch:
-        if not base:
-            raise ValueError("base branch required when creating new branch")
-        args.extend(["-b", branch, str(path), base])
-    else:
-        args.extend([str(path), branch])
-
-    run_git(args, cwd=cwd)
-
-
-def get_worktree_status(path: Path) -> tuple[bool, List[str]]:
-    """Check if worktree is clean.
-
-    Returns:
-        Tuple of (is_clean, list of dirty files)
-    """
-    result = run_git(["status", "--short"], cwd=path, check=False)
-    if result.returncode != 0:
-        return False, [f"git status failed: {result.stderr}"]
-
-    dirty_files = [line.strip() for line in result.stdout.strip().split("\n") if line.strip()]
-    return len(dirty_files) == 0, dirty_files
-
-
-# =============================================================================
-# Tracking Document
-# =============================================================================
-
-
-def ensure_tracking_doc(tracking_path: Path, repo_name: str) -> None:
-    """Ensure tracking document exists with headers."""
-    if tracking_path.exists():
-        return
-
-    # Create parent directory if needed
-    tracking_path.parent.mkdir(parents=True, exist_ok=True)
-
-    now = datetime.now(timezone.utc).isoformat()
-    content = f"""---
-repo: {repo_name}
-tracking_enabled: true
-created: {now}
----
-
-# Worktree Tracking
-
-| Branch | Path | Base | Purpose | Owner | Created | Status | Last Checked | Notes |
-|--------|------|------|---------|-------|---------|--------|--------------|-------|
-"""
-    tracking_path.write_text(content)
-
-
-def add_tracking_row(tracking_path: Path, row: TrackingRow) -> None:
-    """Add a row to the tracking document."""
-    content = tracking_path.read_text()
-
-    # Build markdown table row
-    table_row = (
-        f"| {row.branch} | {row.path} | {row.base} | {row.purpose} | "
-        f"{row.owner} | {row.created} | {row.status} | {row.last_checked} | {row.notes} |"
-    )
-
-    # Append to file
-    if not content.endswith("\n"):
-        content += "\n"
-    content += table_row + "\n"
-
-    tracking_path.write_text(content)
 
 
 # =============================================================================
@@ -250,8 +119,10 @@ def create_worktree_main(input_data: CreateInput) -> Envelope:
         input_data: Validated input
 
     Returns:
-        Envelope with success/error response
+        Envelope with success/error response including operation transcript
     """
+    transcript = Transcript()
+
     try:
         # Determine repo root
         if input_data.repo_root:
@@ -260,13 +131,23 @@ def create_worktree_main(input_data: CreateInput) -> Envelope:
             repo_root = get_repo_root()
 
         if not repo_root.exists():
+            transcript.step_failed(
+                step="detect_repo",
+                error=f"Repository root does not exist: {repo_root}",
+            )
             return Envelope.error_response(
                 code=ErrorCodes.GIT_NOT_REPO,
                 message=f"Repository root does not exist: {repo_root}",
                 recoverable=False,
+                transcript=transcript,
             )
 
-        repo_name = get_repo_name(repo_root)
+        repo_name = repo_root.name
+        transcript.step_ok(
+            step="git rev-parse --show-toplevel",
+            message=str(repo_root),
+            value={"repo_name": repo_name},
+        )
 
         # Determine worktree base
         if input_data.worktree_base:
@@ -276,55 +157,139 @@ def create_worktree_main(input_data: CreateInput) -> Envelope:
 
         # Ensure worktree base exists
         worktree_base.mkdir(parents=True, exist_ok=True)
+        transcript.step_ok(
+            step=f"mkdir -p {worktree_base}",
+            message="created" if not worktree_base.exists() else "exists",
+        )
 
-        # Determine tracking path
+        # Determine tracking path (JSONL format)
         if input_data.tracking_enabled:
             if input_data.tracking_path:
                 tracking_path = Path(input_data.tracking_path).resolve()
             else:
-                tracking_path = worktree_base / "worktree-tracking.md"
+                tracking_path = get_default_tracking_path(worktree_base)
 
-            # Ensure tracking document exists
-            ensure_tracking_doc(tracking_path, repo_name)
+            tracking_existed = tracking_path.exists()
+            transcript.step_ok(
+                step=f"init {tracking_path}",
+                message="exists" if tracking_existed else "will create",
+            )
         else:
             tracking_path = None
+            transcript.step_skipped(step="init_tracking", message="disabled")
 
         # Fetch all remotes
-        fetch_all(cwd=repo_root)
+        with transcript.timed_step("git fetch --all --prune") as t:
+            run_git(["fetch", "--all", "--prune"], cwd=repo_root)
 
-        # Check if base branch exists
-        if not branch_exists(input_data.base, cwd=repo_root):
+        # Check if base branch exists (local)
+        base_local_result = run_git(["branch", "--list", input_data.base], cwd=repo_root, check=False)
+        base_exists_local = bool(base_local_result.stdout.strip())
+
+        # Check if base branch exists (remote)
+        base_remote_result = run_git(["branch", "-r", "--list", f"origin/{input_data.base}"], cwd=repo_root, check=False)
+        base_exists_remote = bool(base_remote_result.stdout.strip())
+
+        if not base_exists_local and not base_exists_remote:
+            transcript.step_failed(
+                step=f"git branch --list {input_data.base}",
+                error="not found locally or remotely",
+            )
             return Envelope.error_response(
                 code=ErrorCodes.BRANCH_NOT_FOUND,
                 message=f"Base branch '{input_data.base}' not found",
                 recoverable=False,
                 suggested_action="Verify the base branch exists locally or remotely",
+                transcript=transcript,
             )
+
+        transcript.step_ok(
+            step=f"git branch --list {input_data.base}",
+            message=f"local={base_exists_local} remote={base_exists_remote}",
+        )
 
         # Determine worktree path
         worktree_path = worktree_base / input_data.branch
 
         # Check if path already exists
         if worktree_path.exists():
+            transcript.step_failed(
+                step="check_path",
+                error=f"Worktree path already exists: {worktree_path}",
+            )
             return Envelope.error_response(
                 code=ErrorCodes.WORKTREE_EXISTS,
                 message=f"Worktree path already exists: {worktree_path}",
                 recoverable=False,
                 suggested_action="Remove existing worktree or choose different branch name",
+                transcript=transcript,
             )
 
-        # Create worktree
-        needs_new_branch = not branch_exists(input_data.branch, cwd=repo_root)
-        create_worktree(
-            branch=input_data.branch,
-            path=worktree_path,
-            base=input_data.base if needs_new_branch else None,
-            create_branch=needs_new_branch,
-            cwd=repo_root,
+        # Check if branch exists (local or remote)
+        branch_local_result = run_git(["branch", "--list", input_data.branch], cwd=repo_root, check=False)
+        branch_exists_local = bool(branch_local_result.stdout.strip())
+
+        branch_remote_result = run_git(["branch", "-r", "--list", f"origin/{input_data.branch}"], cwd=repo_root, check=False)
+        branch_exists_remote = bool(branch_remote_result.stdout.strip())
+
+        transcript.step_ok(
+            step=f"git branch --list {input_data.branch}",
+            message=f"local={branch_exists_local} remote={branch_exists_remote}",
         )
+
+        # Determine creation strategy
+        if branch_exists_local:
+            # Branch exists locally, just add worktree
+            git_cmd = f"git worktree add {worktree_path} {input_data.branch}"
+            with transcript.timed_step(git_cmd) as t:
+                run_git(["worktree", "add", str(worktree_path), input_data.branch], cwd=repo_root)
+                t.message = f"Preparing worktree ({worktree_path})"
+            needs_new_branch = False
+        elif branch_exists_remote:
+            # Branch exists on remote only - create local tracking branch first
+            transcript.step_ok(
+                step=f"git branch --track {input_data.branch} origin/{input_data.branch}",
+                message="creating local tracking branch",
+            )
+            if not create_tracking_branch(input_data.branch, cwd=repo_root):
+                # Fallback: let git worktree add handle it (may auto-create tracking)
+                transcript.step_ok(
+                    step="tracking branch fallback",
+                    message="using git worktree add directly",
+                )
+            git_cmd = f"git worktree add {worktree_path} {input_data.branch}"
+            with transcript.timed_step(git_cmd) as t:
+                run_git(["worktree", "add", str(worktree_path), input_data.branch], cwd=repo_root)
+                t.message = f"Preparing worktree ({worktree_path})"
+            needs_new_branch = False
+        else:
+            # New branch, create from base
+            # Determine the actual base ref to use (local or remote)
+            if base_exists_local:
+                base_ref = input_data.base
+            elif base_exists_remote:
+                base_ref = f"origin/{input_data.base}"
+                transcript.step_ok(
+                    step="resolve base",
+                    message=f"using remote base: {base_ref}",
+                )
+            else:
+                # Neither local nor remote base exists - error handled earlier
+                base_ref = input_data.base
+
+            git_cmd = f"git worktree add -b {input_data.branch} {worktree_path} {base_ref}"
+            with transcript.timed_step(git_cmd) as t:
+                run_git(["worktree", "add", "-b", input_data.branch, str(worktree_path), base_ref], cwd=repo_root)
+                t.message = f"Preparing worktree ({worktree_path})"
+            needs_new_branch = True
 
         # Verify worktree is clean
         is_clean, dirty_files = get_worktree_status(worktree_path)
+        transcript.step_ok(
+            step=f"git -C {worktree_path} status --porcelain",
+            message="clean" if is_clean else "\n".join(dirty_files),
+        )
+
         if not is_clean:
             return Envelope.error_response(
                 code=ErrorCodes.WORKTREE_DIRTY,
@@ -332,11 +297,13 @@ def create_worktree_main(input_data: CreateInput) -> Envelope:
                 recoverable=False,
                 suggested_action="Investigate worktree state; manual cleanup may be required",
                 data={"dirty_files": dirty_files},
+                transcript=transcript,
             )
 
-        # Create tracking row
+        # Create tracking entry (JSONL format with remote sync fields)
         now = datetime.now(timezone.utc).isoformat()
-        tracking_row = TrackingRow(
+        remote_exists = check_remote_branch_exists(input_data.branch, cwd=repo_root)
+        tracking_entry = TrackingEntry(
             branch=input_data.branch,
             path=str(worktree_path),
             base=input_data.base,
@@ -346,13 +313,22 @@ def create_worktree_main(input_data: CreateInput) -> Envelope:
             status="active",
             last_checked=now,
             notes="",
+            remote_exists=remote_exists,
+            local_worktree=True,
+            remote_ahead=0,  # Just created, local is up to date
         )
 
-        # Update tracking document
+        # Update tracking document (JSONL)
         tracking_updated = False
         if tracking_path:
-            add_tracking_row(tracking_path, tracking_row)
+            add_tracking_entry(tracking_path, tracking_entry)
             tracking_updated = True
+            transcript.step_ok(
+                step=f"append {tracking_path.name}",
+                message=input_data.branch,
+            )
+        else:
+            transcript.step_skipped(step="update_tracking", message="disabled")
 
         # Build response
         return Envelope.success_response(
@@ -364,22 +340,46 @@ def create_worktree_main(input_data: CreateInput) -> Envelope:
                 "repo_name": repo_name,
                 "status": "clean",
                 "branch_created": needs_new_branch,
-                "tracking_row": tracking_row.model_dump(),
+                "tracking_entry": tracking_entry.model_dump(),
                 "tracking_updated": tracking_updated,
-            }
+            },
+            transcript=transcript,
         )
 
     except subprocess.CalledProcessError as e:
+        cmd = " ".join(e.cmd) if isinstance(e.cmd, list) else str(e.cmd)
+        error_output = e.stderr or e.stdout or str(e)
+        transcript.step_failed(
+            step=cmd,
+            error=error_output,
+        )
+
+        # Detect specific error conditions
+        if "is already checked out at" in error_output:
+            return Envelope.error_response(
+                code=ErrorCodes.WORKTREE_BRANCH_IN_USE,
+                message=f"Branch '{input_data.branch}' is already checked out in another worktree",
+                recoverable=False,
+                suggested_action="Use the existing worktree or choose a different branch name",
+                transcript=transcript,
+            )
+
         return Envelope.error_response(
             code=ErrorCodes.GIT_ERROR,
-            message=f"Git command failed: {e.stderr or e.stdout or str(e)}",
+            message=f"Git command failed: {error_output}",
             recoverable=False,
+            transcript=transcript,
         )
     except Exception as e:
+        transcript.step_failed(
+            step="unexpected",
+            error=str(e),
+        )
         return Envelope.error_response(
             code=ErrorCodes.GIT_ERROR,
             message=f"Unexpected error: {str(e)}",
             recoverable=False,
+            transcript=transcript,
         )
 
 

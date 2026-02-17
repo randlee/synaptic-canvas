@@ -1,7 +1,7 @@
 ---
 name: sc-diff
 description: Semantic diff command using roslyn-diff for files, folders, and git/PR comparisons.
-version: 0.8.0
+version: 0.9.0
 options:
   - name: --help
     description: Show usage and options.

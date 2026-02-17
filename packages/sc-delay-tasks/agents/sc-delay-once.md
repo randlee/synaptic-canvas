@@ -1,6 +1,6 @@
 ---
 name: delay-once
-version: 0.8.0
+version: 0.9.0
 description: Wait once for a specified duration with minimal heartbeats, then emit the action text. For short waits, print a single waiting line. No tool traces.
 model: sonnet
 color: gray

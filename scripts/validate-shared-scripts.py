@@ -26,6 +26,19 @@ def read_bytes(path: Path) -> bytes:
     return path.read_bytes()
 
 
+def has_package_specific_shared(package_dir: Path) -> bool:
+    """Check if package has migrated to package-specific shared module."""
+    scripts_dir = package_dir / "scripts"
+    if not scripts_dir.exists():
+        return False
+
+    # Look for any *_shared.py that's not sc_shared.py
+    for script in scripts_dir.glob("*_shared.py"):
+        if script.name != "sc_shared.py":
+            return True
+    return False
+
+
 def compare_shared_script(canonical: Path, packages_dir: Path) -> Tuple[list[str], list[str]]:
     mismatched = []
     missing = []
@@ -34,6 +47,11 @@ def compare_shared_script(canonical: Path, packages_dir: Path) -> Tuple[list[str
     for package_dir in iter_packages(packages_dir):
         if package_dir.name == "shared":
             continue
+
+        # Skip packages that have migrated to package-specific shared modules
+        if has_package_specific_shared(package_dir):
+            continue
+
         target = package_dir / "scripts" / "sc_shared.py"
         if not target.exists():
             missing.append(package_dir.name)
@@ -51,6 +69,11 @@ def sync_shared_script(canonical: Path, packages_dir: Path) -> list[str]:
     for package_dir in iter_packages(packages_dir):
         if package_dir.name == "shared":
             continue
+
+        # Skip packages that have migrated to package-specific shared modules
+        if has_package_specific_shared(package_dir):
+            continue
+
         scripts_dir = package_dir / "scripts"
         scripts_dir.mkdir(parents=True, exist_ok=True)
         target = scripts_dir / "sc_shared.py"

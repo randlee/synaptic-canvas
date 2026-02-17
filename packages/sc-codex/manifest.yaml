@@ -1,5 +1,5 @@
 name: sc-codex
-version: 0.8.0
+version: 0.9.0
 description: >
   Run Codex agents via a Task Tool-compatible runner, with hooks emulation
   and background execution support.

@@ -1,5 +1,5 @@
 name: sc-kanban
-version: 0.8.0
+version: 0.9.0
 description: >
   Kanban state machine for Synaptic Canvas: backlog → board → done with gate validation,
   scrubbing, and shared board config (v0.7).
