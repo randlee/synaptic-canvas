@@ -150,7 +150,7 @@ class RegistryPackageSchema(BaseModel):
     repo: str
     path: str
     license: str
-    author: str
+    author: Union[str, Dict[str, str]]
     tags: List[str]
     artifacts: Dict[str, int]
     dependencies: List[str] = Field(default_factory=list)

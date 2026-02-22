@@ -56,6 +56,7 @@ class SyncValidationResult:
     missing_in_marketplace: list[str] = field(default_factory=list)
     missing_in_registry: list[str] = field(default_factory=list)
     version_mismatches: list[dict] = field(default_factory=list)
+    schema_errors: list[dict] = field(default_factory=list)
     packages_validated: int = 0
     total_packages: int = 0
 
@@ -65,6 +66,7 @@ class SyncValidationResult:
             self.missing_in_marketplace
             or self.missing_in_registry
             or self.version_mismatches
+            or self.schema_errors
         )
 
     def get_summary(self) -> str:
@@ -97,6 +99,11 @@ class SyncValidationResult:
                 for key, value in mismatch.items():
                     if key != "package":
                         lines.append(f"        {key}: {value}")
+
+        if self.schema_errors:
+            lines.append(f"\n  Schema errors ({len(self.schema_errors)}):")
+            for err in self.schema_errors:
+                lines.append(f"    - {err['package']}: {err['error']}")
 
         if self.is_valid():
             lines.append("\n  Status: SYNCHRONIZED ✓")
@@ -310,6 +317,20 @@ def validate_marketplace_sync(
 
     registry = registry_result.value
     registry_packages = registry.get("packages", {})
+
+    # Validate each plugin entry against the schema
+    from pydantic import ValidationError
+    for plugin in marketplace_plugins:
+        pkg_name = plugin.get("name", "<unknown>")
+        try:
+            MarketplacePlugin(**plugin)
+        except ValidationError as e:
+            for err in e.errors():
+                field_path = ".".join(str(x) for x in err["loc"])
+                result.schema_errors.append({
+                    "package": pkg_name,
+                    "error": f"{field_path}: {err['msg']}",
+                })
 
     # Get all package directories
     package_dirs = get_package_dirs(packages_dir)
