@@ -100,6 +100,15 @@ def load_json(path: Path) -> Result[dict[str, Any], SyncError]:
         )
 
 
+def normalize_author(author: Any) -> dict[str, str]:
+    """Normalize author field to object format required by schema."""
+    if isinstance(author, dict):
+        return author
+    if isinstance(author, str):
+        return {"name": author}
+    return {"name": "unknown"}
+
+
 def find_package(packages: list[dict[str, Any]], name: str) -> Optional[dict[str, Any]]:
     """Find package by name in list."""
     for pkg in packages:
@@ -155,10 +164,16 @@ def sync_marketplace(
                 changes_made = True
 
             # Update other fields
-            for field in ["author", "license", "keywords", "category"]:
-                if field in reg_pkg and mkt_pkg.get(field) != reg_pkg.get(field):
-                    mkt_pkg[field] = reg_pkg[field]
+            for field_name in ["license", "keywords", "category"]:
+                if field_name in reg_pkg and mkt_pkg.get(field_name) != reg_pkg.get(field_name):
+                    mkt_pkg[field_name] = reg_pkg[field_name]
                     changes_made = True
+
+            # author must always be an object
+            new_author = normalize_author(reg_pkg.get("author", mkt_pkg.get("author", {})))
+            if mkt_pkg.get("author") != new_author:
+                mkt_pkg["author"] = new_author
+                changes_made = True
 
         else:
             # Add missing package
@@ -167,7 +182,7 @@ def sync_marketplace(
                 "source": reg_pkg.get("source", f"./packages/{pkg_name}"),
                 "description": reg_pkg.get("description", ""),
                 "version": reg_pkg.get("version", ""),
-                "author": reg_pkg.get("author", {"name": "randlee"}),
+                "author": normalize_author(reg_pkg.get("author", {"name": "randlee"})),
                 "license": reg_pkg.get("license", "MIT"),
                 "keywords": reg_pkg.get("keywords", []),
                 "category": reg_pkg.get("category", "tools"),

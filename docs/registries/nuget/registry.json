@@ -21,7 +21,9 @@
       "path": "packages/sc-ci-automation",
       "readme": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-ci-automation/README.md",
       "license": "MIT",
-      "author": "randlee",
+      "author": {
+        "name": "randlee"
+      },
       "tags": [
         "ci",
         "automation",
@@ -56,7 +58,9 @@
       "path": "packages/sc-codex",
       "readme": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-codex/README.md",
       "license": "MIT",
-      "author": "synaptic-canvas",
+      "author": {
+        "name": "synaptic-canvas"
+      },
       "tags": [
         "codex",
         "agents",
@@ -86,7 +90,9 @@
       "path": "packages/sc-delay-tasks",
       "readme": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-delay-tasks/README.md",
       "license": "MIT",
-      "author": "Anthropic",
+      "author": {
+        "name": "Anthropic"
+      },
       "tags": [
         "delay",
         "polling",
@@ -117,7 +123,9 @@
       "path": "packages/sc-git-worktree",
       "readme": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-git-worktree/README.md",
       "license": "MIT",
-      "author": "Anthropic",
+      "author": {
+        "name": "Anthropic"
+      },
       "tags": [
         "git",
         "worktree",
@@ -159,7 +167,9 @@
       "path": "packages/sc-github-issue",
       "readme": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-github-issue/README.md",
       "license": "MIT",
-      "author": "Anthropic",
+      "author": {
+        "name": "Anthropic"
+      },
       "tags": [
         "github",
         "issues",
@@ -195,7 +205,9 @@
       "path": "packages/sc-kanban",
       "readme": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-kanban/README.md",
       "license": "MIT",
-      "author": "randlee",
+      "author": {
+        "name": "randlee"
+      },
       "tags": [
         "kanban",
         "task-tracking",
@@ -232,7 +244,9 @@
       "path": "packages/sc-manage",
       "readme": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-manage/README.md",
       "license": "MIT",
-      "author": "Anthropic",
+      "author": {
+        "name": "Anthropic"
+      },
       "tags": [
         "package-manager",
         "discovery",
@@ -262,7 +276,9 @@
       "path": "packages/sc-repomix-nuget",
       "readme": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-repomix-nuget/README.md",
       "license": "MIT",
-      "author": "Anthropic",
+      "author": {
+        "name": "Anthropic"
+      },
       "tags": [
         "nuget",
         "csharp",
@@ -301,7 +317,9 @@
       "path": "packages/sc-roslyn-diff",
       "readme": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-roslyn-diff/README.md",
       "license": "MIT",
-      "author": "randlee",
+      "author": {
+        "name": "randlee"
+      },
       "tags": [
         "diff",
         "roslyn",
@@ -340,7 +358,9 @@
       "path": "packages/sc-startup",
       "readme": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-startup/README.md",
       "license": "MIT",
-      "author": "randlee",
+      "author": {
+        "name": "randlee"
+      },
       "tags": [
         "startup",
         "checklist",
@@ -375,7 +395,9 @@
       "path": "packages/sc-commit-push-pr",
       "readme": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-commit-push-pr/README.md",
       "license": "MIT",
-      "author": "randlee",
+      "author": {
+        "name": "randlee"
+      },
       "tags": [
         "git",
         "pr",
