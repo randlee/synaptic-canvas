@@ -212,13 +212,14 @@ For Claude Code, use **settings.json hooks** to validate agent spawns (see "Gati
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "Task",
+        "matcher": "Agent",
         "hooks": [{"type": "command", "command": "python3 .claude/scripts/validate.py"}]
       }
     ]
   }
 }
 ```
+> **Version note**: matcher is `"Agent"` in current Claude Code; use `"Agent|Task"` for mixed-version deployments (see [Agent Tool Naming](#agent-tool-naming)).
 
 **NOT Supported:** PreToolUse or SubAgentStart hooks in agent frontmatter
 ```yaml
@@ -692,8 +693,7 @@ Define the hook in **`settings.json`** (preferred for project-wide policy):
 
 The PreToolUse hook receives a JSON payload on stdin with the following structure.
 
-**Note:** Live Haiku captures confirm `tool_name = "Agent"` for all agent/teammate spawns.
-The tool was previously documented as `"Task"` — `"Agent"` is the verified wire name.
+**Note:** Live captures confirm `tool_name = "Agent"` for all agent/teammate spawns in current Claude Code (capture-backed: `20260329T203357.612677Z-pretooluse-agent.json`). Earlier versions emitted `"Task"` — the rename point is not yet confirmed from older-version captures. Hook filters matching on tool name should handle both (`"Agent|Task"`) unless your deployment is version-pinned.
 
 ```json
 {
