@@ -109,13 +109,34 @@ requires:
 
 ### Input
 
-Called by Claude Code's SessionStart hook with no arguments. Orchestrator determines context from environment:
+Called by Claude Code's `SessionStart` hook. The hook payload is received on stdin:
+
+```json
+{
+  "cwd": "/path/to/project",
+  "hook_event_name": "SessionStart",
+  "model": "claude-haiku-4-5-20251001",
+  "session_id": "<uuid>",
+  "source": "startup|compact",
+  "transcript_path": "/Users/.../.claude/projects/...jsonl"
+}
+```
+
+`source` live-captured values: `"startup"` (fresh start), `"compact"` (post-compaction restart).
+Values `"resume"` and `"clear"` are accepted by the runtime but not yet captured in live traces.
+
+`CLAUDE_PROJECT_DIR` is set by Claude Code before spawning the hook subprocess and is available
+via `os.getenv()`. It is the correct project-root anchor (stable even if cwd changes during
+the session).
+
+Orchestrator determines context from:
 
 | Source | Value |
 |--------|-------|
-| `os.getcwd()` | Session path (folder Claude was launched from - may or may not be a git repo) |
+| `CLAUDE_PROJECT_DIR` env var | Project root (preferred; set by Claude Code for all hook contexts) |
+| payload `cwd` | Current working directory at session start (fallback) |
 | `~/.claude/` | Global plugin install location |
-| `.claude/` (in cwd) | Local plugin install location |
+| `.claude/` (relative to project root) | Local plugin install location |
 
 ### Global Timeout
 
@@ -146,7 +167,7 @@ GLOBAL_TIMEOUT_SECONDS = 30
 
 
 def main():
-    session_path = Path.cwd()  # Folder Claude was launched from (may not be git repo)
+    session_path = Path(os.getenv("CLAUDE_PROJECT_DIR") or Path.cwd()).resolve()
     home = Path.home()
 
     # 1. Discover plugins from both locations

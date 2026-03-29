@@ -432,10 +432,17 @@ subprocess.run(["python3", str(script)], ...)
 |--------------|-------------------|-------------------|----------|------------------|
 | **PreToolUse Hook** | ✅ YES | ✅ YES | [test-hook-env-vars.py](../.claude/scripts/tests/test-hook-env-vars.py) | Direct access via `os.getenv()` |
 | **PostToolUse Hook** | ✅ YES | ✅ YES | Same as PreToolUse | Direct access via `os.getenv()` |
+| **SessionStart Hook** | ✅ YES | ✅ YES | Set by Claude Code before spawning hook subprocess; stable even if cwd changes during session | Direct access via `os.getenv()` |
 | **Bash Tool** | ❌ NO | ❌ NO | [test-shell-env-vars.sh](../.claude/scripts/tests/test-shell-env-vars.sh) | Use `Path.cwd()` or pass via args |
 | **Background Agent** | ❌ NO | ❌ NO | [test-bg-agent-env-vars.md](../.claude/agents/test-bg-agent-env-vars.md) | Use `get_project_dir()` fallback |
-| **Frontmatter Hook** | ❓ UNTESTED | ❓ UNTESTED | Needs testing | Assume NO, use fallback |
+| **Frontmatter Hook** | ❌ NO | ❌ NO | Tested — agent frontmatter hooks do not fire in Claude Code | Frontmatter hooks are Codex/ai_cli only |
 | **Named Teammate** | ❓ UNTESTED | ❓ UNTESTED | Needs testing | Assume NO, use fallback |
+
+**Additional note:** `CLAUDE_PROJECT_DIR` is set by Claude Code before spawning any hook subprocess,
+so hook scripts are always rooted to an absolute project path even if the session cwd changes.
+`CLAUDE_SESSION_ID` is stable in the parent Claude process but is NOT available to bash
+subprocesses; capture `session_id` from the `SessionStart` hook payload and persist it if needed
+by later hooks.
 
 **Key Insight:** Only **hook contexts** (PreToolUse, PostToolUse) have access to Claude Code environment variables. All other contexts require fallback patterns.
 
@@ -649,7 +656,7 @@ This ensures all packages using Jenga templates have consistent, portable enviro
 
 ## Gating Agents with PreToolUse Hooks
 
-Use PreToolUse hooks on the **Task** tool to enforce agent constraints at runtime. This pattern is useful for:
+Use PreToolUse hooks on the **Agent** tool to enforce agent constraints at runtime. This pattern is useful for:
 - Blocking agents from running in certain contexts (e.g., background execution)
 - Enforcing naming conventions (e.g., named teammates only)
 - Restricting agent types by directory or permission mode
@@ -664,7 +671,7 @@ Define the hook in **`settings.json`** (preferred for project-wide policy):
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "Task",
+        "matcher": "Agent",
         "hooks": [
           {
             "type": "command",
@@ -681,25 +688,26 @@ Define the hook in **`settings.json`** (preferred for project-wide policy):
 - **`~/.claude/settings.json`** - Global user-level policy
 - **`.claude/settings.local.json`** - Repository-specific override (for testing)
 
-### Task Tool Input Schema
+### Agent Tool Input Schema
 
-The PreToolUse hook receives a JSON payload on stdin with the following structure:
+The PreToolUse hook receives a JSON payload on stdin with the following structure.
+
+**Note:** Live Haiku captures confirm `tool_name = "Agent"` for all agent/teammate spawns.
+The tool was previously documented as `"Task"` — `"Agent"` is the verified wire name.
 
 ```json
 {
   "session_id": "8f47703d-9317-4270-a13a-3c2ae3c02670",
   "transcript_path": "/Users/user/.claude/projects/.../transcript.jsonl",
   "cwd": "/path/to/project",
-  "permission_mode": "bypassPermissions",
+  "permission_mode": "default",
   "hook_event_name": "PreToolUse",
-  "tool_name": "Task",
+  "tool_name": "Agent",
   "tool_input": {
     "description": "Task description text",
     "prompt": "Full task prompt",
-    "subagent_type": "Explore",
     "name": "optional-teammate-name",
-    "run_in_background": true,
-    "team_name": "optional-team-name"
+    "run_in_background": true
   },
   "tool_use_id": "toolu_..."
 }
@@ -761,14 +769,14 @@ def main() -> int:
     sys.stderr.write(
         f"BLOCKED: '{agent_type}' must be launched as a named teammate.\n"
         f"\n"
-        f"Correct (with team and name):\n"
-        f'  Task(subagent_type="{agent_type}", name="sm-sprint-1", team_name="dev-team", run_in_background=true)\n'
+        f"Correct (with name):\n"
+        f'  Agent(subagent_type="{agent_type}", name="sm-sprint-1", run_in_background=true)\n'
         f"\n"
         f"Also allowed (standalone):\n"
-        f'  Task(subagent_type="{agent_type}")  # foreground, no team needed\n'
+        f'  Agent(subagent_type="{agent_type}")  # foreground, no team needed\n'
         f"\n"
         f"Not allowed:\n"
-        f'  Task(subagent_type="{agent_type}", run_in_background=true)  # no name, no team\n'
+        f'  Agent(subagent_type="{agent_type}", run_in_background=true)  # no name, no team\n'
     )
 
     return 2
@@ -803,7 +811,7 @@ if agent_type == "system-admin" and data.get("permission_mode") != "bypassPermis
     return 2
 ```
 
-**4. Log all Task spawns (allow everything):**
+**4. Log all Agent spawns (allow everything):**
 ```python
 # Always allow, but log for audit
 log_entry = {
@@ -818,8 +826,196 @@ return 0
 
 ### Exit Codes
 
-- **0** = Allow the Task tool call (agent spawn proceeds)
-- **2** = Block the Task tool call (agent is not spawned)
+- **0** = Allow the Agent tool call (agent spawn proceeds)
+- **2** = Block the Agent tool call (agent is not spawned)
+
+## Verified Hook Payload Schemas
+
+These schemas are from live Haiku captures in the schook test harness. Treat them
+as observed shapes, not vendor-guaranteed contracts. Fields not listed here may
+appear but should not be depended upon until captured.
+
+### `SessionStart`
+
+```json
+{
+  "cwd": "/path/to/project",
+  "hook_event_name": "SessionStart",
+  "model": "claude-haiku-4-5-20251001",
+  "session_id": "<uuid>",
+  "source": "startup|compact",
+  "transcript_path": "/Users/.../.claude/projects/...jsonl"
+}
+```
+
+`source` observed values: `"startup"` (fresh start), `"compact"` (after `/compact`).
+Values `"resume"` and `"clear"` are accepted by the runtime but not yet captured
+in live Haiku traces — treat them as valid but unverified at the payload level.
+
+**`SessionStart` alone does not emit `Stop`** when no user turn occurs.
+
+### `SessionEnd`
+
+```json
+{
+  "cwd": "/path/to/project",
+  "hook_event_name": "SessionEnd",
+  "reason": "other|prompt_input_exit",
+  "session_id": "<uuid>",
+  "transcript_path": "/Users/.../.claude/projects/...jsonl"
+}
+```
+
+### `PreCompact`
+
+```json
+{
+  "custom_instructions": "",
+  "cwd": "/path/to/project",
+  "hook_event_name": "PreCompact",
+  "session_id": "<uuid>",
+  "transcript_path": "/Users/.../.claude/projects/...jsonl",
+  "trigger": "manual"
+}
+```
+
+### `PreToolUse(Bash)`
+
+```json
+{
+  "cwd": "/path/to/project",
+  "hook_event_name": "PreToolUse",
+  "permission_mode": "default",
+  "session_id": "<uuid>",
+  "tool_input": {
+    "command": "pwd",
+    "description": "Print current working directory"
+  },
+  "tool_name": "Bash",
+  "tool_use_id": "<tool-id>",
+  "transcript_path": "/Users/.../.claude/projects/...jsonl"
+}
+```
+
+### `PreToolUse(Agent)` — agent/teammate spawn
+
+```json
+{
+  "cwd": "/path/to/project",
+  "hook_event_name": "PreToolUse",
+  "permission_mode": "default",
+  "session_id": "<uuid>",
+  "tool_input": {
+    "description": "<string>",
+    "name": "<string>",
+    "prompt": "<string>",
+    "run_in_background": true
+  },
+  "tool_name": "Agent",
+  "tool_use_id": "<tool-id>",
+  "transcript_path": "/Users/.../.claude/projects/...jsonl"
+}
+```
+
+### `PostToolUse(Bash)`
+
+```json
+{
+  "cwd": "/path/to/project",
+  "hook_event_name": "PostToolUse",
+  "permission_mode": "default",
+  "session_id": "<uuid>",
+  "tool_input": {
+    "command": "pwd",
+    "description": "Print current working directory"
+  },
+  "tool_name": "Bash",
+  "tool_response": {
+    "interrupted": false,
+    "isImage": false,
+    "noOutputExpected": false,
+    "stderr": "",
+    "stdout": "/path/to/project"
+  },
+  "tool_use_id": "<tool-id>",
+  "transcript_path": "/Users/.../.claude/projects/...jsonl"
+}
+```
+
+### `PermissionRequest`
+
+```json
+{
+  "cwd": "/path/to/project",
+  "hook_event_name": "PermissionRequest",
+  "permission_mode": "default",
+  "permission_suggestions": [
+    {
+      "destination": "session",
+      "mode": "acceptEdits",
+      "type": "setMode"
+    }
+  ],
+  "session_id": "<uuid>",
+  "tool_input": { "...": "provider-specific tool payload" },
+  "tool_name": "Write|Bash",
+  "transcript_path": "/Users/.../.claude/projects/...jsonl"
+}
+```
+
+### `Stop`
+
+```json
+{
+  "cwd": "/path/to/project",
+  "hook_event_name": "Stop",
+  "last_assistant_message": "<assistant text>",
+  "permission_mode": "default",
+  "session_id": "<uuid>",
+  "stop_hook_active": false,
+  "transcript_path": "/Users/.../.claude/projects/...jsonl"
+}
+```
+
+### `Notification`
+
+Not yet captured in any live harness environment despite repeated attempts with
+`matcher = "idle_prompt"` and `matcher = ""`. Hook should stay wired; do not
+build implementation logic that depends on a specific payload shape until
+captured.
+
+---
+
+## Session Correlation Model
+
+Hook calls should treat **identity** and **context** as separate concerns.
+
+**Stable anchor:** `session_id` captured from `SessionStart`.
+
+Rules:
+- `session_id` does not change across directory changes
+- `session_id` does not change after compaction (`source = "compact"` fires a
+  new `SessionStart` with the same `session_id`)
+- a fresh Claude process creates a new `session_id`
+- `CLAUDE_SESSION_ID` is stable in the parent Claude process but is NOT
+  available to bash subprocesses — capture it from `SessionStart` and persist
+
+**Normalized agent state enum** (hook-event-driven):
+
+| State | Trigger |
+|-------|---------|
+| `starting` | `SessionStart(source="startup")` |
+| `busy` | active tool use / turn execution |
+| `awaiting_permission` | `PermissionRequest` |
+| `compacting` | `PreCompact` |
+| `idle` | `Stop` |
+| `ended` | `SessionEnd` |
+
+Note: `SessionStart(source="compact")` is a compact-return startup for the same
+`session_id` — transition back to `starting`, then `idle` once the resumed turn
+completes.
+
+---
 
 ## Notes
 
