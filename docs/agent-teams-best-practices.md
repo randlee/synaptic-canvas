@@ -191,7 +191,7 @@ Without constraints:
 - **Lifecycle issues**: Background agents without names can't compact, die at context limit
 - **Architecture violations**: Teammates spawning teammates breaks hierarchy
 
-### The Solution: PreToolUse Hook on Task Tool
+### The Solution: PreToolUse Hook on Agent Tool
 
 **Hook enforces two rules**:
 1. **Orchestrators must be named teammates** (need full lifecycle/compaction)
@@ -208,7 +208,7 @@ Without constraints:
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "Task",
+        "matcher": "Agent",
         "hooks": [
           {
             "type": "command",
@@ -220,6 +220,8 @@ Without constraints:
   }
 }
 ```
+
+> **Version note**: `tool_name` is `"Agent"` in current Claude Code (capture-backed: `20260329T203357.612677Z-pretooluse-agent.json`). Earlier versions emitted `"Task"`. If your deployment is not version-pinned, use a regex matcher (`"Agent|Task"`) to handle both and avoid silent breakage in mixed-version environments.
 
 **Important**: Must be in `settings.json`, NOT agent frontmatter. Agent frontmatter hooks don't work in Claude Code **tmux mode** (they work in-process, but not when teammates spawn in separate tmux panes). Settings.json PreToolUse hooks work universally across all teammate modes.
 

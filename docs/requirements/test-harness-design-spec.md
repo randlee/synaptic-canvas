@@ -205,41 +205,120 @@ The test harness uses two data sources:
 
 | Source | Strengths | Weaknesses |
 |--------|-----------|------------|
-| **Hooks** (trace.jsonl) | Real-time capture, structured events, tool inputs/outputs | PostToolUse may not fire on errors |
-| **Transcript** (session.jsonl) | Complete record, includes errors, Claude responses | Larger files, requires parsing |
+| **Hooks** (`trace.jsonl`) | Real-time capture, structured events, tool inputs/outputs, current harness also records selected env vars plus `pid`/`ppid` | `PostToolUse` may not fire on errors |
+| **Transcript** (`session.jsonl`) | Complete record, includes errors, Claude responses | Larger files, requires parsing |
 
 **Recommendation**: Use hooks as primary source, transcript as fallback for errors and Claude responses.
 
 ### 4.2 Hook Events
 
-The test harness captures all available hook events:
+The current `sc-test-harness` baseline config wires these hook events:
 
 | Event | When Fired | Key Data Captured |
 |-------|------------|-------------------|
-| `SessionStart` | Session startup | `session_id`, `transcript_path`, `cwd` |
+| `SessionStart` | Session startup | `session_id`, `transcript_path`, `cwd`, `source` |
+| `SessionEnd` | Session ends | `session_id`, `reason` |
 | `UserPromptSubmit` | Prompt submitted | `session_id`, `prompt` |
-| `PreToolUse` | Before tool execution | `tool_name`, `tool_input`, `tool_use_id` |
-| `PostToolUse` | After tool execution | `tool_name`, `tool_input`, `tool_response`, `tool_use_id` |
+| `Notification` | Claude emits a notification/idle event | payload shape still needs capture-backed confirmation |
+| `Stop` | Claude stops responding | `session_id` |
 | `SubagentStart` | Subagent spawned | `agent_id`, `agent_type` |
 | `SubagentStop` | Subagent completed | `agent_id`, `agent_transcript_path` |
-| `Stop` | Claude stops responding | `session_id` |
-| `SessionEnd` | Session ends | `session_id`, `reason` |
+| `PermissionRequest` | Claude requests permission | `tool_name`, `tool_input`, `permission_suggestions` |
+| `PreToolUse` | Before tool execution | `tool_name`, `tool_input`, `tool_use_id` |
+| `PostToolUse` | After tool execution | `tool_name`, `tool_input`, `tool_response`, `tool_use_id` |
+
+Notes:
+- `sc-test-harness` does not currently wire `PreCompact` in its baseline `.claude/settings.json`, even though later harness work has captured that surface elsewhere.
+- Newer live captures use `tool_name = "Agent"` for agent/teammate spawns. Older `Task` examples should be treated as historical, not current wire truth.
+- Newer live captures also confirm `SessionStart.source` values `startup`, `compact`, `resume`, and `clear`.
 
 ### 4.3 Hook Configuration
 
-Hooks are defined in the test project's `.claude/settings.json`:
+Hooks are defined in the test project's `.claude/settings.json` using Claude's nested `hooks` entries:
 
 ```json
 {
   "hooks": {
-    "SessionStart": [{ "matcher": ".*", "commands": ["python3 scripts/log-hook.py --event SessionStart"] }],
-    "SessionEnd": [{ "matcher": ".*", "commands": ["python3 scripts/log-hook.py --event SessionEnd"] }],
-    "UserPromptSubmit": [{ "matcher": ".*", "commands": ["python3 scripts/log-hook.py --event UserPromptSubmit"] }],
-    "PreToolUse": [{ "matcher": ".*", "commands": ["python3 scripts/log-hook.py --event PreToolUse"] }],
-    "PostToolUse": [{ "matcher": ".*", "commands": ["python3 scripts/log-hook.py --event PostToolUse"] }],
-    "SubagentStart": [{ "matcher": ".*", "commands": ["python3 scripts/log-hook.py --event SubagentStart"] }],
-    "SubagentStop": [{ "matcher": ".*", "commands": ["python3 scripts/log-hook.py --event SubagentStop"] }],
-    "Stop": [{ "matcher": ".*", "commands": ["python3 scripts/log-hook.py --event Stop"] }]
+    "SessionStart": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          { "type": "command", "command": "python3 scripts/log-hook.py --event SessionStart" }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          { "type": "command", "command": "python3 scripts/log-hook.py --event SessionEnd" }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          { "type": "command", "command": "python3 scripts/log-hook.py --event UserPromptSubmit" }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          { "type": "command", "command": "python3 scripts/log-hook.py --event Notification" }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          { "type": "command", "command": "python3 scripts/log-hook.py --event Stop" }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          { "type": "command", "command": "python3 scripts/log-hook.py --event SubagentStart" }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          { "type": "command", "command": "python3 scripts/log-hook.py --event SubagentStop" }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          { "type": "command", "command": "python3 scripts/log-hook.py --event PermissionRequest" }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          { "type": "command", "command": "python3 scripts/log-hook.py --event PreToolUse" }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          { "type": "command", "command": "python3 scripts/log-hook.py --event PostToolUse" }
+        ]
+      }
+    ]
   }
 }
 ```

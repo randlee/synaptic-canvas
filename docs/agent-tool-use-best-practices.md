@@ -200,9 +200,17 @@ sys.exit(0)
 
 ### Critical Clarification
 
-**Agent frontmatter hooks are NOT supported in Claude Code.** They are designed for **Codex integration via ai_cli** (see below).
+Do **not** make blanket claims about "frontmatter hooks" as one surface. In practice
+there are multiple distinct hook surfaces:
+- `settings.json` hooks
+- command markdown frontmatter
+- agent markdown frontmatter
+- local `ai_cli` emulation for Codex/local-agent flows
 
-For Claude Code, use **settings.json hooks** to validate agent spawns (see "Gating Agents" section).
+This guide treats **`settings.json` hooks** as the most clearly capture-backed
+Claude Code validation surface for agent spawn gating (see "Gating Agents"
+section). Other frontmatter-driven surfaces should be described per surface, not
+collapsed into a single supported/unsupported claim.
 
 ### Claude Code
 
@@ -212,24 +220,14 @@ For Claude Code, use **settings.json hooks** to validate agent spawns (see "Gati
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "Task",
+        "matcher": "Agent",
         "hooks": [{"type": "command", "command": "python3 .claude/scripts/validate.py"}]
       }
     ]
   }
 }
 ```
-
-**NOT Supported:** PreToolUse or SubAgentStart hooks in agent frontmatter
-```yaml
----
-name: my-agent
-hooks:
-  PreToolUse:  # ❌ This does NOT fire in Claude Code
-    - matcher: "Bash"
-      hooks: [...]
----
-```
+> **Version note**: matcher is `"Agent"` in current Claude Code; use `"Agent|Task"` for mixed-version deployments (see [Agent Tool Naming](#agent-tool-naming)).
 
 ### Codex Integration (ai_cli)
 
@@ -266,7 +264,14 @@ See: `packages/sc-codex/scripts/ai_cli/README.md` (lines 103-118)
 
 ### Slash Commands
 
-**Frontmatter hooks are NOT supported.** Use `!` pre-exec lines in the command body to run scripts before the model prompt, and `allowed-tools` to permit those commands.
+Do not make blanket unsupported claims about slash-command frontmatter hook
+behavior here. In practice, command markdown files use multiple mechanisms:
+- frontmatter metadata/config
+- `allowed-tools`
+- `!` pre-exec lines in the command body
+
+This section documents `!` pre-exec lines as one verified way to run scripts
+before the model prompt.
 
 ### Example: `/git-pr` with `!` pre-exec
 
@@ -379,16 +384,22 @@ import os
 import subprocess
 import sys
 
-# ✅ CORRECT: Use environment variables
-project_root = os.getenv("CLAUDE_PROJECT_DIR") or os.getcwd()
+# ✅ CORRECT in hook context: use the normalized project-root env if present
+project_root = os.getenv("CLAUDE_PROJECT_DIR")
+if not project_root:
+    raise RuntimeError("CLAUDE_PROJECT_DIR not set; pass project root explicitly in this context")
 hook_script = os.path.join(project_root, ".claude", "scripts", "validate.py")
 
 result = subprocess.run(["python3", hook_script], ...)
 ```
 
 **Available Environment Variables:**
-- `$CLAUDE_PROJECT_DIR` - Project root (where Claude Code was launched)
-- `$CLAUDE_PLUGIN_ROOT` - Plugin's root directory (for bundled scripts)
+- `$CLAUDE_PROJECT_DIR` - Hook-context project/session root signal. Newer env-backed
+  `schook` captures show it present in current tested hook contexts and stable
+  even when raw hook `cwd` drifts after `cd`.
+- `$CLAUDE_PLUGIN_ROOT` - Plugin-context root for bundled scripts. Do not treat
+  this as a generic hook invariant until you have a capture for the specific
+  plugin surface you are documenting.
 - `$CODEX_PROJECT_DIR` - Codex equivalent (if using Codex)
 
 ### Bad Pattern (Relative Paths)
@@ -414,8 +425,11 @@ In Python hooks:
 import os
 from pathlib import Path
 
-# Resolve to absolute path using project root
-project_dir = Path(os.getenv("CLAUDE_PROJECT_DIR") or os.getcwd()).resolve()
+# Resolve to absolute path using project root env when available
+project_dir_raw = os.getenv("CLAUDE_PROJECT_DIR")
+if not project_dir_raw:
+    raise RuntimeError("CLAUDE_PROJECT_DIR not set; this hook expects normalized project-root context")
+project_dir = Path(project_dir_raw).resolve()
 script = project_dir / ".claude" / "scripts" / "validate.py"
 
 # Use absolute path
@@ -424,20 +438,34 @@ subprocess.run(["python3", str(script)], ...)
 
 ## Environment Variables: Availability by Context
 
-**Critical Finding:** Claude Code environment variables are NOT available in all contexts. Understanding where they work is essential for writing portable code.
+**Critical Finding:** Claude Code environment variables are not available in all
+contexts. Also, raw `cwd` and stable project-root identity are not the same
+thing. Newer env-backed `schook` captures show that later hook `cwd` can drift
+after Claude changes directories while `CLAUDE_PROJECT_DIR` stays pinned to the
+startup root.
 
 ### Availability Matrix
 
 | Context Type | CLAUDE_PROJECT_DIR | CLAUDE_PLUGIN_ROOT | Evidence | Fallback Pattern |
 |--------------|-------------------|-------------------|----------|------------------|
-| **PreToolUse Hook** | ✅ YES | ✅ YES | [test-hook-env-vars.py](../.claude/scripts/tests/test-hook-env-vars.py) | Direct access via `os.getenv()` |
-| **PostToolUse Hook** | ✅ YES | ✅ YES | Same as PreToolUse | Direct access via `os.getenv()` |
-| **Bash Tool** | ❌ NO | ❌ NO | [test-shell-env-vars.sh](../.claude/scripts/tests/test-shell-env-vars.sh) | Use `Path.cwd()` or pass via args |
-| **Background Agent** | ❌ NO | ❌ NO | [test-bg-agent-env-vars.md](../.claude/agents/test-bg-agent-env-vars.md) | Use `get_project_dir()` fallback |
-| **Frontmatter Hook** | ❓ UNTESTED | ❓ UNTESTED | Needs testing | Assume NO, use fallback |
-| **Named Teammate** | ❓ UNTESTED | ❓ UNTESTED | Needs testing | Assume NO, use fallback |
+| **PreToolUse Hook** | ✅ YES | ❓ UNVERIFIED | newer env-backed `schook` captures | Direct access via `os.getenv()` for `CLAUDE_PROJECT_DIR`; do not assume `CLAUDE_PLUGIN_ROOT` |
+| **PostToolUse Hook** | ✅ YES | ❓ UNVERIFIED | newer env-backed `schook` captures | Same as PreToolUse |
+| **SessionStart Hook** | ✅ YES | ❓ UNVERIFIED | newer env-backed `schook` captures (`startup`, `compact`, `resume`, `clear`) | Direct access via `os.getenv()` for `CLAUDE_PROJECT_DIR`; do not assume `CLAUDE_PLUGIN_ROOT` |
+| **Bash Tool** | ❓ NOT CAPTURE-BACKED HERE | ❓ NOT CAPTURE-BACKED HERE | older local probes referenced in repo notes, but checked-in evidence is incomplete | Pass explicit paths when possible; otherwise treat `Path.cwd()` as current directory only |
+| **Background Agent** | ❓ NOT CAPTURE-BACKED HERE | ❓ NOT CAPTURE-BACKED HERE | repo guidance exists but checked-in evidence is incomplete | Pass explicit paths or use marker search; do not equate current cwd with stable root |
+| **Frontmatter Hook** | surface-specific | surface-specific | depends on whether you mean command frontmatter, agent frontmatter, or `ai_cli` emulation | document per surface rather than assuming one rule |
+| **Named Teammate** | ❓ UNTESTED | ❓ UNTESTED | Needs testing | Assume nothing; pass explicit context if required |
 
-**Key Insight:** Only **hook contexts** (PreToolUse, PostToolUse) have access to Claude Code environment variables. All other contexts require fallback patterns.
+**Additional note:** newer env-backed captures show `CLAUDE_PROJECT_DIR` present
+in the tested hook contexts and still pinned to the startup root even when later
+hook `cwd` drifted after `cd`.
+`CLAUDE_SESSION_ID` is stable in the parent Claude process but is NOT available to bash
+subprocesses; capture `session_id` from the `SessionStart` hook payload and persist it if needed
+by later hooks.
+
+**Key Insight:** treat hook-context `CLAUDE_PROJECT_DIR` as stronger than raw
+`cwd` for root identity. Treat `Path.cwd()` only as "where this process is
+running right now," not as equivalent to a stable session/project root.
 
 ### Recommended Helper Function Pattern
 
@@ -485,20 +513,20 @@ def find_project_root(start: Optional[Path] = None) -> Optional[Path]:
 
 
 def get_project_dir() -> Path:
-    """Get project directory with robust fallback chain.
+    """Get best-available project directory for general-purpose scripts.
 
     Returns:
         Project directory Path (never None)
 
-    Fallback order:
+    Resolution order:
         1. CLAUDE_PROJECT_DIR (Claude Code hook context)
         2. CODEX_PROJECT_DIR (Codex compatibility)
         3. Search upward for .git/.claude/.sc markers
-        4. Path.cwd() (last resort)
+        4. Path.cwd() (last resort current directory only)
 
     Note:
-        Environment variables are ONLY available in hook contexts.
-        Background agents, Bash tool, and teammates use marker search fallback.
+        Path.cwd() is a convenience fallback, not a stable root identity signal.
+        In hook contexts, prefer CLAUDE_PROJECT_DIR over raw cwd.
     """
     # Try environment variables first (available in hook contexts)
     project_dir = os.getenv("CLAUDE_PROJECT_DIR") or os.getenv("CODEX_PROJECT_DIR")
@@ -510,7 +538,7 @@ def get_project_dir() -> Path:
     if found_root:
         return found_root
 
-    # Last resort: current working directory
+    # Last resort: current working directory only
     return Path.cwd()
 
 def get_plugin_root() -> Path:
@@ -520,7 +548,7 @@ def get_plugin_root() -> Path:
         Plugin root Path (never None)
 
     Environment Variable:
-        - CLAUDE_PLUGIN_ROOT (Claude Code hook context)
+        - CLAUDE_PLUGIN_ROOT (plugin-context hook surface, if provided)
         - Fallback: Derive from current file location
     """
     plugin_root = os.getenv("CLAUDE_PLUGIN_ROOT")
@@ -542,13 +570,13 @@ LOGS_DIR = get_project_dir() / ".claude" / "state" / "logs" / "my-package"
 import os
 from pathlib import Path
 
-# ✅ Direct access works in hook context
-project_dir = Path(os.getenv("CLAUDE_PROJECT_DIR")).resolve()
-plugin_root = Path(os.getenv("CLAUDE_PLUGIN_ROOT")).resolve()
+# ✅ Direct access to CLAUDE_PROJECT_DIR is capture-backed in current hook context
+project_dir = Path(os.environ["CLAUDE_PROJECT_DIR"]).resolve()
+plugin_root_raw = os.getenv("CLAUDE_PLUGIN_ROOT")  # May be absent outside plugin-specific surfaces
 
-# Validate they exist (defensive programming)
-if not project_dir:
-    raise ValueError("CLAUDE_PROJECT_DIR not set (hook context required)")
+# Validate plugin root only when the specific surface expects it
+if plugin_root_raw:
+    plugin_root = Path(plugin_root_raw).resolve()
 ```
 
 #### 2. Background Agents & Bash Tool (Variables NOT Available)
@@ -558,20 +586,21 @@ if not project_dir:
 import os
 from pathlib import Path
 
-# ❌ These will be None in background agent context
+# ❌ Do not assume these exist in background agent context
 project_dir_raw = os.getenv("CLAUDE_PROJECT_DIR")  # None
 plugin_root_raw = os.getenv("CLAUDE_PLUGIN_ROOT")  # None
 
-# ✅ Use fallback pattern
+# ✅ Use explicit/root-search fallback pattern
 def get_project_dir():
-    return Path(os.getenv("CLAUDE_PROJECT_DIR") or os.getcwd())
+    return find_project_root() or Path.cwd()
 
-project_dir = get_project_dir()  # Falls back to Path.cwd()
+project_dir = get_project_dir()  # May fall back to current directory, not canonical root
 ```
 
 #### 3. Agent Scripts (Unknown Context)
 
-Agent scripts may run in ANY context (hook, background, teammate), so always use fallback:
+Agent scripts may run in multiple contexts (hook, background, teammate), so use
+fallbacks carefully and do not treat raw cwd as equivalent to stable root:
 
 ```python
 #!/usr/bin/env python3
@@ -580,7 +609,7 @@ import os
 
 # ✅ Works in ALL contexts
 def get_project_dir():
-    """Get project directory with fallback for all contexts."""
+    """Get best-available project directory for all contexts."""
     return Path(os.getenv("CLAUDE_PROJECT_DIR") or
                 os.getenv("CODEX_PROJECT_DIR") or
                 os.getcwd())
@@ -618,17 +647,15 @@ if __name__ == "__main__":
     test_env_vars()
 ```
 
-Run this in different contexts:
-- ✅ PreToolUse hook: Variables present
-- ❌ Bash tool: Variables absent (null)
-- ❌ Background agent: Variables absent (null)
+Run this in different contexts and record the results. Do not promote the output
+to a general rule until you have checked-in evidence for that surface.
 
 ### Security Considerations
 
-1. **Never hardcode project paths** - Always use environment variables or fallbacks
+1. **Never hardcode project paths** - Always use environment variables or explicit resolution logic
 2. **Validate paths exist** - Check `path.exists()` before using
 3. **Use Path.resolve()** - Convert to absolute paths to avoid CWD issues
-4. **Test fallback logic** - Ensure code works when env vars are missing
+4. **Test fallback logic** - Ensure code works when env vars are missing, and document when fallback is only current-directory context
 
 ### Template Integration
 
@@ -637,7 +664,7 @@ The `sc-logging.jenga.py` and `sc-shared.jenga.py` templates include these helpe
 ```python
 # templates/sc-logging.jenga.py includes:
 def get_project_dir() -> Path:
-    """Get project directory with fallback."""
+    """Get best-available project directory."""
     project_dir = os.getenv("CLAUDE_PROJECT_DIR") or os.getenv("CODEX_PROJECT_DIR")
     return _normalize_path(project_dir) or Path.cwd()
 
@@ -649,7 +676,7 @@ This ensures all packages using Jenga templates have consistent, portable enviro
 
 ## Gating Agents with PreToolUse Hooks
 
-Use PreToolUse hooks on the **Task** tool to enforce agent constraints at runtime. This pattern is useful for:
+Use PreToolUse hooks on the **Agent** tool to enforce agent constraints at runtime. This pattern is useful for:
 - Blocking agents from running in certain contexts (e.g., background execution)
 - Enforcing naming conventions (e.g., named teammates only)
 - Restricting agent types by directory or permission mode
@@ -664,7 +691,7 @@ Define the hook in **`settings.json`** (preferred for project-wide policy):
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "Task",
+        "matcher": "Agent",
         "hooks": [
           {
             "type": "command",
@@ -681,25 +708,25 @@ Define the hook in **`settings.json`** (preferred for project-wide policy):
 - **`~/.claude/settings.json`** - Global user-level policy
 - **`.claude/settings.local.json`** - Repository-specific override (for testing)
 
-### Task Tool Input Schema
+### Agent Tool Input Schema
 
-The PreToolUse hook receives a JSON payload on stdin with the following structure:
+The PreToolUse hook receives a JSON payload on stdin with the following structure.
+
+**Note:** Live captures confirm `tool_name = "Agent"` for all agent/teammate spawns in current Claude Code (capture-backed: `20260329T203357.612677Z-pretooluse-agent.json`). Earlier versions emitted `"Task"` — the rename point is not yet confirmed from older-version captures. Hook filters matching on tool name should handle both (`"Agent|Task"`) unless your deployment is version-pinned.
 
 ```json
 {
   "session_id": "8f47703d-9317-4270-a13a-3c2ae3c02670",
   "transcript_path": "/Users/user/.claude/projects/.../transcript.jsonl",
   "cwd": "/path/to/project",
-  "permission_mode": "bypassPermissions",
+  "permission_mode": "default",
   "hook_event_name": "PreToolUse",
-  "tool_name": "Task",
+  "tool_name": "Agent",
   "tool_input": {
     "description": "Task description text",
     "prompt": "Full task prompt",
-    "subagent_type": "Explore",
     "name": "optional-teammate-name",
-    "run_in_background": true,
-    "team_name": "optional-team-name"
+    "run_in_background": true
   },
   "tool_use_id": "toolu_..."
 }
@@ -761,14 +788,14 @@ def main() -> int:
     sys.stderr.write(
         f"BLOCKED: '{agent_type}' must be launched as a named teammate.\n"
         f"\n"
-        f"Correct (with team and name):\n"
-        f'  Task(subagent_type="{agent_type}", name="sm-sprint-1", team_name="dev-team", run_in_background=true)\n'
+        f"Correct (with name):\n"
+        f'  Agent(subagent_type="{agent_type}", name="sm-sprint-1", run_in_background=true)\n'
         f"\n"
         f"Also allowed (standalone):\n"
-        f'  Task(subagent_type="{agent_type}")  # foreground, no team needed\n'
+        f'  Agent(subagent_type="{agent_type}")  # foreground, no team needed\n'
         f"\n"
         f"Not allowed:\n"
-        f'  Task(subagent_type="{agent_type}", run_in_background=true)  # no name, no team\n'
+        f'  Agent(subagent_type="{agent_type}", run_in_background=true)  # no name, no team\n'
     )
 
     return 2
@@ -803,7 +830,7 @@ if agent_type == "system-admin" and data.get("permission_mode") != "bypassPermis
     return 2
 ```
 
-**4. Log all Task spawns (allow everything):**
+**4. Log all Agent spawns (allow everything):**
 ```python
 # Always allow, but log for audit
 log_entry = {
@@ -818,8 +845,200 @@ return 0
 
 ### Exit Codes
 
-- **0** = Allow the Task tool call (agent spawn proceeds)
-- **2** = Block the Task tool call (agent is not spawned)
+- **0** = Allow the Agent tool call (agent spawn proceeds)
+- **2** = Block the Agent tool call (agent is not spawned)
+
+## Verified Hook Payload Schemas
+
+These schemas are from live Haiku captures in the schook test harness. Treat them
+as observed shapes, not vendor-guaranteed contracts. Fields not listed here may
+appear but should not be depended upon until captured.
+
+### `SessionStart`
+
+```json
+{
+  "cwd": "/path/to/project",
+  "hook_event_name": "SessionStart",
+  "model": "claude-haiku-4-5-20251001",
+  "session_id": "<uuid>",
+  "source": "startup|compact|resume|clear",
+  "transcript_path": "/Users/.../.claude/projects/...jsonl"
+}
+```
+
+`source` observed values now include:
+- `"startup"` — fresh start
+- `"compact"` — post-compaction restart for the same session id
+- `"resume"` — resumed runtime
+- `"clear"` — new session start after `/clear`
+
+**`SessionStart` alone does not emit `Stop`** when no user turn occurs.
+
+### `SessionEnd`
+
+```json
+{
+  "cwd": "/path/to/project",
+  "hook_event_name": "SessionEnd",
+  "reason": "other|prompt_input_exit",
+  "session_id": "<uuid>",
+  "transcript_path": "/Users/.../.claude/projects/...jsonl"
+}
+```
+
+### `PreCompact`
+
+Observed in newer `schook` harness captures, but not currently wired in the
+baseline `sc-test-harness` `.claude/settings.json`.
+
+```json
+{
+  "custom_instructions": "",
+  "cwd": "/path/to/project",
+  "hook_event_name": "PreCompact",
+  "session_id": "<uuid>",
+  "transcript_path": "/Users/.../.claude/projects/...jsonl",
+  "trigger": "manual"
+}
+```
+
+### `PreToolUse(Bash)`
+
+```json
+{
+  "cwd": "/path/to/project",
+  "hook_event_name": "PreToolUse",
+  "permission_mode": "default",
+  "session_id": "<uuid>",
+  "tool_input": {
+    "command": "pwd",
+    "description": "Print current working directory"
+  },
+  "tool_name": "Bash",
+  "tool_use_id": "<tool-id>",
+  "transcript_path": "/Users/.../.claude/projects/...jsonl"
+}
+```
+
+### `PreToolUse(Agent)` — agent/teammate spawn
+
+```json
+{
+  "cwd": "/path/to/project",
+  "hook_event_name": "PreToolUse",
+  "permission_mode": "default",
+  "session_id": "<uuid>",
+  "tool_input": {
+    "description": "<string>",
+    "name": "<string>",
+    "prompt": "<string>",
+    "run_in_background": true
+  },
+  "tool_name": "Agent",
+  "tool_use_id": "<tool-id>",
+  "transcript_path": "/Users/.../.claude/projects/...jsonl"
+}
+```
+
+### `PostToolUse(Bash)`
+
+```json
+{
+  "cwd": "/path/to/project",
+  "hook_event_name": "PostToolUse",
+  "permission_mode": "default",
+  "session_id": "<uuid>",
+  "tool_input": {
+    "command": "pwd",
+    "description": "Print current working directory"
+  },
+  "tool_name": "Bash",
+  "tool_response": {
+    "interrupted": false,
+    "isImage": false,
+    "noOutputExpected": false,
+    "stderr": "",
+    "stdout": "/path/to/project"
+  },
+  "tool_use_id": "<tool-id>",
+  "transcript_path": "/Users/.../.claude/projects/...jsonl"
+}
+```
+
+### `PermissionRequest`
+
+```json
+{
+  "cwd": "/path/to/project",
+  "hook_event_name": "PermissionRequest",
+  "permission_mode": "default",
+  "permission_suggestions": [
+    {
+      "destination": "session",
+      "mode": "acceptEdits",
+      "type": "setMode"
+    }
+  ],
+  "session_id": "<uuid>",
+  "tool_input": { "...": "provider-specific tool payload" },
+  "tool_name": "Write|Bash",
+  "transcript_path": "/Users/.../.claude/projects/...jsonl"
+}
+```
+
+### `Stop`
+
+```json
+{
+  "cwd": "/path/to/project",
+  "hook_event_name": "Stop",
+  "last_assistant_message": "<assistant text>",
+  "permission_mode": "default",
+  "session_id": "<uuid>",
+  "stop_hook_active": false,
+  "transcript_path": "/Users/.../.claude/projects/...jsonl"
+}
+```
+
+### `Notification`
+
+Payload shape is still unknown in current live harness captures. Hook should
+stay wired, but do not build implementation logic that depends on any specific
+`Notification` fields until a real capture lands.
+
+---
+
+## Session Correlation Model
+
+Hook calls should treat **identity** and **context** as separate concerns.
+
+**Stable anchor:** `session_id` captured from `SessionStart`.
+
+Rules:
+- `session_id` does not change across directory changes
+- `session_id` does not change after compaction (`source = "compact"` fires a
+  new `SessionStart` with the same `session_id`)
+- a fresh Claude process creates a new `session_id`
+- `CLAUDE_SESSION_ID` is stable in the parent Claude process but is NOT
+  available to bash subprocesses — capture it from `SessionStart` and persist
+
+**Normalized agent state enum** (hook-event-driven):
+
+| State | Trigger |
+|-------|---------|
+| `starting` | `SessionStart(source="startup")` |
+| `busy` | active tool use / turn execution |
+| `awaiting_permission` | `PermissionRequest` |
+| `compacting` | `PreCompact` |
+| `idle` | `Stop` |
+| `ended` | `SessionEnd` |
+
+Note: `SessionStart(source="compact")` is a compact-return startup for the same
+`session_id` — transition back to `starting`, then `idle` once the resumed turn
+completes.
+
+---
 
 ## Notes
 
