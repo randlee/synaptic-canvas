@@ -1,4 +1,4 @@
-# Claude Code Skills and Agents Architecture Guidelines (v0.5)
+# Claude Code Skills and Agents Architecture Guidelines (v0.6)
 
 A practical guide for designing and implementing a two-tier skill/agent architecture that optimizes context efficiency, maintains clean separation of concerns, and enables scalable AI-assisted workflows.
 
@@ -203,6 +203,93 @@ Runner behaviors:
 - On registry/path error, return `success: false`, `error.code: "REGISTRY.RESOLUTION"`.
 
 Runner output to skill: fenced JSON matching the agent’s envelope. Skills MUST treat unfenced or malformed JSON as failure and surface a concise error.
+
+---
+
+### Named Teammate Pattern
+
+Some agents run as **named, persistent teammates** rather than one-shot Task-tool agents. A named teammate is launched with a `name` parameter (e.g., `quality-mgr`, `scrum-master`) and persists as a full process across the session, receiving assignments via team messaging (ATM) and spawning background sub-agents independently.
+
+This is a **distinct pattern** from the two-tier skill/agent architecture and has different rules:
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│                     Team Lead Session                         │
+│  • Sends assignments via ATM CLI / SendMessage               │
+│  • Receives structured status reports from teammate           │
+└──────────────────────────────────────────────────────────────┘
+                              │
+                              ▼ ATM message / SendMessage
+┌──────────────────────────────────────────────────────────────┐
+│               Named Teammate (e.g., quality-mgr)              │
+│  • Persistent process, receives messages on arrival           │
+│  • Loads skill as required reading (behavioral spec)          │
+│  • Orchestrates background sub-agents directly                │
+│  • Sends structured status to team lead via ATM               │
+└──────────────────────────────────────────────────────────────┘
+                              │
+                              ▼ Task tool (run_in_background: true)
+┌──────────────────────────────────────────────────────────────┐
+│           Background Sub-Agents (e.g., rust-qa-agent)         │
+│  • Invoked by teammate, not by a skill                        │
+│  • Return fenced JSON to the teammate                         │
+│  • Context isolated from teammate session                     │
+└──────────────────────────────────────────────────────────────┘
+```
+
+#### Key Differences from Background Agent Pattern
+
+| Aspect | Background Agent (Task tool) | Named Teammate |
+|--------|------------------------------|----------------|
+| Launch | `Task tool`, no `name` param | `Task tool` WITH `name` param (tmux pane) |
+| Lifetime | Single invocation, disposable | Persistent across session |
+| Communication | Returns fenced JSON to skill | Sends ATM messages to team lead |
+| Skill relationship | Skill invokes agent via Agent Runner | Teammate loads skill as required reading |
+| Agent Delegation section | Required in SKILL.md | **Not applicable** — teammate orchestrates directly |
+| Output contract | Fenced JSON | Structured ATM message (may include fenced JSON block) |
+| Sub-agent spawning | Not typical | Core pattern — spawns background agents with `run_in_background: true` |
+
+#### SKILL.md for Named Teammates
+
+When a skill is designed for use by a named teammate (loaded as required reading into the teammate's prompt), **do not include an Agent Delegation section**. Instead, describe:
+
+- The workflow the teammate should follow
+- Which sub-agents to spawn (with `run_in_background: true`)
+- The structured status format to report back to team lead
+- Multi-pass lifecycle (if applicable)
+
+The skill functions as a **behavioral spec**, not an invocation table. The teammate is the orchestrator.
+
+Example SKILL.md structure for named-teammate skills:
+
+```yaml
+---
+name: managing-quality-gh
+description: QA orchestration workflow for named quality-mgr teammate. Loaded as
+  required reading. Defines multi-pass QA lifecycle, sub-agent spawning, and
+  structured status reporting contract.
+---
+
+# Managing Quality (GitHub)
+
+## Scope
+[When to use this skill]
+
+## QA Lifecycle
+[Multi-pass workflow: IN-FLIGHT → FAIL → PASS]
+
+## Sub-Agent Orchestration
+[Which agents to spawn, with run_in_background: true]
+
+## Structured Status Contract
+[What to report back to team lead — fenced JSON block format]
+```
+
+#### Agent Prompt for Named Teammates
+
+Named teammate agents (e.g., `quality-mgr.md`) follow a relaxed version of the Agent Template. The `## Output Format` section describes the **ATM message format** sent to team lead, not a fenced JSON return value. The `## Inputs` section describes incoming ATM message fields rather than Task-tool parameters.
+
+The four required sections still apply (`## Inputs`, `## Output Format`, `## Error Handling`, `## Constraints`), but their content reflects the messaging-based interaction model.
 
 ---
 
@@ -889,10 +976,11 @@ Rationale:
 
 ---
 
-Document version: 0.5  
-Last updated: 2025-12-11  
+Document version: 0.6
+Last updated: 2026-03-09
 
 | Version | Date       | Notes |
 |---------|------------|-------|
+| 0.6     | 2026-03-09 | Added Named Teammate Pattern section: persistent tmux teammate vs background agent distinction, SKILL.md guidance for named-teammate skills (no Agent Delegation section required), and relaxed Agent Template rules for messaging-based interaction model. |
 | 0.5     | 2025-12-11 | Normalized versioning, tightened response contracts, added Agent Runner invocation contract, parallel aggregation policy, and safety/state guardrails. |
 | 0.4     | 2025-11-01 | Prior baseline for two-tier skills/agents architecture. |
