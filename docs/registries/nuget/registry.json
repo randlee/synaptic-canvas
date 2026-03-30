@@ -422,6 +422,44 @@
       "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-commit-push-pr/CHANGELOG.md",
       "lastUpdated": "2026-03-30",
       "dependents": []
+    },
+    "sc-rust": {
+      "name": "sc-rust",
+      "version": "0.9.0",
+      "status": "beta",
+      "tier": 2,
+      "description": "Rust development toolkit: idiomatic guidelines, design pattern enforcement, and specialized agents for architecture, code review, exploration, implementation, and QA. Includes cross-platform portability guidelines for Ubuntu, macOS, and Windows.",
+      "github": "randlee/synaptic-canvas",
+      "repo": "https://github.com/randlee/synaptic-canvas",
+      "path": "packages/sc-rust",
+      "readme": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-rust/README.md",
+      "license": "MIT",
+      "author": {
+        "name": "randlee"
+      },
+      "tags": [
+        "rust",
+        "development",
+        "code-review",
+        "architecture",
+        "qa",
+        "agents",
+        "skills"
+      ],
+      "artifacts": {
+        "commands": 0,
+        "skills": 2,
+        "agents": 5,
+        "scripts": 0,
+        "schemas": 0
+      },
+      "dependencies": [
+        "cargo >= 1.87",
+        "cargo-llvm-cov"
+      ],
+      "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-rust/CHANGELOG.md",
+      "lastUpdated": "2026-03-27",
+      "dependents": []
     }
   },
   "metadata": {

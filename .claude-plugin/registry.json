@@ -186,12 +186,12 @@
       "category": "tools",
       "artifacts": {
         "commands": 0,
-        "skills": 2,
+        "skills": 8,
         "agents": 5,
         "scripts": 0,
         "schemas": 0
       },
-      "lastUpdated": "2026-03-30T00:49:41.626476+00:00"
+      "lastUpdated": "2026-03-29T17:51:39.470924"
     },
     {
       "name": "sc-startup",
@@ -214,11 +214,11 @@
   "metadata": {
     "totalPackages": 12,
     "totalCommands": 10,
-    "totalSkills": 13,
+    "totalSkills": 19,
     "totalAgents": 42,
     "totalScripts": 46,
     "totalSchemas": 2
   },
-  "generated": "2026-03-30T00:49:41.627259+00:00",
-  "lastUpdated": "2026-03-30T00:49:41.627260+00:00"
+  "generated": "2026-03-29T17:51:39.470943",
+  "lastUpdated": "2026-03-29T17:51:39.470945"
 }
