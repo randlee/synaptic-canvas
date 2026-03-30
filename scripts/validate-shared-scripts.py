@@ -15,6 +15,12 @@ import sys
 from pathlib import Path
 from typing import Iterable, Tuple
 
+try:
+    import yaml
+    _YAML_AVAILABLE = True
+except ImportError:
+    _YAML_AVAILABLE = False
+
 
 def iter_packages(packages_dir: Path) -> Iterable[Path]:
     for path in sorted(packages_dir.iterdir()):
@@ -24,6 +30,21 @@ def iter_packages(packages_dir: Path) -> Iterable[Path]:
 
 def read_bytes(path: Path) -> bytes:
     return path.read_bytes()
+
+
+def package_uses_scripts(package_dir: Path) -> bool:
+    """Return True if the package manifest declares scripts artifacts."""
+    manifest = package_dir / "manifest.yaml"
+    if not manifest.exists():
+        return True  # No manifest: assume scripts are used
+    if not _YAML_AVAILABLE:
+        return True  # Can't parse: assume scripts are used
+    try:
+        data = yaml.safe_load(manifest.read_text())
+        artifacts = (data or {}).get("artifacts", {})
+        return bool(artifacts.get("scripts"))
+    except Exception:
+        return True
 
 
 def has_package_specific_shared(package_dir: Path) -> bool:
@@ -48,6 +69,10 @@ def compare_shared_script(canonical: Path, packages_dir: Path) -> Tuple[list[str
         if package_dir.name == "shared":
             continue
 
+        # Skip packages that don't declare scripts in their manifest
+        if not package_uses_scripts(package_dir):
+            continue
+
         # Skip packages that have migrated to package-specific shared modules
         if has_package_specific_shared(package_dir):
             continue
@@ -68,6 +93,10 @@ def sync_shared_script(canonical: Path, packages_dir: Path) -> list[str]:
 
     for package_dir in iter_packages(packages_dir):
         if package_dir.name == "shared":
+            continue
+
+        # Skip packages that don't declare scripts in their manifest
+        if not package_uses_scripts(package_dir):
             continue
 
         # Skip packages that have migrated to package-specific shared modules

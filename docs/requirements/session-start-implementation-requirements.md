@@ -274,7 +274,7 @@ class SessionStartLogEntry(BaseLogEntry):
 }
 ```
 
-**Note**: Need to verify which format Claude Code actually uses for SessionStart hooks. The design document shows Option A, but existing PreToolUse hooks use Option B format.
+**Verified**: Claude Code uses `settings.json` with structured format (Option B) — confirmed via live harness. Option A (`hooks.json` simple array) is not the Claude Code standard. Always use Option B.
 
 #### 2.2 Installer Modification Points
 
@@ -627,10 +627,8 @@ echo "=== Test Complete ==="
 
 ### Critical Decisions
 
-**Hook file format**: Need to verify which format Claude Code uses:
-- Design document specifies `~/.claude/hooks/hooks.json` with simple array format
-- Existing PreToolUse hooks use `.claude/settings.json` with structured format
-- **Recommendation**: Support both, check for hooks.json first, fall back to settings.json
+**Hook file format**: Verified — use `settings.json` structured format (Option B only).
+The `hooks.json` simple array format is not the Claude Code standard and should not be used.
 
 **Error handling philosophy**: Non-blocking at all costs
 - Orchestrator never fails session start
@@ -734,10 +732,8 @@ echo "=== Test Complete ==="
 
 ## Questions for Clarification
 
-1. **Hook file format**: Which format does Claude Code actually use for SessionStart hooks?
-   - `~/.claude/hooks/hooks.json` with array format (per design)
-   - `.claude/settings.json` with structured format (per existing PreToolUse hooks)
-   - Both supported?
+1. **Hook file format**: ✅ Resolved — `settings.json` structured format only (Option B).
+   `hooks.json` array format is not the Claude Code standard.
 
 2. **Hook registration failure**: Should sc-manage installation fail if hook registration fails?
    - Recommendation: No (warn but continue)

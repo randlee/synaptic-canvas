@@ -12,6 +12,12 @@ import sys
 from pathlib import Path
 from typing import Iterable
 
+try:
+    import yaml
+    _YAML_AVAILABLE = True
+except ImportError:
+    _YAML_AVAILABLE = False
+
 
 def iter_packages(packages_dir: Path) -> Iterable[Path]:
     for path in sorted(packages_dir.iterdir()):
@@ -23,12 +29,29 @@ def read_bytes(path: Path) -> bytes:
     return path.read_bytes()
 
 
+def package_uses_scripts(package_dir: Path) -> bool:
+    """Return True if the package declares scripts in its manifest artifacts."""
+    manifest = package_dir / "manifest.yaml"
+    if not manifest.exists():
+        return True  # no manifest — assume scripts needed (safe default)
+    if not _YAML_AVAILABLE:
+        return True  # can't parse — assume scripts needed
+    try:
+        data = yaml.safe_load(manifest.read_text())
+        artifacts = (data or {}).get("artifacts", {})
+        return bool(artifacts.get("scripts"))
+    except Exception:
+        return True  # parse error — assume scripts needed
+
+
 def sync_shared_script(canonical: Path, packages_dir: Path) -> list[str]:
     changed = []
     canonical_bytes = read_bytes(canonical)
 
     for package_dir in iter_packages(packages_dir):
         if package_dir.name == "shared":
+            continue
+        if not package_uses_scripts(package_dir):
             continue
         scripts_dir = package_dir / "scripts"
         scripts_dir.mkdir(parents=True, exist_ok=True)

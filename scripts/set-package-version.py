@@ -267,6 +267,15 @@ def load_manifest(package_dir: Path) -> Optional[dict]:
         return yaml.safe_load(f)
 
 
+def normalize_author(author: Any) -> dict[str, str]:
+    """Normalize author values to the marketplace object shape."""
+    if isinstance(author, dict):
+        return author
+    if isinstance(author, str):
+        return {'name': author}
+    return {'name': 'unknown'}
+
+
 def regenerate_marketplace_json(repo_root: Path, dry_run: bool = False) -> list[str]:
     """Regenerate .claude-plugin/marketplace.json from package manifests."""
     updated_files = []
@@ -305,7 +314,9 @@ def regenerate_marketplace_json(repo_root: Path, dry_run: bool = False) -> list[
         if manifest:
             plugin['version'] = manifest.get('version', plugin.get('version'))
             plugin['description'] = manifest.get('description', plugin.get('description', ''))
-            plugin['author'] = manifest.get('author', plugin.get('author', ''))
+            plugin['author'] = normalize_author(
+                manifest.get('author', plugin.get('author', {'name': 'unknown'}))
+            )
             plugin['license'] = manifest.get('license', plugin.get('license', 'MIT'))
 
     if not dry_run:
