@@ -1,6 +1,6 @@
 ---
 name: rust-qa-agent
-version: 1.0.0
+version: 0.9.0
 description: Verifies code quality through comprehensive testing, coverage analysis, and test suite validation, ensuring all tests pass and adequate coverage exists before sprint completion
 tools: Glob, Grep, LS, Read, NotebookRead, TodoWrite, KillShell, BashOutput, Bash
 model: sonnet

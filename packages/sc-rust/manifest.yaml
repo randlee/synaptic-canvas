@@ -1,5 +1,5 @@
 name: sc-rust
-version: 1.0.0
+version: 0.9.0
 description: >
   Rust development toolkit: idiomatic guidelines, design pattern enforcement, and
   specialized agents for architecture, code review, exploration, implementation, and QA.

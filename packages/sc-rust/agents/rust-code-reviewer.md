@@ -1,6 +1,6 @@
 ---
 name: rust-code-reviewer
-version: 1.0.0
+version: 0.9.0
 description: Reviews Rust code for bugs, logic errors, security vulnerabilities, code quality issues, and adherence to project conventions, using confidence-based filtering to report only high-priority issues that truly matter
 tools: Glob, Grep, LS, Read, NotebookRead, WebFetch, TodoWrite, WebSearch, KillShell, BashOutput
 model: sonnet
