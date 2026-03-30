@@ -21,7 +21,7 @@
         "scripts": 1,
         "schemas": 0
       },
-      "lastUpdated": "2026-02-16T22:30:16.442628+00:00"
+      "lastUpdated": "2026-03-30T00:49:41.617970+00:00"
     },
     {
       "name": "sc-codex",
@@ -38,7 +38,7 @@
         "scripts": 2,
         "schemas": 2
       },
-      "lastUpdated": "2026-02-16T22:30:16.443668+00:00"
+      "lastUpdated": "2026-03-30T00:49:41.619135+00:00"
     },
     {
       "name": "sc-commit-push-pr",
@@ -55,7 +55,7 @@
         "scripts": 9,
         "schemas": 0
       },
-      "lastUpdated": "2026-02-16T22:30:16.444450+00:00"
+      "lastUpdated": "2026-03-30T00:49:41.619863+00:00"
     },
     {
       "name": "sc-delay-tasks",
@@ -72,7 +72,7 @@
         "scripts": 2,
         "schemas": 0
       },
-      "lastUpdated": "2026-02-16T22:30:16.445049+00:00"
+      "lastUpdated": "2026-03-30T00:49:41.620529+00:00"
     },
     {
       "name": "sc-git-worktree",
@@ -86,10 +86,10 @@
         "commands": 1,
         "skills": 1,
         "agents": 5,
-        "scripts": 7,
+        "scripts": 8,
         "schemas": 0
       },
-      "lastUpdated": "2026-02-16T22:30:16.445990+00:00"
+      "lastUpdated": "2026-03-30T00:49:41.621593+00:00"
     },
     {
       "name": "sc-github-issue",
@@ -106,7 +106,7 @@
         "scripts": 1,
         "schemas": 0
       },
-      "lastUpdated": "2026-02-16T22:30:16.446985+00:00"
+      "lastUpdated": "2026-03-30T00:49:41.622740+00:00"
     },
     {
       "name": "sc-kanban",
@@ -123,7 +123,7 @@
         "scripts": 5,
         "schemas": 0
       },
-      "lastUpdated": "2026-02-16T22:30:16.447644+00:00"
+      "lastUpdated": "2026-03-30T00:49:41.623503+00:00"
     },
     {
       "name": "sc-manage",
@@ -140,7 +140,7 @@
         "scripts": 8,
         "schemas": 0
       },
-      "lastUpdated": "2026-02-16T22:30:16.448300+00:00"
+      "lastUpdated": "2026-03-30T00:49:41.624241+00:00"
     },
     {
       "name": "sc-repomix-nuget",
@@ -157,7 +157,7 @@
         "scripts": 3,
         "schemas": 0
       },
-      "lastUpdated": "2026-02-16T22:30:16.448917+00:00"
+      "lastUpdated": "2026-03-30T00:49:41.624960+00:00"
     },
     {
       "name": "sc-roslyn-diff",
@@ -174,7 +174,24 @@
         "scripts": 6,
         "schemas": 0
       },
-      "lastUpdated": "2026-02-16T22:30:16.449655+00:00"
+      "lastUpdated": "2026-03-30T00:49:41.625709+00:00"
+    },
+    {
+      "name": "sc-rust",
+      "version": "0.9.0",
+      "description": "Rust development toolkit: idiomatic guidelines, design pattern enforcement, and specialized agents for architecture, code review, exploration, implementation, and QA. Includes cross-platform portability guidelines for Ubuntu, macOS, and Windows.\n",
+      "author": "randlee",
+      "license": "MIT",
+      "keywords": [],
+      "category": "tools",
+      "artifacts": {
+        "commands": 0,
+        "skills": 8,
+        "agents": 5,
+        "scripts": 0,
+        "schemas": 0
+      },
+      "lastUpdated": "2026-03-29T17:51:39.470924"
     },
     {
       "name": "sc-startup",
@@ -191,17 +208,17 @@
         "scripts": 1,
         "schemas": 0
       },
-      "lastUpdated": "2026-02-16T22:30:16.450414+00:00"
+      "lastUpdated": "2026-03-30T00:49:41.627249+00:00"
     }
   ],
   "metadata": {
-    "totalPackages": 11,
+    "totalPackages": 12,
     "totalCommands": 10,
-    "totalSkills": 11,
-    "totalAgents": 37,
-    "totalScripts": 45,
+    "totalSkills": 19,
+    "totalAgents": 42,
+    "totalScripts": 46,
     "totalSchemas": 2
   },
-  "generated": "2026-02-16T22:30:16.450423+00:00",
-  "lastUpdated": "2026-02-16T22:30:16.450424+00:00"
+  "generated": "2026-03-29T17:51:39.470943",
+  "lastUpdated": "2026-03-29T17:51:39.470945"
 }

@@ -1,0 +1,44 @@
+name: sc-rust
+version: 0.9.0
+description: >
+  Rust development toolkit: idiomatic guidelines, design pattern enforcement, and
+  specialized agents for architecture, code review, exploration, implementation, and QA.
+  Includes cross-platform portability guidelines for Ubuntu, macOS, and Windows.
+author: randlee
+license: MIT
+tags:
+  - rust
+  - development
+  - code-review
+  - architecture
+  - qa
+  - agents
+  - skills
+
+# Files to install (relative to package root)
+artifacts:
+  skills:
+    - skills/rust-development/SKILL.md
+    - skills/rust-development/guidelines.txt
+    - skills/rust-development/cross-platform-guidelines.md
+    - skills/rust-best-practices/SKILL.md
+    - skills/rust-best-practices/patterns/enforcement-strategy.md
+    - skills/rust-best-practices/patterns/error-context-recovery-plan.md
+    - skills/rust-best-practices/patterns/typestate-plan.md
+    - skills/rust-best-practices/patterns/sealed-traits-plan.md
+  agents:
+    - agents/rust-architect.md
+    - agents/rust-code-reviewer.md
+    - agents/rust-code-explorer.md
+    - agents/rust-developer.md
+    - agents/rust-qa-agent.md
+
+# Installation policy
+install:
+  scope: local-only  # installed into repo .claude/, not global
+
+# Runtime requirements
+requires:
+  cli:
+    - cargo >= 1.87
+    - cargo-llvm-cov
