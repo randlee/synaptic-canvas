@@ -64,6 +64,19 @@ Apply checks in this order and stop early only if the higher-priority gaps make 
 
 Read `production-checklist.md` first. Read `framework-notes.md` only for the frameworks that actually appear in the codebase or task.
 
+## Agent Delegation
+
+Use these existing `sc-rust` agents for service-hardening workflows:
+
+| Operation | Agent | Returns |
+|-----------|-------|---------|
+| Design review or rollout hardening plan | `rust-architect` | Architecture blueprint or hardening plan with concrete implementation guidance |
+| Sprint review or diff-scoped service-hardening review | `rust-code-reviewer` | High-confidence review findings limited to applicable service-hardening topics |
+| Codebase tracing before review | `rust-code-explorer` | Codepath map showing where startup, request handling, clients, queues, and shutdown behavior live |
+| Validation pass after changes | `rust-qa-agent` | QA report covering tests, quality gates, and broader validation after hardening work |
+
+When delegating, use the same `run_in_background: true` payload format used by the other `sc-rust` skills and keep the prompt focused on service-hardening concerns rather than general Rust style issues.
+
 ## Review Modes
 
 ### Design or readiness review
