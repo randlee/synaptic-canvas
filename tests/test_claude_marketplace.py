@@ -42,6 +42,7 @@ def test_marketplace_json_valid():
         "sc-kanban",
         "sc-codex",
         "sc-commit-push-pr",
+        "sc-rust",
     ]
     assert len(data["plugins"]) == len(expected_plugins), f"Expected {len(expected_plugins)} plugins, found {len(data['plugins'])}"
     plugin_names = [p["name"] for p in data["plugins"]]
