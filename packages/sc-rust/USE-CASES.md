@@ -61,6 +61,35 @@ Review this design plan for state machine encoding and error propagation pattern
 
 The skill checks for typestate opportunities, error inventory completeness, sealed trait candidates, and newtype wrapping needs.
 
+## Review a Rust service for production gaps
+
+Use `rust-service-hardening` when the code in question is a service rather than a general-purpose crate.
+
+```
+Review this Axum service for production hardening gaps before we ship it.
+```
+
+Start with the skill's Tier 1 checks:
+1. Startup config validation
+2. Client and server timeouts
+3. Graceful shutdown and draining
+
+Then continue through tracing, request IDs, retries, backpressure, `spawn_blocking`, body limits, dependency hygiene, health checks, and CI/release gates.
+
+## Harden a Tokio service before rollout
+
+Use `rust-service-hardening` when the user asks for production readiness, deploy-readiness, or service-operability guidance rather than general Rust style advice.
+
+```
+Make this Tokio worker production-ready. I want request IDs, bounded queues, timeout rules, and a shutdown plan.
+```
+
+The skill is intentionally not for:
+- non-service Rust crates
+- embedded Rust
+- pure sync CLI tools
+- low-level libraries with no runtime/network/server concerns
+
 ## Catch cross-platform issues
 
 `rust-qa-agent` automatically checks for:

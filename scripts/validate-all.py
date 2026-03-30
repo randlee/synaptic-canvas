@@ -90,6 +90,7 @@ class ValidatorResult(BaseModel):
     command: str
     exit_code: int
     passed: bool
+    skipped: bool = False
     stdout: str = ""
     stderr: str = ""
     duration_seconds: float = 0.0
@@ -278,6 +279,7 @@ def run_validators_sequential(
                 command=" ".join(config.command),
                 exit_code=-1,
                 passed=False,
+                skipped=not config.required,
                 error_message=error.message,
                 stdout=error.stdout,
                 stderr=error.stderr,
@@ -299,6 +301,7 @@ def run_validators_sequential(
                                 command=" ".join(remaining.command),
                                 exit_code=-1,
                                 passed=False,
+                                skipped=True,
                                 error_message="Skipped due to previous failure",
                             )
                         )
@@ -312,6 +315,8 @@ def run_validators_sequential(
 
         else:
             validator_result = result.value
+            if not validator_result.passed and not config.required:
+                validator_result.skipped = True
             summary.results.append(validator_result)
 
             if validator_result.passed:
@@ -330,14 +335,15 @@ def run_validators_sequential(
                         # Skip remaining validators
                         for remaining in validators[i:]:
                             summary.results.append(
-                                ValidatorResult(
-                                    name=remaining.name,
-                                    command=" ".join(remaining.command),
-                                    exit_code=-1,
-                                    passed=False,
-                                    error_message="Skipped due to previous failure",
-                                )
+                            ValidatorResult(
+                                name=remaining.name,
+                                command=" ".join(remaining.command),
+                                exit_code=-1,
+                                passed=False,
+                                skipped=True,
+                                error_message="Skipped due to previous failure",
                             )
+                        )
                             summary.skipped += 1
                         break
                 else:
@@ -397,6 +403,7 @@ def run_validators_parallel(
                         command=" ".join(config.command),
                         exit_code=-1,
                         passed=False,
+                        skipped=not config.required,
                         error_message=error.message,
                         stdout=error.stdout,
                         stderr=error.stderr,
@@ -416,6 +423,8 @@ def run_validators_parallel(
 
                 else:
                     validator_result = result.value
+                    if not validator_result.passed and not config.required:
+                        validator_result.skipped = True
                     summary.results.append(validator_result)
 
                     if validator_result.passed:
@@ -439,6 +448,7 @@ def run_validators_parallel(
                     command=" ".join(config.command),
                     exit_code=-1,
                     passed=False,
+                    skipped=not config.required,
                     error_message=str(e),
                 )
                 summary.results.append(validator_result)
@@ -482,7 +492,7 @@ def print_summary(summary: ValidationSummary, verbose: bool = False) -> None:
     print("-" * 70)
 
     for result in summary.results:
-        status = "PASS" if result.passed else ("SKIP" if result.error_message and "kipped" in result.error_message else "FAIL")
+        status = "PASS" if result.passed else ("SKIP" if result.skipped else "FAIL")
         duration_str = f"{result.duration_seconds:.2f}s" if result.duration_seconds > 0 else "-"
         exit_code_str = str(result.exit_code) if result.exit_code >= 0 else "-"
         print(f"{result.name:<30} {status:<10} {duration_str:<12} {exit_code_str:<10}")
@@ -490,7 +500,7 @@ def print_summary(summary: ValidationSummary, verbose: bool = False) -> None:
     print("-" * 70)
 
     # Show failures in detail
-    failed_results = [r for r in summary.results if not r.passed and r.error_message != "Skipped due to previous failure"]
+    failed_results = [r for r in summary.results if not r.passed and not r.skipped]
     if failed_results and verbose:
         print("\nFAILURE DETAILS:")
         for result in failed_results:

@@ -105,7 +105,7 @@ Phase 1 should avoid overbuilding. Start by reusing existing `sc-rust` agents wh
 ### Phase 1
 - Use existing architecture/review agents if present in `sc-rust`
 - Lock v0.1 to guidance and review only; do not generate scaffolds or config snippets in the first release
-- For sprint review or diff-scoped review, use a single reviewer that covers only applicable topics
+- For sprint review or diff-scoped review, delegate to `rust-code-reviewer` and limit findings to applicable service-hardening topics only
 
 ### Phase 2
 If generic Rust review is too broad, add specialized review agents:

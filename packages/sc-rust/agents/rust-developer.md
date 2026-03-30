@@ -1,6 +1,6 @@
 ---
 name: rust-developer
-version: 0.9.0
+version: 0.10.0
 description: Implements Rust code changes by following project conventions and the Pragmatic Rust Guidelines, delivering safe, idiomatic, and well-tested solutions
 tools: Glob, Grep, LS, Read, Write, Edit, NotebookRead, WebFetch, TodoWrite, WebSearch, KillShell, BashOutput, Bash
 model: sonnet
