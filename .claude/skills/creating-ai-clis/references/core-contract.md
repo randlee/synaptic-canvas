@@ -18,6 +18,7 @@ Every command should have:
 - a defined response model
 - `--json` output support
 - deterministic exit behavior
+- one stable envelope shape across command modes and failure paths
 
 Strongly recommended for commands with structured input:
 - JSON input via stdin, `--input`, or `--file`
@@ -30,6 +31,10 @@ Strongly recommended for commands with structured input:
 - output should be complete enough for automated callers
 - avoid embedding important data only in prose strings
 - avoid color, progress output, or interactivity in JSON mode
+- do not change the top-level JSON shape just because the command runs in a different sub-mode
+- do not silently drop skipped inputs, partial failures, or incomplete scans
+- prefer provider-neutral field names in the canonical contract
+- preserve forward-compatible extension data rather than dropping unknown machine fields by default
 
 Human-readable mode may:
 - format the same data for readability
@@ -63,6 +68,10 @@ Keep error categories stable enough for automation:
 - permission/safety errors
 - internal/unexpected errors
 
+Top-level failure behavior should use the same machine contract family as success paths:
+- if `--json` is set, failures should still be JSON
+- partial success should be explicit, not inferred from stderr
+
 ## Command Modeling
 
 Prefer commands that correspond to tool-like operations:
@@ -79,6 +88,8 @@ Avoid machine contracts that depend on:
 - parsing unstructured text
 - positional-output conventions
 - side effects that cannot be re-read or verified
+- mode-specific envelope drift that forces callers to reshape per command path
+- display-only sentinel values in machine payloads
 
 ## Completion Standard
 

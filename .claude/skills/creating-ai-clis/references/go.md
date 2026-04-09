@@ -2,6 +2,8 @@
 
 Use this reference when implementing the CLI in Go.
 
+For concrete command and DTO shapes, also read `references/go-examples.md`.
+
 ## Recommended Stack
 
 - a mature command framework such as `cobra` when subcommands and help structure matter
@@ -43,6 +45,8 @@ Depending on the integration, this may be implemented through:
 - an in-memory backend
 - an `httptest` server or lower-level fake transport
 
+For complex simulator design, especially stateful device or database simulation, use the separate `designing-cli-simulators` skill.
+
 ## Testing Guidance
 
 Test at least:
@@ -50,3 +54,12 @@ Test at least:
 - CLI `--json` payloads
 - read-after-write verification for mutating commands
 - shared-fixture equivalence across CLI and MCP entrypoints
+
+## Example Notes
+
+- `claude-history` is a useful mixed example: it centralizes output formatting and offers JSON output on several commands, but many error paths still rely on plain error strings and stderr messages rather than a stable typed error envelope.
+
+For this skill’s target bar, improve on that pattern by:
+- centralizing both success and error serialization
+- defining stable machine-readable error codes or categories
+- making `not found` and invalid-input outcomes just as structured as success results

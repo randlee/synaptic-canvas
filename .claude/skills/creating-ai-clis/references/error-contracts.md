@@ -57,6 +57,10 @@ Exact field names may vary by language or existing conventions. The important pr
 - structured details
 - actionable guidance when a caller can recover
 
+For stronger contracts, prefer exposing both:
+- a stable machine code such as `ERR_VAL_MISSING_REQUIRED` or `ATM_TEAM_NOT_FOUND`
+- a broader kind/category such as `validation` or `not_found`
+
 ## Actionable Error Guidance
 
 Good CLI errors help the caller answer:
@@ -74,6 +78,10 @@ Avoid messages like:
 - "invalid request"
 - "operation failed"
 - "something went wrong"
+
+Also avoid:
+- exposing only prose on stderr when `--json` was explicitly requested
+- hiding partial failure in warnings/logs while returning a nominal success payload
 
 ## Recommended Error Categories
 
@@ -100,6 +108,10 @@ the MCP wrapper should not replace that with:
 - prose-only text
 - flattened or renamed payloads
 
+The CLI should also avoid:
+- switching to a different error shape for different sub-modes of the same command
+- collapsing partial success into silent omission
+
 ## Review Questions
 
 When reviewing an existing CLI, check:
@@ -108,6 +120,7 @@ When reviewing an existing CLI, check:
 - Does the message steer the caller toward correction?
 - Are validation, state, and dependency failures distinguishable?
 - Does the same error contract appear in both CLI and MCP paths?
+- Is the same error schema used for top-level failures, not only nested library results?
 
 ## Warning Signs
 

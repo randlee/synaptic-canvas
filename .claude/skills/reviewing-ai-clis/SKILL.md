@@ -1,7 +1,7 @@
 ---
 name: reviewing-ai-clis
 version: 0.1.0
-description: Critically review an existing CLI, MCP wrapper, or CLI plan for AI-first contract quality. Use when evaluating whether a CLI is JSON-first, MCP-ready without JSON reshaping, auditably models state changes, uses simulator-backed testing for external integrations, and returns typed actionable errors. Do not use for general style review or human-first shell UX review.
+description: Critically review an existing CLI, MCP wrapper, or CLI plan for AI-first contract quality. Use when evaluating whether a CLI is JSON-first, MCP-ready without JSON reshaping, auditably models state changes, uses stateful simulator-backed testing for external integrations, and returns typed actionable errors. Do not use for general style review or human-first shell UX review.
 ---
 
 # Reviewing AI CLIs
@@ -36,12 +36,14 @@ Review in this order:
 - `references/review-checklist.md` — critical review checklist for implemented CLIs
 - `references/error-review.md` — deep review rubric for typed, actionable errors
 - `references/plan-review.md` — how to review CLI designs before implementation
+- `../creating-ai-clis/references/example-repos.md` — example patterns and non-patterns
+  This is a deliberate cross-skill dependency; if `creating-ai-clis` moves or is renamed, this reference must be updated.
 
-Read `review-checklist.md` first. Then read `error-review.md`. Read `plan-review.md` when the target is a plan or architecture document rather than code.
+Read `review-checklist.md` first. Then read `error-review.md`. Read `plan-review.md` when the target is a plan or architecture document rather than code. Use `../creating-ai-clis/references/example-repos.md` to calibrate the bar, not to excuse weaker designs. Review at the contract level first; do not load language-specific references unless a concrete implementation detail requires it.
 
 ## Agent Delegation
 
-This skill operates directly on the target CLI, wrapper, or plan. It does not delegate to background agents or sub-agents.
+This skill operates directly in the main session on the target CLI, wrapper, or plan. It does not delegate to background agents or sub-agents.
 
 ## Workflow
 
@@ -53,7 +55,7 @@ This skill operates directly on the target CLI, wrapper, or plan. It does not de
 3. Identify whether every command exposes a usable JSON contract.
 4. Identify whether success and error results are typed, stable, and actionable.
 5. For any mutating command, verify that a corresponding read command exists to confirm resulting state.
-6. If the tool integrates with external systems, check whether realistic simulator-backed tests exist below the CLI layer.
+6. If the tool integrates with external systems, check whether realistic stateful simulator-backed tests exist below the CLI layer. Load `designing-cli-simulators` only when the simulator design itself needs deeper review.
 7. If an MCP wrapper exists or is planned, verify that it reuses the same request and response models without reshaping the business payload.
 8. Report findings first, ordered by severity, with file references when reviewing code and section references when reviewing plans.
 

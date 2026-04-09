@@ -2,6 +2,8 @@
 
 Error handling is a primary review area for AI-facing CLIs.
 
+This review is contract-first and language-agnostic by default. Do not reach for language-specific implementation guidance unless the problem requires it.
+
 ## Review Questions
 
 Ask:

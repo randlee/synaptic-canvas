@@ -2,6 +2,8 @@
 
 Use this reference when implementing the CLI in Rust.
 
+For concrete command and DTO shapes, also read `references/rust-examples.md`.
+
 ## Recommended Stack
 
 - `clap` for command and option parsing
@@ -42,6 +44,8 @@ For external systems:
 If the integration is async:
 - run the same async operation layer against both real and simulated backends
 
+For complex simulator design, especially stateful device or database simulation, use the separate `designing-cli-simulators` skill.
+
 ## Testing Guidance
 
 Test at least:
@@ -49,3 +53,14 @@ Test at least:
 - CLI `--json` responses, often with `assert_cmd` or equivalent
 - read-after-write verification for mutations
 - identical JSON contracts across CLI and MCP paths
+
+## Example Notes
+
+- `atm-core` is a strong example of domain-owned result types, stable error codes, and recovery-oriented error construction.
+- `sc-compose` is a strong example of a versioned diagnostics envelope and library-owned diagnostic codes.
+- `schook` is a strong example of treating JSON protocol and exit codes as the public contract, but its top-level CLI is not yet uniformly JSON-first enough to use as the final target standard.
+
+For this skill’s target bar, prefer combining:
+- `atm-core` style domain error taxonomy
+- `sc-compose` style versioned output envelopes
+- `schook` style explicit contract language

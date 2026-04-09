@@ -17,6 +17,20 @@ The goal is to run realistic end-to-end tests without:
 
 Prefer one simulator that exercises the real business flow over many shallow mocks.
 
+This skill requires the simulator contract to exist during CLI design. If the simulator itself needs detailed design work, use the separate `designing-cli-simulators` skill.
+
+## Required Simulator Properties
+
+For an AI-first CLI, the simulator should meet these baseline requirements:
+
+- fidelity: match real behavior as closely as reasonable for the test purpose
+- state: preserve state across calls so read-after-write and multi-step workflows are testable
+- behavior mutation: allow controlled injection of failures, edge cases, alternate timing, and unusual backend responses
+- test completeness: make routine unit and integration tests pass without requiring live infrastructure
+- swapability: sit behind the same adapter boundary used by the real integration so the same business logic runs in both modes
+
+Stateless per-call fakes are not enough when the real system has persistent state, sequencing constraints, or observable side effects.
+
 ## What the Simulator Should Cover
 
 The simulator should support:
@@ -25,6 +39,8 @@ The simulator should support:
 - retries/timeouts where relevant
 - deterministic seeded test data
 - observation of resulting state for verification
+- partial-success or degraded-mode scenarios where the real backend can produce them
+- configurable failure injection for negative-path tests
 
 ## Mutation Auditability
 
@@ -54,6 +70,33 @@ Mutating commands should return enough JSON to support automation, such as:
 
 Do not make automation infer success from prose like "updated successfully".
 
+## Adapter Boundary Guidance
+
+Use a swappable adapter pattern when the CLI talks to devices, services, or databases:
+
+- Rust: trait-based adapter boundary
+- .NET: interface-based adapter boundary
+- Go: interface-based adapter boundary
+
+The CLI and operation layer should depend on the abstraction, not on the simulator or the live implementation directly. Avoid separate conditional code paths that make simulator mode behave differently from production mode.
+
+## Database Simulator Guidance
+
+Database-backed CLIs also need simulator-backed testing. In these cases, the simulator may be a local persistence implementation rather than a fake device or service.
+
+Choose the lowest-fidelity option that still preserves the important behavior:
+
+- JSON-backed local store for simpler persistence and state-verification scenarios
+- SQLite-backed simulator with a matching or near-matching schema when relational behavior, constraints, or query semantics matter
+
+The simulator should still preserve:
+- persistent state across commands and tests
+- realistic mutation and readback behavior
+- failure injection such as conflicts, missing rows, lock-like conditions, or invalid-state transitions
+- the same adapter contract used by the live database path
+
+Do not treat a stateless repository mock as a sufficient database simulator when the CLI behavior depends on stored state or query behavior.
+
 ## Verification Pattern
 
 For each state-changing operation:
@@ -68,3 +111,6 @@ For each state-changing operation:
 - tests that only assert exit code
 - tests that require live hardware or servers
 - state changes visible only in logs or human-readable text
+- simulator mode with separate business logic branches
+- stateless fakes standing in for stateful systems
+- no way to inject negative-path behavior without patching test code

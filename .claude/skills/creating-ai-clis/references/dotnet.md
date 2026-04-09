@@ -2,6 +2,8 @@
 
 Use this reference when implementing the CLI in `.NET`.
 
+For concrete command and DTO shapes, also read `references/dotnet-examples.md`.
+
 ## Recommended Stack
 
 - `System.CommandLine` for command and option parsing
@@ -45,6 +47,8 @@ Depending on the integration, this may be implemented through:
 - a fake repository or device adapter
 - a custom `HttpMessageHandler` or equivalent low-level transport substitute
 
+For complex simulator design, especially stateful device or database simulation, use the separate `designing-cli-simulators` skill.
+
 ## Testing Guidance
 
 Test at least:
@@ -52,3 +56,13 @@ Test at least:
 - CLI `--json` output contract
 - read-after-write auditability for mutating commands
 - contract equivalence between CLI and MCP entrypoints
+
+## Example Notes
+
+- `roslyn-diff` shows the value of central output orchestration and explicit machine-output options on important commands.
+- `roslyn-graph` is a useful caution: a human-oriented batch CLI with stderr/prose errors is not enough for AI-first consumption.
+
+For this skill’s target bar, prefer:
+- one reusable request/response model layer
+- one reusable JSON serializer policy
+- stable machine-readable errors for top-level failures, not just internal exceptions

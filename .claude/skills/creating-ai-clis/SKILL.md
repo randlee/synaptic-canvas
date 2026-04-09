@@ -23,13 +23,12 @@ Do not use this skill for:
 
 ## Core Rules
 
-- Every command must support `--json`.
-- Machine-readable JSON is the source of truth; human-readable output is secondary.
-- MCP wrappers must reuse the same request and response JSON models as the CLI.
-- Wrapping the CLI with MCP does not require shelling out through stdout, but it must preserve the same serialization contract.
-- Error results must be typed, machine-readable, and actionable for callers. Prefer discriminated-union or result-style modeling over opaque strings.
-- Every mutating command must have a corresponding read command that can verify resulting state.
-- External integrations should have a full simulator at the lowest practical boundary so tests can run without real hardware or services.
+Keep these top-level rules in mind:
+- the machine contract is primary: `--json`, stable envelopes, typed actionable errors, and stable codes are mandatory
+- CLI and MCP must share the same request and response models with no business-payload reshaping
+- mutating commands need readback and external integrations need simulator-backed tests
+
+The detailed contract lives in the reference files below.
 
 ## References
 
@@ -37,15 +36,19 @@ Do not use this skill for:
 - `references/error-contracts.md` — typed, actionable error modeling for AI-facing CLIs
 - `references/mcp-compatibility.md` — how to keep CLI and MCP behavior identical without JSON reshaping
 - `references/simulation-and-auditability.md` — simulator, auditability, and mutation/read-pair guidance
+- `references/example-repos.md` — extracted patterns and non-patterns from the example CLIs
 - `references/dotnet.md` — `.NET` implementation patterns
+- `references/dotnet-examples.md` — `.NET` command, adapter, and JSON contract examples
 - `references/rust.md` — Rust implementation patterns
+- `references/rust-examples.md` — Rust command, trait, and JSON contract examples
 - `references/go.md` — Go implementation patterns
+- `references/go-examples.md` — Go command, interface, and JSON contract examples
 
-Read `core-contract.md` first. Then read `error-contracts.md`, `mcp-compatibility.md`, and `simulation-and-auditability.md`. Load only the language reference that matches the implementation language.
+Read `core-contract.md` first. Then read `error-contracts.md`, `mcp-compatibility.md`, `simulation-and-auditability.md`, and `example-repos.md`. Load only the language reference and language example file that match the implementation language. If the work requires deep simulator design, load the separate `designing-cli-simulators` skill as well.
 
 ## Agent Delegation
 
-This skill operates directly on CLI design and implementation artifacts. It does not delegate to background agents or sub-agents.
+This skill operates directly in the main session on CLI design and implementation artifacts. It does not delegate to background agents or sub-agents.
 
 ## Workflow
 
@@ -56,15 +59,15 @@ When creating or hardening an AI-first CLI:
 3. Define typed success and error results before formatting human output. Error outputs should help the caller correct the problem, not just report failure.
 4. Ensure every command supports `--json`, and use shared request/response models for any MCP wrapper.
 5. For each mutating command, define the corresponding `get`/`show`/`list`/`status` command needed to verify resulting state.
-6. If the CLI talks to an external system, place a simulator below the CLI and protocol layer so the same business logic runs against real and simulated backends.
-7. Pick the language-specific reference only after the contract is fixed.
+6. If the CLI talks to an external system, require a stateful simulator below the CLI and protocol layer so the same business logic runs against real and simulated backends. For specialist simulator design, use `designing-cli-simulators`.
+7. Pick the language-specific reference and example file only after the contract is fixed.
 8. Test the same JSON fixtures against the CLI path and the MCP path, with no contract reshaping between them.
 9. Before declaring the CLI complete, verify that:
    - all commands expose machine output through `--json`
    - the CLI and MCP wrapper use the same JSON schemas
-   - error results are typed, stable, and corrective for callers
+   - error results are typed, stable, corrective for callers, and carry stable codes
    - mutating commands are auditable through corresponding read commands
-   - external integrations can be exercised through a simulator
+   - external integrations can be exercised through a stateful simulator with controlled alternate behaviors
    - human output is a presentation layer, not the only tested interface
 
 ## Output Expectations
@@ -73,6 +76,7 @@ When using this skill, report:
 - the command and JSON contract that was chosen
 - how CLI and MCP compatibility is enforced
 - how success and error results are modeled
+- what stable error or diagnostic codes exist
 - how mutating commands are audited
 - how simulation-backed testing is provided
 - any remaining language-specific decisions
