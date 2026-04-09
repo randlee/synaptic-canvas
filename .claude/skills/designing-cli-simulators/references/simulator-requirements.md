@@ -37,4 +37,4 @@ Do not rely on:
 - top-level mocks that skip the real operation flow
 - simulator-only command paths
 - hidden magic state that tests cannot inspect
-- manually patched test doubles for each failure instead of reusable mutation controls
+- manually patched test doubles for each failure instead of reusable mutation controls; use the simulator-control patterns in `references/adapter-boundaries.md` instead

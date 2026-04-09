@@ -69,3 +69,5 @@ When using this skill, report:
 - the supported behavior-mutation controls
 - the fidelity goals and known limitations
 - how routine tests avoid live infrastructure
+
+Use `reviewing-ai-clis` as the validation counterpart when the simulator design needs a contract-level review against the CLI and MCP expectations.
