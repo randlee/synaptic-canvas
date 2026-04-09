@@ -145,9 +145,11 @@ Minimum coverage:
 
 ## Template Direction
 
-If you add Jinja2 or code templates later, these are the first files worth templating:
+If you generate scaffolding with `sc-compose` and MiniJinja, these are the first files worth templating:
 - root command and subcommand registration
 - request and response structs
 - output writer and error envelope
 - backend interface
 - simulator skeleton
+
+Use normalized frontmatter with `required_variables`, `defaults`, and `metadata`, and keep the rendered command pair and JSON writer on the same template branch. See `references/template-generation.md` for the shared templating pattern.

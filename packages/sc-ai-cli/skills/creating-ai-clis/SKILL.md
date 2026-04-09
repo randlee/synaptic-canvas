@@ -1,6 +1,6 @@
 ---
 name: creating-ai-clis
-version: 0.1.0
+version: 0.9.0
 description: Create or harden CLIs intended primarily for AI or system consumption and secondarily for humans. Use when designing or implementing a JSON-first, MCP-ready CLI where every command supports machine output, errors are typed and actionable, mutating commands are auditable via corresponding read commands, and external integrations need simulator-backed testing. Do not use for human-first shell utilities, one-off scripts, or text-only CLIs.
 ---
 
@@ -36,6 +36,7 @@ The detailed contract lives in the reference files below.
 - `references/error-contracts.md` — typed, actionable error modeling for AI-facing CLIs
 - `references/mcp-compatibility.md` — how to keep CLI and MCP behavior identical without JSON reshaping
 - `references/simulation-and-auditability.md` — simulator, auditability, and mutation/read-pair guidance
+- `references/template-generation.md` — `sc-compose`/MiniJinja template patterns for repeatable CLI scaffolding
 - `references/example-repos.md` — extracted patterns and non-patterns from the example CLIs
 - `references/dotnet.md` — `.NET` implementation patterns
 - `references/dotnet-examples.md` — `.NET` command, adapter, and JSON contract examples
@@ -44,7 +45,7 @@ The detailed contract lives in the reference files below.
 - `references/go.md` — Go implementation patterns
 - `references/go-examples.md` — Go command, interface, and JSON contract examples
 
-Read `core-contract.md` first. Then read `error-contracts.md`, `mcp-compatibility.md`, `simulation-and-auditability.md`, and `example-repos.md`. Load only the language reference and language example file that match the implementation language. If the work requires deep simulator design, load the separate `designing-cli-simulators` skill as well.
+Read `core-contract.md` first. Then read `error-contracts.md`, `mcp-compatibility.md`, `simulation-and-auditability.md`, `template-generation.md`, and `example-repos.md`. Load only the language reference and language example file that match the implementation language. If the work requires deep simulator design, load the separate `designing-cli-simulators` skill as well.
 
 ## Agent Delegation
 
@@ -61,8 +62,9 @@ When creating or hardening an AI-first CLI:
 5. For each mutating command, define the corresponding `get`/`show`/`list`/`status` command needed to verify resulting state.
 6. If the CLI talks to an external system, require a stateful simulator below the CLI and protocol layer so the same business logic runs against real and simulated backends. For specialist simulator design, use `designing-cli-simulators`.
 7. Pick the language-specific reference and example file only after the contract is fixed.
-8. Test the same JSON fixtures against the CLI path and the MCP path, with no contract reshaping between them.
-9. Before declaring the CLI complete, verify that:
+8. When the CLI shape repeats across projects or commands, capture the boilerplate as `sc-compose`-rendered `.j2` templates with normalized YAML frontmatter.
+9. Test the same JSON fixtures against the CLI path and the MCP path, with no contract reshaping between them.
+10. Before declaring the CLI complete, verify that:
    - all commands expose machine output through `--json`
    - the CLI and MCP wrapper use the same JSON schemas
    - error results are typed, stable, corrective for callers, and carry stable codes

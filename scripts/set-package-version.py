@@ -305,7 +305,13 @@ def regenerate_marketplace_json(repo_root: Path, dry_run: bool = False) -> list[
         if manifest:
             plugin['version'] = manifest.get('version', plugin.get('version'))
             plugin['description'] = manifest.get('description', plugin.get('description', ''))
-            plugin['author'] = manifest.get('author', plugin.get('author', ''))
+            manifest_author = manifest.get('author')
+            if isinstance(manifest_author, dict):
+                plugin['author'] = manifest_author
+            elif isinstance(manifest_author, str):
+                plugin['author'] = {'name': manifest_author}
+            else:
+                plugin['author'] = plugin.get('author', {'name': 'unknown'})
             plugin['license'] = manifest.get('license', plugin.get('license', 'MIT'))
 
     if not dry_run:
@@ -409,14 +415,38 @@ def regenerate_nuget_registry(repo_root: Path, dry_run: bool = False) -> list[st
         if marketplace_version is None:
             marketplace_version = manifest.get('version')
 
-        if pkg_name in registry.get('packages', {}):
-            pkg_entry = registry['packages'][pkg_name]
-            pkg_entry['version'] = manifest.get('version', pkg_entry.get('version'))
-            pkg_entry['description'] = manifest.get('description', pkg_entry.get('description', ''))
+        packages_map = registry.setdefault('packages', {})
+        if pkg_name not in packages_map:
+            packages_map[pkg_name] = {
+                'name': pkg_name,
+                'version': manifest.get('version', '0.0.0'),
+                'status': 'beta',
+                'tier': 0,
+                'description': manifest.get('description', ''),
+                'github': 'randlee/synaptic-canvas',
+                'repo': 'https://github.com/randlee/synaptic-canvas',
+                'path': f'packages/{pkg_name}',
+                'readme': f'https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/{pkg_name}/README.md',
+                'license': manifest.get('license', 'MIT'),
+                'author': {'name': manifest.get('author', 'randlee')},
+                'tags': manifest.get('tags', []),
+                'artifacts': count_artifacts(pkg_dir),
+                'dependencies': manifest.get('requires', {}).get('cli', []),
+                'changelog': f'https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/{pkg_name}/CHANGELOG.md',
+                'lastUpdated': datetime.now(timezone.utc).strftime('%Y-%m-%d'),
+                'dependents': [],
+            }
 
-            counts = count_artifacts(pkg_dir)
-            pkg_entry['artifacts'] = counts
-            pkg_entry['lastUpdated'] = datetime.now(timezone.utc).strftime('%Y-%m-%d')
+        pkg_entry = packages_map[pkg_name]
+        pkg_entry['version'] = manifest.get('version', pkg_entry.get('version'))
+        pkg_entry['description'] = manifest.get('description', pkg_entry.get('description', ''))
+        pkg_entry['license'] = manifest.get('license', pkg_entry.get('license', 'MIT'))
+        pkg_entry['author'] = {'name': manifest.get('author', pkg_entry.get('author', {}).get('name', 'randlee'))}
+        pkg_entry['tags'] = manifest.get('tags', pkg_entry.get('tags', []))
+
+        counts = count_artifacts(pkg_dir)
+        pkg_entry['artifacts'] = counts
+        pkg_entry['lastUpdated'] = datetime.now(timezone.utc).strftime('%Y-%m-%d')
 
     # Update marketplace version
     if marketplace_version and 'marketplace' in registry:

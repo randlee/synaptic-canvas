@@ -1,6 +1,6 @@
 ---
 name: designing-cli-simulators
-version: 0.1.0
+version: 0.9.0
 description: Design stateful simulators for AI-facing CLIs that integrate with devices, networks, services, or databases. Use when a CLI needs realistic simulator-backed testing, configurable fault injection, persistent state, and a swappable adapter boundary so the same business logic runs against live and simulated backends. Do not use for shallow mocks, stateless test doubles, or CLIs with no external integration.
 ---
 
@@ -36,8 +36,9 @@ The detailed guidance lives in the reference files below.
 - `references/adapter-boundaries.md` — how to keep simulator and live backends interchangeable
 - `references/device-simulators.md` — device, transport, and protocol simulation patterns
 - `references/database-simulators.md` — JSON-backed and SQLite-backed database simulation patterns
+- `references/simulator-examples.md` — concrete code patterns for simple stateful simulators
 
-Read `simulator-requirements.md` first. Then load `adapter-boundaries.md`. Load `device-simulators.md` for serial, USB, network, or service-style integrations. Load `database-simulators.md` for persistence-backed integrations.
+Read `simulator-requirements.md` first. Then load `adapter-boundaries.md`. Load `device-simulators.md` for serial, USB, network, or service-style integrations. Load `database-simulators.md` for persistence-backed integrations. Load `simulator-examples.md` when you need a concrete starting pattern.
 
 ## Agent Delegation
 
