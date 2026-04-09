@@ -1,6 +1,6 @@
 # Repo Target Map
 
-This file lists likely current targets in this repository for prompt hardening. It is a convenience map, not a source of truth. Re-check the actual files before editing.
+This file lists likely current targets in this repository for prompt hardening. It is a convenience map, not a source of truth. Re-check the actual files before editing, and quickly confirm the map is still current at the start of each hardening session.
 
 ## Coding and implementation agents
 

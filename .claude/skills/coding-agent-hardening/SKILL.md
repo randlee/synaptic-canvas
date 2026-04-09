@@ -51,6 +51,10 @@ Human escalation is still allowed, but only for real decisions:
 
 Read `hardening-policy.md` first. Then read `agent-category-guidance.md` for the target agent type. Use `prompt-rewrite-patterns.md` while editing the actual prompt text. Read `repo-target-map.md` only when you need help identifying likely target agents in this repository.
 
+## Agent Delegation
+
+This skill operates directly on prompt files and workflow instructions. It does not delegate to background agents or sub-agents.
+
 ## Workflow
 
 When hardening an existing agent prompt:
@@ -63,6 +67,8 @@ When hardening an existing agent prompt:
 2. Read the applicable sections in:
    - `references/hardening-policy.md`
    - `references/agent-category-guidance.md`
+
+2.5. If using `references/repo-target-map.md`, quickly confirm the listed targets are still current before relying on it.
 
 3. Scan the target prompt for permissive patterns such as:
    - blocker-only language
@@ -85,37 +91,16 @@ When hardening an existing agent prompt:
    - destructive-operation confirmations
    - scope limits that prevent major unplanned refactors
 
-6. Re-read the final prompt and ask:
-   - would this agent still stop on a fake decision?
-   - would it still treat "minor" as "ignore"?
-   - would it still create technical debt instead of fixing an issue now?
+6. Before declaring the prompt hardened, verify that it no longer permits:
+   - fake decisions or premature escalation
+   - "minor" as an ignore/defer category
+   - technical-debt escape hatches for reasonable fixes
+   - pre-existing/not-worsened dismissal
+   - stop-without-validation outcomes
 
 ## Category Guidance
 
-### Coding agents
-
-Default expectation:
-- fix small and medium issues directly while already in the code
-- do not ask whether to fix trivial adjacent defects
-- do not suggest backlog/technical debt for reasonable fixes
-- do not stop after edits without running relevant tests or validation
-- if validation regresses, keep working until the regression is fixed or root-caused
-
-### QA and review agents
-
-Default expectation:
-- surface all real findings, not just blockers and "important" ones
-- do not down-rank issues into irrelevance if they are cheap to fix now
-- do not tolerate "pre-existing" dismissal
-
-### Orchestration agents
-
-Default expectation:
-- treat findings as work to close, not merely classify
-- prefer "fix now" over "defer" unless there is a genuine project-level trade-off
-- stop only when the remaining path requires a real decision or approval
-- require executed validation after code changes, not just claimed intent to validate
-- require regression to be resolved or root-caused before allowing the workflow to stop
+See `references/agent-category-guidance.md` for category-specific rewrite rules for coding, QA/review, and orchestration agents.
 
 ## Output Expectations
 
