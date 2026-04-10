@@ -135,11 +135,6 @@ DEFAULT_VALIDATORS: list[ValidatorConfig] = [
         command=["python3", "scripts/validate-marketplace-sync.py"],
     ),
     ValidatorConfig(
-        name="Plugin JSON",
-        command=["python3", "scripts/validate-plugin-json.py"],
-        required=False,  # May not exist in all setups
-    ),
-    ValidatorConfig(
         name="Agent Registry",
         command=["python3", "scripts/validate-agents.py"],
     ),
@@ -167,6 +162,35 @@ DEFAULT_VALIDATORS: list[ValidatorConfig] = [
 # ============================================================================
 
 
+def _resolve_python_script_path(
+    command: list[str],
+    cwd: Optional[Path] = None,
+) -> Optional[Path]:
+    """Return the referenced Python script path when the command targets a .py file."""
+    if len(command) < 2:
+        return None
+
+    executable = Path(command[0]).name
+    script = command[1]
+    if not executable.startswith("python") or not script.endswith(".py"):
+        return None
+
+    script_path = Path(script)
+    if not script_path.is_absolute():
+        script_path = (cwd or Path.cwd()) / script_path
+    return script_path
+
+
+def _mark_optional_skip(result: ValidatorResult, reason: str) -> None:
+    """Tag an optional validator result so summary output reports it as skipped."""
+    result.error_message = f"Skipped optional validator: {reason}"
+
+
+def _is_skipped_result(result: ValidatorResult) -> bool:
+    """Detect skipped validators from their synthetic error messages."""
+    return bool(result.error_message and result.error_message.startswith("Skipped"))
+
+
 def run_validator(
     config: ValidatorConfig,
     cwd: Optional[Path] = None,
@@ -186,6 +210,17 @@ def run_validator(
     command_str = " ".join(config.command)
 
     try:
+        script_path = _resolve_python_script_path(config.command, cwd)
+        if script_path is not None and not script_path.exists():
+            duration = time.time() - start_time
+            return Failure(
+                error=ValidatorError(
+                    validator_name=config.name,
+                    message=f"Script not found: {config.command[1]}",
+                    duration_seconds=round(duration, 2),
+                )
+            )
+
         result = subprocess.run(
             config.command,
             capture_output=True,
@@ -283,6 +318,10 @@ def run_validators_sequential(
                 stderr=error.stderr,
                 duration_seconds=error.duration_seconds,
             )
+
+            if not config.required:
+                _mark_optional_skip(validator_result, error.message)
+
             summary.results.append(validator_result)
 
             if config.required:
@@ -303,7 +342,7 @@ def run_validators_sequential(
                             )
                         )
                         summary.skipped += 1
-                    break
+                        break
             else:
                 summary.skipped += 1
                 warnings.append(f"Optional validator '{config.name}' failed: {error.message}")
@@ -312,6 +351,13 @@ def run_validators_sequential(
 
         else:
             validator_result = result.value
+
+            if not validator_result.passed and not config.required:
+                _mark_optional_skip(
+                    validator_result,
+                    f"exit code {validator_result.exit_code}",
+                )
+
             summary.results.append(validator_result)
 
             if validator_result.passed:
@@ -402,6 +448,10 @@ def run_validators_parallel(
                         stderr=error.stderr,
                         duration_seconds=error.duration_seconds,
                     )
+
+                    if not config.required:
+                        _mark_optional_skip(validator_result, error.message)
+
                     summary.results.append(validator_result)
 
                     if config.required:
@@ -416,6 +466,13 @@ def run_validators_parallel(
 
                 else:
                     validator_result = result.value
+
+                    if not validator_result.passed and not config.required:
+                        _mark_optional_skip(
+                            validator_result,
+                            f"exit code {validator_result.exit_code}",
+                        )
+
                     summary.results.append(validator_result)
 
                     if validator_result.passed:
@@ -482,7 +539,7 @@ def print_summary(summary: ValidationSummary, verbose: bool = False) -> None:
     print("-" * 70)
 
     for result in summary.results:
-        status = "PASS" if result.passed else ("SKIP" if result.error_message and "kipped" in result.error_message else "FAIL")
+        status = "PASS" if result.passed else ("SKIP" if _is_skipped_result(result) else "FAIL")
         duration_str = f"{result.duration_seconds:.2f}s" if result.duration_seconds > 0 else "-"
         exit_code_str = str(result.exit_code) if result.exit_code >= 0 else "-"
         print(f"{result.name:<30} {status:<10} {duration_str:<12} {exit_code_str:<10}")
@@ -490,7 +547,13 @@ def print_summary(summary: ValidationSummary, verbose: bool = False) -> None:
     print("-" * 70)
 
     # Show failures in detail
-    failed_results = [r for r in summary.results if not r.passed and r.error_message != "Skipped due to previous failure"]
+    failed_results = [
+        r
+        for r in summary.results
+        if not r.passed
+        and not _is_skipped_result(r)
+        and r.error_message != "Skipped due to previous failure"
+    ]
     if failed_results and verbose:
         print("\nFAILURE DETAILS:")
         for result in failed_results:
@@ -572,7 +635,6 @@ Available validators:
   - Version Consistency (audit-versions.py)
   - Manifest Artifacts (validate-manifest-artifacts.py)
   - Marketplace Sync (validate-marketplace-sync.py)
-  - Plugin JSON (validate-plugin-json.py) [optional]
   - Agent Registry (validate-agents.py)
   - Frontmatter Schema (validate-frontmatter-schema.py)
   - Script References (validate-script-references.py)

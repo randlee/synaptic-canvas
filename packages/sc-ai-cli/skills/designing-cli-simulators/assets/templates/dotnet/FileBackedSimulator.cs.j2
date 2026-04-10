@@ -1,0 +1,101 @@
+---
+required_variables:
+  - namespace
+  - device_id
+  - set_command_name
+  - get_command_name
+  - state_file_name
+defaults: {}
+metadata:
+  language: dotnet
+  template_kind: simulator
+  skill: designing-cli-simulators
+  variant: file-backed
+---
+using System.Text.Json;
+
+namespace {{ namespace }};
+
+public sealed class FileBackedSimulator(string stateFile) : IDeviceBackend
+{
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        WriteIndented = true
+    };
+
+    public SetDeviceModeResponse SetDeviceMode(string mode)
+    {
+        ValidateMode(mode);
+        var state = LoadState() with
+        {
+            CurrentMode = mode,
+            Status = "updated"
+        };
+        SaveState(state);
+
+        return new SetDeviceModeResponse(
+            state.DeviceId,
+            mode,
+            mode,
+            state.Status,
+            "mode.updated"
+        );
+    }
+
+    public DeviceState GetDevice()
+    {
+        return LoadState();
+    }
+
+    private DeviceState LoadState()
+    {
+        if (!File.Exists(stateFile))
+        {
+            var initial = new DeviceState("{{ device_id }}", "idle", "ready");
+            SaveState(initial);
+            return initial;
+        }
+
+        try
+        {
+            var raw = File.ReadAllText(stateFile);
+            return JsonSerializer.Deserialize<DeviceState>(raw, JsonOptions)
+                ?? throw new CliException(new CliError("simulator.invalid_state", "backend", "Simulator state was empty.", "Delete the state file and retry."));
+        }
+        catch (CliException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            throw new CliException(new CliError("simulator.read_failed", "backend", $"Failed to read simulator state: {ex.Message}", "Verify the state file path is readable."));
+        }
+    }
+
+    private void SaveState(DeviceState state)
+    {
+        try
+        {
+            var directory = Path.GetDirectoryName(stateFile);
+            if (!string.IsNullOrWhiteSpace(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
+            var raw = JsonSerializer.Serialize(state, JsonOptions);
+            File.WriteAllText(stateFile, raw);
+        }
+        catch (Exception ex)
+        {
+            throw new CliException(new CliError("simulator.write_failed", "backend", $"Failed to write simulator state: {ex.Message}", "Verify the state file path is writable."));
+        }
+    }
+
+    private static void ValidateMode(string mode)
+    {
+        if (mode is not ("idle" or "active"))
+        {
+            throw new CliException(new CliError("validation.invalid_mode", "validation", $"Unsupported mode '{mode}'.", "Use one of: idle, active."));
+        }
+    }
+}

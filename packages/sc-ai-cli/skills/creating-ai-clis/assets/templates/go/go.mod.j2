@@ -1,0 +1,18 @@
+---
+required_variables:
+  - module_path
+  - binary_name
+  - device_id
+  - set_command_name
+  - get_command_name
+  - state_file_name
+defaults:
+  go_version: "1.26.0"
+metadata:
+  language: go
+  template_kind: project-file
+  skill: creating-ai-clis
+---
+module {{ module_path }}
+
+go {{ go_version }}

@@ -119,10 +119,11 @@ class ManifestArtifacts(BaseModel):
     agents: list[str] = Field(default_factory=list)
     scripts: list[str] = Field(default_factory=list)
     schemas: list[str] = Field(default_factory=list)
+    assets: list[str] = Field(default_factory=list)
 
     def all_files(self) -> list[str]:
         """Get all artifact files."""
-        return self.commands + self.skills + self.agents + self.scripts + self.schemas
+        return self.commands + self.skills + self.agents + self.scripts + self.schemas + self.assets
 
 
 class ManifestSchema(BaseModel):
@@ -209,7 +210,7 @@ def get_disk_files(package_path: Path) -> list[str]:
         List of relative file paths (normalized to forward slashes)
     """
     disk_files = []
-    artifact_dirs = ["commands", "skills", "agents", "scripts", "schemas"]
+    artifact_dirs = ["commands", "skills", "agents", "scripts", "schemas", "assets"]
     # Directories to skip
     skip_dirs = {"__pycache__", ".git", "node_modules", ".pytest_cache"}
 

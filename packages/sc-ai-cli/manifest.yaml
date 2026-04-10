@@ -40,6 +40,20 @@ artifacts:
     - skills/designing-cli-simulators/references/device-simulators.md
     - skills/designing-cli-simulators/references/database-simulators.md
     - skills/designing-cli-simulators/references/simulator-examples.md
+  assets:
+    - skills/creating-ai-clis/assets/templates/rust/Cargo.toml.j2
+    - skills/creating-ai-clis/assets/templates/rust/src/contracts.rs.j2
+    - skills/creating-ai-clis/assets/templates/rust/src/backend.rs.j2
+    - skills/creating-ai-clis/assets/templates/rust/src/main.rs.j2
+    - skills/creating-ai-clis/assets/templates/dotnet/AiCliFixture.csproj.j2
+    - skills/creating-ai-clis/assets/templates/dotnet/Contracts.cs.j2
+    - skills/creating-ai-clis/assets/templates/dotnet/Program.cs.j2
+    - skills/creating-ai-clis/assets/templates/go/go.mod.j2
+    - skills/creating-ai-clis/assets/templates/go/contracts.go.j2
+    - skills/creating-ai-clis/assets/templates/go/main.go.j2
+    - skills/designing-cli-simulators/assets/templates/rust/src/simulator.rs.j2
+    - skills/designing-cli-simulators/assets/templates/dotnet/FileBackedSimulator.cs.j2
+    - skills/designing-cli-simulators/assets/templates/go/simulator.go.j2
 
 install:
   scope: local-only

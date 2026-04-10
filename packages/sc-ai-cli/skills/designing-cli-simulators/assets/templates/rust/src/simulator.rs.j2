@@ -1,0 +1,134 @@
+---
+required_variables:
+  - package_name
+  - device_id
+  - set_command_name
+  - get_command_name
+  - state_file_name
+defaults: {}
+metadata:
+  language: rust
+  template_kind: simulator
+  skill: designing-cli-simulators
+  variant: file-backed
+---
+use std::fs;
+use std::path::PathBuf;
+
+use serde::{Deserialize, Serialize};
+
+use crate::backend::DeviceBackend;
+use crate::contracts::{CliError, DeviceState, SetDeviceModeResponse};
+
+#[derive(Debug, Serialize, Deserialize)]
+struct PersistedState {
+    device_id: String,
+    current_mode: String,
+    status: String,
+}
+
+impl Default for PersistedState {
+    fn default() -> Self {
+        Self {
+            device_id: "{{ device_id }}".to_string(),
+            current_mode: "idle".to_string(),
+            status: "ready".to_string(),
+        }
+    }
+}
+
+pub struct FileBackedSimulator {
+    state_path: PathBuf,
+}
+
+impl FileBackedSimulator {
+    pub fn new(state_path: PathBuf) -> Self {
+        Self { state_path }
+    }
+
+    fn load_state(&self) -> Result<PersistedState, CliError> {
+        if !self.state_path.exists() {
+            let state = PersistedState::default();
+            self.save_state(&state)?;
+            return Ok(state);
+        }
+
+        let raw = fs::read_to_string(&self.state_path).map_err(|error| CliError {
+            code: "simulator.read_failed".to_string(),
+            category: "backend".to_string(),
+            message: format!("failed to read simulator state: {error}"),
+            remediation: "Verify the state file path is writable and readable.".to_string(),
+        })?;
+
+        serde_json::from_str(&raw).map_err(|error| CliError {
+            code: "simulator.invalid_state".to_string(),
+            category: "backend".to_string(),
+            message: format!("failed to parse simulator state: {error}"),
+            remediation: "Delete the state file and retry to regenerate a clean simulator state.".to_string(),
+        })
+    }
+
+    fn save_state(&self, state: &PersistedState) -> Result<(), CliError> {
+        if let Some(parent) = self.state_path.parent() {
+            fs::create_dir_all(parent).map_err(|error| CliError {
+                code: "simulator.mkdir_failed".to_string(),
+                category: "backend".to_string(),
+                message: format!("failed to create simulator directory: {error}"),
+                remediation: "Verify the output directory exists and is writable.".to_string(),
+            })?;
+        }
+
+        let raw = serde_json::to_string_pretty(state).map_err(|error| CliError {
+            code: "simulator.serialize_failed".to_string(),
+            category: "backend".to_string(),
+            message: format!("failed to serialize simulator state: {error}"),
+            remediation: "Inspect the state model and ensure it remains serializable.".to_string(),
+        })?;
+
+        fs::write(&self.state_path, raw).map_err(|error| CliError {
+            code: "simulator.write_failed".to_string(),
+            category: "backend".to_string(),
+            message: format!("failed to write simulator state: {error}"),
+            remediation: "Verify the state file path is writable.".to_string(),
+        })
+    }
+
+    fn validate_mode(mode: &str) -> Result<(), CliError> {
+        match mode {
+            "idle" | "active" => Ok(()),
+            other => Err(CliError {
+                code: "validation.invalid_mode".to_string(),
+                category: "validation".to_string(),
+                message: format!("unsupported mode '{other}'"),
+                remediation: "Use one of: idle, active.".to_string(),
+            }),
+        }
+    }
+}
+
+impl DeviceBackend for FileBackedSimulator {
+    fn set_device_mode(&mut self, mode: &str) -> Result<SetDeviceModeResponse, CliError> {
+        Self::validate_mode(mode)?;
+        let mut state = self.load_state()?;
+        state.current_mode = mode.to_string();
+        state.status = "updated".to_string();
+        self.save_state(&state)?;
+
+        Ok(SetDeviceModeResponse {
+            device_id: state.device_id,
+            requested_mode: mode.to_string(),
+            applied_mode: mode.to_string(),
+            status: state.status,
+            diagnostic_code: "mode.updated".to_string(),
+        })
+    }
+
+    fn get_device(&self) -> Result<DeviceState, CliError> {
+        let state = self.load_state()?;
+        Ok(DeviceState {
+            device_id: state.device_id,
+            current_mode: state.current_mode,
+            status: state.status,
+        })
+    }
+}

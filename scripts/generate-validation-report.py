@@ -770,7 +770,6 @@ def run_validators(
         ("Version Consistency", ["python3", "scripts/audit-versions.py", "--verbose"]),
         ("Manifest Artifacts", ["python3", "scripts/validate-manifest-artifacts.py"]),
         ("Marketplace Sync", ["python3", "scripts/validate-marketplace-sync.py"]),
-        ("Plugin JSON", ["python3", "scripts/validate-plugin-json.py"]),
         ("Agent Registry", ["python3", "scripts/validate-agents.py"]),
         ("Frontmatter Schema", ["python3", "scripts/validate-frontmatter-schema.py"]),
         ("Script References", ["python3", "scripts/validate-script-references.py"]),

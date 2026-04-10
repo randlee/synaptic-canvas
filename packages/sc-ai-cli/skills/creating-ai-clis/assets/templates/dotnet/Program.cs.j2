@@ -1,0 +1,162 @@
+---
+required_variables:
+  - namespace
+  - device_id
+  - set_command_name
+  - get_command_name
+  - state_file_name
+defaults: {}
+metadata:
+  language: dotnet
+  template_kind: entrypoint
+  skill: creating-ai-clis
+---
+using System.Text.Json;
+
+namespace {{ namespace }};
+
+internal static class Program
+{
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        WriteIndented = true
+    };
+
+    private static int Main(string[] args)
+    {
+        var parsed = CliArguments.Parse(args);
+        var backend = new FileBackedSimulator(parsed.StateFile);
+
+        try
+        {
+            return parsed.Command switch
+            {
+                "{{ set_command_name }}" => RunSet(parsed, backend),
+                "{{ get_command_name }}" => RunGet(parsed, backend),
+                _ => WriteError(
+                    parsed.JsonMode,
+                    new CliError(
+                        "usage.unknown_command",
+                        "usage",
+                        $"Unknown command '{parsed.Command}'",
+                        "Use {{ set_command_name }} or {{ get_command_name }}."
+                    )
+                )
+            };
+        }
+        catch (CliException ex)
+        {
+            return WriteError(parsed.JsonMode, ex.Error);
+        }
+    }
+
+    private static int RunSet(CliArguments parsed, IDeviceBackend backend)
+    {
+        if (string.IsNullOrWhiteSpace(parsed.Mode))
+        {
+            return WriteError(
+                parsed.JsonMode,
+                new CliError(
+                    "validation.missing_mode",
+                    "validation",
+                    "Missing required --mode value.",
+                    "Provide --mode idle or --mode active."
+                )
+            );
+        }
+
+        var response = backend.SetDeviceMode(parsed.Mode);
+        return WriteSuccess(parsed.JsonMode, response, $"mode set to {parsed.Mode}");
+    }
+
+    private static int RunGet(CliArguments parsed, IDeviceBackend backend)
+    {
+        var response = backend.GetDevice();
+        return WriteSuccess(parsed.JsonMode, response, "device state loaded");
+    }
+
+    private static int WriteSuccess<T>(bool jsonMode, T data, string human)
+    {
+        if (jsonMode)
+        {
+            Console.WriteLine(JsonSerializer.Serialize(new Envelope<T>(true, data, null), JsonOptions));
+        }
+        else
+        {
+            Console.WriteLine(human);
+        }
+
+        return 0;
+    }
+
+    private static int WriteError(bool jsonMode, CliError error)
+    {
+        if (jsonMode)
+        {
+            Console.Error.WriteLine(JsonSerializer.Serialize(new Envelope<object>(false, null, error), JsonOptions));
+        }
+        else
+        {
+            Console.Error.WriteLine(error.Message);
+        }
+
+        return 2;
+    }
+}
+
+internal sealed class CliException : Exception
+{
+    public CliException(CliError error) : base(error.Message)
+    {
+        Error = error;
+    }
+
+    public CliError Error { get; }
+}
+
+internal sealed record CliArguments(string Command, string? Mode, bool JsonMode, string StateFile)
+{
+    public static CliArguments Parse(string[] args)
+    {
+        var jsonMode = false;
+        var stateFile = "{{ state_file_name }}";
+        string? command = null;
+        string? mode = null;
+
+        for (var i = 0; i < args.Length; i++)
+        {
+            switch (args[i])
+            {
+                case "--json":
+                    jsonMode = true;
+                    break;
+                case "--state-file":
+                    if (i + 1 >= args.Length)
+                    {
+                        throw new CliException(new CliError("usage.missing_state_file", "usage", "Missing value for --state-file.", "Provide a file path after --state-file."));
+                    }
+
+                    stateFile = args[++i];
+                    break;
+                case "--mode":
+                    if (i + 1 >= args.Length)
+                    {
+                        throw new CliException(new CliError("usage.missing_mode", "usage", "Missing value for --mode.", "Provide idle or active after --mode."));
+                    }
+
+                    mode = args[++i];
+                    break;
+                default:
+                    command ??= args[i];
+                    break;
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(command))
+        {
+            throw new CliException(new CliError("usage.missing_command", "usage", "Missing command.", "Use {{ set_command_name }} or {{ get_command_name }}."));
+        }
+
+        return new CliArguments(command, mode, jsonMode, stateFile);
+    }
+}

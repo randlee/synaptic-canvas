@@ -57,3 +57,17 @@ def test_token_expansion_repo_name(tmp_path: Path):
     assert f.exists()
     content = f.read_text(encoding="utf-8")
     assert f"../{repo.name}-worktrees" in content
+
+
+def test_install_sc_ai_cli_copies_template_assets(tmp_path: Path):
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    _init_git_repo(repo)
+    dest = repo / ".claude"
+
+    rc = sc_install.main(["install", "sc-ai-cli", "--dest", str(dest)])
+    assert rc == 0
+
+    assert (dest / "skills/creating-ai-clis/SKILL.md").exists()
+    assert (dest / "skills/creating-ai-clis/assets/templates/rust/Cargo.toml.j2").exists()
+    assert (dest / "skills/designing-cli-simulators/assets/templates/go/simulator.go.j2").exists()

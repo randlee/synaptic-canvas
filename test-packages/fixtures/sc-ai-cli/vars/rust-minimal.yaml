@@ -1,0 +1,5 @@
+package_name: ai_cli_rust_fixture
+device_id: device-rust-01
+set_command_name: set-device-mode
+get_command_name: get-device
+state_file_name: fixture-state.json

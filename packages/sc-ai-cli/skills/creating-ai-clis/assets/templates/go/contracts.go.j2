@@ -1,0 +1,55 @@
+---
+required_variables:
+  - module_path
+  - binary_name
+  - device_id
+  - set_command_name
+  - get_command_name
+  - state_file_name
+defaults: {}
+metadata:
+  language: go
+  template_kind: contracts
+  skill: creating-ai-clis
+---
+package main
+
+type DeviceState struct {
+	DeviceID    string `json:"device_id"`
+	CurrentMode string `json:"current_mode"`
+	Status      string `json:"status"`
+}
+
+type SetDeviceModeResponse struct {
+	DeviceID       string `json:"device_id"`
+	RequestedMode  string `json:"requested_mode"`
+	AppliedMode    string `json:"applied_mode"`
+	Status         string `json:"status"`
+	DiagnosticCode string `json:"diagnostic_code"`
+}
+
+type CliError struct {
+	Code        string `json:"code"`
+	Category    string `json:"category"`
+	Message     string `json:"message"`
+	Remediation string `json:"remediation"`
+}
+
+type Envelope[T any] struct {
+	OK    bool      `json:"ok"`
+	Data  *T        `json:"data,omitempty"`
+	Error *CliError `json:"error,omitempty"`
+}
+
+type DeviceBackend interface {
+	SetDeviceMode(mode string) (SetDeviceModeResponse, *CliError)
+	GetDevice() (DeviceState, *CliError)
+}
+
+func defaultState() DeviceState {
+	return DeviceState{
+		DeviceID:    "{{ device_id }}",
+		CurrentMode: "idle",
+		Status:      "ready",
+	}
+}

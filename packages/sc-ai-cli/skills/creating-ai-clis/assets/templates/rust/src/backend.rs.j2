@@ -1,0 +1,19 @@
+---
+required_variables:
+  - package_name
+  - device_id
+  - set_command_name
+  - get_command_name
+  - state_file_name
+defaults: {}
+metadata:
+  language: rust
+  template_kind: backend-trait
+  skill: creating-ai-clis
+---
+use crate::contracts::{CliError, DeviceState, SetDeviceModeResponse};
+
+pub trait DeviceBackend {
+    fn set_device_mode(&mut self, mode: &str) -> Result<SetDeviceModeResponse, CliError>;
+    fn get_device(&self) -> Result<DeviceState, CliError>;
+}

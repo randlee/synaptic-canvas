@@ -1,0 +1,134 @@
+---
+required_variables:
+  - module_path
+  - binary_name
+  - device_id
+  - set_command_name
+  - get_command_name
+  - state_file_name
+defaults: {}
+metadata:
+  language: go
+  template_kind: entrypoint
+  skill: creating-ai-clis
+---
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+	"os"
+)
+
+func main() {
+	command, jsonMode, stateFile, mode := parseArgs(os.Args[1:])
+	backend := NewFileBackedSimulator(stateFile)
+
+	switch command {
+	case "{{ set_command_name }}":
+		if mode == "" {
+			writeError(jsonMode, CliError{
+				Code:        "validation.missing_mode",
+				Category:    "validation",
+				Message:     "Missing required --mode value.",
+				Remediation: "Provide --mode idle or --mode active.",
+			})
+		}
+
+		response, err := backend.SetDeviceMode(mode)
+		if err != nil {
+			writeError(jsonMode, *err)
+		}
+		writeSuccess(jsonMode, response, fmt.Sprintf("mode set to %s", mode))
+	case "{{ get_command_name }}":
+		response, err := backend.GetDevice()
+		if err != nil {
+			writeError(jsonMode, *err)
+		}
+		writeSuccess(jsonMode, response, "device state loaded")
+	default:
+		writeError(jsonMode, CliError{
+			Code:        "usage.unknown_command",
+			Category:    "usage",
+			Message:     fmt.Sprintf("Unknown command '%s'.", command),
+			Remediation: "Use {{ set_command_name }} or {{ get_command_name }}.",
+		})
+	}
+}
+
+func parseArgs(args []string) (command string, jsonMode bool, stateFile string, mode string) {
+	stateFile = "{{ state_file_name }}"
+
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--json":
+			jsonMode = true
+		case "--state-file":
+			if i+1 >= len(args) {
+				writeError(true, CliError{
+					Code:        "usage.missing_state_file",
+					Category:    "usage",
+					Message:     "Missing value for --state-file.",
+					Remediation: "Provide a file path after --state-file.",
+				})
+			}
+			i++
+			stateFile = args[i]
+		case "--mode":
+			if i+1 >= len(args) {
+				writeError(true, CliError{
+					Code:        "usage.missing_mode",
+					Category:    "usage",
+					Message:     "Missing value for --mode.",
+					Remediation: "Provide idle or active after --mode.",
+				})
+			}
+			i++
+			mode = args[i]
+		default:
+			if command == "" {
+				command = args[i]
+			}
+		}
+	}
+
+	if command == "" {
+		writeError(true, CliError{
+			Code:        "usage.missing_command",
+			Category:    "usage",
+			Message:     "Missing command.",
+			Remediation: "Use {{ set_command_name }} or {{ get_command_name }}.",
+		})
+	}
+
+	return command, jsonMode, stateFile, mode
+}
+
+func writeSuccess[T any](jsonMode bool, data T, human string) {
+	if jsonMode {
+		envelope := Envelope[T]{OK: true, Data: &data}
+		raw, err := json.MarshalIndent(envelope, "", "  ")
+		if err != nil {
+			panic(err)
+		}
+		fmt.Println(string(raw))
+		return
+	}
+
+	fmt.Println(human)
+}
+
+func writeError(jsonMode bool, cliErr CliError) {
+	if jsonMode {
+		envelope := Envelope[any]{OK: false, Error: &cliErr}
+		raw, err := json.MarshalIndent(envelope, "", "  ")
+		if err != nil {
+			panic(err)
+		}
+		fmt.Fprintln(os.Stderr, string(raw))
+	} else {
+		fmt.Fprintln(os.Stderr, cliErr.Message)
+	}
+
+	os.Exit(2)
+}

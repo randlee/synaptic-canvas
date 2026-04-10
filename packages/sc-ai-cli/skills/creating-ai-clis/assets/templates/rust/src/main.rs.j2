@@ -1,0 +1,92 @@
+---
+required_variables:
+  - package_name
+  - device_id
+  - set_command_name
+  - get_command_name
+  - state_file_name
+defaults: {}
+metadata:
+  language: rust
+  template_kind: entrypoint
+  skill: creating-ai-clis
+---
+mod backend;
+mod contracts;
+mod simulator;
+
+use std::path::PathBuf;
+
+use clap::{Parser, Subcommand};
+
+use crate::backend::DeviceBackend;
+use crate::contracts::{CliError, DeviceState, Envelope, SetDeviceModeResponse};
+use crate::simulator::FileBackedSimulator;
+
+#[derive(Parser)]
+#[command(name = "{{ set_command_name }}-fixture")]
+struct Cli {
+    #[arg(long, global = true)]
+    json: bool,
+
+    #[arg(long, global = true, default_value = "{{ state_file_name }}")]
+    state_file: PathBuf,
+
+    #[command(subcommand)]
+    command: Commands,
+}
+
+#[derive(Subcommand)]
+enum Commands {
+    #[command(name = "{{ set_command_name }}")]
+    SetDeviceMode {
+        #[arg(long)]
+        mode: String,
+    },
+    #[command(name = "{{ get_command_name }}")]
+    GetDevice,
+}
+
+fn main() {
+    let cli = Cli::parse();
+    let mut backend = FileBackedSimulator::new(cli.state_file);
+
+    match cli.command {
+        Commands::SetDeviceMode { mode } => match backend.set_device_mode(&mode) {
+            Ok(response) => emit_success(
+                cli.json,
+                response,
+                format!("mode set to {}", mode),
+            ),
+            Err(error) => emit_error(cli.json, error),
+        },
+        Commands::GetDevice => match backend.get_device() {
+            Ok(response) => emit_success(cli.json, response, "device state loaded".to_string()),
+            Err(error) => emit_error(cli.json, error),
+        },
+    }
+}
+
+fn emit_success<T: serde::Serialize>(json_mode: bool, data: T, human: String) {
+    if json_mode {
+        println!(
+            "{}",
+            serde_json::to_string_pretty(&Envelope::success(data)).expect("serialize success envelope")
+        );
+    } else {
+        println!("{human}");
+    }
+}
+
+fn emit_error(json_mode: bool, error: CliError) -> ! {
+    if json_mode {
+        eprintln!(
+            "{}",
+            serde_json::to_string_pretty(&Envelope::<DeviceState>::failure(error))
+                .expect("serialize error envelope")
+        );
+    } else {
+        eprintln!("error");
+    }
+    std::process::exit(2);
+}

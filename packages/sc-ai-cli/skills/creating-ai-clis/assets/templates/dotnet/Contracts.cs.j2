@@ -1,0 +1,49 @@
+---
+required_variables:
+  - namespace
+  - device_id
+  - set_command_name
+  - get_command_name
+  - state_file_name
+defaults: {}
+metadata:
+  language: dotnet
+  template_kind: contracts
+  skill: creating-ai-clis
+---
+using System.Text.Json.Serialization;
+
+namespace {{ namespace }};
+
+public sealed record DeviceState(
+    [property: JsonPropertyName("device_id")] string DeviceId,
+    [property: JsonPropertyName("current_mode")] string CurrentMode,
+    [property: JsonPropertyName("status")] string Status
+);
+
+public sealed record SetDeviceModeResponse(
+    [property: JsonPropertyName("device_id")] string DeviceId,
+    [property: JsonPropertyName("requested_mode")] string RequestedMode,
+    [property: JsonPropertyName("applied_mode")] string AppliedMode,
+    [property: JsonPropertyName("status")] string Status,
+    [property: JsonPropertyName("diagnostic_code")] string DiagnosticCode
+);
+
+public sealed record CliError(
+    [property: JsonPropertyName("code")] string Code,
+    [property: JsonPropertyName("category")] string Category,
+    [property: JsonPropertyName("message")] string Message,
+    [property: JsonPropertyName("remediation")] string Remediation
+);
+
+public sealed record Envelope<T>(
+    [property: JsonPropertyName("ok")] bool Ok,
+    [property: JsonPropertyName("data")] T? Data,
+    [property: JsonPropertyName("error")] CliError? Error
+);
+
+public interface IDeviceBackend
+{
+    SetDeviceModeResponse SetDeviceMode(string mode);
+    DeviceState GetDevice();
+}

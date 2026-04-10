@@ -1,0 +1,138 @@
+---
+required_variables:
+  - module_path
+  - binary_name
+  - device_id
+  - set_command_name
+  - get_command_name
+  - state_file_name
+defaults: {}
+metadata:
+  language: go
+  template_kind: simulator
+  skill: designing-cli-simulators
+  variant: file-backed
+---
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+	"os"
+	"path/filepath"
+)
+
+type FileBackedSimulator struct {
+	stateFile string
+}
+
+func NewFileBackedSimulator(stateFile string) *FileBackedSimulator {
+	return &FileBackedSimulator{stateFile: stateFile}
+}
+
+func (s *FileBackedSimulator) SetDeviceMode(mode string) (SetDeviceModeResponse, *CliError) {
+	if err := validateMode(mode); err != nil {
+		return SetDeviceModeResponse{}, err
+	}
+
+	state, cliErr := s.loadState()
+	if cliErr != nil {
+		return SetDeviceModeResponse{}, cliErr
+	}
+
+	state.CurrentMode = mode
+	state.Status = "updated"
+	if cliErr := s.saveState(state); cliErr != nil {
+		return SetDeviceModeResponse{}, cliErr
+	}
+
+	return SetDeviceModeResponse{
+		DeviceID:       state.DeviceID,
+		RequestedMode:  mode,
+		AppliedMode:    mode,
+		Status:         state.Status,
+		DiagnosticCode: "mode.updated",
+	}, nil
+}
+
+func (s *FileBackedSimulator) GetDevice() (DeviceState, *CliError) {
+	return s.loadState()
+}
+
+func (s *FileBackedSimulator) loadState() (DeviceState, *CliError) {
+	if _, err := os.Stat(s.stateFile); os.IsNotExist(err) {
+		state := defaultState()
+		if cliErr := s.saveState(state); cliErr != nil {
+			return DeviceState{}, cliErr
+		}
+		return state, nil
+	}
+
+	raw, err := os.ReadFile(s.stateFile)
+	if err != nil {
+		return DeviceState{}, &CliError{
+			Code:        "simulator.read_failed",
+			Category:    "backend",
+			Message:     fmt.Sprintf("failed to read simulator state: %v", err),
+			Remediation: "Verify the state file path is readable.",
+		}
+	}
+
+	var state DeviceState
+	if err := json.Unmarshal(raw, &state); err != nil {
+		return DeviceState{}, &CliError{
+			Code:        "simulator.invalid_state",
+			Category:    "backend",
+			Message:     fmt.Sprintf("failed to parse simulator state: %v", err),
+			Remediation: "Delete the state file and retry.",
+		}
+	}
+
+	return state, nil
+}
+
+func (s *FileBackedSimulator) saveState(state DeviceState) *CliError {
+	if err := os.MkdirAll(filepath.Dir(s.stateFile), 0o755); err != nil && filepath.Dir(s.stateFile) != "." {
+		return &CliError{
+			Code:        "simulator.mkdir_failed",
+			Category:    "backend",
+			Message:     fmt.Sprintf("failed to create simulator directory: %v", err),
+			Remediation: "Verify the output directory exists and is writable.",
+		}
+	}
+
+	raw, err := json.MarshalIndent(state, "", "  ")
+	if err != nil {
+		return &CliError{
+			Code:        "simulator.serialize_failed",
+			Category:    "backend",
+			Message:     fmt.Sprintf("failed to serialize simulator state: %v", err),
+			Remediation: "Inspect the state model and ensure it remains serializable.",
+		}
+	}
+
+	if err := os.WriteFile(s.stateFile, raw, 0o644); err != nil {
+		return &CliError{
+			Code:        "simulator.write_failed",
+			Category:    "backend",
+			Message:     fmt.Sprintf("failed to write simulator state: %v", err),
+			Remediation: "Verify the state file path is writable.",
+		}
+	}
+
+	return nil
+}
+
+func validateMode(mode string) *CliError {
+	switch mode {
+	case "idle", "active":
+		return nil
+	default:
+		return &CliError{
+			Code:        "validation.invalid_mode",
+			Category:    "validation",
+			Message:     fmt.Sprintf("unsupported mode '%s'", mode),
+			Remediation: "Use one of: idle, active.",
+		}
+	}
+}
