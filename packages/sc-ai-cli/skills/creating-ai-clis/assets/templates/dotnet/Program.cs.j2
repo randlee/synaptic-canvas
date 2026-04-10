@@ -11,6 +11,8 @@ metadata:
   template_kind: entrypoint
   skill: creating-ai-clis
 ---
+using System.CommandLine;
+using System.CommandLine.Parsing;
 using System.Text.Json;
 
 namespace {{ namespace }};
@@ -24,55 +26,110 @@ internal static class Program
 
     private static int Main(string[] args)
     {
-        var parsed = CliArguments.Parse(args);
-        var backend = new FileBackedSimulator(parsed.StateFile);
+        var jsonOption = new Option<bool>("--json")
+        {
+            Description = "Emit machine-readable JSON output."
+        };
+        var stateFileOption = new Option<string?>("--state-file")
+        {
+            Description = "Path to the simulator state file."
+        };
+        var modeOption = new Option<string?>("--mode")
+        {
+            Description = "Target device mode."
+        };
+
+        var setCommand = new Command("{{ set_command_name }}")
+        {
+            Description = "Set the device mode."
+        };
+        setCommand.Options.Add(modeOption);
+        setCommand.SetAction(parseResult => RunSet(
+            parseResult.GetValue(jsonOption),
+            parseResult.GetValue(stateFileOption) ?? "{{ state_file_name }}",
+            parseResult.GetValue(modeOption)
+        ));
+
+        var getCommand = new Command("{{ get_command_name }}")
+        {
+            Description = "Get the current device state."
+        };
+        getCommand.SetAction(parseResult => RunGet(
+            parseResult.GetValue(jsonOption),
+            parseResult.GetValue(stateFileOption) ?? "{{ state_file_name }}"
+        ));
+
+        var rootCommand = new RootCommand("AI-first CLI fixture");
+        rootCommand.Options.Add(jsonOption);
+        rootCommand.Options.Add(stateFileOption);
+        rootCommand.Subcommands.Add(setCommand);
+        rootCommand.Subcommands.Add(getCommand);
+        rootCommand.SetAction(parseResult => WriteError(
+            parseResult.GetValue(jsonOption),
+            new CliError(
+                "usage.missing_command",
+                "usage",
+                "Missing command.",
+                "Use {{ set_command_name }} or {{ get_command_name }}."
+            )
+        ));
 
         try
         {
-            return parsed.Command switch
+            var parseResult = rootCommand.Parse(args);
+            if (parseResult.Errors.Count > 0)
             {
-                "{{ set_command_name }}" => RunSet(parsed, backend),
-                "{{ get_command_name }}" => RunGet(parsed, backend),
-                _ => WriteError(
-                    parsed.JsonMode,
-                    new CliError(
-                        "usage.unknown_command",
-                        "usage",
-                        $"Unknown command '{parsed.Command}'",
-                        "Use {{ set_command_name }} or {{ get_command_name }}."
-                    )
-                )
-            };
+                return WriteParseError(RequestedJson(args), parseResult.Errors);
+            }
+
+            return parseResult.Invoke();
         }
         catch (CliException ex)
         {
-            return WriteError(parsed.JsonMode, ex.Error);
+            return WriteError(RequestedJson(args), ex.Error);
         }
     }
 
-    private static int RunSet(CliArguments parsed, IDeviceBackend backend)
+    private static int RunSet(bool jsonMode, string stateFile, string? mode)
     {
-        if (string.IsNullOrWhiteSpace(parsed.Mode))
+        try
         {
-            return WriteError(
-                parsed.JsonMode,
-                new CliError(
-                    "validation.missing_mode",
-                    "validation",
-                    "Missing required --mode value.",
-                    "Provide --mode idle or --mode active."
-                )
-            );
-        }
+            var backend = new FileBackedSimulator(stateFile);
 
-        var response = backend.SetDeviceMode(parsed.Mode);
-        return WriteSuccess(parsed.JsonMode, response, $"mode set to {parsed.Mode}");
+            if (string.IsNullOrWhiteSpace(mode))
+            {
+                return WriteError(
+                    jsonMode,
+                    new CliError(
+                        "validation.missing_mode",
+                        "validation",
+                        "Missing required --mode value.",
+                        "Provide --mode idle or --mode active."
+                    )
+                );
+            }
+
+            var response = backend.SetDeviceMode(mode);
+            return WriteSuccess(jsonMode, response, $"mode set to {mode}");
+        }
+        catch (CliException ex)
+        {
+            return WriteError(jsonMode, ex.Error);
+        }
     }
 
-    private static int RunGet(CliArguments parsed, IDeviceBackend backend)
+    private static int RunGet(bool jsonMode, string stateFile)
     {
-        var response = backend.GetDevice();
-        return WriteSuccess(parsed.JsonMode, response, "device state loaded");
+        try
+        {
+            var backend = new FileBackedSimulator(stateFile);
+            var response = backend.GetDevice();
+            return WriteSuccess(jsonMode, response, "device state loaded");
+        }
+        catch (CliException ex)
+        {
+            return WriteError(jsonMode, ex.Error);
+        }
     }
 
     private static int WriteSuccess<T>(bool jsonMode, T data, string human)
@@ -102,6 +159,22 @@ internal static class Program
 
         return 2;
     }
+
+    private static int WriteParseError(bool jsonMode, IReadOnlyList<ParseError> errors)
+    {
+        var message = errors[0].Message;
+        return WriteError(
+            jsonMode,
+            new CliError(
+                "usage.parse_error",
+                "usage",
+                message,
+                "Run the command with --help or use {{ set_command_name }} / {{ get_command_name }} with supported options."
+            )
+        );
+    }
+
+    private static bool RequestedJson(string[] args) => args.Contains("--json", StringComparer.Ordinal);
 }
 
 internal sealed class CliException : Exception
@@ -112,51 +185,4 @@ internal sealed class CliException : Exception
     }
 
     public CliError Error { get; }
-}
-
-internal sealed record CliArguments(string Command, string? Mode, bool JsonMode, string StateFile)
-{
-    public static CliArguments Parse(string[] args)
-    {
-        var jsonMode = false;
-        var stateFile = "{{ state_file_name }}";
-        string? command = null;
-        string? mode = null;
-
-        for (var i = 0; i < args.Length; i++)
-        {
-            switch (args[i])
-            {
-                case "--json":
-                    jsonMode = true;
-                    break;
-                case "--state-file":
-                    if (i + 1 >= args.Length)
-                    {
-                        throw new CliException(new CliError("usage.missing_state_file", "usage", "Missing value for --state-file.", "Provide a file path after --state-file."));
-                    }
-
-                    stateFile = args[++i];
-                    break;
-                case "--mode":
-                    if (i + 1 >= args.Length)
-                    {
-                        throw new CliException(new CliError("usage.missing_mode", "usage", "Missing value for --mode.", "Provide idle or active after --mode."));
-                    }
-
-                    mode = args[++i];
-                    break;
-                default:
-                    command ??= args[i];
-                    break;
-            }
-        }
-
-        if (string.IsNullOrWhiteSpace(command))
-        {
-            throw new CliException(new CliError("usage.missing_command", "usage", "Missing command.", "Use {{ set_command_name }} or {{ get_command_name }}."));
-        }
-
-        return new CliArguments(command, mode, jsonMode, stateFile);
-    }
 }

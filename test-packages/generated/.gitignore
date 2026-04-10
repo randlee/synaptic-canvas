@@ -1,2 +1,5 @@
+# Ignore all rendered fixtures and any build artifacts they produce.
+# This covers generated source files, binaries, obj/target trees, state files,
+# and local OS/editor metadata under test-packages/generated/.
 *
 !.gitignore
