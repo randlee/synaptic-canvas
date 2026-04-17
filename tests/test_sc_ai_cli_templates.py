@@ -1,10 +1,10 @@
 import json
 import shutil
 import subprocess
-import tempfile
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
+from jinja2 import Environment, StrictUndefined
 import yaml
 
 
@@ -19,47 +19,42 @@ def _load_fixture() -> dict:
 
 
 def _declared_template_keys(template: Path) -> set[str]:
-    raw = template.read_text(encoding="utf-8")
-    if not raw.startswith("---\n"):
-        return set()
-
-    _, frontmatter, _ = raw.split("---", 2)
-    data = yaml.safe_load(frontmatter) or {}
+    data, _ = _parse_template(template)
     required = set(data.get("required_variables", []) or [])
     defaults = set((data.get("defaults") or {}).keys())
     return required | defaults
 
 
+def _parse_template(template: Path) -> tuple[dict, str]:
+    raw = template.read_text(encoding="utf-8")
+    if not raw.startswith("---\n"):
+        return {}, raw
+
+    _, frontmatter, body = raw.split("---", 2)
+    data = yaml.safe_load(frontmatter) or {}
+    return data, body.lstrip("\n")
+
+
 def _render_templates(template_root: Path, output_root: Path, vars_data: dict) -> None:
+    environment = Environment(
+        autoescape=False,
+        keep_trailing_newline=True,
+        undefined=StrictUndefined,
+    )
+
     for template in sorted(template_root.rglob("*.j2")):
         rel = template.relative_to(template_root)
         output_path = output_root / rel.with_suffix("")
         output_path.parent.mkdir(parents=True, exist_ok=True)
-        filtered_vars = {key: value for key, value in vars_data.items() if key in _declared_template_keys(template)}
-        with tempfile.NamedTemporaryFile("w", suffix=".yaml", delete=False, encoding="utf-8") as handle:
-            yaml.safe_dump(filtered_vars, handle)
-            temp_vars_file = Path(handle.name)
-
+        frontmatter, body = _parse_template(template)
+        filtered_vars = dict(frontmatter.get("defaults") or {})
+        filtered_vars.update({key: value for key, value in vars_data.items() if key in _declared_template_keys(template)})
         try:
-            command = [
-                "sc-compose",
-                "render",
-                rel.as_posix(),
-                "--root",
-                str(template_root),
-                "--var-file",
-                str(temp_vars_file),
-                "--output",
-                str(output_path),
-                "--write",
-            ]
-            completed = subprocess.run(command, capture_output=True, text=True, check=False)
-            if completed.returncode != 0:
-                raise AssertionError(
-                    f"sc-compose render failed for {template}:\nSTDOUT:\n{completed.stdout}\nSTDERR:\n{completed.stderr}"
-                )
-        finally:
-            temp_vars_file.unlink(missing_ok=True)
+            rendered = environment.from_string(body).render(**filtered_vars)
+        except Exception as exc:
+            raise AssertionError(f"Template render failed for {template}: {exc}") from exc
+
+        output_path.write_text(rendered, encoding="utf-8")
 
 
 def _run(command: list[str], cwd: Path, expected_returncode: int = 0) -> subprocess.CompletedProcess[str]:

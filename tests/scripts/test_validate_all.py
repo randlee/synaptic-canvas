@@ -317,11 +317,8 @@ class TestRunValidator:
 
         result = module.run_validator(config)
 
-        # Python returns exit code 2 when script file doesn't exist
-        # The execution "succeeds" but the script fails
-        assert result.is_success()
-        assert result.value.passed is False
-        assert result.value.exit_code == 2
+        assert result.is_failure()
+        assert result.error.message == "Script not found: /nonexistent/script.py"
 
     def test_run_nonexistent_binary(self):
         """Test running a nonexistent binary."""
