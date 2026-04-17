@@ -1,7 +1,6 @@
 ---
 required_variables:
   - namespace
-  - device_id
   - set_command_name
   - get_command_name
   - state_file_name
@@ -95,6 +94,7 @@ internal static class Program
         try
         {
             var backend = new FileBackedSimulator(stateFile);
+            var operations = new DeviceOperations(backend);
 
             if (string.IsNullOrWhiteSpace(mode))
             {
@@ -109,7 +109,7 @@ internal static class Program
                 );
             }
 
-            var response = backend.SetDeviceMode(mode);
+            var response = operations.SetDeviceMode(new SetDeviceModeRequest(mode));
             return WriteSuccess(jsonMode, response, $"mode set to {mode}");
         }
         catch (CliException ex)
@@ -123,7 +123,8 @@ internal static class Program
         try
         {
             var backend = new FileBackedSimulator(stateFile);
-            var response = backend.GetDevice();
+            var operations = new DeviceOperations(backend);
+            var response = operations.GetDevice(new GetDeviceRequest());
             return WriteSuccess(jsonMode, response, "device state loaded");
         }
         catch (CliException ex)
@@ -155,6 +156,10 @@ internal static class Program
         else
         {
             Console.Error.WriteLine(error.Message);
+            if (!string.IsNullOrWhiteSpace(error.Remediation))
+            {
+                Console.Error.WriteLine($"hint: {error.Remediation}");
+            }
         }
 
         return 2;

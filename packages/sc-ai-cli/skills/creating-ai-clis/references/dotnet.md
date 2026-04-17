@@ -2,7 +2,7 @@
 
 Use this reference when implementing the CLI in `.NET`.
 
-For concrete command and DTO shapes, also read `references/dotnet-examples.md`.
+For concrete command and DTO shapes, also read `dotnet-examples.md`.
 
 ## Recommended Stack
 

@@ -42,6 +42,8 @@ The simulator should support:
 - partial-success or degraded-mode scenarios where the real backend can produce them
 - configurable failure injection for negative-path tests
 
+Starter templates in this package include a simple file-backed simulator control seam so tests can force read failures, write failures, or degraded status without branching the operation layer. Treat that as a baseline hook, not the full limit of simulator behavior.
+
 ## Mutation Auditability
 
 Every mutating command must have a corresponding read command.

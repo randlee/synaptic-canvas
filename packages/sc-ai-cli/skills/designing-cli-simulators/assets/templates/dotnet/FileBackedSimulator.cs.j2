@@ -2,9 +2,6 @@
 required_variables:
   - namespace
   - device_id
-  - set_command_name
-  - get_command_name
-  - state_file_name
 defaults: {}
 metadata:
   language: dotnet
@@ -13,6 +10,7 @@ metadata:
   variant: file-backed
 ---
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace {{ namespace }};
 
@@ -23,32 +21,44 @@ public sealed class FileBackedSimulator(string stateFile) : IDeviceBackend
         WriteIndented = true
     };
 
-    public SetDeviceModeResponse SetDeviceMode(string mode)
+    public SetDeviceModeResponse SetDeviceMode(SetDeviceModeRequest request)
     {
-        ValidateMode(mode);
+        ValidateMode(request.Mode);
+        var controls = LoadControls();
         var state = LoadState() with
         {
-            CurrentMode = mode,
+            CurrentMode = request.Mode,
             Status = "updated"
         };
         SaveState(state);
 
         return new SetDeviceModeResponse(
             state.DeviceId,
-            mode,
-            mode,
-            state.Status,
+            request.Mode,
+            request.Mode,
+            ApplyStatusOverride(state.Status, controls),
             "mode.updated"
         );
     }
 
-    public DeviceState GetDevice()
+    public DeviceState GetDevice(GetDeviceRequest request)
     {
-        return LoadState();
+        var controls = LoadControls();
+        var state = LoadState();
+        return state with
+        {
+            Status = ApplyStatusOverride(state.Status, controls)
+        };
     }
 
     private DeviceState LoadState()
     {
+        var controls = LoadControls();
+        if (controls.FailReads)
+        {
+            throw new CliException(new CliError("backend.unavailable", "dependency", "Simulator read path is configured to fail.", "Clear the simulator controls file or disable fail_reads."));
+        }
+
         if (!File.Exists(stateFile))
         {
             var initial = new DeviceState("{{ device_id }}", "idle", "ready");
@@ -76,6 +86,12 @@ public sealed class FileBackedSimulator(string stateFile) : IDeviceBackend
     {
         try
         {
+            var controls = LoadControls();
+            if (controls.FailWrites)
+            {
+                throw new CliException(new CliError("backend.unavailable", "dependency", "Simulator write path is configured to fail.", "Clear the simulator controls file or disable fail_writes."));
+            }
+
             var directory = Path.GetDirectoryName(stateFile);
             if (!string.IsNullOrWhiteSpace(directory))
             {
@@ -84,6 +100,10 @@ public sealed class FileBackedSimulator(string stateFile) : IDeviceBackend
 
             var raw = JsonSerializer.Serialize(state, JsonOptions);
             File.WriteAllText(stateFile, raw);
+        }
+        catch (CliException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
@@ -98,4 +118,36 @@ public sealed class FileBackedSimulator(string stateFile) : IDeviceBackend
             throw new CliException(new CliError("validation.invalid_mode", "validation", $"Unsupported mode '{mode}'.", "Use one of: idle, active."));
         }
     }
+
+    private string ControlFilePath => $"{stateFile}.controls.json";
+
+    private SimulatorControls LoadControls()
+    {
+        if (!File.Exists(ControlFilePath))
+        {
+            return new SimulatorControls(false, false, null);
+        }
+
+        try
+        {
+            var raw = File.ReadAllText(ControlFilePath);
+            return JsonSerializer.Deserialize<SimulatorControls>(raw, JsonOptions)
+                ?? new SimulatorControls(false, false, null);
+        }
+        catch (Exception ex)
+        {
+            throw new CliException(new CliError("simulator.invalid_controls", "backend", $"Failed to read simulator controls: {ex.Message}", "Delete or repair the controls file and retry."));
+        }
+    }
+
+    private static string ApplyStatusOverride(string status, SimulatorControls controls)
+    {
+        return string.IsNullOrWhiteSpace(controls.ForcedStatus) ? status : controls.ForcedStatus;
+    }
 }
+
+internal sealed record SimulatorControls(
+    [property: JsonPropertyName("fail_reads")] bool FailReads,
+    [property: JsonPropertyName("fail_writes")] bool FailWrites,
+    [property: JsonPropertyName("forced_status")] string? ForcedStatus
+);

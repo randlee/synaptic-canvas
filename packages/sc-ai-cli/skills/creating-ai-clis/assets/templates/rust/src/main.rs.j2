@@ -1,7 +1,5 @@
 ---
 required_variables:
-  - package_name
-  - device_id
   - set_command_name
   - get_command_name
   - state_file_name
@@ -13,14 +11,22 @@ metadata:
 ---
 mod backend;
 mod contracts;
+mod operations;
 mod simulator;
 
 use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
 
-use crate::backend::DeviceBackend;
-use crate::contracts::{CliError, DeviceState, Envelope, SetDeviceModeResponse};
+use crate::contracts::{
+    CliError,
+    DeviceState,
+    Envelope,
+    GetDeviceRequest,
+    SetDeviceModeRequest,
+    SetDeviceModeResponse,
+};
+use crate::operations::DeviceOperations;
 use crate::simulator::FileBackedSimulator;
 
 #[derive(Parser)]
@@ -48,11 +54,38 @@ enum Commands {
 }
 
 fn main() {
-    let cli = Cli::parse();
-    let mut backend = FileBackedSimulator::new(cli.state_file);
+    let raw_args: Vec<String> = std::env::args().collect();
+    let requested_json = raw_args.iter().any(|arg| arg == "--json");
+    let cli = match Cli::try_parse_from(&raw_args) {
+        Ok(cli) => cli,
+        Err(error) => {
+            if requested_json {
+                emit_error(
+                    true,
+                    CliError {
+                        code: "usage.parse_error".to_string(),
+                        category: "usage".to_string(),
+                        message: error.to_string(),
+                        remediation: format!(
+                            "Run --help or use {} / {} with supported options.",
+                            "{{ set_command_name }}",
+                            "{{ get_command_name }}"
+                        ),
+                    },
+                );
+            }
+
+            eprintln!("{error}");
+            std::process::exit(2);
+        }
+    };
+    let backend = FileBackedSimulator::new(cli.state_file);
+    let mut operations = DeviceOperations::new(backend);
 
     match cli.command {
-        Commands::SetDeviceMode { mode } => match backend.set_device_mode(&mode) {
+        Commands::SetDeviceMode { mode } => match operations.set_device_mode(SetDeviceModeRequest {
+            mode: mode.clone(),
+        }) {
             Ok(response) => emit_success(
                 cli.json,
                 response,
@@ -60,7 +93,7 @@ fn main() {
             ),
             Err(error) => emit_error(cli.json, error),
         },
-        Commands::GetDevice => match backend.get_device() {
+        Commands::GetDevice => match operations.get_device(GetDeviceRequest) {
             Ok(response) => emit_success(cli.json, response, "device state loaded".to_string()),
             Err(error) => emit_error(cli.json, error),
         },
@@ -86,7 +119,10 @@ fn emit_error(json_mode: bool, error: CliError) -> ! {
                 .expect("serialize error envelope")
         );
     } else {
-        eprintln!("error");
+        eprintln!("{}", error.message);
+        if !error.remediation.is_empty() {
+            eprintln!("hint: {}", error.remediation);
+        }
     }
     std::process::exit(2);
 }

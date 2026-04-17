@@ -1,8 +1,5 @@
 ---
 required_variables:
-  - module_path
-  - binary_name
-  - device_id
   - set_command_name
   - get_command_name
   - state_file_name
@@ -18,11 +15,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 )
 
 func main() {
 	command, jsonMode, stateFile, mode := parseArgs(os.Args[1:])
 	backend := NewFileBackedSimulator(stateFile)
+	operations := NewDeviceOperations(backend)
 
 	switch command {
 	case "{{ set_command_name }}":
@@ -35,13 +34,13 @@ func main() {
 			})
 		}
 
-		response, err := backend.SetDeviceMode(mode)
+		response, err := operations.SetDeviceMode(SetDeviceModeRequest{Mode: mode})
 		if err != nil {
 			writeError(jsonMode, *err)
 		}
 		writeSuccess(jsonMode, response, fmt.Sprintf("mode set to %s", mode))
 	case "{{ get_command_name }}":
-		response, err := backend.GetDevice()
+		response, err := operations.GetDevice(GetDeviceRequest{})
 		if err != nil {
 			writeError(jsonMode, *err)
 		}
@@ -59,13 +58,20 @@ func main() {
 func parseArgs(args []string) (command string, jsonMode bool, stateFile string, mode string) {
 	stateFile = "{{ state_file_name }}"
 
+	for _, arg := range args {
+		if arg == "--json" {
+			jsonMode = true
+			break
+		}
+	}
+
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
 		case "--json":
-			jsonMode = true
+			continue
 		case "--state-file":
 			if i+1 >= len(args) {
-				writeError(true, CliError{
+				writeError(jsonMode, CliError{
 					Code:        "usage.missing_state_file",
 					Category:    "usage",
 					Message:     "Missing value for --state-file.",
@@ -76,7 +82,7 @@ func parseArgs(args []string) (command string, jsonMode bool, stateFile string, 
 			stateFile = args[i]
 		case "--mode":
 			if i+1 >= len(args) {
-				writeError(true, CliError{
+				writeError(jsonMode, CliError{
 					Code:        "usage.missing_mode",
 					Category:    "usage",
 					Message:     "Missing value for --mode.",
@@ -87,13 +93,28 @@ func parseArgs(args []string) (command string, jsonMode bool, stateFile string, 
 			mode = args[i]
 		default:
 			if command == "" {
+				if strings.HasPrefix(args[i], "-") {
+					writeError(jsonMode, CliError{
+						Code:        "usage.parse_error",
+						Category:    "usage",
+						Message:     fmt.Sprintf("Unknown option '%s'.", args[i]),
+						Remediation: "Run --help or use only supported options.",
+					})
+				}
 				command = args[i]
+			} else {
+				writeError(jsonMode, CliError{
+					Code:        "usage.parse_error",
+					Category:    "usage",
+					Message:     fmt.Sprintf("Unexpected argument '%s'.", args[i]),
+					Remediation: "Run --help or remove extra positional arguments.",
+				})
 			}
 		}
 	}
 
 	if command == "" {
-		writeError(true, CliError{
+		writeError(jsonMode, CliError{
 			Code:        "usage.missing_command",
 			Category:    "usage",
 			Message:     "Missing command.",
@@ -128,6 +149,9 @@ func writeError(jsonMode bool, cliErr CliError) {
 		fmt.Fprintln(os.Stderr, string(raw))
 	} else {
 		fmt.Fprintln(os.Stderr, cliErr.Message)
+		if cliErr.Remediation != "" {
+			fmt.Fprintf(os.Stderr, "hint: %s\n", cliErr.Remediation)
+		}
 	}
 
 	os.Exit(2)

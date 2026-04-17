@@ -1,10 +1,6 @@
 ---
 required_variables:
-  - package_name
   - device_id
-  - set_command_name
-  - get_command_name
-  - state_file_name
 defaults: {}
 metadata:
   language: rust
@@ -18,13 +14,28 @@ use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 
 use crate::backend::DeviceBackend;
-use crate::contracts::{CliError, DeviceState, SetDeviceModeResponse};
+use crate::contracts::{
+    CliError,
+    DeviceState,
+    GetDeviceRequest,
+    SetDeviceModeRequest,
+    SetDeviceModeResponse,
+};
 
 #[derive(Debug, Serialize, Deserialize)]
 struct PersistedState {
     device_id: String,
     current_mode: String,
     status: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Default)]
+struct SimulatorControls {
+    #[serde(default)]
+    fail_reads: bool,
+    #[serde(default)]
+    fail_writes: bool,
+    forced_status: Option<String>,
 }
 
 impl Default for PersistedState {
@@ -47,6 +58,16 @@ impl FileBackedSimulator {
     }
 
     fn load_state(&self) -> Result<PersistedState, CliError> {
+        let controls = self.load_controls()?;
+        if controls.fail_reads {
+            return Err(CliError {
+                code: "backend.unavailable".to_string(),
+                category: "dependency".to_string(),
+                message: "Simulator read path is configured to fail.".to_string(),
+                remediation: "Clear the controls file or disable fail_reads.".to_string(),
+            });
+        }
+
         if !self.state_path.exists() {
             let state = PersistedState::default();
             self.save_state(&state)?;
@@ -69,6 +90,16 @@ impl FileBackedSimulator {
     }
 
     fn save_state(&self, state: &PersistedState) -> Result<(), CliError> {
+        let controls = self.load_controls()?;
+        if controls.fail_writes {
+            return Err(CliError {
+                code: "backend.unavailable".to_string(),
+                category: "dependency".to_string(),
+                message: "Simulator write path is configured to fail.".to_string(),
+                remediation: "Clear the controls file or disable fail_writes.".to_string(),
+            });
+        }
+
         if let Some(parent) = self.state_path.parent() {
             fs::create_dir_all(parent).map_err(|error| CliError {
                 code: "simulator.mkdir_failed".to_string(),
@@ -93,6 +124,34 @@ impl FileBackedSimulator {
         })
     }
 
+    fn load_controls(&self) -> Result<SimulatorControls, CliError> {
+        let control_path = PathBuf::from(format!("{}.controls.json", self.state_path.display()));
+        if !control_path.exists() {
+            return Ok(SimulatorControls::default());
+        }
+
+        let raw = fs::read_to_string(&control_path).map_err(|error| CliError {
+            code: "simulator.invalid_controls".to_string(),
+            category: "backend".to_string(),
+            message: format!("failed to read simulator controls: {error}"),
+            remediation: "Delete or repair the controls file and retry.".to_string(),
+        })?;
+
+        serde_json::from_str(&raw).map_err(|error| CliError {
+            code: "simulator.invalid_controls".to_string(),
+            category: "backend".to_string(),
+            message: format!("failed to parse simulator controls: {error}"),
+            remediation: "Delete or repair the controls file and retry.".to_string(),
+        })
+    }
+
+    fn apply_status_override(status: String, controls: &SimulatorControls) -> String {
+        controls
+            .forced_status
+            .clone()
+            .unwrap_or(status)
+    }
+
     fn validate_mode(mode: &str) -> Result<(), CliError> {
         match mode {
             "idle" | "active" => Ok(()),
@@ -107,28 +166,30 @@ impl FileBackedSimulator {
 }
 
 impl DeviceBackend for FileBackedSimulator {
-    fn set_device_mode(&mut self, mode: &str) -> Result<SetDeviceModeResponse, CliError> {
-        Self::validate_mode(mode)?;
+    fn set_device_mode(&mut self, request: SetDeviceModeRequest) -> Result<SetDeviceModeResponse, CliError> {
+        Self::validate_mode(&request.mode)?;
         let mut state = self.load_state()?;
-        state.current_mode = mode.to_string();
+        state.current_mode = request.mode.clone();
         state.status = "updated".to_string();
         self.save_state(&state)?;
+        let controls = self.load_controls()?;
 
         Ok(SetDeviceModeResponse {
             device_id: state.device_id,
-            requested_mode: mode.to_string(),
-            applied_mode: mode.to_string(),
-            status: state.status,
+            requested_mode: request.mode.clone(),
+            applied_mode: request.mode,
+            status: Self::apply_status_override(state.status, &controls),
             diagnostic_code: "mode.updated".to_string(),
         })
     }
 
-    fn get_device(&self) -> Result<DeviceState, CliError> {
+    fn get_device(&self, _request: GetDeviceRequest) -> Result<DeviceState, CliError> {
         let state = self.load_state()?;
+        let controls = self.load_controls()?;
         Ok(DeviceState {
             device_id: state.device_id,
             current_mode: state.current_mode,
-            status: state.status,
+            status: Self::apply_status_override(state.status, &controls),
         })
     }
 }

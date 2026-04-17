@@ -2,9 +2,6 @@
 required_variables:
   - namespace
   - device_id
-  - set_command_name
-  - get_command_name
-  - state_file_name
 defaults: {}
 metadata:
   language: dotnet
@@ -14,6 +11,12 @@ metadata:
 using System.Text.Json.Serialization;
 
 namespace {{ namespace }};
+
+public sealed record SetDeviceModeRequest(
+    [property: JsonPropertyName("mode")] string Mode
+);
+
+public sealed record GetDeviceRequest();
 
 public sealed record DeviceState(
     [property: JsonPropertyName("device_id")] string DeviceId,
@@ -44,6 +47,6 @@ public sealed record Envelope<T>(
 
 public interface IDeviceBackend
 {
-    SetDeviceModeResponse SetDeviceMode(string mode);
-    DeviceState GetDevice();
+    SetDeviceModeResponse SetDeviceMode(SetDeviceModeRequest request);
+    DeviceState GetDevice(GetDeviceRequest request);
 }

@@ -2,7 +2,7 @@
 
 Use this reference when implementing the CLI in Rust.
 
-For concrete command and DTO shapes, also read `references/rust-examples.md`.
+For concrete command and DTO shapes, also read `rust-examples.md`.
 
 ## Recommended Stack
 

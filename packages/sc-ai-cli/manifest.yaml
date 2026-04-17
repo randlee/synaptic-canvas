@@ -1,9 +1,9 @@
 name: sc-ai-cli
 version: 0.9.0
 description: >
-  AI-first CLI design toolkit: create, review, and harden JSON-first, MCP-ready CLIs
-  with typed error contracts, auditable mutations, repeatable scaffolding patterns,
-  and stateful simulator design guidance.
+  AI-first CLI design toolkit: create, review, and harden JSON-first CLIs with
+  MCP-ready contract seams, typed error contracts, auditable mutations, repeatable
+  scaffolding patterns, and stateful simulator design guidance.
 author: randlee
 license: MIT
 tags:
@@ -43,10 +43,12 @@ artifacts:
   assets:
     - skills/creating-ai-clis/assets/templates/rust/Cargo.toml.j2
     - skills/creating-ai-clis/assets/templates/rust/src/contracts.rs.j2
+    - skills/creating-ai-clis/assets/templates/rust/src/operations.rs.j2
     - skills/creating-ai-clis/assets/templates/rust/src/backend.rs.j2
     - skills/creating-ai-clis/assets/templates/rust/src/main.rs.j2
     - skills/creating-ai-clis/assets/templates/dotnet/AiCliFixture.csproj.j2
     - skills/creating-ai-clis/assets/templates/dotnet/Contracts.cs.j2
+    - skills/creating-ai-clis/assets/templates/dotnet/Operations.cs.j2
     - skills/creating-ai-clis/assets/templates/dotnet/Program.cs.j2
     - skills/creating-ai-clis/assets/templates/go/go.mod.j2
     - skills/creating-ai-clis/assets/templates/go/contracts.go.j2

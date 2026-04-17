@@ -24,13 +24,16 @@ Each finding should include:
 
 Check whether:
 - every relevant command supports `--json`
+- commands that accept structured input define a request model rather than relying only on prose-oriented flags and implicit parsing
 - JSON output is complete enough for automation
 - machine-significant data exists in JSON, not only prose
+- human-readable mode does not expose machine-significant data that is missing from JSON mode
 - success and error shapes are stable across commands
 - exit behavior and JSON behavior are deterministic
 - the same command keeps a stable JSON envelope across different operating modes
 - partial results are surfaced explicitly rather than silently skipped
 - success-path JSON coverage and failure-path JSON coverage are both present
+- tests assert the JSON contract directly across command families rather than only checking exit codes or human-readable text
 
 ## Error Checks
 
@@ -45,6 +48,7 @@ Check whether:
 ## MCP Checks
 
 Check whether:
+- the CLI request models are reusable outside the CLI entrypoint
 - the MCP wrapper shares the same request and response models
 - business payloads are not reshaped between CLI and MCP
 - tests compare shared fixtures across CLI and MCP paths
@@ -70,6 +74,8 @@ If the tool integrates with external systems, check whether:
 - the same business logic runs against real and simulated backends
 - failure modes like timeouts, invalid state, and dependency errors are exercised
 - alternate behaviors and fault injection are possible without patching business logic
+- deterministic seeded fixtures or explicit starting-state controls exist when simulator state matters to test reproducibility
+- partial-success or degraded-mode scenarios are exercised when the real backend can produce them
 - device and service integrations use a swappable adapter boundary
 - database-backed integrations use a realistic local persistence simulator such as a JSON store or SQLite when query or schema behavior matters
 
@@ -82,6 +88,7 @@ If the tool integrates with external systems, check whether:
 - tests that require live infrastructure for routine verification
 - stateless fakes used where persistent backend state is central to CLI behavior
 - help/examples that advertise flags or shapes the implementation does not actually support
+- human-readable output that includes machine-significant detail unavailable through `--json`
 - machine payloads that use display sentinels like `(main)` instead of typed/null fields
 - unknown machine fields are dropped in a way that breaks forward compatibility
 - branching results exposed as unrelated JSON shapes instead of explicit tagged unions

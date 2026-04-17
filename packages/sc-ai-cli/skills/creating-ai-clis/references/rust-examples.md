@@ -178,4 +178,4 @@ If you generate scaffolding with `sc-compose` and MiniJinja, these are the first
 - error enums and envelope types
 - backend trait and simulator skeleton
 
-Use normalized frontmatter with `required_variables`, `defaults`, and `metadata`, and keep the rendered command pair and shared output writer on the same template branch. See `references/template-generation.md` for the shared templating pattern.
+Use normalized frontmatter with `required_variables`, `defaults`, and `metadata`, and keep the rendered command pair and shared output writer on the same template branch. See `template-generation.md` for the shared templating pattern.

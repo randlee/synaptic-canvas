@@ -45,4 +45,4 @@ Tests should be able to verify state after mutations using the same read command
 
 Aim for enough fidelity to verify normal flows and the failures the CLI claims to handle. Do not overbuild hardware-level emulation if the CLI only depends on a narrower application contract, but do not collapse meaningful protocol behavior into unrealistic one-line mocks.
 
-For a concrete starting point, see `references/simulator-examples.md`, especially the map-backed request-handler pattern.
+For a concrete starting point, see `simulator-examples.md`, especially the map-backed request-handler pattern.

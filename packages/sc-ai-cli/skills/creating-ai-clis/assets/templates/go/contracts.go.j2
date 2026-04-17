@@ -1,11 +1,6 @@
 ---
 required_variables:
-  - module_path
-  - binary_name
   - device_id
-  - set_command_name
-  - get_command_name
-  - state_file_name
 defaults: {}
 metadata:
   language: go
@@ -13,6 +8,12 @@ metadata:
   skill: creating-ai-clis
 ---
 package main
+
+type SetDeviceModeRequest struct {
+	Mode string `json:"mode"`
+}
+
+type GetDeviceRequest struct{}
 
 type DeviceState struct {
 	DeviceID    string `json:"device_id"`
@@ -42,8 +43,24 @@ type Envelope[T any] struct {
 }
 
 type DeviceBackend interface {
-	SetDeviceMode(mode string) (SetDeviceModeResponse, *CliError)
-	GetDevice() (DeviceState, *CliError)
+	SetDeviceMode(request SetDeviceModeRequest) (SetDeviceModeResponse, *CliError)
+	GetDevice(request GetDeviceRequest) (DeviceState, *CliError)
+}
+
+type DeviceOperations struct {
+	backend DeviceBackend
+}
+
+func NewDeviceOperations(backend DeviceBackend) *DeviceOperations {
+	return &DeviceOperations{backend: backend}
+}
+
+func (o *DeviceOperations) SetDeviceMode(request SetDeviceModeRequest) (SetDeviceModeResponse, *CliError) {
+	return o.backend.SetDeviceMode(request)
+}
+
+func (o *DeviceOperations) GetDevice(request GetDeviceRequest) (DeviceState, *CliError) {
+	return o.backend.GetDevice(request)
 }
 
 func defaultState() DeviceState {

@@ -1,13 +1,13 @@
 # MCP Compatibility
 
-The CLI should be architected so an MCP wrapper can reuse the same request and response models with no JSON reshaping.
+The CLI should be architected so a future MCP wrapper can reuse the same request and response models with no JSON reshaping. This package does not currently ship MCP templates; it defines the contract seam those templates or wrappers should use later.
 
 ## What "MCP-ready" Means Here
 
 For this skill, "MCP-ready" means:
 - the CLI command surface maps cleanly to tool-like operations
 - request and response payloads are JSON-serializable without transport-specific rewriting
-- the same fixtures can be used to test CLI and MCP paths
+- the same fixtures can be used to test CLI and MCP paths when both surfaces exist
 
 It does not require:
 - the MCP server to shell out to the CLI binary
@@ -47,7 +47,7 @@ The wrapper should not:
 
 ## Test Strategy
 
-Use shared fixtures for both paths:
+When both surfaces exist, use shared fixtures for both paths:
 - input fixture -> CLI command -> JSON result
 - same input fixture -> MCP method/tool -> JSON result
 
@@ -58,6 +58,11 @@ Assert:
 - same omitted/null behavior when relevant
 
 Minor transport differences like trailing newlines on stdout are acceptable. Business payload differences are not.
+
+If the project does not yet have an MCP wrapper:
+- keep request and response models outside the CLI entrypoint
+- keep human formatting isolated from business payload construction
+- keep CLI tests fixture-oriented so MCP parity can be added without redesigning the contract
 
 ## Good Signs
 

@@ -1,7 +1,7 @@
 ---
 name: reviewing-ai-clis
 version: 0.9.0
-description: Critically review an existing CLI, MCP wrapper, or CLI plan for AI-first contract quality. Use when evaluating whether a CLI is JSON-first, MCP-ready without JSON reshaping, auditably models state changes, uses stateful simulator-backed testing for external integrations, and returns typed actionable errors. Do not use for general style review or human-first shell UX review.
+description: Critically review an existing CLI, MCP wrapper, or CLI plan for AI-first contract quality. Use when evaluating whether a CLI is JSON-first, has an MCP-ready contract seam without JSON reshaping, auditably models state changes, uses stateful simulator-backed testing for external integrations, and returns typed actionable errors. Do not use for general style review or human-first shell UX review.
 ---
 
 # Reviewing AI CLIs
@@ -39,7 +39,7 @@ Review in this order:
 - `../creating-ai-clis/references/example-repos.md` — example patterns and non-patterns
   This is a deliberate cross-skill dependency; if `creating-ai-clis` moves or is renamed, this reference must be updated.
 
-Read `review-checklist.md` first. Then read `error-review.md`. Read `plan-review.md` when the target is a plan or architecture document rather than code. Use `../creating-ai-clis/references/example-repos.md` to calibrate the bar, not to excuse weaker designs. Review at the contract level first; do not load language-specific references unless a concrete implementation detail requires it.
+If the target is implemented code, read `review-checklist.md` first and then `error-review.md`. If the target is a plan or architecture document, read `plan-review.md` first and then use relevant checklist items as design commitments. Use `../creating-ai-clis/references/example-repos.md` to calibrate the bar, not to excuse weaker designs. Review at the contract level first; do not load language-specific references unless a concrete implementation detail requires it.
 
 ## Agent Delegation
 
@@ -52,12 +52,13 @@ This skill operates directly in the main session on the target CLI, wrapper, or 
    - MCP wrapper
    - CLI design or plan
 2. Review the machine contract before reviewing human-readable output.
-3. Identify whether every command exposes a usable JSON contract.
+3. Identify whether every command exposes a usable JSON contract and whether structured request models are defined where commands accept structured input.
 4. Identify whether success and error results are typed, stable, and actionable.
-5. For any mutating command, verify that a corresponding read command exists to confirm resulting state.
-6. If the tool integrates with external systems, check whether realistic stateful simulator-backed tests exist below the CLI layer. Load `designing-cli-simulators` only when the simulator design itself needs deeper review.
-7. If an MCP wrapper exists or is planned, verify that it reuses the same request and response models without reshaping the business payload.
-8. Report findings first, ordered by severity, with file references when reviewing code and section references when reviewing plans.
+5. Verify that human-readable mode is not richer than JSON mode for machine-significant data.
+6. For any mutating command, verify that a corresponding read command exists to confirm resulting state.
+7. If the tool integrates with external systems, check whether realistic stateful simulator-backed tests exist below the CLI layer, including seeded data and negative-path controls. Load `designing-cli-simulators` only when the simulator design itself needs deeper review.
+8. If an MCP wrapper exists or is planned, verify that it reuses the same request and response models without reshaping the business payload.
+9. Report findings first, ordered by severity, with file references when reviewing code and section references when reviewing plans.
 
 ## Output Expectations
 

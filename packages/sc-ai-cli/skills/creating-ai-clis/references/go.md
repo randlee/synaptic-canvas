@@ -2,7 +2,7 @@
 
 Use this reference when implementing the CLI in Go.
 
-For concrete command and DTO shapes, also read `references/go-examples.md`.
+For concrete command and DTO shapes, also read `go-examples.md`.
 
 ## Recommended Stack
 

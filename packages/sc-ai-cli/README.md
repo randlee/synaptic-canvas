@@ -5,7 +5,7 @@ AI-first CLI design toolkit for Synaptic Canvas. Provides skills for creating, r
 ## Skills
 
 ### creating-ai-clis
-Design or harden JSON-first, MCP-ready CLIs with shared request and response models, typed actionable errors, auditable mutating commands, and simulator-backed testing expectations.
+Design or harden JSON-first CLIs with MCP-ready contract seams, shared request and response models, typed actionable errors, auditable mutating commands, and simulator-backed testing expectations.
 
 ### reviewing-ai-clis
 Critically review existing CLIs, MCP wrappers, or CLI plans against the AI-first contract: JSON completeness, error quality, MCP parity, auditability, and simulator realism.
@@ -16,7 +16,7 @@ Design stateful simulators for device, service, or database integrations so the 
 ## What This Package Covers
 
 - universal `--json` support as the machine contract
-- MCP compatibility with no business-payload reshaping
+- MCP-ready contract seams with no business-payload reshaping
 - typed or discriminated error contracts with stable codes
 - readback symmetry for mutating commands
 - realistic simulator expectations for external integrations
@@ -29,6 +29,8 @@ No required runtime tools are needed to install the skills themselves.
 Optional supporting tools referenced by the skills:
 - `sc-compose` for `.j2`-based scaffolding workflows
 - language-specific CLI tooling such as `.NET`, Rust, or Go toolchains
+
+The package currently ships CLI and simulator scaffolding assets only. It does not ship MCP templates in this release.
 
 ## Storage
 
