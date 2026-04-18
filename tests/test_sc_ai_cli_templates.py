@@ -1,7 +1,7 @@
 import json
 import shutil
 import subprocess
-from concurrent.futures import ThreadPoolExecutor, as_completed
+import sys
 from pathlib import Path
 
 from jinja2 import Environment, StrictUndefined
@@ -11,6 +11,12 @@ import yaml
 REPO_ROOT = Path(__file__).resolve().parent.parent
 FIXTURE_ROOT = REPO_ROOT / "test-packages" / "fixtures" / "sc-ai-cli"
 GENERATED_ROOT = REPO_ROOT / "test-packages" / "generated" / "sc-ai-cli"
+
+
+def _platform_binary(path: Path) -> Path:
+    if sys.platform == "win32" and path.suffix != ".exe":
+        return path.with_suffix(".exe")
+    return path
 
 
 def _load_fixture() -> dict:
@@ -144,7 +150,7 @@ def _verify_rust(case: dict) -> None:
     binary_name = vars_data["package_name"]
 
     _run(["cargo", "build", "--quiet"], cwd=output_root)
-    binary = output_root / "target" / "debug" / binary_name
+    binary = _platform_binary(output_root / "target" / "debug" / binary_name)
     assert binary.exists(), f"Expected Rust binary at {binary}"
 
     set_result = _run(
@@ -276,7 +282,7 @@ def _verify_dotnet(case: dict) -> None:
 def _verify_go(case: dict) -> None:
     output_root, vars_data = _prepare_case(case)
     state_file = output_root / vars_data["state_file_name"]
-    binary = output_root / vars_data["binary_name"]
+    binary = _platform_binary(output_root / vars_data["binary_name"])
 
     _run(["go", "build", "-o", str(binary), "."], cwd=output_root)
     assert binary.exists(), f"Expected Go binary at {binary}"
@@ -351,17 +357,11 @@ def test_sc_ai_cli_templates_render_build_and_run() -> None:
 
     failures: list[str] = []
 
-    with ThreadPoolExecutor(max_workers=3) as executor:
-        future_map = {
-            executor.submit(verifiers[case["language"]], case): case["id"]
-            for case in fixture["cases"]
-        }
-
-        for future in as_completed(future_map):
-            case_id = future_map[future]
-            try:
-                future.result()
-            except Exception as exc:  # pragma: no cover - failure path
-                failures.append(f"{case_id}: {exc}")
+    for case in fixture["cases"]:
+        case_id = case["id"]
+        try:
+            verifiers[case["language"]](case)
+        except Exception as exc:  # pragma: no cover - failure path
+            failures.append(f"{case_id}: {exc}")
 
     assert not failures, "\n\n".join(failures)
