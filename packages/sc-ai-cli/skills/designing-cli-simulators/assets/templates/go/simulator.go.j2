@@ -1,0 +1,217 @@
+---
+required_variables:
+  - device_id
+defaults: {}
+metadata:
+  language: go
+  template_kind: simulator
+  skill: designing-cli-simulators
+  variant: file-backed
+---
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+	"os"
+	"path/filepath"
+)
+
+type FileBackedSimulator struct {
+	stateFile string
+}
+
+type SimulatorControls struct {
+	FailReads    bool   `json:"fail_reads"`
+	FailWrites   bool   `json:"fail_writes"`
+	ForcedStatus string `json:"forced_status,omitempty"`
+}
+
+func NewFileBackedSimulator(stateFile string) *FileBackedSimulator {
+	return &FileBackedSimulator{stateFile: stateFile}
+}
+
+func (s *FileBackedSimulator) SetDeviceMode(request SetDeviceModeRequest) (SetDeviceModeResponse, *CliError) {
+	if err := validateMode(request.Mode); err != nil {
+		return SetDeviceModeResponse{}, err
+	}
+
+	state, cliErr := s.loadState()
+	if cliErr != nil {
+		return SetDeviceModeResponse{}, cliErr
+	}
+
+	state.CurrentMode = request.Mode
+	state.Status = "updated"
+	if cliErr := s.saveState(state); cliErr != nil {
+		return SetDeviceModeResponse{}, cliErr
+	}
+
+	controls, cliErr := s.loadControls()
+	if cliErr != nil {
+		return SetDeviceModeResponse{}, cliErr
+	}
+
+	return SetDeviceModeResponse{
+		DeviceID:       state.DeviceID,
+		RequestedMode:  request.Mode,
+		AppliedMode:    request.Mode,
+		Status:         applyStatusOverride(state.Status, controls),
+		DiagnosticCode: "mode.updated",
+	}, nil
+}
+
+func (s *FileBackedSimulator) GetDevice(request GetDeviceRequest) (DeviceState, *CliError) {
+	state, cliErr := s.loadState()
+	if cliErr != nil {
+		return DeviceState{}, cliErr
+	}
+
+	controls, cliErr := s.loadControls()
+	if cliErr != nil {
+		return DeviceState{}, cliErr
+	}
+
+	state.Status = applyStatusOverride(state.Status, controls)
+	return state, nil
+}
+
+func (s *FileBackedSimulator) loadState() (DeviceState, *CliError) {
+	controls, cliErr := s.loadControls()
+	if cliErr != nil {
+		return DeviceState{}, cliErr
+	}
+	if controls.FailReads {
+		return DeviceState{}, &CliError{
+			Code:        "backend.unavailable",
+			Category:    "dependency",
+			Message:     "Simulator read path is configured to fail.",
+			Remediation: "Clear the controls file or disable fail_reads.",
+		}
+	}
+
+	if _, err := os.Stat(s.stateFile); os.IsNotExist(err) {
+		state := defaultState()
+		if cliErr := s.saveState(state); cliErr != nil {
+			return DeviceState{}, cliErr
+		}
+		return state, nil
+	}
+
+	raw, err := os.ReadFile(s.stateFile)
+	if err != nil {
+		return DeviceState{}, &CliError{
+			Code:        "simulator.read_failed",
+			Category:    "backend",
+			Message:     fmt.Sprintf("failed to read simulator state: %v", err),
+			Remediation: "Verify the state file path is readable.",
+		}
+	}
+
+	var state DeviceState
+	if err := json.Unmarshal(raw, &state); err != nil {
+		return DeviceState{}, &CliError{
+			Code:        "simulator.invalid_state",
+			Category:    "backend",
+			Message:     fmt.Sprintf("failed to parse simulator state: %v", err),
+			Remediation: "Delete the state file and retry.",
+		}
+	}
+
+	return state, nil
+}
+
+func (s *FileBackedSimulator) saveState(state DeviceState) *CliError {
+	controls, cliErr := s.loadControls()
+	if cliErr != nil {
+		return cliErr
+	}
+	if controls.FailWrites {
+		return &CliError{
+			Code:        "backend.unavailable",
+			Category:    "dependency",
+			Message:     "Simulator write path is configured to fail.",
+			Remediation: "Clear the controls file or disable fail_writes.",
+		}
+	}
+
+	if err := os.MkdirAll(filepath.Dir(s.stateFile), 0o755); err != nil && filepath.Dir(s.stateFile) != "." {
+		return &CliError{
+			Code:        "simulator.mkdir_failed",
+			Category:    "backend",
+			Message:     fmt.Sprintf("failed to create simulator directory: %v", err),
+			Remediation: "Verify the output directory exists and is writable.",
+		}
+	}
+
+	raw, err := json.MarshalIndent(state, "", "  ")
+	if err != nil {
+		return &CliError{
+			Code:        "simulator.serialize_failed",
+			Category:    "backend",
+			Message:     fmt.Sprintf("failed to serialize simulator state: %v", err),
+			Remediation: "Inspect the state model and ensure it remains serializable.",
+		}
+	}
+
+	if err := os.WriteFile(s.stateFile, raw, 0o644); err != nil {
+		return &CliError{
+			Code:        "simulator.write_failed",
+			Category:    "backend",
+			Message:     fmt.Sprintf("failed to write simulator state: %v", err),
+			Remediation: "Verify the state file path is writable.",
+		}
+	}
+
+	return nil
+}
+
+func (s *FileBackedSimulator) loadControls() (SimulatorControls, *CliError) {
+	controlFile := s.stateFile + ".controls.json"
+	if _, err := os.Stat(controlFile); os.IsNotExist(err) {
+		return SimulatorControls{}, nil
+	}
+
+	raw, err := os.ReadFile(controlFile)
+	if err != nil {
+		return SimulatorControls{}, &CliError{
+			Code:        "simulator.invalid_controls",
+			Category:    "backend",
+			Message:     fmt.Sprintf("failed to read simulator controls: %v", err),
+			Remediation: "Delete or repair the controls file and retry.",
+		}
+	}
+
+	var controls SimulatorControls
+	if err := json.Unmarshal(raw, &controls); err != nil {
+		return SimulatorControls{}, &CliError{
+			Code:        "simulator.invalid_controls",
+			Category:    "backend",
+			Message:     fmt.Sprintf("failed to parse simulator controls: %v", err),
+			Remediation: "Delete or repair the controls file and retry.",
+		}
+	}
+
+	return controls, nil
+}
+
+func applyStatusOverride(status string, controls SimulatorControls) string {
+	if controls.ForcedStatus == "" {
+		return status
+	}
+	return controls.ForcedStatus
+}
+
+func validateMode(mode string) *CliError {
+	switch mode {
+	case "idle", "active":
+		return nil
+	default:
+		return &CliError{
+			Code:        "validation.invalid_mode",
+			Category:    "validation",
+			Message:     fmt.Sprintf("unsupported mode '%s'", mode),
+			Remediation: "Use one of: idle, active.",
+		}
+	}
+}

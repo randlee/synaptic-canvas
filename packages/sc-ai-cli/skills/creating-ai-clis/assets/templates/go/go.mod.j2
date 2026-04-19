@@ -1,0 +1,13 @@
+---
+required_variables:
+  - module_path
+defaults:
+  go_version: "1.26.0"
+metadata:
+  language: go
+  template_kind: project-file
+  skill: creating-ai-clis
+---
+module {{ module_path }}
+
+go {{ go_version }}

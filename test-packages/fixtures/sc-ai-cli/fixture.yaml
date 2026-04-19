@@ -1,0 +1,20 @@
+name: sc-ai-cli
+description: Render, build, and run generated CLI fixture apps for Rust, .NET, and Go
+package: sc-ai-cli@synaptic-canvas
+output_root: test-packages/generated/sc-ai-cli
+cases:
+  - id: rust-minimal
+    language: rust
+    vars_file: vars/rust-minimal.yaml
+    cli_template_root: packages/sc-ai-cli/skills/creating-ai-clis/assets/templates/rust
+    simulator_template_root: packages/sc-ai-cli/skills/designing-cli-simulators/assets/templates/rust
+  - id: dotnet-minimal
+    language: dotnet
+    vars_file: vars/dotnet-minimal.yaml
+    cli_template_root: packages/sc-ai-cli/skills/creating-ai-clis/assets/templates/dotnet
+    simulator_template_root: packages/sc-ai-cli/skills/designing-cli-simulators/assets/templates/dotnet
+  - id: go-minimal
+    language: go
+    vars_file: vars/go-minimal.yaml
+    cli_template_root: packages/sc-ai-cli/skills/creating-ai-clis/assets/templates/go
+    simulator_template_root: packages/sc-ai-cli/skills/designing-cli-simulators/assets/templates/go

@@ -115,7 +115,7 @@ def _parse_manifest(pkg_dir: Path) -> Manifest:
         )
 
     # Fallback: minimal line parser for artifacts sections
-    artifacts: Dict[str, List[str]] = {"commands": [], "skills": [], "agents": [], "scripts": []}
+    artifacts: Dict[str, List[str]] = {"commands": [], "skills": [], "agents": [], "scripts": [], "assets": []}
     current: Optional[str] = None
     for line in _read_file(manifest_path).splitlines():
         line = line.rstrip()
@@ -863,7 +863,7 @@ def _git_repo_basename(dest_dir: Path) -> str:
 
 
 def _iter_artifacts(m: Manifest) -> Iterable[str]:
-    order = ["commands", "skills", "agents", "scripts"]
+    order = ["commands", "skills", "agents", "scripts", "assets"]
     for key in order:
         for item in m.artifacts.get(key, []):
             yield item

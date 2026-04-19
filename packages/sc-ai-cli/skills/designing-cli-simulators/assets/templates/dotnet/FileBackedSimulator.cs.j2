@@ -1,0 +1,153 @@
+---
+required_variables:
+  - namespace
+  - device_id
+defaults: {}
+metadata:
+  language: dotnet
+  template_kind: simulator
+  skill: designing-cli-simulators
+  variant: file-backed
+---
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
+namespace {{ namespace }};
+
+public sealed class FileBackedSimulator(string stateFile) : IDeviceBackend
+{
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        WriteIndented = true
+    };
+
+    public SetDeviceModeResponse SetDeviceMode(SetDeviceModeRequest request)
+    {
+        ValidateMode(request.Mode);
+        var controls = LoadControls();
+        var state = LoadState() with
+        {
+            CurrentMode = request.Mode,
+            Status = "updated"
+        };
+        SaveState(state);
+
+        return new SetDeviceModeResponse(
+            state.DeviceId,
+            request.Mode,
+            request.Mode,
+            ApplyStatusOverride(state.Status, controls),
+            "mode.updated"
+        );
+    }
+
+    public DeviceState GetDevice(GetDeviceRequest request)
+    {
+        var controls = LoadControls();
+        var state = LoadState();
+        return state with
+        {
+            Status = ApplyStatusOverride(state.Status, controls)
+        };
+    }
+
+    private DeviceState LoadState()
+    {
+        var controls = LoadControls();
+        if (controls.FailReads)
+        {
+            throw new CliException(new CliError("backend.unavailable", "dependency", "Simulator read path is configured to fail.", "Clear the simulator controls file or disable fail_reads."));
+        }
+
+        if (!File.Exists(stateFile))
+        {
+            var initial = new DeviceState("{{ device_id }}", "idle", "ready");
+            SaveState(initial);
+            return initial;
+        }
+
+        try
+        {
+            var raw = File.ReadAllText(stateFile);
+            return JsonSerializer.Deserialize<DeviceState>(raw, JsonOptions)
+                ?? throw new CliException(new CliError("simulator.invalid_state", "backend", "Simulator state was empty.", "Delete the state file and retry."));
+        }
+        catch (CliException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            throw new CliException(new CliError("simulator.read_failed", "backend", $"Failed to read simulator state: {ex.Message}", "Verify the state file path is readable."));
+        }
+    }
+
+    private void SaveState(DeviceState state)
+    {
+        try
+        {
+            var controls = LoadControls();
+            if (controls.FailWrites)
+            {
+                throw new CliException(new CliError("backend.unavailable", "dependency", "Simulator write path is configured to fail.", "Clear the simulator controls file or disable fail_writes."));
+            }
+
+            var directory = Path.GetDirectoryName(stateFile);
+            if (!string.IsNullOrWhiteSpace(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
+            var raw = JsonSerializer.Serialize(state, JsonOptions);
+            File.WriteAllText(stateFile, raw);
+        }
+        catch (CliException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            throw new CliException(new CliError("simulator.write_failed", "backend", $"Failed to write simulator state: {ex.Message}", "Verify the state file path is writable."));
+        }
+    }
+
+    private static void ValidateMode(string mode)
+    {
+        if (mode is not ("idle" or "active"))
+        {
+            throw new CliException(new CliError("validation.invalid_mode", "validation", $"Unsupported mode '{mode}'.", "Use one of: idle, active."));
+        }
+    }
+
+    private string ControlFilePath => $"{stateFile}.controls.json";
+
+    private SimulatorControls LoadControls()
+    {
+        if (!File.Exists(ControlFilePath))
+        {
+            return new SimulatorControls(false, false, null);
+        }
+
+        try
+        {
+            var raw = File.ReadAllText(ControlFilePath);
+            return JsonSerializer.Deserialize<SimulatorControls>(raw, JsonOptions)
+                ?? new SimulatorControls(false, false, null);
+        }
+        catch (Exception ex)
+        {
+            throw new CliException(new CliError("simulator.invalid_controls", "backend", $"Failed to read simulator controls: {ex.Message}", "Delete or repair the controls file and retry."));
+        }
+    }
+
+    private static string ApplyStatusOverride(string status, SimulatorControls controls)
+    {
+        return string.IsNullOrWhiteSpace(controls.ForcedStatus) ? status : controls.ForcedStatus;
+    }
+}
+
+internal sealed record SimulatorControls(
+    [property: JsonPropertyName("fail_reads")] bool FailReads,
+    [property: JsonPropertyName("fail_writes")] bool FailWrites,
+    [property: JsonPropertyName("forced_status")] string? ForcedStatus
+);

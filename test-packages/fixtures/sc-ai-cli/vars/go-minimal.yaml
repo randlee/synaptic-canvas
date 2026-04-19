@@ -1,0 +1,6 @@
+module_path: example.com/ai-cli-go-fixture
+binary_name: ai-cli-go-fixture
+device_id: device-go-01
+set_command_name: set-device-mode
+get_command_name: get-device
+state_file_name: fixture-state.json

@@ -7,6 +7,23 @@
   },
   "packages": [
     {
+      "name": "sc-ai-cli",
+      "version": "0.9.0",
+      "description": "AI-first CLI design toolkit: create, review, and harden JSON-first, MCP-ready CLIs with typed error contracts, auditable mutations, repeatable scaffolding patterns, and stateful simulator design guidance.\n",
+      "author": "randlee",
+      "license": "MIT",
+      "keywords": [],
+      "category": "tools",
+      "artifacts": {
+        "commands": 0,
+        "skills": 3,
+        "agents": 0,
+        "scripts": 0,
+        "schemas": 0
+      },
+      "lastUpdated": "2026-04-09T21:39:08.642903+00:00"
+    },
+    {
       "name": "sc-ci-automation",
       "version": "0.9.0",
       "description": "Run CI quality gates (pull \u2192 build \u2192 test) with optional auto-fix and PR creation. Coordinates pull from upstream, builds projects, runs tests, applies straightforward fixes, and creates PRs when all quality gates pass. Supports version bumping with --patch flag.\n",
@@ -21,7 +38,7 @@
         "scripts": 1,
         "schemas": 0
       },
-      "lastUpdated": "2026-03-30T00:49:41.617970+00:00"
+      "lastUpdated": "2026-04-09T21:39:08.643886+00:00"
     },
     {
       "name": "sc-codex",
@@ -38,7 +55,7 @@
         "scripts": 2,
         "schemas": 2
       },
-      "lastUpdated": "2026-03-30T00:49:41.619135+00:00"
+      "lastUpdated": "2026-04-09T21:39:08.644668+00:00"
     },
     {
       "name": "sc-commit-push-pr",
@@ -55,7 +72,7 @@
         "scripts": 9,
         "schemas": 0
       },
-      "lastUpdated": "2026-03-30T00:49:41.619863+00:00"
+      "lastUpdated": "2026-04-09T21:39:08.645340+00:00"
     },
     {
       "name": "sc-delay-tasks",
@@ -72,7 +89,7 @@
         "scripts": 2,
         "schemas": 0
       },
-      "lastUpdated": "2026-03-30T00:49:41.620529+00:00"
+      "lastUpdated": "2026-04-09T21:39:08.645965+00:00"
     },
     {
       "name": "sc-git-worktree",
@@ -86,10 +103,10 @@
         "commands": 1,
         "skills": 1,
         "agents": 5,
-        "scripts": 8,
+        "scripts": 7,
         "schemas": 0
       },
-      "lastUpdated": "2026-03-30T00:49:41.621593+00:00"
+      "lastUpdated": "2026-04-09T21:39:08.646999+00:00"
     },
     {
       "name": "sc-github-issue",
@@ -106,7 +123,7 @@
         "scripts": 1,
         "schemas": 0
       },
-      "lastUpdated": "2026-03-30T00:49:41.622740+00:00"
+      "lastUpdated": "2026-04-09T21:39:08.648086+00:00"
     },
     {
       "name": "sc-kanban",
@@ -123,7 +140,7 @@
         "scripts": 5,
         "schemas": 0
       },
-      "lastUpdated": "2026-03-30T00:49:41.623503+00:00"
+      "lastUpdated": "2026-04-09T21:39:08.648803+00:00"
     },
     {
       "name": "sc-manage",
@@ -140,7 +157,7 @@
         "scripts": 8,
         "schemas": 0
       },
-      "lastUpdated": "2026-03-30T00:49:41.624241+00:00"
+      "lastUpdated": "2026-04-09T21:39:08.649510+00:00"
     },
     {
       "name": "sc-repomix-nuget",
@@ -157,7 +174,7 @@
         "scripts": 3,
         "schemas": 0
       },
-      "lastUpdated": "2026-03-30T00:49:41.624960+00:00"
+      "lastUpdated": "2026-04-09T21:39:08.650193+00:00"
     },
     {
       "name": "sc-roslyn-diff",
@@ -174,7 +191,7 @@
         "scripts": 6,
         "schemas": 0
       },
-      "lastUpdated": "2026-03-30T00:49:41.625709+00:00"
+      "lastUpdated": "2026-04-09T21:39:08.650924+00:00"
     },
     {
       "name": "sc-rust",
@@ -186,12 +203,12 @@
       "category": "tools",
       "artifacts": {
         "commands": 0,
-        "skills": 8,
+        "skills": 2,
         "agents": 5,
         "scripts": 0,
         "schemas": 0
       },
-      "lastUpdated": "2026-03-29T17:51:39.470924"
+      "lastUpdated": "2026-04-09T21:39:08.651670+00:00"
     },
     {
       "name": "sc-startup",
@@ -208,17 +225,17 @@
         "scripts": 1,
         "schemas": 0
       },
-      "lastUpdated": "2026-03-30T00:49:41.627249+00:00"
+      "lastUpdated": "2026-04-09T21:39:08.652571+00:00"
     }
   ],
   "metadata": {
-    "totalPackages": 12,
+    "totalPackages": 13,
     "totalCommands": 10,
-    "totalSkills": 19,
+    "totalSkills": 16,
     "totalAgents": 42,
-    "totalScripts": 46,
+    "totalScripts": 45,
     "totalSchemas": 2
   },
-  "generated": "2026-03-29T17:51:39.470943",
-  "lastUpdated": "2026-03-29T17:51:39.470945"
+  "generated": "2026-04-09T21:39:08.652582+00:00",
+  "lastUpdated": "2026-04-09T21:39:08.652584+00:00"
 }
