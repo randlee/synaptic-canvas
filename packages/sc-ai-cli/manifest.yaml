@@ -1,0 +1,61 @@
+name: sc-ai-cli
+version: 0.10.0
+description: >
+  AI-first CLI design toolkit: create, review, and harden JSON-first CLIs with
+  MCP-ready contract seams, typed error contracts, auditable mutations, repeatable
+  scaffolding patterns, and stateful simulator design guidance.
+author: randlee
+license: MIT
+tags:
+  - cli
+  - ai
+  - mcp
+  - templates
+  - simulator
+  - review
+  - skills
+
+artifacts:
+  skills:
+    - skills/creating-ai-clis/SKILL.md
+    - skills/creating-ai-clis/references/core-contract.md
+    - skills/creating-ai-clis/references/error-contracts.md
+    - skills/creating-ai-clis/references/mcp-compatibility.md
+    - skills/creating-ai-clis/references/simulation-and-auditability.md
+    - skills/creating-ai-clis/references/template-generation.md
+    - skills/creating-ai-clis/references/example-repos.md
+    - skills/creating-ai-clis/references/dotnet.md
+    - skills/creating-ai-clis/references/dotnet-examples.md
+    - skills/creating-ai-clis/references/rust.md
+    - skills/creating-ai-clis/references/rust-examples.md
+    - skills/creating-ai-clis/references/go.md
+    - skills/creating-ai-clis/references/go-examples.md
+    - skills/reviewing-ai-clis/SKILL.md
+    - skills/reviewing-ai-clis/references/review-checklist.md
+    - skills/reviewing-ai-clis/references/error-review.md
+    - skills/reviewing-ai-clis/references/plan-review.md
+    - skills/designing-cli-simulators/SKILL.md
+    - skills/designing-cli-simulators/references/simulator-requirements.md
+    - skills/designing-cli-simulators/references/adapter-boundaries.md
+    - skills/designing-cli-simulators/references/device-simulators.md
+    - skills/designing-cli-simulators/references/database-simulators.md
+    - skills/designing-cli-simulators/references/simulator-examples.md
+  assets:
+    - skills/creating-ai-clis/assets/templates/rust/Cargo.toml.j2
+    - skills/creating-ai-clis/assets/templates/rust/src/contracts.rs.j2
+    - skills/creating-ai-clis/assets/templates/rust/src/operations.rs.j2
+    - skills/creating-ai-clis/assets/templates/rust/src/backend.rs.j2
+    - skills/creating-ai-clis/assets/templates/rust/src/main.rs.j2
+    - skills/creating-ai-clis/assets/templates/dotnet/AiCliFixture.csproj.j2
+    - skills/creating-ai-clis/assets/templates/dotnet/Contracts.cs.j2
+    - skills/creating-ai-clis/assets/templates/dotnet/Operations.cs.j2
+    - skills/creating-ai-clis/assets/templates/dotnet/Program.cs.j2
+    - skills/creating-ai-clis/assets/templates/go/go.mod.j2
+    - skills/creating-ai-clis/assets/templates/go/contracts.go.j2
+    - skills/creating-ai-clis/assets/templates/go/main.go.j2
+    - skills/designing-cli-simulators/assets/templates/rust/src/simulator.rs.j2
+    - skills/designing-cli-simulators/assets/templates/dotnet/FileBackedSimulator.cs.j2
+    - skills/designing-cli-simulators/assets/templates/go/simulator.go.j2
+
+install:
+  scope: local-only

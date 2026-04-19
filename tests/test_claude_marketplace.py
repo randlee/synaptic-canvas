@@ -5,6 +5,25 @@ from pathlib import Path
 import yaml
 
 
+def _plugin_packages() -> list[str]:
+    """Return package names that ship a marketplace plugin.json."""
+    packages_dir = Path("packages")
+    names = []
+    for pkg_dir in sorted(packages_dir.iterdir()):
+        if not pkg_dir.is_dir() or pkg_dir.name == "shared":
+            continue
+        if (pkg_dir / ".claude-plugin" / "plugin.json").exists():
+            names.append(pkg_dir.name)
+    return names
+
+
+def _package_version(package_name: str) -> str:
+    """Read the package version from manifest.yaml."""
+    manifest_path = Path(f"packages/{package_name}/manifest.yaml")
+    data = yaml.safe_load(manifest_path.read_text())
+    return data["version"]
+
+
 def _get_marketplace_version() -> str:
     """Get the current marketplace version from version.yaml."""
     version_file = Path("version.yaml")
@@ -30,20 +49,7 @@ def test_marketplace_json_valid():
     assert data["name"] == "synaptic-canvas", f"Expected name 'synaptic-canvas', got '{data['name']}'"
     assert "owner" in data, "marketplace.json missing 'owner' field"
     assert "plugins" in data, "marketplace.json missing 'plugins' field"
-    expected_plugins = [
-        "sc-delay-tasks",
-        "sc-git-worktree",
-        "sc-manage",
-        "sc-repomix-nuget",
-        "sc-github-issue",
-        "sc-startup",
-        "sc-ci-automation",
-        "sc-roslyn-diff",
-        "sc-kanban",
-        "sc-codex",
-        "sc-commit-push-pr",
-        "sc-rust",
-    ]
+    expected_plugins = _plugin_packages()
     assert len(data["plugins"]) == len(expected_plugins), f"Expected {len(expected_plugins)} plugins, found {len(data['plugins'])}"
     plugin_names = [p["name"] for p in data["plugins"]]
     assert plugin_names == expected_plugins, f"Expected plugins {expected_plugins}, got {plugin_names}"
@@ -51,7 +57,7 @@ def test_marketplace_json_valid():
 
 def test_all_packages_have_plugin_json():
     """Verify each package has .claude-plugin/plugin.json."""
-    packages = ["sc-delay-tasks", "sc-git-worktree", "sc-manage", "sc-repomix-nuget", "sc-github-issue", "sc-startup", "sc-codex"]
+    packages = _plugin_packages()
 
     for pkg in packages:
         plugin_json = Path(f"packages/{pkg}/.claude-plugin/plugin.json")
@@ -60,13 +66,13 @@ def test_all_packages_have_plugin_json():
         data = json.loads(plugin_json.read_text())
         assert data["name"] == pkg, f"Expected name '{pkg}', got '{data['name']}'"
         assert "version" in data, f"{pkg}/plugin.json missing 'version' field"
-        expected_version = _get_marketplace_version()
+        expected_version = _package_version(pkg)
         assert data["version"] == expected_version, f"{pkg} expected version {expected_version}, got {data['version']}"
 
 
 def test_plugin_json_schema_valid():
     """Verify plugin.json files have required fields."""
-    packages = ["sc-delay-tasks", "sc-git-worktree", "sc-manage", "sc-repomix-nuget", "sc-github-issue", "sc-startup", "sc-codex"]
+    packages = _plugin_packages()
 
     required_fields = ["name", "description", "version", "author", "license"]
 
@@ -92,7 +98,7 @@ def test_marketplace_package_sources_exist():
 
 def test_plugin_component_directories_exist():
     """Verify plugin component directories (commands, agents, skills) exist."""
-    packages = ["sc-delay-tasks", "sc-git-worktree", "sc-manage", "sc-repomix-nuget", "sc-codex"]
+    packages = _plugin_packages()
 
     for pkg in packages:
         plugin_json = Path(f"packages/{pkg}/.claude-plugin/plugin.json")

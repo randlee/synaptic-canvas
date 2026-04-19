@@ -1,18 +1,18 @@
 {
   "$schema": "https://yourcompany.github.io/schemas/package-registry.schema.json",
   "version": "2.0.0",
-  "generated": "2026-03-30T03:21:08Z",
+  "generated": "2026-04-19T01:57:37Z",
   "repo": "randlee/synaptic-canvas",
   "marketplace": {
     "name": "Synaptic Canvas",
-    "version": "0.9.0",
+    "version": "0.10.0",
     "status": "beta",
     "url": "https://github.com/randlee/synaptic-canvas"
   },
   "packages": {
     "sc-ci-automation": {
       "name": "sc-ci-automation",
-      "version": "0.9.0",
+      "version": "0.10.0",
       "status": "beta",
       "tier": 2,
       "description": "Run CI quality gates (pull \u2192 build \u2192 test) with optional auto-fix and PR creation. Coordinates pull from upstream, builds projects, runs tests, applies straightforward fixes, and creates PRs when all quality gates pass. Supports version bumping with --patch flag.\n",
@@ -30,8 +30,8 @@
         "testing",
         "build",
         "quality-gates",
-        "pr",
-        "continuous-integration"
+        "agents",
+        "workflow"
       ],
       "artifacts": {
         "commands": 1,
@@ -41,15 +41,16 @@
         "schemas": 0
       },
       "dependencies": [
-        "git >= 2.20"
+        "git >= 2.20",
+        "pydantic"
       ],
       "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-ci-automation/CHANGELOG.md",
-      "lastUpdated": "2026-03-30",
+      "lastUpdated": "2026-04-19",
       "dependents": []
     },
     "sc-codex": {
       "name": "sc-codex",
-      "version": "0.9.0",
+      "version": "0.10.0",
       "status": "beta",
       "tier": 0,
       "description": "Run Codex agents via a Task Tool-compatible runner, with hooks emulation and background execution support.\n",
@@ -74,14 +75,19 @@
         "scripts": 2,
         "schemas": 2
       },
-      "dependencies": [],
+      "dependencies": [
+        "python3",
+        "codex",
+        "pydantic",
+        "pyyaml"
+      ],
       "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-codex/CHANGELOG.md",
-      "lastUpdated": "2026-03-30",
+      "lastUpdated": "2026-04-19",
       "dependents": []
     },
     "sc-delay-tasks": {
       "name": "sc-delay-tasks",
-      "version": "0.9.0",
+      "version": "0.10.0",
       "status": "beta",
       "tier": 0,
       "description": "Schedule delayed one-shot or bounded polling actions with minimal heartbeats. Useful for waiting before running checks (e.g., CI status) or polling with stop-on-success.\n",
@@ -91,14 +97,15 @@
       "readme": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-delay-tasks/README.md",
       "license": "MIT",
       "author": {
-        "name": "Anthropic"
+        "name": "randlee"
       },
       "tags": [
         "delay",
         "polling",
-        "tasks",
+        "scheduler",
         "ci",
-        "automation"
+        "workflow",
+        "agents"
       ],
       "artifacts": {
         "commands": 1,
@@ -107,14 +114,17 @@
         "scripts": 2,
         "schemas": 0
       },
-      "dependencies": [],
+      "dependencies": [
+        "python3",
+        "pydantic"
+      ],
       "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-delay-tasks/CHANGELOG.md",
-      "lastUpdated": "2026-03-30",
+      "lastUpdated": "2026-04-19",
       "dependents": []
     },
     "sc-git-worktree": {
       "name": "sc-git-worktree",
-      "version": "0.9.0",
+      "version": "0.10.0",
       "status": "beta",
       "tier": 1,
       "description": "Manage git worktrees with optional tracking and protected branch safeguards: create, scan, cleanup, abort, and update worktrees using a standard sibling folder layout with tracking documents. Prevents accidental deletion of protected branches.\n",
@@ -124,15 +134,14 @@
       "readme": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-git-worktree/README.md",
       "license": "MIT",
       "author": {
-        "name": "Anthropic"
+        "name": "randlee"
       },
       "tags": [
         "git",
         "worktree",
-        "branches",
-        "development",
-        "parallel",
-        "protected-branches"
+        "workflow",
+        "agents",
+        "branching"
       ],
       "artifacts": {
         "commands": 1,
@@ -148,17 +157,19 @@
         }
       },
       "dependencies": [
-        "git >= 2.27"
+        "python3",
+        "pydantic",
+        "git >= 2.20"
       ],
       "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-git-worktree/CHANGELOG.md",
-      "lastUpdated": "2026-03-30",
+      "lastUpdated": "2026-04-19",
       "dependents": [
         "sc-github-issue"
       ]
     },
     "sc-github-issue": {
       "name": "sc-github-issue",
-      "version": "0.9.0",
+      "version": "0.10.0",
       "status": "beta",
       "tier": 2,
       "description": "GitHub issue lifecycle management with worktree isolation: list, create, update, and fix issues with automated workflows including PR creation. Integrates with sc-git-worktree for safe isolation.\n",
@@ -168,16 +179,15 @@
       "readme": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-github-issue/README.md",
       "license": "MIT",
       "author": {
-        "name": "Anthropic"
+        "name": "randlee"
       },
       "tags": [
         "github",
         "issues",
+        "workflow",
+        "agents",
         "pull-requests",
-        "worktree",
-        "automation",
-        "ci",
-        "bug-fixing"
+        "worktree"
       ],
       "artifacts": {
         "commands": 1,
@@ -188,15 +198,16 @@
       },
       "dependencies": [
         "sc-git-worktree >= 0.7.0",
-        "gh >= 2.0"
+        "gh >= 2.0",
+        "pydantic"
       ],
       "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-github-issue/CHANGELOG.md",
-      "lastUpdated": "2026-03-30",
+      "lastUpdated": "2026-04-19",
       "dependents": []
     },
     "sc-kanban": {
       "name": "sc-kanban",
-      "version": "0.9.0",
+      "version": "0.10.0",
       "status": "beta",
       "tier": 2,
       "description": "Kanban state machine for Synaptic Canvas: backlog \u2192 board \u2192 done with gate validation, scrubbing, and shared board config (v0.7).\n",
@@ -212,7 +223,6 @@
         "kanban",
         "task-tracking",
         "workflow",
-        "project-management",
         "git",
         "pr",
         "gates"
@@ -225,17 +235,18 @@
         "schemas": 0
       },
       "dependencies": [
+        "python3",
         "PyYAML",
-        "pydantic >= 2.0",
-        "sc-git-worktree >= 0.5.2"
+        "pydantic",
+        "sc-git-worktree>=0.5.2"
       ],
       "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-kanban/CHANGELOG.md",
-      "lastUpdated": "2026-03-30",
+      "lastUpdated": "2026-04-19",
       "dependents": []
     },
     "sc-manage": {
       "name": "sc-manage",
-      "version": "0.9.0",
+      "version": "0.10.0",
       "status": "beta",
       "tier": 0,
       "description": "Manage Synaptic Canvas Claude packages. List available packages and their install status (local/global), and install or uninstall packages according to policy.\n",
@@ -245,13 +256,13 @@
       "readme": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-manage/README.md",
       "license": "MIT",
       "author": {
-        "name": "Anthropic"
+        "name": "synaptic-canvas"
       },
       "tags": [
-        "package-manager",
-        "discovery",
-        "marketplace",
-        "tools"
+        "management",
+        "packages",
+        "installer",
+        "agents"
       ],
       "artifacts": {
         "commands": 1,
@@ -260,14 +271,18 @@
         "scripts": 8,
         "schemas": 0
       },
-      "dependencies": [],
+      "dependencies": [
+        "python3",
+        "git",
+        "pydantic"
+      ],
       "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-manage/CHANGELOG.md",
-      "lastUpdated": "2026-03-30",
+      "lastUpdated": "2026-04-19",
       "dependents": []
     },
     "sc-repomix-nuget": {
       "name": "sc-repomix-nuget",
-      "version": "0.9.0",
+      "version": "0.10.0",
       "status": "beta",
       "tier": 1,
       "description": "Generate AI-optimized NuGet package context using Repomix with NuGet metadata (dependencies, dependents, namespaces, frameworks). Produces a compressed API surface.\n",
@@ -277,14 +292,14 @@
       "readme": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-repomix-nuget/README.md",
       "license": "MIT",
       "author": {
-        "name": "Anthropic"
+        "name": "synaptic-canvas"
       },
       "tags": [
         "nuget",
-        "csharp",
-        ".net",
+        "repomix",
         "documentation",
-        "analysis"
+        "api",
+        "context"
       ],
       "artifacts": {
         "commands": 1,
@@ -300,15 +315,17 @@
         }
       },
       "dependencies": [
-        "python3 >= 3.12"
+        "node >= 18",
+        "python >= 3.9",
+        "pydantic"
       ],
       "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-repomix-nuget/CHANGELOG.md",
-      "lastUpdated": "2026-03-30",
+      "lastUpdated": "2026-04-19",
       "dependents": []
     },
     "sc-roslyn-diff": {
       "name": "sc-roslyn-diff",
-      "version": "0.9.0",
+      "version": "0.10.0",
       "status": "beta",
       "tier": 2,
       "description": "Semantic diffing for .NET source using roslyn-diff with JSON-first outputs, HTML reports, and git/PR-aware comparisons.\n",
@@ -324,7 +341,6 @@
         "diff",
         "roslyn",
         "semantic",
-        ".net",
         "csharp",
         "vb",
         "git",
@@ -341,15 +357,16 @@
       "dependencies": [
         "dotnet >= 10",
         "git >= 2.20",
-        "python >= 3.10"
+        "python >= 3.10",
+        "pydantic"
       ],
       "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-roslyn-diff/CHANGELOG.md",
-      "lastUpdated": "2026-03-30",
+      "lastUpdated": "2026-04-19",
       "dependents": []
     },
     "sc-startup": {
       "name": "sc-startup",
-      "version": "0.9.0",
+      "version": "0.10.0",
       "status": "beta",
       "tier": 2,
       "description": "Startup runner for Synaptic Canvas: read startup prompt, sync master checklist, optional PR triage, worktree hygiene, and CI pull, then emit a concise status with next steps. Supports read-only mode.\n",
@@ -377,16 +394,18 @@
         "schemas": 0
       },
       "dependencies": [
-        "sc-ci-automation >= 0.7.0",
-        "sc-git-worktree >= 0.7.0"
+        "git >= 2.20",
+        "python3",
+        "PyYAML",
+        "pydantic"
       ],
       "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-startup/CHANGELOG.md",
-      "lastUpdated": "2026-03-30",
+      "lastUpdated": "2026-04-19",
       "dependents": []
     },
     "sc-commit-push-pr": {
       "name": "sc-commit-push-pr",
-      "version": "0.9.0",
+      "version": "0.10.0",
       "status": "beta",
       "tier": 2,
       "description": "Commit, push, and create PRs for GitHub and Azure DevOps",
@@ -403,8 +422,7 @@
         "pr",
         "github",
         "azure-devops",
-        "workflow",
-        "automation"
+        "workflow"
       ],
       "artifacts": {
         "commands": 0,
@@ -414,13 +432,14 @@
         "schemas": 0
       },
       "dependencies": [
+        "python3",
         "pydantic",
         "pyyaml",
         "git",
         "gh"
       ],
       "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-commit-push-pr/CHANGELOG.md",
-      "lastUpdated": "2026-03-30",
+      "lastUpdated": "2026-04-19",
       "dependents": []
     },
     "sc-rust": {
@@ -428,7 +447,7 @@
       "version": "0.10.0",
       "status": "beta",
       "tier": 2,
-      "description": "Rust development toolkit: idiomatic guidelines, service hardening guidance, design pattern enforcement, and specialized agents for architecture, code review, exploration, implementation, and QA. Includes cross-platform portability guidelines for Ubuntu, macOS, and Windows.\n",
+      "description": "Rust development toolkit: idiomatic guidelines, design pattern enforcement, and specialized agents for architecture, code review, exploration, implementation, and QA. Includes cross-platform portability guidelines for Ubuntu, macOS, and Windows.\n",
       "github": "randlee/synaptic-canvas",
       "repo": "https://github.com/randlee/synaptic-canvas",
       "path": "packages/sc-rust",
@@ -448,7 +467,7 @@
       ],
       "artifacts": {
         "commands": 0,
-        "skills": 3,
+        "skills": 2,
         "agents": 5,
         "scripts": 0,
         "schemas": 0
@@ -458,8 +477,77 @@
         "cargo-llvm-cov"
       ],
       "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-rust/CHANGELOG.md",
-      "lastUpdated": "2026-03-30",
+      "lastUpdated": "2026-04-19",
       "dependents": []
+    },
+    "sc-ai-cli": {
+      "name": "sc-ai-cli",
+      "version": "0.10.0",
+      "status": "beta",
+      "tier": 0,
+      "description": "AI-first CLI design toolkit: create, review, and harden JSON-first CLIs with MCP-ready contract seams, typed error contracts, auditable mutations, repeatable scaffolding patterns, and stateful simulator design guidance.\n",
+      "github": "randlee/synaptic-canvas",
+      "repo": "https://github.com/randlee/synaptic-canvas",
+      "path": "packages/sc-ai-cli",
+      "readme": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-ai-cli/README.md",
+      "license": "MIT",
+      "author": {
+        "name": "randlee"
+      },
+      "tags": [
+        "cli",
+        "ai",
+        "mcp",
+        "templates",
+        "simulator",
+        "review",
+        "skills"
+      ],
+      "artifacts": {
+        "commands": 0,
+        "skills": 3,
+        "agents": 0,
+        "scripts": 0,
+        "schemas": 0
+      },
+      "dependencies": [],
+      "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-ai-cli/CHANGELOG.md",
+      "lastUpdated": "2026-04-19",
+      "dependents": []
+    },
+    "sc-coding-agent-hardening": {
+      "name": "sc-coding-agent-hardening",
+      "status": "beta",
+      "tier": 2,
+      "github": "randlee/synaptic-canvas",
+      "repo": "https://github.com/randlee/synaptic-canvas",
+      "path": "packages/sc-coding-agent-hardening",
+      "readme": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-coding-agent-hardening/README.md",
+      "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-coding-agent-hardening/CHANGELOG.md",
+      "dependents": [],
+      "version": "0.10.0",
+      "description": "Harden coding, QA, and orchestration agent prompts so straightforward defects are fixed instead of being dismissed as minor, pre-existing, non-blocking, or technical debt.\n",
+      "license": "MIT",
+      "author": {
+        "name": "randlee"
+      },
+      "tags": [
+        "agents",
+        "prompt-hardening",
+        "qa",
+        "review",
+        "orchestration",
+        "skills"
+      ],
+      "artifacts": {
+        "commands": 0,
+        "skills": 1,
+        "agents": 0,
+        "scripts": 0,
+        "schemas": 0
+      },
+      "dependencies": [],
+      "lastUpdated": "2026-04-19"
     }
   },
   "metadata": {

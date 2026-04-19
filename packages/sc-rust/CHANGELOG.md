@@ -5,9 +5,7 @@ All notable changes to the **sc-rust** package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
-
-## [0.10.0] - Unreleased
+## [0.10.0] - 2026-04-18
 
 ### Added
 - New `rust-service-hardening` skill for production-readiness guidance and review of Rust services
@@ -17,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Expanded `sc-rust` package metadata and marketplace/plugin descriptions to include service-hardening scope
 - Updated `README.md` and `USE-CASES.md` to advertise when `rust-service-hardening` should be selected
-- Bumped `sc-rust` package and bundled artifact versions from `0.9.0` to `0.10.0`
+- Bumped `sc-rust` package and bundled artifact versions to `0.10.0`
 
 ### Scope
 - `rust-service-hardening` is intended for Rust services with runtime, network, or deployment concerns

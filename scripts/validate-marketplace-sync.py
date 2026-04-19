@@ -316,7 +316,15 @@ def validate_marketplace_sync(
         return registry_result
 
     registry = registry_result.value
-    registry_packages = registry.get("packages", {})
+    registry_packages_raw = registry.get("packages", {})
+    if isinstance(registry_packages_raw, list):
+        registry_packages = {
+            entry.get("name"): entry
+            for entry in registry_packages_raw
+            if isinstance(entry, dict) and entry.get("name")
+        }
+    else:
+        registry_packages = registry_packages_raw
 
     # Validate each plugin entry against the schema
     from pydantic import ValidationError
@@ -488,7 +496,15 @@ def fix_sync_issues(
         return registry_result
 
     registry = registry_result.value
-    registry_packages = registry.get("packages", {})
+    registry_packages_raw = registry.get("packages", {})
+    if isinstance(registry_packages_raw, list):
+        registry_packages = {
+            entry.get("name"): entry
+            for entry in registry_packages_raw
+            if isinstance(entry, dict) and entry.get("name")
+        }
+    else:
+        registry_packages = registry_packages_raw
 
     changes_made = False
 

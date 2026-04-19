@@ -267,13 +267,38 @@ def load_manifest(package_dir: Path) -> Optional[dict]:
         return yaml.safe_load(f)
 
 
-def normalize_author(author: Any) -> dict[str, str]:
-    """Normalize author values to the marketplace object shape."""
+def normalize_author(author: object) -> dict[str, str]:
+    """Normalize author metadata to object form for marketplace-style registries."""
     if isinstance(author, dict):
-        return author
+        name = str(author.get('name', '')).strip()
+        email = str(author.get('email', '')).strip()
+        result = {}
+        if name:
+            result['name'] = name
+        if email:
+            result['email'] = email
+        return result or {'name': 'unknown'}
+
     if isinstance(author, str):
-        return {'name': author}
+        name = author.strip()
+        return {'name': name or 'unknown'}
+
     return {'name': 'unknown'}
+
+
+def flatten_requires(requires: object) -> list[str]:
+    """Flatten manifest requires metadata into a simple list of dependency strings."""
+    if isinstance(requires, list):
+        return [str(item) for item in requires]
+
+    if isinstance(requires, dict):
+        flattened = []
+        for values in requires.values():
+            if isinstance(values, list):
+                flattened.extend(str(item) for item in values)
+        return flattened
+
+    return []
 
 
 def regenerate_marketplace_json(repo_root: Path, dry_run: bool = False) -> list[str]:
@@ -302,22 +327,39 @@ def regenerate_marketplace_json(repo_root: Path, dry_run: bool = False) -> list[
     if first_manifest:
         marketplace['metadata']['version'] = first_manifest.get('version', marketplace['metadata'].get('version'))
 
-    # Update each plugin entry
-    for plugin in marketplace.get('plugins', []):
-        pkg_name = plugin.get('name')
-        if not pkg_name:
+    existing_plugins = {
+        plugin.get('name'): plugin
+        for plugin in marketplace.get('plugins', [])
+        if plugin.get('name')
+    }
+    plugins = []
+
+    for pkg_dir in sorted(packages_dir.iterdir()):
+        if not pkg_dir.is_dir() or pkg_dir.name == "shared":
             continue
 
-        pkg_dir = packages_dir / pkg_name
         manifest = load_manifest(pkg_dir)
+        if not manifest:
+            continue
 
-        if manifest:
-            plugin['version'] = manifest.get('version', plugin.get('version'))
-            plugin['description'] = manifest.get('description', plugin.get('description', ''))
-            plugin['author'] = normalize_author(
-                manifest.get('author', plugin.get('author', {'name': 'unknown'}))
-            )
-            plugin['license'] = manifest.get('license', plugin.get('license', 'MIT'))
+        pkg_name = manifest.get('name', pkg_dir.name)
+        plugin = existing_plugins.get(pkg_name, {
+            'name': pkg_name,
+            'source': f'./packages/{pkg_name}',
+            'category': manifest.get('category', 'tools'),
+        })
+
+        plugin['name'] = pkg_name
+        plugin['source'] = plugin.get('source', f'./packages/{pkg_name}')
+        plugin['description'] = manifest.get('description', plugin.get('description', ''))
+        plugin['version'] = manifest.get('version', plugin.get('version', '0.0.0'))
+        plugin['author'] = normalize_author(manifest.get('author', plugin.get('author', {})))
+        plugin['license'] = manifest.get('license', plugin.get('license', 'MIT'))
+        plugin['keywords'] = manifest.get('tags', plugin.get('keywords', []))
+        plugin['category'] = manifest.get('category', plugin.get('category', 'tools'))
+        plugins.append(plugin)
+
+    marketplace['plugins'] = plugins
 
     if not dry_run:
         with open(marketplace_path, 'w') as f:
@@ -422,12 +464,32 @@ def regenerate_nuget_registry(repo_root: Path, dry_run: bool = False) -> list[st
 
         if pkg_name in registry.get('packages', {}):
             pkg_entry = registry['packages'][pkg_name]
-            pkg_entry['version'] = manifest.get('version', pkg_entry.get('version'))
-            pkg_entry['description'] = manifest.get('description', pkg_entry.get('description', ''))
+        else:
+            pkg_entry = registry.setdefault('packages', {})[pkg_name] = {
+                'name': pkg_name,
+                'status': 'beta',
+                'tier': 2,
+                'github': 'randlee/synaptic-canvas',
+                'repo': 'https://github.com/randlee/synaptic-canvas',
+                'path': f'packages/{pkg_name}',
+                'readme': f'https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/{pkg_name}/README.md',
+                'changelog': f'https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/{pkg_name}/CHANGELOG.md',
+                'dependents': [],
+            }
 
-            counts = count_artifacts(pkg_dir)
-            pkg_entry['artifacts'] = counts
-            pkg_entry['lastUpdated'] = datetime.now(timezone.utc).strftime('%Y-%m-%d')
+        pkg_entry['version'] = manifest.get('version', pkg_entry.get('version', '0.0.0'))
+        pkg_entry['description'] = manifest.get('description', pkg_entry.get('description', ''))
+        pkg_entry['license'] = manifest.get('license', pkg_entry.get('license', 'MIT'))
+        pkg_entry['author'] = normalize_author(manifest.get('author', pkg_entry.get('author', {})))
+        pkg_entry['tags'] = manifest.get('tags', pkg_entry.get('tags', []))
+        pkg_entry['path'] = f'packages/{pkg_name}'
+        pkg_entry['readme'] = f'https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/{pkg_name}/README.md'
+        pkg_entry['changelog'] = f'https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/{pkg_name}/CHANGELOG.md'
+
+        counts = count_artifacts(pkg_dir)
+        pkg_entry['artifacts'] = counts
+        pkg_entry['dependencies'] = flatten_requires(manifest.get('requires', {}))
+        pkg_entry['lastUpdated'] = datetime.now(timezone.utc).strftime('%Y-%m-%d')
 
     # Update marketplace version
     if marketplace_version and 'marketplace' in registry:

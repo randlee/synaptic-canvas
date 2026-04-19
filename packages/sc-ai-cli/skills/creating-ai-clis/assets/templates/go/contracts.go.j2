@@ -1,0 +1,72 @@
+---
+required_variables:
+  - device_id
+defaults: {}
+metadata:
+  language: go
+  template_kind: contracts
+  skill: creating-ai-clis
+---
+package main
+
+type SetDeviceModeRequest struct {
+	Mode string `json:"mode"`
+}
+
+type GetDeviceRequest struct{}
+
+type DeviceState struct {
+	DeviceID    string `json:"device_id"`
+	CurrentMode string `json:"current_mode"`
+	Status      string `json:"status"`
+}
+
+type SetDeviceModeResponse struct {
+	DeviceID       string `json:"device_id"`
+	RequestedMode  string `json:"requested_mode"`
+	AppliedMode    string `json:"applied_mode"`
+	Status         string `json:"status"`
+	DiagnosticCode string `json:"diagnostic_code"`
+}
+
+type CliError struct {
+	Code        string `json:"code"`
+	Category    string `json:"category"`
+	Message     string `json:"message"`
+	Remediation string `json:"remediation"`
+}
+
+type Envelope[T any] struct {
+	OK    bool      `json:"ok"`
+	Data  *T        `json:"data,omitempty"`
+	Error *CliError `json:"error,omitempty"`
+}
+
+type DeviceBackend interface {
+	SetDeviceMode(request SetDeviceModeRequest) (SetDeviceModeResponse, *CliError)
+	GetDevice(request GetDeviceRequest) (DeviceState, *CliError)
+}
+
+type DeviceOperations struct {
+	backend DeviceBackend
+}
+
+func NewDeviceOperations(backend DeviceBackend) *DeviceOperations {
+	return &DeviceOperations{backend: backend}
+}
+
+func (o *DeviceOperations) SetDeviceMode(request SetDeviceModeRequest) (SetDeviceModeResponse, *CliError) {
+	return o.backend.SetDeviceMode(request)
+}
+
+func (o *DeviceOperations) GetDevice(request GetDeviceRequest) (DeviceState, *CliError) {
+	return o.backend.GetDevice(request)
+}
+
+func defaultState() DeviceState {
+	return DeviceState{
+		DeviceID:    "{{ device_id }}",
+		CurrentMode: "idle",
+		Status:      "ready",
+	}
+}

@@ -1,0 +1,77 @@
+---
+required_variables:
+  - device_id
+defaults: {}
+metadata:
+  language: rust
+  template_kind: contracts
+  skill: creating-ai-clis
+---
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct SetDeviceModeRequest {
+    pub mode: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+pub struct GetDeviceRequest;
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct DeviceState {
+    pub device_id: String,
+    pub current_mode: String,
+    pub status: String,
+}
+
+impl Default for DeviceState {
+    fn default() -> Self {
+        Self {
+            device_id: "{{ device_id }}".to_string(),
+            current_mode: "idle".to_string(),
+            status: "ready".to_string(),
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct SetDeviceModeResponse {
+    pub device_id: String,
+    pub requested_mode: String,
+    pub applied_mode: String,
+    pub status: String,
+    pub diagnostic_code: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CliError {
+    pub code: String,
+    pub category: String,
+    pub message: String,
+    pub remediation: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Envelope<T> {
+    pub ok: bool,
+    pub data: Option<T>,
+    pub error: Option<CliError>,
+}
+
+impl<T> Envelope<T> {
+    pub fn success(data: T) -> Self {
+        Self {
+            ok: true,
+            data: Some(data),
+            error: None,
+        }
+    }
+
+    pub fn failure(error: CliError) -> Self {
+        Self {
+            ok: false,
+            data: None,
+            error: Some(error),
+        }
+    }
+}

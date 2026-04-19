@@ -1,0 +1,42 @@
+---
+required_variables: []
+defaults: {}
+metadata:
+  language: rust
+  template_kind: operations
+  skill: creating-ai-clis
+---
+use crate::backend::DeviceBackend;
+use crate::contracts::{
+    CliError,
+    DeviceState,
+    GetDeviceRequest,
+    SetDeviceModeRequest,
+    SetDeviceModeResponse,
+};
+
+pub struct DeviceOperations<B> {
+    backend: B,
+}
+
+impl<B> DeviceOperations<B> {
+    pub fn new(backend: B) -> Self {
+        Self { backend }
+    }
+}
+
+impl<B> DeviceOperations<B>
+where
+    B: DeviceBackend,
+{
+    pub fn set_device_mode(
+        &mut self,
+        request: SetDeviceModeRequest,
+    ) -> Result<SetDeviceModeResponse, CliError> {
+        self.backend.set_device_mode(request)
+    }
+
+    pub fn get_device(&self, request: GetDeviceRequest) -> Result<DeviceState, CliError> {
+        self.backend.get_device(request)
+    }
+}

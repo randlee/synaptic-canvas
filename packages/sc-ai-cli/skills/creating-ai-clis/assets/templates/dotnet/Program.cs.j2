@@ -1,0 +1,193 @@
+---
+required_variables:
+  - namespace
+  - set_command_name
+  - get_command_name
+  - state_file_name
+defaults: {}
+metadata:
+  language: dotnet
+  template_kind: entrypoint
+  skill: creating-ai-clis
+---
+using System.CommandLine;
+using System.CommandLine.Parsing;
+using System.Text.Json;
+
+namespace {{ namespace }};
+
+internal static class Program
+{
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        WriteIndented = true
+    };
+
+    private static int Main(string[] args)
+    {
+        var jsonOption = new Option<bool>("--json")
+        {
+            Description = "Emit machine-readable JSON output."
+        };
+        var stateFileOption = new Option<string?>("--state-file")
+        {
+            Description = "Path to the simulator state file."
+        };
+        var modeOption = new Option<string?>("--mode")
+        {
+            Description = "Target device mode."
+        };
+
+        var setCommand = new Command("{{ set_command_name }}")
+        {
+            Description = "Set the device mode."
+        };
+        setCommand.Options.Add(modeOption);
+        setCommand.SetAction(parseResult => RunSet(
+            parseResult.GetValue(jsonOption),
+            parseResult.GetValue(stateFileOption) ?? "{{ state_file_name }}",
+            parseResult.GetValue(modeOption)
+        ));
+
+        var getCommand = new Command("{{ get_command_name }}")
+        {
+            Description = "Get the current device state."
+        };
+        getCommand.SetAction(parseResult => RunGet(
+            parseResult.GetValue(jsonOption),
+            parseResult.GetValue(stateFileOption) ?? "{{ state_file_name }}"
+        ));
+
+        var rootCommand = new RootCommand("AI-first CLI fixture");
+        rootCommand.Options.Add(jsonOption);
+        rootCommand.Options.Add(stateFileOption);
+        rootCommand.Subcommands.Add(setCommand);
+        rootCommand.Subcommands.Add(getCommand);
+        rootCommand.SetAction(parseResult => WriteError(
+            parseResult.GetValue(jsonOption),
+            new CliError(
+                "usage.missing_command",
+                "usage",
+                "Missing command.",
+                "Use {{ set_command_name }} or {{ get_command_name }}."
+            )
+        ));
+
+        try
+        {
+            var parseResult = rootCommand.Parse(args);
+            if (parseResult.Errors.Count > 0)
+            {
+                return WriteParseError(RequestedJson(args), parseResult.Errors);
+            }
+
+            return parseResult.Invoke();
+        }
+        catch (CliException ex)
+        {
+            return WriteError(RequestedJson(args), ex.Error);
+        }
+    }
+
+    private static int RunSet(bool jsonMode, string stateFile, string? mode)
+    {
+        try
+        {
+            var backend = new FileBackedSimulator(stateFile);
+            var operations = new DeviceOperations(backend);
+
+            if (string.IsNullOrWhiteSpace(mode))
+            {
+                return WriteError(
+                    jsonMode,
+                    new CliError(
+                        "validation.missing_mode",
+                        "validation",
+                        "Missing required --mode value.",
+                        "Provide --mode idle or --mode active."
+                    )
+                );
+            }
+
+            var response = operations.SetDeviceMode(new SetDeviceModeRequest(mode));
+            return WriteSuccess(jsonMode, response, $"mode set to {mode}");
+        }
+        catch (CliException ex)
+        {
+            return WriteError(jsonMode, ex.Error);
+        }
+    }
+
+    private static int RunGet(bool jsonMode, string stateFile)
+    {
+        try
+        {
+            var backend = new FileBackedSimulator(stateFile);
+            var operations = new DeviceOperations(backend);
+            var response = operations.GetDevice(new GetDeviceRequest());
+            return WriteSuccess(jsonMode, response, "device state loaded");
+        }
+        catch (CliException ex)
+        {
+            return WriteError(jsonMode, ex.Error);
+        }
+    }
+
+    private static int WriteSuccess<T>(bool jsonMode, T data, string human)
+    {
+        if (jsonMode)
+        {
+            Console.WriteLine(JsonSerializer.Serialize(new Envelope<T>(true, data, null), JsonOptions));
+        }
+        else
+        {
+            Console.WriteLine(human);
+        }
+
+        return 0;
+    }
+
+    private static int WriteError(bool jsonMode, CliError error)
+    {
+        if (jsonMode)
+        {
+            Console.Error.WriteLine(JsonSerializer.Serialize(new Envelope<object>(false, null, error), JsonOptions));
+        }
+        else
+        {
+            Console.Error.WriteLine(error.Message);
+            if (!string.IsNullOrWhiteSpace(error.Remediation))
+            {
+                Console.Error.WriteLine($"hint: {error.Remediation}");
+            }
+        }
+
+        return 2;
+    }
+
+    private static int WriteParseError(bool jsonMode, IReadOnlyList<ParseError> errors)
+    {
+        var message = errors[0].Message;
+        return WriteError(
+            jsonMode,
+            new CliError(
+                "usage.parse_error",
+                "usage",
+                message,
+                "Run the command with --help or use {{ set_command_name }} / {{ get_command_name }} with supported options."
+            )
+        );
+    }
+
+    private static bool RequestedJson(string[] args) => args.Contains("--json", StringComparer.Ordinal);
+}
+
+internal sealed class CliException : Exception
+{
+    public CliException(CliError error) : base(error.Message)
+    {
+        Error = error;
+    }
+
+    public CliError Error { get; }
+}

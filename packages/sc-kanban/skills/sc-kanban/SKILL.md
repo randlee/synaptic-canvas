@@ -1,6 +1,6 @@
 ---
 name: sc-kanban
-version: 0.9.0
+version: 0.10.0
 description: Kanban state machine orchestration with provider abstraction
 ---
 

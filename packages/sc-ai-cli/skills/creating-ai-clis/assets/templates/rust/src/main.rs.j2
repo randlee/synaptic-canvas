@@ -1,0 +1,128 @@
+---
+required_variables:
+  - set_command_name
+  - get_command_name
+  - state_file_name
+defaults: {}
+metadata:
+  language: rust
+  template_kind: entrypoint
+  skill: creating-ai-clis
+---
+mod backend;
+mod contracts;
+mod operations;
+mod simulator;
+
+use std::path::PathBuf;
+
+use clap::{Parser, Subcommand};
+
+use crate::contracts::{
+    CliError,
+    DeviceState,
+    Envelope,
+    GetDeviceRequest,
+    SetDeviceModeRequest,
+    SetDeviceModeResponse,
+};
+use crate::operations::DeviceOperations;
+use crate::simulator::FileBackedSimulator;
+
+#[derive(Parser)]
+#[command(name = "{{ set_command_name }}-fixture")]
+struct Cli {
+    #[arg(long, global = true)]
+    json: bool,
+
+    #[arg(long, global = true, default_value = "{{ state_file_name }}")]
+    state_file: PathBuf,
+
+    #[command(subcommand)]
+    command: Commands,
+}
+
+#[derive(Subcommand)]
+enum Commands {
+    #[command(name = "{{ set_command_name }}")]
+    SetDeviceMode {
+        #[arg(long)]
+        mode: String,
+    },
+    #[command(name = "{{ get_command_name }}")]
+    GetDevice,
+}
+
+fn main() {
+    let raw_args: Vec<String> = std::env::args().collect();
+    let requested_json = raw_args.iter().any(|arg| arg == "--json");
+    let cli = match Cli::try_parse_from(&raw_args) {
+        Ok(cli) => cli,
+        Err(error) => {
+            if requested_json {
+                emit_error(
+                    true,
+                    CliError {
+                        code: "usage.parse_error".to_string(),
+                        category: "usage".to_string(),
+                        message: error.to_string(),
+                        remediation: format!(
+                            "Run --help or use {} / {} with supported options.",
+                            "{{ set_command_name }}",
+                            "{{ get_command_name }}"
+                        ),
+                    },
+                );
+            }
+
+            eprintln!("{error}");
+            std::process::exit(2);
+        }
+    };
+    let backend = FileBackedSimulator::new(cli.state_file);
+    let mut operations = DeviceOperations::new(backend);
+
+    match cli.command {
+        Commands::SetDeviceMode { mode } => match operations.set_device_mode(SetDeviceModeRequest {
+            mode: mode.clone(),
+        }) {
+            Ok(response) => emit_success(
+                cli.json,
+                response,
+                format!("mode set to {}", mode),
+            ),
+            Err(error) => emit_error(cli.json, error),
+        },
+        Commands::GetDevice => match operations.get_device(GetDeviceRequest) {
+            Ok(response) => emit_success(cli.json, response, "device state loaded".to_string()),
+            Err(error) => emit_error(cli.json, error),
+        },
+    }
+}
+
+fn emit_success<T: serde::Serialize>(json_mode: bool, data: T, human: String) {
+    if json_mode {
+        println!(
+            "{}",
+            serde_json::to_string_pretty(&Envelope::success(data)).expect("serialize success envelope")
+        );
+    } else {
+        println!("{human}");
+    }
+}
+
+fn emit_error(json_mode: bool, error: CliError) -> ! {
+    if json_mode {
+        eprintln!(
+            "{}",
+            serde_json::to_string_pretty(&Envelope::<DeviceState>::failure(error))
+                .expect("serialize error envelope")
+        );
+    } else {
+        eprintln!("{}", error.message);
+        if !error.remediation.is_empty() {
+            eprintln!("hint: {}", error.remediation);
+        }
+    }
+    std::process::exit(2);
+}
