@@ -1,7 +1,7 @@
 {
   "name": "sc-ai-cli",
   "description": "AI-first CLI design toolkit: create, review, and harden JSON-first CLIs with MCP-ready contract seams, typed error contracts, auditable mutations, repeatable scaffolding patterns, and stateful simulator design guidance.",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "author": {
     "name": "randlee"
   },

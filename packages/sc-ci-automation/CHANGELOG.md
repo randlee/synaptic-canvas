@@ -5,7 +5,7 @@ All notable changes to sc-ci-automation will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.10.0] - 2026-04-18
 
 ## [0.7.0] - 2025-12-21
 
@@ -58,5 +58,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - No hardcoded credentials (uses environment variables)
 - Safe defaults prevent accidental force-push or protected branch violations
 
-[Unreleased]: https://github.com/randlee/synaptic-canvas/compare/v0.1.0...HEAD
+[0.10.0]: https://github.com/randlee/synaptic-canvas/compare/v0.9.0...v0.10.0
 [0.1.0]: https://github.com/randlee/synaptic-canvas/releases/tag/v0.1.0

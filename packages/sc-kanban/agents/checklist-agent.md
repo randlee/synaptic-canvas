@@ -1,6 +1,6 @@
 ---
 name: checklist-agent
-version: 0.9.0
+version: 0.10.0
 description: Checklist fallback provider using roadmap.md + prompts/ (no gates).
 ---
 

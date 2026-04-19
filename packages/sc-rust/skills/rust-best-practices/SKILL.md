@@ -1,6 +1,6 @@
 ---
 name: rust-best-practices
-version: 0.9.0
+version: 0.10.0
 description: Enforce Rust design patterns at the right lifecycle stage — design review, code review, or CI. Use when reviewing architecture plans, crate API surfaces, or Rust code for pattern compliance. Complements rust-development (style/guidelines) by focusing on structural design patterns and when to apply them.
 ---
 
