@@ -9,7 +9,7 @@
     {
       "name": "sc-ai-cli",
       "version": "0.9.0",
-      "description": "AI-first CLI design toolkit: create, review, and harden JSON-first, MCP-ready CLIs with typed error contracts, auditable mutations, repeatable scaffolding patterns, and stateful simulator design guidance.\n",
+      "description": "AI-first CLI design toolkit: create, review, and harden JSON-first CLIs with MCP-ready contract seams, typed error contracts, auditable mutations, repeatable scaffolding patterns, and stateful simulator design guidance.\n",
       "author": "randlee",
       "license": "MIT",
       "keywords": [],
@@ -21,7 +21,7 @@
         "scripts": 0,
         "schemas": 0
       },
-      "lastUpdated": "2026-04-09T21:39:08.642903+00:00"
+      "lastUpdated": "2026-04-19T00:26:52.977951+00:00"
     },
     {
       "name": "sc-ci-automation",
@@ -38,7 +38,7 @@
         "scripts": 1,
         "schemas": 0
       },
-      "lastUpdated": "2026-04-09T21:39:08.643886+00:00"
+      "lastUpdated": "2026-04-19T00:26:52.979050+00:00"
     },
     {
       "name": "sc-codex",
@@ -55,7 +55,24 @@
         "scripts": 2,
         "schemas": 2
       },
-      "lastUpdated": "2026-04-09T21:39:08.644668+00:00"
+      "lastUpdated": "2026-04-19T00:26:52.979833+00:00"
+    },
+    {
+      "name": "sc-coding-agent-hardening",
+      "version": "0.1.0",
+      "description": "Harden coding, QA, and orchestration agent prompts so straightforward defects are fixed instead of being dismissed as minor, pre-existing, non-blocking, or technical debt.\n",
+      "author": "randlee",
+      "license": "MIT",
+      "keywords": [],
+      "category": "tools",
+      "artifacts": {
+        "commands": 0,
+        "skills": 1,
+        "agents": 0,
+        "scripts": 0,
+        "schemas": 0
+      },
+      "lastUpdated": "2026-04-19T00:26:52.980318+00:00"
     },
     {
       "name": "sc-commit-push-pr",
@@ -72,7 +89,7 @@
         "scripts": 9,
         "schemas": 0
       },
-      "lastUpdated": "2026-04-09T21:39:08.645340+00:00"
+      "lastUpdated": "2026-04-19T00:26:52.980997+00:00"
     },
     {
       "name": "sc-delay-tasks",
@@ -89,7 +106,7 @@
         "scripts": 2,
         "schemas": 0
       },
-      "lastUpdated": "2026-04-09T21:39:08.645965+00:00"
+      "lastUpdated": "2026-04-19T00:26:52.981620+00:00"
     },
     {
       "name": "sc-git-worktree",
@@ -106,7 +123,7 @@
         "scripts": 7,
         "schemas": 0
       },
-      "lastUpdated": "2026-04-09T21:39:08.646999+00:00"
+      "lastUpdated": "2026-04-19T00:26:52.982647+00:00"
     },
     {
       "name": "sc-github-issue",
@@ -123,7 +140,7 @@
         "scripts": 1,
         "schemas": 0
       },
-      "lastUpdated": "2026-04-09T21:39:08.648086+00:00"
+      "lastUpdated": "2026-04-19T00:26:52.983759+00:00"
     },
     {
       "name": "sc-kanban",
@@ -140,7 +157,7 @@
         "scripts": 5,
         "schemas": 0
       },
-      "lastUpdated": "2026-04-09T21:39:08.648803+00:00"
+      "lastUpdated": "2026-04-19T00:26:52.984487+00:00"
     },
     {
       "name": "sc-manage",
@@ -157,7 +174,7 @@
         "scripts": 8,
         "schemas": 0
       },
-      "lastUpdated": "2026-04-09T21:39:08.649510+00:00"
+      "lastUpdated": "2026-04-19T00:26:52.985191+00:00"
     },
     {
       "name": "sc-repomix-nuget",
@@ -174,7 +191,7 @@
         "scripts": 3,
         "schemas": 0
       },
-      "lastUpdated": "2026-04-09T21:39:08.650193+00:00"
+      "lastUpdated": "2026-04-19T00:26:52.985884+00:00"
     },
     {
       "name": "sc-roslyn-diff",
@@ -191,7 +208,7 @@
         "scripts": 6,
         "schemas": 0
       },
-      "lastUpdated": "2026-04-09T21:39:08.650924+00:00"
+      "lastUpdated": "2026-04-19T00:26:52.986599+00:00"
     },
     {
       "name": "sc-rust",
@@ -208,7 +225,7 @@
         "scripts": 0,
         "schemas": 0
       },
-      "lastUpdated": "2026-04-09T21:39:08.651670+00:00"
+      "lastUpdated": "2026-04-19T00:26:52.987336+00:00"
     },
     {
       "name": "sc-startup",
@@ -225,17 +242,17 @@
         "scripts": 1,
         "schemas": 0
       },
-      "lastUpdated": "2026-04-09T21:39:08.652571+00:00"
+      "lastUpdated": "2026-04-19T00:26:52.988080+00:00"
     }
   ],
   "metadata": {
-    "totalPackages": 13,
+    "totalPackages": 14,
     "totalCommands": 10,
-    "totalSkills": 16,
+    "totalSkills": 17,
     "totalAgents": 42,
     "totalScripts": 45,
     "totalSchemas": 2
   },
-  "generated": "2026-04-09T21:39:08.652582+00:00",
-  "lastUpdated": "2026-04-09T21:39:08.652584+00:00"
+  "generated": "2026-04-19T00:26:52.988086+00:00",
+  "lastUpdated": "2026-04-19T00:26:52.988087+00:00"
 }

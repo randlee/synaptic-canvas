@@ -1,7 +1,7 @@
 {
   "$schema": "https://yourcompany.github.io/schemas/package-registry.schema.json",
   "version": "2.0.0",
-  "generated": "2026-04-09T21:39:08Z",
+  "generated": "2026-04-19T00:26:52Z",
   "repo": "randlee/synaptic-canvas",
   "marketplace": {
     "name": "Synaptic Canvas",
@@ -41,10 +41,11 @@
         "schemas": 0
       },
       "dependencies": [
-        "git >= 2.20"
+        "git >= 2.20",
+        "pydantic"
       ],
       "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-ci-automation/CHANGELOG.md",
-      "lastUpdated": "2026-04-09",
+      "lastUpdated": "2026-04-19",
       "dependents": []
     },
     "sc-codex": {
@@ -74,9 +75,14 @@
         "scripts": 2,
         "schemas": 2
       },
-      "dependencies": [],
+      "dependencies": [
+        "python3",
+        "codex",
+        "pydantic",
+        "pyyaml"
+      ],
       "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-codex/CHANGELOG.md",
-      "lastUpdated": "2026-04-09",
+      "lastUpdated": "2026-04-19",
       "dependents": []
     },
     "sc-delay-tasks": {
@@ -108,9 +114,12 @@
         "scripts": 2,
         "schemas": 0
       },
-      "dependencies": [],
+      "dependencies": [
+        "python3",
+        "pydantic"
+      ],
       "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-delay-tasks/CHANGELOG.md",
-      "lastUpdated": "2026-04-09",
+      "lastUpdated": "2026-04-19",
       "dependents": []
     },
     "sc-git-worktree": {
@@ -148,10 +157,12 @@
         }
       },
       "dependencies": [
-        "git >= 2.27"
+        "python3",
+        "pydantic",
+        "git >= 2.20"
       ],
       "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-git-worktree/CHANGELOG.md",
-      "lastUpdated": "2026-04-09",
+      "lastUpdated": "2026-04-19",
       "dependents": [
         "sc-github-issue"
       ]
@@ -187,10 +198,11 @@
       },
       "dependencies": [
         "sc-git-worktree >= 0.7.0",
-        "gh >= 2.0"
+        "gh >= 2.0",
+        "pydantic"
       ],
       "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-github-issue/CHANGELOG.md",
-      "lastUpdated": "2026-04-09",
+      "lastUpdated": "2026-04-19",
       "dependents": []
     },
     "sc-kanban": {
@@ -223,12 +235,13 @@
         "schemas": 0
       },
       "dependencies": [
+        "python3",
         "PyYAML",
-        "pydantic >= 2.0",
-        "sc-git-worktree >= 0.5.2"
+        "pydantic",
+        "sc-git-worktree>=0.5.2"
       ],
       "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-kanban/CHANGELOG.md",
-      "lastUpdated": "2026-04-09",
+      "lastUpdated": "2026-04-19",
       "dependents": []
     },
     "sc-manage": {
@@ -258,9 +271,13 @@
         "scripts": 8,
         "schemas": 0
       },
-      "dependencies": [],
+      "dependencies": [
+        "python3",
+        "git",
+        "pydantic"
+      ],
       "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-manage/CHANGELOG.md",
-      "lastUpdated": "2026-04-09",
+      "lastUpdated": "2026-04-19",
       "dependents": []
     },
     "sc-repomix-nuget": {
@@ -298,10 +315,12 @@
         }
       },
       "dependencies": [
-        "python3 >= 3.12"
+        "node >= 18",
+        "python >= 3.9",
+        "pydantic"
       ],
       "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-repomix-nuget/CHANGELOG.md",
-      "lastUpdated": "2026-04-09",
+      "lastUpdated": "2026-04-19",
       "dependents": []
     },
     "sc-roslyn-diff": {
@@ -338,10 +357,11 @@
       "dependencies": [
         "dotnet >= 10",
         "git >= 2.20",
-        "python >= 3.10"
+        "python >= 3.10",
+        "pydantic"
       ],
       "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-roslyn-diff/CHANGELOG.md",
-      "lastUpdated": "2026-04-09",
+      "lastUpdated": "2026-04-19",
       "dependents": []
     },
     "sc-startup": {
@@ -374,11 +394,13 @@
         "schemas": 0
       },
       "dependencies": [
-        "sc-ci-automation >= 0.7.0",
-        "sc-git-worktree >= 0.7.0"
+        "git >= 2.20",
+        "python3",
+        "PyYAML",
+        "pydantic"
       ],
       "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-startup/CHANGELOG.md",
-      "lastUpdated": "2026-04-09",
+      "lastUpdated": "2026-04-19",
       "dependents": []
     },
     "sc-commit-push-pr": {
@@ -410,13 +432,14 @@
         "schemas": 0
       },
       "dependencies": [
+        "python3",
         "pydantic",
         "pyyaml",
         "git",
         "gh"
       ],
       "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-commit-push-pr/CHANGELOG.md",
-      "lastUpdated": "2026-04-09",
+      "lastUpdated": "2026-04-19",
       "dependents": []
     },
     "sc-rust": {
@@ -454,7 +477,7 @@
         "cargo-llvm-cov"
       ],
       "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-rust/CHANGELOG.md",
-      "lastUpdated": "2026-04-09",
+      "lastUpdated": "2026-04-19",
       "dependents": []
     },
     "sc-ai-cli": {
@@ -462,7 +485,7 @@
       "version": "0.9.0",
       "status": "beta",
       "tier": 0,
-      "description": "AI-first CLI design toolkit: create, review, and harden JSON-first, MCP-ready CLIs with typed error contracts, auditable mutations, repeatable scaffolding patterns, and stateful simulator design guidance.\n",
+      "description": "AI-first CLI design toolkit: create, review, and harden JSON-first CLIs with MCP-ready contract seams, typed error contracts, auditable mutations, repeatable scaffolding patterns, and stateful simulator design guidance.\n",
       "github": "randlee/synaptic-canvas",
       "repo": "https://github.com/randlee/synaptic-canvas",
       "path": "packages/sc-ai-cli",
@@ -489,8 +512,42 @@
       },
       "dependencies": [],
       "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-ai-cli/CHANGELOG.md",
-      "lastUpdated": "2026-04-09",
+      "lastUpdated": "2026-04-19",
       "dependents": []
+    },
+    "sc-coding-agent-hardening": {
+      "name": "sc-coding-agent-hardening",
+      "status": "beta",
+      "tier": 2,
+      "github": "randlee/synaptic-canvas",
+      "repo": "https://github.com/randlee/synaptic-canvas",
+      "path": "packages/sc-coding-agent-hardening",
+      "readme": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-coding-agent-hardening/README.md",
+      "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-coding-agent-hardening/CHANGELOG.md",
+      "dependents": [],
+      "version": "0.1.0",
+      "description": "Harden coding, QA, and orchestration agent prompts so straightforward defects are fixed instead of being dismissed as minor, pre-existing, non-blocking, or technical debt.\n",
+      "license": "MIT",
+      "author": {
+        "name": "randlee"
+      },
+      "tags": [
+        "agents",
+        "prompt-hardening",
+        "qa",
+        "review",
+        "orchestration",
+        "skills"
+      ],
+      "artifacts": {
+        "commands": 0,
+        "skills": 1,
+        "agents": 0,
+        "scripts": 0,
+        "schemas": 0
+      },
+      "dependencies": [],
+      "lastUpdated": "2026-04-19"
     }
   },
   "metadata": {

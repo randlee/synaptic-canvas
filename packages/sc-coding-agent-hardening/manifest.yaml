@@ -1,0 +1,26 @@
+name: sc-coding-agent-hardening
+version: 0.1.0
+description: >
+  Harden coding, QA, and orchestration agent prompts so straightforward defects
+  are fixed instead of being dismissed as minor, pre-existing, non-blocking, or
+  technical debt.
+author: randlee
+license: MIT
+tags:
+  - agents
+  - prompt-hardening
+  - qa
+  - review
+  - orchestration
+  - skills
+
+artifacts:
+  skills:
+    - skills/coding-agent-hardening/SKILL.md
+    - skills/coding-agent-hardening/references/agent-category-guidance.md
+    - skills/coding-agent-hardening/references/hardening-policy.md
+    - skills/coding-agent-hardening/references/prompt-rewrite-patterns.md
+    - skills/coding-agent-hardening/references/repo-target-map.md
+
+install:
+  scope: local-only

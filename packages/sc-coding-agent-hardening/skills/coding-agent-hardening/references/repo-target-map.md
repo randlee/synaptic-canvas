@@ -1,6 +1,6 @@
 # Repo Target Map
 
-This file lists likely current targets in this repository for prompt hardening. It is a convenience map, not a source of truth. Re-check the actual files before editing, and quickly confirm the map is still current at the start of each hardening session.
+This file lists likely current targets in the Synaptic Canvas repository for prompt hardening. It is optional reference material for maintainers working in this repo, not a runtime dependency of the package. Re-check the actual files before editing.
 
 ## Coding and implementation agents
 
@@ -54,6 +54,8 @@ Look for:
 
 ## Notes
 
+- `packages/...` entries point to marketplace package artifacts already checked into this repository.
+- `.claude/agents/...` entries point to repo-local agents checked into this repository.
 - Some agents may span more than one category.
 - When in doubt, classify by behavior, not file name.
 - If the repo adds new agents later, extend this map rather than treating it as exhaustive.

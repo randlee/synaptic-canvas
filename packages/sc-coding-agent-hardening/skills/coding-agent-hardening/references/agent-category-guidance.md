@@ -1,6 +1,6 @@
 # Agent Category Guidance
 
-Use this file after reading `hardening-policy.md`.
+Use this file after reading `./hardening-policy.md`.
 
 ## Coding agents
 

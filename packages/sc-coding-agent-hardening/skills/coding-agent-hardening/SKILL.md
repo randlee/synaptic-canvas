@@ -44,16 +44,12 @@ Human escalation is still allowed, but only for real decisions:
 
 ## References
 
-- `references/hardening-policy.md` — normative rewrite policy for issue handling and escalation
-- `references/prompt-rewrite-patterns.md` — concrete rewrite patterns to remove permissive wording
-- `references/agent-category-guidance.md` — category-specific hardening rules for coding, QA, and orchestration agents
-- `references/repo-target-map.md` — likely current repo targets by agent category
+- `./references/hardening-policy.md` — normative rewrite policy for issue handling and escalation
+- `./references/prompt-rewrite-patterns.md` — concrete rewrite patterns to remove permissive wording
+- `./references/agent-category-guidance.md` — category-specific hardening rules for coding, QA, and orchestration agents
+- `./references/repo-target-map.md` — optional Synaptic Canvas repo target map; ignore outside this repository
 
-Read `hardening-policy.md` first. Then read `agent-category-guidance.md` for the target agent type. Use `prompt-rewrite-patterns.md` while editing the actual prompt text. Read `repo-target-map.md` only when you need help identifying likely target agents in this repository.
-
-## Agent Delegation
-
-This skill operates directly on prompt files and workflow instructions. It does not delegate to background agents or sub-agents.
+Read `./references/hardening-policy.md` first. Then read `./references/agent-category-guidance.md` for the target agent type. Use `./references/prompt-rewrite-patterns.md` while editing the actual prompt text. Read `./references/repo-target-map.md` only when hardening Synaptic Canvas agents in this repository.
 
 ## Workflow
 
@@ -65,10 +61,8 @@ When hardening an existing agent prompt:
    - orchestration/planning
 
 2. Read the applicable sections in:
-   - `references/hardening-policy.md`
-   - `references/agent-category-guidance.md`
-
-2.5. If using `references/repo-target-map.md`, quickly confirm the listed targets are still current before relying on it.
+   - `./references/hardening-policy.md`
+   - `./references/agent-category-guidance.md`
 
 3. Scan the target prompt for permissive patterns such as:
    - blocker-only language
@@ -100,7 +94,7 @@ When hardening an existing agent prompt:
 
 ## Category Guidance
 
-See `references/agent-category-guidance.md` for category-specific rewrite rules for coding, QA/review, and orchestration agents.
+See `./references/agent-category-guidance.md` for category-specific rewrite rules for coding, QA/review, and orchestration agents.
 
 ## Output Expectations
 
