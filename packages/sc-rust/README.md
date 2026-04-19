@@ -1,6 +1,6 @@
 # sc-rust
 
-Rust development toolkit for Claude Code. Provides idiomatic guidelines, design pattern enforcement, and specialized agents for architecture, code review, exploration, implementation, and QA.
+Rust development toolkit for Claude Code. Provides idiomatic guidelines, service-hardening guidance, design pattern enforcement, and specialized agents for architecture, code review, exploration, implementation, and QA.
 
 ## Skills
 
@@ -16,6 +16,20 @@ Enforces high-value Rust design patterns at the right lifecycle stage — design
 - **Cow, Interior Mutability, Infallible, Trait Object Safety**
 
 Complements `rust-development` (style/guidelines) by focusing on architecture and design patterns.
+
+### rust-service-hardening
+Guides production-readiness reviews for Rust services. Best fit for Tokio, Axum, Hyper, Tonic, and Reqwest-based backends where runtime behavior matters as much as code style.
+
+Covers:
+- **Blocking-critical defaults** — startup config validation, timeouts, graceful shutdown
+- **Runtime resilience** — request tracing, request IDs, retries, backpressure, `spawn_blocking`
+- **Operational safety** — input limits, dependency hygiene, health checks, metrics, CI/release gates
+
+Not intended for:
+- non-service Rust crates
+- embedded Rust
+- pure sync CLI tools
+- low-level libraries with no runtime, network, or server concerns
 
 ## Agents
 
@@ -48,3 +62,5 @@ Installed alongside the skills:
 | `patterns/error-context-recovery-plan.md` | Error handling implementation plan |
 | `patterns/typestate-plan.md` | Typestate pattern implementation guide |
 | `patterns/sealed-traits-plan.md` | Sealed trait pattern implementation guide |
+| `references/production-checklist.md` | Prioritized service-hardening checklist for production reviews |
+| `references/framework-notes.md` | Tokio/Axum/Hyper/Tonic/Reqwest notes for service hardening |

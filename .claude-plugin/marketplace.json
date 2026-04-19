@@ -237,7 +237,7 @@
     {
       "name": "sc-rust",
       "source": "./packages/sc-rust",
-      "description": "Rust development toolkit: idiomatic guidelines, design pattern enforcement, and specialized agents for architecture, code review, exploration, implementation, and QA. Includes cross-platform portability guidelines for Ubuntu, macOS, and Windows.\n",
+      "description": "Rust development toolkit: idiomatic guidelines, service hardening guidance, design pattern enforcement, and specialized agents for architecture, code review, exploration, implementation, and QA. Includes cross-platform portability guidelines for Ubuntu, macOS, and Windows.\n",
       "version": "0.10.0",
       "author": {
         "name": "randlee"
