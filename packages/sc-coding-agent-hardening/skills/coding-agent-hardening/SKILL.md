@@ -42,6 +42,10 @@ Human escalation is still allowed, but only for real decisions:
 - destructive or irreversible operations
 - broad refactors whose blast radius materially changes schedule or scope
 
+## Agent Delegation
+
+This skill operates directly in the current session. It does not delegate to background agents or Agent Runner.
+
 ## References
 
 - `./references/hardening-policy.md` — normative rewrite policy for issue handling and escalation
