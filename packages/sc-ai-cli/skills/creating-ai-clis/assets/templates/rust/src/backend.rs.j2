@@ -1,0 +1,20 @@
+---
+required_variables: []
+defaults: {}
+metadata:
+  language: rust
+  template_kind: backend-trait
+  skill: creating-ai-clis
+---
+use crate::contracts::{
+    CliError,
+    DeviceState,
+    GetDeviceRequest,
+    SetDeviceModeRequest,
+    SetDeviceModeResponse,
+};
+
+pub trait DeviceBackend {
+    fn set_device_mode(&mut self, request: SetDeviceModeRequest) -> Result<SetDeviceModeResponse, CliError>;
+    fn get_device(&self, request: GetDeviceRequest) -> Result<DeviceState, CliError>;
+}

@@ -1,0 +1,23 @@
+---
+required_variables:
+  - namespace
+defaults: {}
+metadata:
+  language: dotnet
+  template_kind: operations
+  skill: creating-ai-clis
+---
+namespace {{ namespace }};
+
+public sealed class DeviceOperations(IDeviceBackend backend)
+{
+    public SetDeviceModeResponse SetDeviceMode(SetDeviceModeRequest request)
+    {
+        return backend.SetDeviceMode(request);
+    }
+
+    public DeviceState GetDevice(GetDeviceRequest request)
+    {
+        return backend.GetDevice(request);
+    }
+}

@@ -1,0 +1,23 @@
+{
+  "name": "sc-ai-cli",
+  "description": "AI-first CLI design toolkit: create, review, and harden JSON-first CLIs with MCP-ready contract seams, typed error contracts, auditable mutations, repeatable scaffolding patterns, and stateful simulator design guidance.",
+  "version": "0.9.0",
+  "author": {
+    "name": "randlee"
+  },
+  "license": "MIT",
+  "keywords": [
+    "cli",
+    "ai",
+    "mcp",
+    "templates",
+    "simulator",
+    "review",
+    "skills"
+  ],
+  "skills": [
+    "./skills/creating-ai-clis/SKILL.md",
+    "./skills/reviewing-ai-clis/SKILL.md",
+    "./skills/designing-cli-simulators/SKILL.md"
+  ]
+}
