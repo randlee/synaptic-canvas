@@ -1,212 +1,273 @@
-# Rust Design Patterns — Enforcement Strategy for AI-Assisted Development
+# Rust Best Practices Enforcement Strategy
 
-## Purpose
+This document maps each canonical practice to the stage where enforcing it is cheapest and most reliable.
 
-This document defines a set of high-value Rust design patterns and prescribes **where in the development lifecycle** each should be enforced by Claude Code agents, skills, or commands. The goal is to catch design-level issues before they become code-level churn.
+Read `practice-inventory.md` first for stable ids. Use this file to decide what to check in design review, code review, crate-boundary review, or performance review.
 
 ## Guiding Principles
 
-1. **Patterns that prevent churn belong in design review.** If retrofitting a pattern requires significant refactoring, catch it before code exists.
-2. **Patterns that improve existing code belong in code review.** If a pattern can be injected with a localized refactor, a review-stage agent is appropriate.
-3. **Don't mix concerns.** A code-review agent proposing typestate refactors generates noise. A design agent worrying about `Cow` optimization is premature.
+1. Catch structural problems at the earliest stage where the correct shape is still cheap to adopt.
+2. Keep style/lint concerns in `rust-development`; keep structural pattern concerns here.
+3. Do not report speculative findings. Findings must tie back to a concrete practice and a specific review stage.
+4. Report all real findings in scope. Severity affects ordering, not whether the finding exists.
 
-## Severity Definitions
+## Stage Map
 
-- `Blocking`: must be fixed before the work can progress to the next lifecycle stage.
-- `Important`: should be fixed before broad rollout; may be deferred only with explicit
-  approval and documented follow-up.
-- `Minor`: an effort to fix minor violations should be made unless significant effort is
-  necessary. A one-line fix is easier to fix and review than it is to create and track a
-  GH issue to fix later. If another pass is being made anyway to fix blocking/important
-  issues, fix minor issues in that same pass if doing so takes less than a few minutes
-  (Claude time). Do not defer a trivial fix to a separate issue unless the fix is
-  contested.
+| Stage | Primary Practices |
+|-------|-------------------|
+| Design review | `RBP-001`, `RBP-002`, `RBP-003`, `RBP-004`, `RBP-005`, `RBP-008`, `RBP-010` |
+| Code review | `RBP-001`, `RBP-004`, `RBP-005`, `RBP-006`, `RBP-007`, `RBP-009` |
+| Crate-boundary review | `RBP-003`, `RBP-008`, `RBP-004` |
+| Performance review | `RBP-009`, selective `RBP-006` |
+| CI / hooks | error-shape checks from `RBP-001`, targeted audits for `RBP-006` and `RBP-007` |
 
----
+## Review Cadence Matrix
 
-## Pattern Inventory
+Use this matrix to decide whether a practice should be reviewed during document review, sprint review, or phase-ending review.
 
-### 1. Error Context + Recovery ⭐ TOP 3
+Legend:
+- `Run` — always review this practice in that mode
+- `Skip` — do not normally review this practice in that mode
+- `Trigger` — review only when the triggering conditions below are present
 
-**What:** Structured error types that carry cause chains, recovery steps, and documentation links — not just "what happened" but "why" and "how to fix it."
+| Practice | Doc Review | Sprint | Phase End |
+|----------|------------|--------|-----------|
+| `RBP-001` Error Context + Recovery | `Run` | `Run` | `Run` |
+| `RBP-002` Typestate | `Run` | `Skip` | `Trigger` |
+| `RBP-003` Sealed Trait | `Trigger` | `Skip` | `Trigger` |
+| `RBP-004` Newtype / Zero-Cost Abstraction | `Trigger` | `Run` | `Run` |
+| `RBP-005` Deref Coercion for Wrapper Ergonomics | `Trigger` | `Skip` | `Run` |
+| `RBP-006` Interior Mutability Justification | `Skip` | `Run` | `Run` |
+| `RBP-007` Infallible Usage | `Skip` | `Run` | `Run` |
+| `RBP-008` Trait Object Safety | `Trigger` | `Skip` | `Trigger` |
+| `RBP-009` `Cow` / Clone-on-Write | `Skip` | `Trigger` | `Run` |
+| `RBP-010` `PhantomData` Lifetime / Capability Token | `Trigger` | `Skip` | `Trigger` |
 
-**Enforcement point:** Library-first, then design review, then code review, then CI.
+## Upstream Review Surface
 
-**Cross-language applicability:**
+In this matrix, `Doc Review` means upstream document-review agents such as `req-qa` and `arch-qa` should consider or trigger the practice. It does not mean those agents replace the specialized `rust-best-practices` review.
 
-| Language | Native support | Approach |
-|----------|---------------|----------|
-| Rust | `thiserror` + custom `RecoverableError` struct | Enum variants with `#[error]` + recovery fields |
-| C# / .NET | `Exception` inheritance | Custom exception base with `Recovery` property |
-| Python | Exception chaining (`raise X from Y`) | Custom exception class with `recovery_steps` |
-| TypeScript | `Error` + custom classes | `RecoverableError` class with structured JSON |
-| Go | `errors.Wrap` / `fmt.Errorf` | Sentinel errors + structured error types |
+Use this split:
+- `req-qa` and `arch-qa` identify missing or underspecified decisions in requirements/architecture docs
+- `rust-best-practices` remains the specialized Rust pattern authority for design and code review
 
-**Impact:** Highest churn-reduction of all patterns. Bad errors cascade across agent boundaries, cause debugging spirals, and generate user-filed issues.
+## Trigger Conditions
 
-**See:** `error-context-recovery-plan.md` for full implementation plan.
+### `RBP-001` Error Context + Recovery
 
----
+No trigger is needed. Always review this practice.
 
-### 2. Typestate Pattern ⭐ TOP 3
+### `RBP-002` Typestate
 
-**What:** Encode state machine transitions in the type system so invalid states are unrepresentable. The compiler rejects illegal transitions.
+Trigger when:
+- architecture introduces explicit lifecycle or state transitions
+- protocol/resource sequencing is central to the design
+- invalid runtime states are currently prevented by convention rather than by type shape
 
-**Enforcement point:** Design review / plan review. By code review, retrofitting is expensive.
+### `RBP-003` Sealed Trait
 
-**Cross-language applicability:**
+Trigger when:
+- a new or changed `pub trait` is introduced
+- crate extraction or package API work is in scope
+- an extension-point design question appears in requirements or architecture docs
 
-| Language | Feasibility | Approach |
-|----------|-------------|----------|
-| Rust | Native (PhantomData + generics) | Zero-cost, compiler-enforced |
-| C# / .NET | Partial (generic constraints) | Generics with marker interfaces; less ergonomic |
-| TypeScript | Good (branded types + generics) | Branded types simulate phantom types |
-| Python | Weak (runtime only) | Protocol classes + `@overload`; no compile-time enforcement |
-| Go | Weak (no generics until 1.18, limited) | Interface-per-state; verbose but works |
+### `RBP-004` Newtype / Zero-Cost Abstraction
 
-**Impact:** Eliminates entire categories of runtime state-machine bugs. High value for protocol handlers, connection lifecycles, build pipelines, authentication flows.
+Trigger in doc review when:
+- semantic ids, units, or validated primitives appear in requirements or architecture docs
+- raw primitives carry domain meaning across boundaries
 
-**See:** `typestate-plan.md` for full implementation plan.
+Always run in sprint review when:
+- repeated validation appears in touched code
+- semantic ids or unit-bearing values are introduced or refactored in changed files
 
----
+### `RBP-005` Deref Coercion for Wrapper Ergonomics
 
-### 3. Sealed Trait Pattern ⭐ TOP 3
+Trigger when:
+- wrapper/newtype ergonomics are being designed or refactored
+- many trivial forwarding methods or direct `.0` access patterns appear
+- the design is deciding whether a wrapper should feel transparent in borrowed/read-only use
 
-**What:** Prevent external implementations of your traits. Maintain control over behavior evolution without breaking downstream consumers.
+### `RBP-006` Interior Mutability Justification
 
-**Enforcement point:** API design phase / crate boundary review. Must be decided when defining public trait surfaces.
+Run whenever touched code includes:
+- `RefCell`
+- `Cell`
+- `Mutex`
+- `RwLock`
 
-**Cross-language applicability:**
+### `RBP-007` Infallible Usage
 
-| Language | Feasibility | Approach |
-|----------|-------------|----------|
-| Rust | Idiomatic (private supertrait) | `mod sealed { pub trait Sealed {} }` |
-| C# / .NET | Native | `internal` interface inheritance or `sealed` keyword |
-| TypeScript | Partial | Module-scoped symbols as brand markers |
-| Python | Weak | `abc.ABC` + `__init_subclass__` guard |
-| Go | Natural (unexported interface method) | Add lowercase method to interface |
+Run whenever touched code includes:
+- `Result<T, E>` shapes that may be fake or dead
+- conversions or parsers that cannot actually fail
+- unwrap-safe-by-construction code paths
 
-**Impact:** Critical for crate/package ecosystems. Prevents downstream breakage when evolving trait/interface surfaces.
+### `RBP-008` Trait Object Safety
 
-**See:** `sealed-traits-plan.md` for full implementation plan.
+Trigger when:
+- dynamic dispatch, plugin systems, handlers, or registries are in scope
+- a public trait is intended for `dyn Trait`
+- heterogeneous collections of implementors are part of the design
 
----
+### `RBP-009` `Cow` / Clone-on-Write
 
-### 4. Newtype / Zero-Cost Abstraction Pattern
+Trigger in sprint review when:
+- touched code is performance-sensitive
+- owned strings/vectors are used on borrow-mostly paths
+- obvious eager cloning appears on a hot path
 
-**What:** Wrap primitives in domain-specific types to enforce invariants and prevent unit confusion. `Kilometers(f64)` vs `Miles(f64)` — the compiler catches misuse.
+Always run at phase end because broader context is usually needed to judge whether `Cow` is the right tradeoff.
 
-**Enforcement point:** Design phase for new types; code review for retrofitting.
+### `RBP-010` `PhantomData` Lifetime / Capability Token
 
-**Cross-language applicability:**
+Trigger when:
+- capability tokens, guards, or proof objects appear in design
+- resource access invariants are described in docs but not encoded in types
+- the design implies borrowing/capability proof without a concrete type-level mechanism
 
-| Language | Feasibility | Approach |
-|----------|-------------|----------|
-| Rust | Native (tuple structs, `Deref`) | Zero-cost after compilation |
-| C# / .NET | Good (`readonly record struct`) | Value types; near-zero overhead |
-| TypeScript | Good (branded types) | `type UserId = string & { __brand: 'UserId' }` |
-| Python | Moderate (`NewType` from `typing`) | Runtime class or `NewType` for static checkers |
-| Go | Good (type aliases with methods) | `type Kilometers float64` |
+## Practice Guidance
 
-**Recommended agent integration:**
-- **Design agent** proposes newtypes when plans mention validated inputs, physical quantities, or semantic IDs.
-- **Code review command** (`/newtype-audit`) scans for repeated validation on the same primitive type across call sites — if `.trim()` appears on the same `String` in 3+ places, that's a newtype candidate.
+### `RBP-001` Error Context + Recovery
 
----
+**Check in design review:**
+- does the plan define new failure modes?
+- is there an error inventory for new commands, endpoints, or agent interactions?
+- does each important failure mode define:
+  - a stable code
+  - cause
+  - recovery steps
+  - docs link or reference when applicable
 
-### 5. Cow (Clone-on-Write) Pattern
+**Check in code review:**
+- are errors propagated as opaque strings or generic wrappers with no recovery guidance?
+- are user-facing JSON errors consistent and machine-parseable?
+- do error types provide actionable recovery rather than vague advice?
 
-**What:** Defer cloning until mutation is actually needed. `Cow::Borrowed` avoids allocation on the common path; `Cow::Owned` allocates only when data must change.
+**Minimum contract:**
+- stable error code
+- clear message
+- cause
+- recovery steps
+- docs link where useful
 
-**Enforcement point:** Code review / performance review. This is a refactoring opportunity, not a design concern.
+Use `error-context-recovery-plan.md` for detailed implementation guidance.
 
-**Cross-language applicability:**
+### `RBP-002` Typestate
 
-| Language | Feasibility | Approach |
-|----------|-------------|----------|
-| Rust | Native (`std::borrow::Cow`) | Zero-cost abstraction |
-| C# / .NET | Partial | `ReadOnlySpan<T>` / `Memory<T>` for similar semantics |
-| Python | N/A | Reference semantics; not applicable |
-| TypeScript | N/A | Reference semantics; not applicable |
-| Go | Manual | Copy-on-write via pointer + flag |
+**Check in design review:**
+- are there explicit or implicit state transitions?
+- does the plan describe illegal transitions that should be compile-time impossible?
+- would retrofitting typestate later be expensive?
 
-**Recommended agent integration:**
-- **`/perf-audit` command** identifies functions accepting owned types (`String`, `Vec<u8>`) on hot paths where most inputs pass through unmodified. Suggests `Cow` refactoring.
+Use `typestate-plan.md` when a real state machine is present.
 
----
+### `RBP-003` Sealed Trait
 
-### 6. Interior Mutability Pattern
+**Check in design review and crate-boundary review:**
+- is a `pub trait` intended for downstream implementation?
+- does the trait need future evolution without downstream breakage?
+- does the trait represent a fixed internal implementation set?
 
-**What:** Mutate through shared references (`&self`) when runtime borrowing rules are acceptable. `RefCell`, `Cell`, `Mutex`, `RwLock`.
+Use `sealed-traits-plan.md` for the full review and migration logic.
 
-**Enforcement point:** Code review, with mandatory justification.
+### `RBP-004` Newtype / Zero-Cost Abstraction
 
-**Cross-language applicability:**
+**Check in design review:**
+- validated primitives repeated across the API
+- semantic ids represented as raw strings or integers
+- physical quantities or units passed as plain numeric types
 
-| Language | Feasibility | Notes |
-|----------|-------------|-------|
-| Rust | Native (`RefCell`, `Cell`, `Mutex`) | Runtime borrow checks; panic on violation |
-| Other languages | N/A | Mutable-by-default; pattern doesn't apply |
+**Check in code review:**
+- repeated `trim`/parse/validate logic on the same primitive type
+- call sites manually preserving the same invariant over and over
+- primitive-typed parameters where semantic confusion is likely
 
-**Recommended agent integration:**
-- **Code review hook** (sc-hooks): If `RefCell` or `Cell` appears, require a comment explaining why shared mutability is needed. For concurrent code (`Send + Sync` contexts), flag `RefCell` and suggest thread-safe alternatives.
+### `RBP-005` Deref Coercion for Wrapper Ergonomics
 
----
+**Check in design review and code review:**
+- is a wrapper type intended to feel like a borrowed view of its inner type?
+- would `Deref`, `AsRef`, or `Borrow` improve ergonomics without obscuring meaning?
+- is the wrapper truly transparent, or does it carry materially different semantics that should stay explicit?
 
-### 7. Infallible Pattern
+**Review rule:**
+- use this pattern for ergonomic transparency
+- do not use it to hide surprising behavior behind familiar APIs
 
-**What:** Use `Result<T, Infallible>` to document that an operation cannot fail. Makes `unwrap()` auditable.
+### `RBP-006` Interior Mutability Justification
 
-**Enforcement point:** Code review (lint-level).
+**Check in code review:**
+- any `RefCell`, `Cell`, `Mutex`, or `RwLock` should have a clear reason
+- in `Send + Sync` or cross-thread contexts, verify the primitive is concurrency-safe
+- challenge interior mutability when ownership refactoring would be clearer
 
-**Cross-language applicability:** Rust-specific. Other languages lack the type-level expressiveness to make this meaningful.
+### `RBP-007` Infallible Usage
 
-**Recommended agent integration:**
-- **Code review hook**: Flag `Result<T, E>` return types where the error variant is never constructed. Suggest simplifying to `T` or `Result<T, Infallible>`.
+**Check in code review:**
+- functions returning `Result<T, E>` where `E` is never actually constructed
+- parser or conversion code that cannot fail but preserves a meaningless error type
+- `unwrap()` calls that are only safe because the error is structurally impossible
 
----
+**Review rule:**
+- prefer `Result<T, Infallible>` or a direct `T` return when failure is impossible
 
-### 8. Trait Object Safety Pattern
+### `RBP-008` Trait Object Safety
 
-**What:** Design traits for dynamic dispatch compatibility — no generic methods, no `Self` in return position.
+**Check in design review and crate-boundary review:**
+- is the trait intended for dynamic dispatch?
+- are there generic methods or `Self` return positions that break object safety?
+- is the object-safety requirement documented before the public API is committed?
 
-**Enforcement point:** Design phase for plugin/extension traits. The compiler catches violations, but the design agent should verify intent upfront.
+### `RBP-009` `Cow` / Clone-on-Write
 
-**Cross-language applicability:** Rust-specific (other languages use virtual dispatch by default).
+**Check in code review and performance review:**
+- APIs that take owned types even when the common path only reads
+- hot paths where most calls do not need allocation or mutation
+- serialization or transformation paths that only occasionally need to own data
 
-**Recommended agent integration:**
-- **Crate boundary agent**: For any `pub trait` intended for plugin use, verify object safety during API design review.
+### `RBP-010` `PhantomData` Lifetime / Capability Token
 
----
+**Check in design review:**
+- APIs that must tie access to a borrowed capability or guard without storing a reference
+- resource-acquisition protocols that should prevent illegal reuse or aliasing
+- token-based access flows where the token carries invariants rather than data
 
-### 9. PhantomData Lifetime Pattern
+## Review Heuristics
 
-**What:** Use `PhantomData` to tie lifetimes without storing references. Creates zero-size tokens that enforce borrowing invariants.
+### Design Review Heuristics
 
-**Enforcement point:** Design phase for resource guards and capability tokens.
+Look for:
+- “must X before Y”
+- “only valid when”
+- new `pub trait` or plugin boundaries
+- repeated validated primitives in the plan
+- new commands/endpoints with undocumented failure behavior
+- guard/token/resource access semantics that imply capability types
 
-**Cross-language applicability:** Rust-specific.
+### Code Review Heuristics
 
-**Recommended agent integration:**
-- Document as a design pattern in workspace CLAUDE.md files. Too specialized for a generic agent — trigger manually when designing resource access patterns.
+Look for:
+- opaque error strings
+- repeated validation on raw primitives
+- wrappers with clumsy forwarding methods
+- `RefCell`/`Cell` with no rationale
+- `Result<T, E>` where the error never occurs
+- owned inputs in paths that usually only borrow
 
----
+### Crate-Boundary Review Heuristics
 
-## Agent / Skill / Command Summary
+Look for:
+- new `pub trait`
+- traits intended for `dyn Trait`
+- crate extraction or package publication work
+- public ids/units/validated strings still represented as primitives
 
-| Tool | Type | Trigger Point | Patterns Enforced |
-|------|------|---------------|-------------------|
-| `design-review` | Agent | Plan doc creation | Typestate, Sealed, Newtype, Error inventory |
-| `crate-boundary` | Agent | Crate extraction / API changes | Sealed, Trait object safety |
-| `/error-audit` | Command | Pre-commit / CI | Error Context + Recovery |
-| `/newtype-audit` | Command | Code review | Newtype, Zero-cost units |
-| `/perf-audit` | Command | Performance review | Cow, Infallible cleanup |
-| `refcell-gate` | Hook | Post-commit | Interior mutability justification |
+## Relationship to QA Review
 
-## Priority
+`rust-best-practices-agent` should treat this document as the stage-mapping reference for dedicated structural review.
 
-1. **Error Context + Recovery** — foundation layer; everything else benefits from better errors
-2. **Typestate** — catches the most expensive bugs (invalid state transitions) at zero runtime cost
-3. **Sealed Traits** — critical for any multi-crate / multi-package ecosystem
-4. **Newtype** — steady value; prevents unit confusion and validation duplication
-5. **Cow / Interior Mutability / Infallible** — incremental improvements; build as needed
+The best-practices QA path must:
+- reference practices by stable id
+- report all real findings in scope
+- never use a smaller, stale hardcoded inventory
+- keep lifecycle-cadence decisions in orchestration policy rather than in the worker prompt

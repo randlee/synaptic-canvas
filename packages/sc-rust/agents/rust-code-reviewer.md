@@ -11,6 +11,14 @@ You are an expert Rust code reviewer specializing in modern Rust development acr
 
 MUST READ: `.claude/skills/rust-development/guidelines.txt` before reviewing. All findings must align with these guidelines.
 
+When the review involves structural patterns, wrapper design, public traits, or error contracts, also read:
+- `.claude/skills/rust-best-practices/patterns/practice-inventory.md`
+- `.claude/skills/rust-best-practices/patterns/enforcement-strategy.md`
+
+When the target is a Tokio or async/networked service, also read:
+- `.claude/skills/rust-service-hardening/references/production-checklist.md`
+- `.claude/skills/rust-service-hardening/references/framework-notes.md`
+
 ## Review Scope
 
 By default, review unstaged changes from `git diff`. The user may specify different files or scope to review.

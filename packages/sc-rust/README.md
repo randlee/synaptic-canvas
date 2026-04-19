@@ -36,10 +36,12 @@ Not intended for:
 | Agent | Model | Role |
 |-------|-------|------|
 | `rust-architect` | Opus | Architecture blueprints and implementation plans |
+| `rust-best-practices-agent` | Sonnet | Dedicated structural pattern review using stable practice ids |
 | `rust-code-reviewer` | Sonnet | High-confidence code review with confidence-based filtering |
 | `rust-code-explorer` | Sonnet | Feature tracing and architecture mapping |
 | `rust-developer` | Sonnet | Implementation and refactoring per Pragmatic Rust Guidelines |
-| `rust-qa-agent` | Sonnet | Testing, coverage, clippy, and guideline compliance |
+| `rust-qa-agent` | Sonnet | Testing, coverage, clippy, portability, and first-principles QA |
+| `rust-service-hardening-agent` | Sonnet | Dedicated service-runtime hardening review with service applicability checks |
 
 ## Requirements
 
@@ -59,8 +61,10 @@ Installed alongside the skills:
 | `guidelines.txt` | Pragmatic Rust Guidelines — style, idioms, error handling, async, FFI |
 | `cross-platform-guidelines.md` | Portability rules for Ubuntu, macOS, and Windows |
 | `patterns/enforcement-strategy.md` | Master pattern inventory — when and where to enforce each pattern |
+| `patterns/practice-inventory.md` | Stable practice ids and canonical best-practices inventory |
 | `patterns/error-context-recovery-plan.md` | Error handling implementation plan |
 | `patterns/typestate-plan.md` | Typestate pattern implementation guide |
 | `patterns/sealed-traits-plan.md` | Sealed trait pattern implementation guide |
 | `references/production-checklist.md` | Prioritized service-hardening checklist for production reviews |
 | `references/framework-notes.md` | Tokio/Axum/Hyper/Tonic/Reqwest notes for service hardening |
+| `assets/sc-rust/quality-mgr/quality-mgr.rust.md` | Rust-specific quality-mgr supplement listing Rust reviewers and launch rules |

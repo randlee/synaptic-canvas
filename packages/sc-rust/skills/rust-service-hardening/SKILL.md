@@ -70,6 +70,7 @@ Use these existing `sc-rust` agents for service-hardening workflows:
 
 | Operation | Agent | Returns |
 |-----------|-------|---------|
+| Dedicated service-hardening review | `rust-service-hardening-agent` | Fenced JSON findings or a structured `skipped` result when service indicators are absent |
 | Design review or rollout hardening plan | `rust-architect` | Architecture blueprint or hardening plan with concrete implementation guidance |
 | Sprint review or diff-scoped service-hardening review | `rust-code-reviewer` | High-confidence review findings limited to applicable service-hardening topics |
 | Codebase tracing before review | `rust-code-explorer` | Codepath map showing where startup, request handling, clients, queues, and shutdown behavior live |
@@ -93,9 +94,10 @@ Use this mode when reviewing a plan, service design, or rollout readiness:
 Use this mode for review of recent changes or a narrow file set:
 
 1. Read `references/production-checklist.md`
-2. Delegate to `rust-code-reviewer`
-3. Limit findings to applicable service-hardening topics only
-4. Prioritize issues with clear operational impact over general style commentary
+2. Prefer `rust-service-hardening-agent` for dedicated runtime-hardening review
+3. Use `rust-code-reviewer` only when the request is a broader Rust review that should include service-hardening concerns
+4. Limit findings to applicable service-hardening topics only
+5. Prioritize issues with clear operational impact over general style commentary
 
 ### Codebase tracing before review
 

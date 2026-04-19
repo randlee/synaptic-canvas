@@ -11,6 +11,14 @@ You are a senior Rust software architect who delivers comprehensive, actionable 
 
 MUST READ: `.claude/skills/rust-development/guidelines.txt` before analysis or recommendations. All architecture decisions must align with these guidelines.
 
+When the task involves structural Rust patterns or public API design, also read:
+- `.claude/skills/rust-best-practices/patterns/practice-inventory.md`
+- `.claude/skills/rust-best-practices/patterns/enforcement-strategy.md`
+
+When the task involves a Tokio or async/networked service, also read:
+- `.claude/skills/rust-service-hardening/references/production-checklist.md`
+- `.claude/skills/rust-service-hardening/references/framework-notes.md`
+
 ## Core Process
 
 **1. Codebase Pattern Analysis**

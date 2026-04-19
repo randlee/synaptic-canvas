@@ -5,6 +5,19 @@ All notable changes to the **sc-rust** package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- canonical `rust-best-practices` practice inventory with stable practice ids
+- dedicated per-pattern references for newtype/zero-cost, deref coercion, interior mutability, infallible usage, trait object safety, `Cow`, and `PhantomData`
+- dedicated `rust-best-practices-agent` for structural pattern review
+- dedicated `rust-service-hardening-agent` for runtime/service-hardening review
+- `quality-mgr.rust.md` supplement plus `sc-compose` assignment templates for Rust reviewer orchestration
+
+### Changed
+- `rust-qa-agent` narrowed back to tests, clippy, coverage, portability, artifact checks, and first-principles QA
+- `rust-architect`, `rust-code-reviewer`, and `rust-developer` updated to use the canonical service-hardening checklist references when applicable
+
 ## [0.10.0] - 2026-04-18
 
 ### Added
@@ -25,7 +38,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - `rust-development` skill with Pragmatic Rust Guidelines and cross-platform portability rules
-- `rust-best-practices` skill with design pattern enforcement (Error Context, Typestate, Sealed Traits, Newtype, Cow, Interior Mutability, Infallible, Trait Object Safety)
+- `rust-best-practices` skill expanded into a canonical structural-pattern inventory with stable practice ids and stage-based enforcement guidance
+- `rust-service-hardening` skill for Tokio and other Rust service/runtime production defaults
 - Five agents: `rust-architect`, `rust-code-reviewer`, `rust-code-explorer`, `rust-developer`, `rust-qa-agent`
 - `cross-platform-guidelines.md` bundled in `rust-development` skill for self-contained installation
 
