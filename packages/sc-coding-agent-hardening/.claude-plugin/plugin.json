@@ -1,0 +1,20 @@
+{
+  "name": "sc-coding-agent-hardening",
+  "description": "Harden coding, QA, and orchestration agent prompts so straightforward defects are fixed instead of being dismissed as minor, pre-existing, non-blocking, or technical debt.",
+  "version": "0.1.0",
+  "author": {
+    "name": "randlee"
+  },
+  "license": "MIT",
+  "keywords": [
+    "agents",
+    "prompt-hardening",
+    "qa",
+    "review",
+    "orchestration",
+    "skills"
+  ],
+  "skills": [
+    "./skills/coding-agent-hardening/SKILL.md"
+  ]
+}
