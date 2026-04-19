@@ -10,7 +10,7 @@ Use this supplement to decide when to launch Rust-specific reviewers and how to 
 - `rust-best-practices-agent` — structural Rust pattern review keyed by stable practice ids
 - `rust-service-hardening-agent` — runtime/service-hardening review with a required service-indicator fast-exit check
 
-`req-qa` and `arch-qa` remain generic and language-independent. They continue to run under `quality-mgr.md`; this supplement only adds Rust-specific reviewers.
+Generic, repo-defined reviewers remain language-independent and continue to run under `quality-mgr.md`; this supplement only adds Rust-specific reviewers.
 
 ## Assignment Types
 
