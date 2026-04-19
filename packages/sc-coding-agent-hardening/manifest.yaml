@@ -1,5 +1,5 @@
 name: sc-coding-agent-hardening
-version: 0.1.0
+version: 0.10.0
 description: >
   Harden coding, QA, and orchestration agent prompts so straightforward defects
   are fixed instead of being dismissed as minor, pre-existing, non-blocking, or

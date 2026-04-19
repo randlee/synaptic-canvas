@@ -5,7 +5,7 @@ All notable changes to sc-kanban will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.7.0] - 2026-01-XX
+## [0.7.0] - 2026-01-20
 
 ### Added
 - Three-file lifecycle (backlog.json → board.json → done.json) with automatic card movement
@@ -47,7 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fail-closed on config validation errors (invalid schema blocks all operations)
 - Board config version enforcement (rejects mismatched versions)
 
-## [Unreleased]
+## [0.10.0] - 2026-04-18
 
 ### Planned for v0.7.1
 - Full gate execution suite: PR state validation, git cleanliness checks, worktree validation

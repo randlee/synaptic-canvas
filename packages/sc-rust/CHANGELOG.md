@@ -1,6 +1,10 @@
 # Changelog
 
-## 1.0.0 — 2026-03-30
+## [0.10.0] - 2026-04-18
+
+- Version alignment with Synaptic Canvas 0.10.0 release
+
+## [1.0.0] - 2026-03-30
 
 Initial release.
 
