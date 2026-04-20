@@ -1,0 +1,23 @@
+{
+  "name": "sc-docling-pdf",
+  "description": "Convert PDFs to markdown and structured output using the docling CLI. Selects the optimal conversion profile (text, scan, rich, vlm, code) based on document content. Extracts images as PNG files. No MCP required — pure CLI workflow for Claude Code.",
+  "version": "0.1.0",
+  "author": {
+    "name": "randlee"
+  },
+  "license": "MIT",
+  "keywords": [
+    "pdf",
+    "docling",
+    "conversion",
+    "markdown",
+    "ocr",
+    "images",
+    "tables",
+    "datasheets",
+    "extraction"
+  ],
+  "skills": [
+    "./skills/docling-pdf-extraction/SKILL.md"
+  ]
+}
