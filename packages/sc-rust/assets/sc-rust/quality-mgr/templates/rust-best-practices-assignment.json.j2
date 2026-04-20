@@ -1,0 +1,34 @@
+---
+name: rust-best-practices-assignment
+version: 1.0.0
+description: Render a fenced-JSON assignment for rust-best-practices-agent.
+format: json
+required_variables:
+  - review_mode
+  - worktree_path
+  - review_targets
+optional_variables:
+  - practice_mode
+  - practice_ids
+  - notes
+defaults:
+  practice_mode: ""
+  practice_ids: []
+  notes: ""
+---
+{
+  "review_mode": "{{ review_mode }}",
+  "worktree_path": "{{ worktree_path }}",
+  "review_targets": [{% for target in review_targets %}"{{ target }}"{% if not loop.last %}, {% endif %}{% endfor %}],
+  "practice_mode": {% if practice_mode %}"{{ practice_mode }}"{% elif review_mode == "phase_end" %}"all"{% else %}"selected"{% endif %},
+  "practice_ids": {% if practice_ids and practice_mode != "all" %}
+    [{% for practice_id in practice_ids %}"{{ practice_id }}"{% if not loop.last %}, {% endif %}{% endfor %}]
+  {% elif not practice_mode and review_mode == "doc_review" %}
+    ["RBP-001", "RBP-002", "RBP-003", "RBP-004", "RBP-005", "RBP-008", "RBP-010"]
+  {% elif not practice_mode and review_mode == "sprint_review" %}
+    ["RBP-001", "RBP-004", "RBP-006", "RBP-007"]
+  {% else %}
+    []
+  {% endif %},
+  "notes": "{{ notes }}"
+}

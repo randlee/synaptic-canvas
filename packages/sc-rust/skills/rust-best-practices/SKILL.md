@@ -1,92 +1,102 @@
 ---
 name: rust-best-practices
-version: 0.10.0
-description: Enforce Rust design patterns at the right lifecycle stage — design review, code review, or CI. Use when reviewing architecture plans, crate API surfaces, or Rust code for pattern compliance. Complements rust-development (style/guidelines) by focusing on structural design patterns and when to apply them.
+version: 0.11.0
+description: Review Rust architecture plans, crate boundaries, and code for structural design-pattern compliance. Use when the task involves typestate, sealed traits, error contracts, wrapper/newtype design, object safety, interior mutability, or other type-system-driven Rust correctness patterns that go beyond general style guidance.
 ---
 
 # Rust Best Practices
 
-This skill enforces high-value Rust design patterns at the appropriate stage of the development lifecycle. Its primary purpose is to prevent churn by catching structural issues before they become expensive to fix.
+This skill is the canonical source of truth for structural Rust pattern review in Synaptic Canvas. It complements `rust-development` by focusing on type-system-driven correctness, API-boundary design, and the lifecycle stage where each pattern should be enforced.
 
 ## Scope
 
-This skill covers **design patterns** — structural choices that affect API surfaces, state machines, error propagation, and crate boundaries. It does not duplicate the style and lint rules in `rust-development/guidelines.txt`.
+Use this skill for:
+- architecture and design review of Rust plans
+- crate-boundary and public API review
+- code review for structural Rust pattern compliance
+- QA review when the goal is to enforce documented best-practice patterns
 
-## Pattern Documents
+This skill does not cover service-runtime hardening such as timeouts, graceful shutdown, request IDs, retries, readiness probes, or backpressure. Those belong in `rust-service-hardening`.
 
-Pattern documentation lives in `patterns/`:
+## Canonical Inventory
 
-- [`enforcement-strategy.md`](patterns/enforcement-strategy.md) — Full pattern inventory with enforcement points, cross-language applicability, and agent integration recommendations
+Read these files in order:
 
-Additional per-pattern implementation plans (referenced from enforcement-strategy.md, added as available):
-- `error-context-recovery-plan.md`
-- `typestate-plan.md`
-- `sealed-traits-plan.md`
+- `patterns/practice-inventory.md` — canonical practice ids, names, lifecycle stage, and review applicability
+- `patterns/enforcement-strategy.md` — enforcement heuristics, stage mapping, and review guidance
 
-## Enforcement Points
+Read these additional pattern docs only when the practice under review requires them:
+- `patterns/error-context-recovery-plan.md`
+- `patterns/typestate-plan.md`
+- `patterns/sealed-traits-plan.md`
+- `patterns/newtype-zero-cost-plan.md`
+- `patterns/deref-coercion-plan.md`
+- `patterns/interior-mutability-plan.md`
+- `patterns/infallible-plan.md`
+- `patterns/trait-object-safety-plan.md`
+- `patterns/cow-plan.md`
+- `patterns/phantomdata-capability-token-plan.md`
 
-Patterns are enforced at the stage where catching them costs the least:
+## Review Modes
 
-| Stage | Patterns |
-|-------|----------|
-| Design review | Typestate, Sealed Traits, Newtype (new types), Error inventory |
-| Code review | Newtype (retrofit), Interior Mutability justification, Infallible |
-| Performance review | Cow, allocation hot paths |
-| CI / hooks | RefCell in `Send+Sync` contexts, `unwrap()` audit |
+### Design Review
 
-## Priority Order
+Use for plans, architecture documents, and implementation blueprints.
 
-When reviewing, apply in this order — higher priority patterns have greater churn-reduction impact:
+Focus on:
+- error contracts and recovery inventory
+- typestate opportunities
+- sealed traits and crate extension boundaries
+- newtype / deref / zero-cost wrapper design
+- trait object safety when plugin-style dispatch is intended
+- capability-token / `PhantomData` patterns for resource invariants
 
-1. Error Context + Recovery
-2. Typestate
-3. Sealed Traits
-4. Newtype / Zero-Cost Abstraction
-5. Cow, Interior Mutability, Infallible (incremental)
+### Code Review
 
-## Instructions
+Use for implemented Rust code.
 
-### Design Review Mode
+Focus on:
+- missing structured error context and recovery guidance
+- repeated primitive validation that should become newtypes
+- unsafe or weakly justified interior mutability
+- `Result<T, E>` shapes that should be simplified or made `Infallible`
+- unnecessary ownership on hot paths where `Cow` fits
+- wrappers whose ergonomics justify `Deref`/`AsRef`/`Borrow`
 
-When reviewing an architecture plan or design document:
+### Crate Boundary Review
 
-1. Read `patterns/enforcement-strategy.md`
-2. Identify state machines → apply Typestate check
-3. Identify public trait surfaces intended for external use → apply Sealed Trait check
-4. Identify validated primitives, semantic IDs, physical quantities → apply Newtype check
-5. Identify error propagation paths → verify Error Context + Recovery is planned
-6. Flag findings with pattern name, enforcement-strategy section reference, and concrete suggestion
+Use when extracting crates or defining public traits and extension points.
 
-### Code Review Mode
-
-When reviewing Rust code:
-
-1. Read `patterns/enforcement-strategy.md`
-2. Check for `RefCell` / `Cell` in `Send + Sync` contexts → flag with justification requirement
-3. Check for `unwrap()` on `Result<T, E>` where E is never constructed → suggest `Infallible`
-4. Check for repeated primitive validation at call sites → suggest Newtype
-5. Check for owned-type parameters (`String`, `Vec`) on hot paths → suggest `Cow`
-6. Only report issues with clear, concrete impact — no speculative findings
-
-### Crate Boundary Review Mode
-
-When a new crate is being extracted or a public API is being defined:
-
-1. For every `pub trait`: verify object safety if dynamic dispatch is intended
-2. For every `pub trait` that must not be externally implemented: verify sealed pattern is applied
-3. Flag missing sealed markers on extension points
-
-## Relationship to Other Skills
-
-- **rust-development**: Style, idioms, lint compliance, documentation standards. Use for code-level concerns.
-- **rust-best-practices**: Structural design patterns, enforcement lifecycle, crate boundary contracts. Use for architecture-level concerns.
-
-These skills are complementary and should both be active during full design + implementation reviews.
+Focus on:
+- sealed traits
+- trait object safety
+- wrapper/newtype boundaries for semantic ids and validated values
+- which patterns must be enforced before downstream API exposure
 
 ## Agent Delegation
 
-For extended pattern analysis, delegate to existing agents:
+This skill delegates pattern review work to existing Rust agents when specialized execution is needed:
 
-- `rust-architect`: Architecture blueprints that incorporate pattern decisions
-- `rust-code-reviewer`: Code-level pattern compliance (Infallible, Interior Mutability, Newtype retrofit)
-- `rust-code-explorer`: Locate existing pattern usage across the codebase before designing new surfaces
+| Operation | Agent | Returns |
+|-----------|-------|---------|
+| Dedicated structural pattern review | `rust-best-practices-agent` | Fenced JSON findings keyed by stable practice id |
+| Architecture or plan review | `rust-architect` | Blueprint or design findings |
+| Code review for structural findings | `rust-code-reviewer` | Findings summary |
+| Pattern discovery across a codebase | `rust-code-explorer` | Located files and pattern usage |
+
+When invoking an agent, instruct it to load `rust-best-practices` and the specific pattern references relevant to the requested review.
+
+## Output Expectations
+
+When using this skill for review:
+- identify the practices reviewed by stable practice id
+- report all real findings in scope
+- include `file:line` and remediation guidance for each finding
+- treat severity as ordering, not as permission to omit a real finding
+- do not dismiss findings as pre-existing or not worsened
+
+## Relationship to Other Skills
+
+- `rust-development`: general Rust style, idioms, documentation, and implementation guidance
+- `rust-best-practices`: structural correctness patterns and lifecycle enforcement
+- `rust-service-hardening`: service-runtime production defaults for Tokio and similar Rust services

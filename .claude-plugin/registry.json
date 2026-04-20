@@ -21,7 +21,7 @@
         "scripts": 0,
         "schemas": 0
       },
-      "lastUpdated": "2026-04-19T01:57:37.523720+00:00"
+      "lastUpdated": "2026-04-20T04:35:16.788270+00:00"
     },
     {
       "name": "sc-ci-automation",
@@ -38,7 +38,7 @@
         "scripts": 1,
         "schemas": 0
       },
-      "lastUpdated": "2026-04-19T01:57:37.524901+00:00"
+      "lastUpdated": "2026-04-20T04:35:16.789239+00:00"
     },
     {
       "name": "sc-codex",
@@ -55,7 +55,7 @@
         "scripts": 2,
         "schemas": 2
       },
-      "lastUpdated": "2026-04-19T01:57:37.525706+00:00"
+      "lastUpdated": "2026-04-20T04:35:16.790035+00:00"
     },
     {
       "name": "sc-coding-agent-hardening",
@@ -72,7 +72,7 @@
         "scripts": 0,
         "schemas": 0
       },
-      "lastUpdated": "2026-04-19T01:57:37.526191+00:00"
+      "lastUpdated": "2026-04-20T04:35:16.790514+00:00"
     },
     {
       "name": "sc-commit-push-pr",
@@ -89,7 +89,7 @@
         "scripts": 9,
         "schemas": 0
       },
-      "lastUpdated": "2026-04-19T01:57:37.526947+00:00"
+      "lastUpdated": "2026-04-20T04:35:16.791173+00:00"
     },
     {
       "name": "sc-delay-tasks",
@@ -106,7 +106,7 @@
         "scripts": 2,
         "schemas": 0
       },
-      "lastUpdated": "2026-04-19T01:57:37.527569+00:00"
+      "lastUpdated": "2026-04-20T04:35:16.791779+00:00"
     },
     {
       "name": "sc-git-worktree",
@@ -123,7 +123,7 @@
         "scripts": 7,
         "schemas": 0
       },
-      "lastUpdated": "2026-04-19T01:57:37.528581+00:00"
+      "lastUpdated": "2026-04-20T04:35:16.792776+00:00"
     },
     {
       "name": "sc-github-issue",
@@ -140,7 +140,7 @@
         "scripts": 1,
         "schemas": 0
       },
-      "lastUpdated": "2026-04-19T01:57:37.529700+00:00"
+      "lastUpdated": "2026-04-20T04:35:16.793861+00:00"
     },
     {
       "name": "sc-kanban",
@@ -157,7 +157,7 @@
         "scripts": 5,
         "schemas": 0
       },
-      "lastUpdated": "2026-04-19T01:57:37.530444+00:00"
+      "lastUpdated": "2026-04-20T04:35:16.794575+00:00"
     },
     {
       "name": "sc-manage",
@@ -174,7 +174,7 @@
         "scripts": 8,
         "schemas": 0
       },
-      "lastUpdated": "2026-04-19T01:57:37.531158+00:00"
+      "lastUpdated": "2026-04-20T04:35:16.795262+00:00"
     },
     {
       "name": "sc-repomix-nuget",
@@ -191,7 +191,7 @@
         "scripts": 3,
         "schemas": 0
       },
-      "lastUpdated": "2026-04-19T01:57:37.531846+00:00"
+      "lastUpdated": "2026-04-20T04:35:16.795931+00:00"
     },
     {
       "name": "sc-roslyn-diff",
@@ -208,11 +208,11 @@
         "scripts": 6,
         "schemas": 0
       },
-      "lastUpdated": "2026-04-19T01:57:37.532584+00:00"
+      "lastUpdated": "2026-04-20T04:35:16.796629+00:00"
     },
     {
       "name": "sc-rust",
-      "version": "0.10.0",
+      "version": "0.11.0",
       "description": "Rust development toolkit: idiomatic guidelines, service hardening guidance, design pattern enforcement, and specialized agents for architecture, code review, exploration, implementation, and QA. Includes cross-platform portability guidelines for Ubuntu, macOS, and Windows.\n",
       "author": "randlee",
       "license": "MIT",
@@ -220,12 +220,12 @@
       "category": "tools",
       "artifacts": {
         "commands": 0,
-        "skills": 2,
-        "agents": 5,
+        "skills": 3,
+        "agents": 7,
         "scripts": 0,
         "schemas": 0
       },
-      "lastUpdated": "2026-04-19T01:57:37.533336+00:00"
+      "lastUpdated": "2026-04-20T04:35:16.797723+00:00"
     },
     {
       "name": "sc-startup",
@@ -242,17 +242,17 @@
         "scripts": 1,
         "schemas": 0
       },
-      "lastUpdated": "2026-04-19T01:57:37.534081+00:00"
+      "lastUpdated": "2026-04-20T04:35:16.798463+00:00"
     }
   ],
   "metadata": {
     "totalPackages": 14,
     "totalCommands": 10,
-    "totalSkills": 17,
-    "totalAgents": 42,
+    "totalSkills": 18,
+    "totalAgents": 44,
     "totalScripts": 45,
     "totalSchemas": 2
   },
-  "generated": "2026-04-19T01:57:37.534090+00:00",
-  "lastUpdated": "2026-04-19T01:57:37.534091+00:00"
+  "generated": "2026-04-20T04:35:16.798469+00:00",
+  "lastUpdated": "2026-04-20T04:35:16.798470+00:00"
 }
