@@ -1,0 +1,32 @@
+---
+name: rust-service-hardening-assignment
+version: 1.0.0
+description: Render a fenced-JSON assignment for rust-service-hardening-agent.
+format: json
+required_variables:
+  - review_mode
+  - worktree_path
+  - review_targets
+optional_variables:
+  - topics
+  - notes
+defaults:
+  topics: []
+  notes: ""
+---
+{
+  "review_mode": "{{ review_mode }}",
+  "worktree_path": "{{ worktree_path }}",
+  "review_targets": [{% for target in review_targets %}"{{ target }}"{% if not loop.last %}, {% endif %}{% endfor %}],
+  "topics": {% if topics %}
+    [{% for topic in topics %}"{{ topic }}"{% if not loop.last %}, {% endif %}{% endfor %}]
+  {% elif review_mode == "doc_review" %}
+    ["config_validation", "timeouts", "graceful_shutdown", "retry_scope", "backpressure", "health_readiness"]
+  {% elif review_mode == "sprint_review" %}
+    ["config_validation", "timeouts", "graceful_shutdown", "spawn_blocking", "input_limits"]
+  {% else %}
+    ["config_validation", "timeouts", "graceful_shutdown", "structured_logging", "request_ids", "retries", "backpressure", "spawn_blocking", "input_limits", "dependency_hygiene", "health_readiness", "ci_release_gates"]
+  {% endif %},
+  "service_indicator_dependencies": ["tokio", "axum", "hyper", "tonic", "warp", "actix-web", "reqwest"],
+  "notes": "{{ notes }}"
+}
