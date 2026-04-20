@@ -8,6 +8,7 @@
 - Technical documents where images carry meaningful content
 
 **Recommended default for most engineering/product documents.**
+Start with the baseline command below. Add enrichment flags only after the runtime validation in `installation.md` passes.
 
 ---
 
@@ -20,9 +21,6 @@ docling INPUT.pdf \
   --output ./output \
   --image-export-mode referenced \
   --table-mode accurate \
-  --enrich-picture-classes \
-  --enrich-picture-description \
-  --enrich-chart-extraction \
   --device mps
 ```
 
@@ -31,10 +29,7 @@ docling INPUT.pdf \
 | `--to md --to json` | Markdown for reading; JSON for structured image metadata and table objects |
 | `--image-export-mode referenced` | Saves images as PNG files, inserts `![]()` links — viewable, not base64 bloat |
 | `--table-mode accurate` | Thorough table structure extraction |
-| `--enrich-picture-classes` | Classifies each image: `photograph`, `diagram`, `chart`, `logo`, `screenshot` |
-| `--enrich-picture-description` | Generates a text caption per image (runs a small VLM per image) |
-| `--enrich-chart-extraction` | Converts bar/pie/line charts to tabular data in JSON output |
-| `--device mps` | GPU acceleration — enrichment models are compute-intensive |
+| `--device mps` | GPU acceleration if available; use `--device cpu` elsewhere |
 
 ---
 
@@ -63,25 +58,35 @@ ls -lh ./output/INPUT-pictures/
 
 ---
 
-## Faster Variant (skip captions)
+## Optional Enrichment Variant
 
-`--enrich-picture-description` is the slowest step (~5–15s per image).
-Omit it when captions are not needed:
+Only use this after the Step 1 validation passes:
 
 ```bash
 docling INPUT.pdf \
   --to md \
+  --to json \
   --output ./output \
   --image-export-mode referenced \
   --table-mode accurate \
   --enrich-picture-classes \
+  --enrich-picture-description \
   --enrich-chart-extraction \
   --device mps
 ```
 
+Notes:
+- `--enrich-picture-classes` adds class labels such as `diagram`, `chart`, or `photograph`
+- `--enrich-picture-description` adds image captions and is usually the slowest flag
+- `--enrich-chart-extraction` converts supported charts into tabular JSON, but is the most dependency-sensitive enrichment step
+- If you hit a Granite / `transformers` import error, remove the enrichment flags and use the baseline command
+
 ---
 
 ## Performance
+
+Baseline `rich` without enrichment:
+- 20-page datasheet: typically tens of seconds on Apple Silicon, longer on CPU
 
 With `--enrich-picture-description`:
 - 20-page datasheet with 5–10 images: 2–5 minutes
@@ -94,7 +99,7 @@ Without `--enrich-picture-description`:
 ## Upgrade Path
 
 Text layout garbled despite good image extraction?
-→ Escalate to `vlm` profile; carry enrichment flags forward.
+→ Escalate to `vlm` profile; carry enrichment flags forward only if runtime validation passes.
 
 Document is also scanned?
 → Add `--force-ocr --ocr-engine easyocr` to this command.

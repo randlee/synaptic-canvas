@@ -23,7 +23,7 @@ triggers:
 Convert PDFs to markdown and structured output using the docling CLI.
 Selects the optimal conversion profile based on document content.
 
-## Step 1 — Verify Installation
+## Step 1 — Verify Installation and Runtime Compatibility
 
 ```bash
 which docling && docling --version
@@ -44,6 +44,13 @@ If found at a non-PATH location, use the full path for all `docling` commands,
 or export that directory to PATH for the session.
 
 If not installed: **read `references/installation.md` before proceeding.**
+
+On first use in a session, and after any Docling / `transformers` / `peft` upgrade,
+run the advanced-runtime validation block from `references/installation.md`.
+
+If validation fails:
+- fix the environment before using `vlm` or enrichment-heavy commands
+- fall back to `text`, `scan`, or baseline `rich` without enrichment flags
 
 ---
 
@@ -94,11 +101,13 @@ Output format is independent of conversion profile. Multiple formats can be gene
 # Fastest — clean digital PDF
 docling INPUT.pdf --to md --output ./out --device mps
 
-# Datasheet with tables + images (most common)
+# Datasheet with tables + images (most common baseline)
 docling INPUT.pdf --to md --to json --output ./out \
   --image-export-mode referenced \
-  --enrich-picture-classes --enrich-picture-description \
-  --enrich-chart-extraction --device mps
+  --table-mode accurate --device mps
+
+# Add enrichment flags only after Step 1 validation passes
+# --enrich-picture-classes --enrich-picture-description --enrich-chart-extraction
 
 # Scanned document
 docling INPUT.pdf --to md --output ./out \

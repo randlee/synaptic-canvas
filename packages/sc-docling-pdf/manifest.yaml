@@ -45,3 +45,6 @@ requires:
     - docling >= 2.90.0   # verified against current CLI/docs on 2026-04-19
   optional:
     - poppler          # pdfinfo, pdfimages, pdftotext — for document analysis
+    - docling[easyocr,vlm]  # for VLM and enrichment-heavy workflows
+    - peft >= 0.18.1        # required by Granite-based advanced runtime
+    - transformers < 5.5    # known-good ceiling for Granite chart/VLM runtime in this skill

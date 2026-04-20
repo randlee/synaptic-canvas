@@ -6,6 +6,9 @@
 - Documents where code blocks must be preserved with correct formatting
 - LaTeX-heavy documents
 
+Run the validation block from `installation.md` before using code/formula enrichment.
+If validation fails, fall back to baseline `text` first.
+
 ---
 
 ## Command
@@ -22,8 +25,8 @@ docling INPUT.pdf \
 
 | Flag | Reason |
 |------|--------|
-| `--enrich-code` | Detects and formats code blocks, preserving indentation and language hints |
-| `--enrich-formula` | Detects math expressions, renders in LaTeX notation |
+| `--enrich-code` | Runs Docling's code-understanding enrichment and sets code-language metadata |
+| `--enrich-formula` | Runs formula-understanding enrichment and extracts LaTeX representations |
 | `--table-mode accurate` | Technical docs often have parameter/spec tables |
 
 ---
@@ -78,6 +81,12 @@ $E = mc^2$
 Both enrichment models add modest overhead vs `text` profile:
 - 20-page doc: ~15–45 seconds (vs ~10s for `text`)
 - Per-formula and per-code-block passes are lightweight vs `--enrich-picture-description`
+
+If enrichment is unavailable in the environment, use:
+
+```bash
+docling INPUT.pdf --to md --output ./output --table-mode accurate --device mps
+```
 
 ---
 

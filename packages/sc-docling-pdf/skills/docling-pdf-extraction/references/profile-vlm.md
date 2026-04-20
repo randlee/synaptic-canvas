@@ -9,6 +9,7 @@ Use `vlm` **only** when the standard pipeline produces poor results:
 - Academic papers, magazine-style, heavily designed documents
 
 **Always try `rich` or `text` first.** VLM is 3–10× slower.
+Run the validation block from `installation.md` before using `vlm`.
 
 ---
 
@@ -56,7 +57,7 @@ Only use `granite_docling` if smol output is insufficient.
 
 ## With Image Enrichment
 
-Enrichment flags work with VLM pipeline:
+Enrichment flags work with VLM pipeline only when the advanced runtime is healthy:
 
 ```bash
 docling INPUT.pdf \
@@ -93,6 +94,21 @@ docling-tools models download smoldocling
 # Use offline:
 docling INPUT.pdf --pipeline vlm --vlm-model granite_docling \
   --artifacts-path ~/.docling/models --device mps --output ./output
+```
+
+## Compatibility Note
+
+If you see:
+
+```text
+ImportError: cannot import name 'HybridMambaAttentionDynamicCache'
+```
+
+your Granite runtime is incompatible with the installed `transformers`.
+For this skill, pin:
+
+```bash
+python3 -m pip install -U "transformers<5.5" "peft>=0.18.1"
 ```
 
 ---
