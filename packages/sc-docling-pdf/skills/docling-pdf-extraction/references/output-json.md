@@ -24,20 +24,28 @@ docling INPUT.pdf --to md --to json --output ./output --device mps
 ```json
 {
   "schema_name": "DoclingDocument",
-  "version": "1.3.0",
+  "version": "1.10.0",
   "name": "INPUT",
-  "origin": { "filename": "INPUT.pdf", "page_count": 12 },
-  "furniture": [ ... ],   // headers, footers, page numbers
-  "body": [ ... ],        // main content elements (ordered)
-  "pages": { ... }        // page dimensions
+  "origin": { "filename": "INPUT.pdf", "mimetype": "application/pdf" },
+  "furniture": { ... },
+  "body": { "children": [ ... ] },
+  "texts": [ ... ],
+  "tables": [ ... ],
+  "pictures": [ ... ],
+  "pages": { ... }
 }
 ```
+
+Current Docling JSON is a referenced document graph:
+- `body.children` contains `$ref` pointers into arrays such as `texts`, `tables`, and `pictures`
+- page metadata lives under `pages`
+- `origin.page_count` may be absent, so do not rely on it being present
 
 ---
 
 ## Element Labels
 
-Every `body` item has a `label`:
+The referenced content items in `texts`, `tables`, `pictures`, and related arrays carry labels:
 
 | Label | Content |
 |-------|---------|
@@ -62,20 +70,27 @@ import json
 with open("./output/INPUT.json") as f:
     doc = json.load(f)
 
+# Resolve the body order into concrete items
+def deref(ref):
+    _, collection, index = ref["$ref"].split("/")
+    return doc[collection][int(index)]
+
+ordered_items = [deref(ref) for ref in doc["body"]["children"]]
+
 # Document outline (headers only)
-for item in doc["body"]:
+for item in ordered_items:
     if item.get("label") in ("title", "section_header"):
         level = item.get("level", 1)
         print("  " * (level - 1) + item.get("text", ""))
 
 # Count elements by label
 from collections import Counter
-counts = Counter(i.get("label","?") for i in doc["body"])
+counts = Counter(i.get("label", "?") for i in ordered_items)
 for label, n in counts.most_common():
     print(f"{n:4d}  {label}")
 
 # Page count
-print(doc["origin"]["page_count"], "pages")
+print(len(doc["pages"]), "pages")
 ```
 
 ---

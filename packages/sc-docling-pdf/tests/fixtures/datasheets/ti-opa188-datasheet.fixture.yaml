@@ -1,0 +1,23 @@
+id: ti-opa188-datasheet
+title: "OPA188 Precision, Low-Noise, Rail-to-Rail Output, 36-V, Zero-Drift Operational Amplifier datasheet (Rev. C)"
+filename: ti-opa188-datasheet.pdf
+source_url: https://www.ti.com/lit/gpn/opa188
+publisher: Texas Instruments
+publication_date: 2020-01
+pages: 42
+sha256: 44772d833141cc80cb95180202d2970038b7542e379b5cc852b4961c59233f20
+license_note: Copyrighted vendor datasheet; keep unmodified and retain notices. Review redistribution policy before publishing broadly.
+profiles:
+  - rich
+reference_text_file: ti-opa188-datasheet.reference.txt
+expected:
+  must_contain:
+    - "OPA188"
+    - "1 Features"
+    - "2 Applications"
+    - "3 Description"
+    - "Low offset voltage: 25"
+  min_tables: 2
+  min_headings: 4
+notes:
+  - Good datasheet fixture with product title block, specification tables, package diagrams, and application guidance.
