@@ -22,7 +22,6 @@ tags:
 artifacts:
   skills:
     - skills/docling-pdf-extraction/SKILL.md
-  references:
     - skills/docling-pdf-extraction/references/installation.md
     - skills/docling-pdf-extraction/references/document-analysis.md
     - skills/docling-pdf-extraction/references/profile-text.md
