@@ -61,15 +61,15 @@ cat > "$_VARS" <<'JSON'
 {
   "review_mode": "sprint_review",
   "worktree_path": "/absolute/path/to/worktree",
-  "review_targets_json": "[\"src/\", \"Cargo.toml\"]",
+  "review_targets": ["src/", "Cargo.toml"],
   "practice_mode": "selected",
-  "practice_ids_json": "[\"RBP-001\", \"RBP-004\", \"RBP-006\", \"RBP-007\"]"
+  "practice_ids": ["RBP-001", "RBP-004", "RBP-006", "RBP-007"]
 }
 JSON
 sc-compose render \
   --root .claude/assets/sc-rust/quality-mgr/templates \
+  --file rust-best-practices-assignment.json.j2 \
   --var-file "$_VARS" \
-  rust-best-practices-assignment.json.j2
 rm -f "$_VARS"
 ```
 
@@ -81,13 +81,13 @@ cat > "$_VARS" <<'JSON'
 {
   "review_mode": "phase_end",
   "worktree_path": "/absolute/path/to/worktree",
-  "review_targets_json": "[\"src/\", \"Cargo.toml\"]"
+  "review_targets": ["src/", "Cargo.toml"]
 }
 JSON
 sc-compose render \
   --root .claude/assets/sc-rust/quality-mgr/templates \
+  --file rust-service-hardening-assignment.json.j2 \
   --var-file "$_VARS" \
-  rust-service-hardening-assignment.json.j2
 rm -f "$_VARS"
 ```
 
@@ -102,4 +102,4 @@ At minimum, render:
 
 Do not rely on visual inspection of the template source alone.
 
-Because the installed `sc-compose` baseline accepts scalar var-file values more reliably than array values, the template input uses `*_json` fields for list-shaped data. Pass those as JSON array literals inside strings. The rendered worker assignment remains proper JSON arrays.
+Use native array values for list-shaped fields such as `review_targets`, `practice_ids`, and `topics`.

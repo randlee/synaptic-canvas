@@ -62,3 +62,4 @@ requires:
   cli:
     - cargo >= 1.87
     - cargo-llvm-cov
+    - sc-compose

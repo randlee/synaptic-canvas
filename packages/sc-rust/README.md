@@ -47,6 +47,7 @@ Not intended for:
 
 - `cargo` >= 1.87
 - `cargo-llvm-cov` (for coverage in rust-qa-agent)
+- `sc-compose` (for rendering Rust quality-manager reviewer assignments)
 
 ## Storage
 

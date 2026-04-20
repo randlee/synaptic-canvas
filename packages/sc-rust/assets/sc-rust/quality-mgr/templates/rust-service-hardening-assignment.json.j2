@@ -6,20 +6,20 @@ format: json
 required_variables:
   - review_mode
   - worktree_path
-  - review_targets_json
+  - review_targets
 optional_variables:
-  - topics_json
+  - topics
   - notes
 defaults:
-  topics_json: ""
+  topics: []
   notes: ""
 ---
 {
   "review_mode": "{{ review_mode }}",
   "worktree_path": "{{ worktree_path }}",
-  "review_targets": {{ review_targets_json }},
-  "topics": {% if topics_json %}
-    {{ topics_json }}
+  "review_targets": [{% for target in review_targets %}"{{ target }}"{% if not loop.last %}, {% endif %}{% endfor %}],
+  "topics": {% if topics %}
+    [{% for topic in topics %}"{{ topic }}"{% if not loop.last %}, {% endif %}{% endfor %}]
   {% elif review_mode == "doc_review" %}
     ["config_validation", "timeouts", "graceful_shutdown", "retry_scope", "backpressure", "health_readiness"]
   {% elif review_mode == "sprint_review" %}
