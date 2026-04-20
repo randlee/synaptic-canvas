@@ -1,0 +1,27 @@
+id: nist-sp-1163
+title: "Economics of the U.S. Additive Manufacturing Industry"
+filename: nist-sp-1163.pdf
+source_url: https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.1163.pdf
+doi_url: https://doi.org/10.6028/NIST.SP.1163
+publisher: National Institute of Standards and Technology
+publication_date: 2013-08
+pages: 59
+sha256: 69bd740b1062c3a0fb29a5dc9eb82855c68492b0cefe209c1493560b4618b3d5
+license_note: U.S. government work from NIST.
+profiles:
+  - text
+  - rich
+reference_text_file: nist-sp-1163.reference.txt
+expected:
+  must_contain:
+    - "Economics of the U.S. Additive Manufacturing Industry"
+    - "Abstract"
+    - "Additive manufacturing may provide an important opportunity"
+    - "List of Figures"
+    - "Table 3.1: Stakeholders"
+  min_tables: 2
+  min_figures: 5
+  min_headings: 5
+notes:
+  - Good fixture for abstract extraction, table/figure list extraction, and regular prose.
+  - Useful for validating economic/technical narrative PDFs without OCR dependence.
