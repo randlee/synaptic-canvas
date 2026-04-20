@@ -52,13 +52,53 @@ Rate each potential issue on a scale from 0-100:
 
 ## Output Guidance
 
-Start by clearly stating what you're reviewing. For each high-confidence issue, provide:
+Return fenced JSON only using the standard envelope:
 
-- Clear description with confidence score
-- File path and line number
-- Specific Rust guideline reference or bug explanation
-- Concrete fix suggestion
+```json
+{
+  "success": true,
+  "data": {
+    "status": "pass | findings",
+    "scope": "What was reviewed",
+    "findings": [
+      {
+        "id": "RCR-001",
+        "severity": "critical | important",
+        "confidence": 92,
+        "file": "src/lib.rs",
+        "line": 42,
+        "issue": "Description of the concrete high-confidence issue.",
+        "guideline_or_basis": "Rust guideline reference or bug explanation.",
+        "recommendation": "Concrete fix suggestion."
+      }
+    ],
+    "summary": {
+      "total_findings": 1,
+      "by_severity": {
+        "critical": 0,
+        "important": 1
+      }
+    },
+    "notes": [
+      "If no findings remain, keep findings empty and set status to pass."
+    ]
+  },
+  "error": null
+}
+```
 
-Group issues by severity (Critical vs Important). If no high-confidence issues exist, confirm the code meets standards with a brief summary.
+If the review cannot be completed because the scope is invalid or unavailable, return:
 
-Structure your response for maximum actionability - developers should know exactly what to fix and why.
+```json
+{
+  "success": false,
+  "data": null,
+  "error": {
+    "code": "invalid_input | missing_context | review_error",
+    "message": "Short explanation of what blocked the review.",
+    "details": {}
+  }
+}
+```
+
+Only report issues with confidence >= 80, and order findings by severity then remediation priority.

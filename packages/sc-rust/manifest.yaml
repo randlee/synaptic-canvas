@@ -50,6 +50,7 @@ artifacts:
     - agents/rust-service-hardening-agent.md
   assets:
     - assets/sc-rust/quality-mgr/quality-mgr.rust.md
+    - assets/sc-rust/quality-mgr/templates/rust-qa-assignment.json.j2
     - assets/sc-rust/quality-mgr/templates/rust-best-practices-assignment.json.j2
     - assets/sc-rust/quality-mgr/templates/rust-service-hardening-assignment.json.j2
 

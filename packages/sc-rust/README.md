@@ -49,9 +49,24 @@ Not intended for:
 - `cargo-llvm-cov` (for coverage in rust-qa-agent)
 - `sc-compose` (for rendering Rust quality-manager reviewer assignments)
 
+## Configuration
+
+`sc-rust` does not require a package-specific config file. Rust agent orchestration is configured by:
+
+- installed Rust skills under `.claude/skills/`
+- installed agents under `.claude/agents/`
+- the Rust quality-manager supplement at `.claude/assets/sc-rust/quality-mgr/quality-mgr.rust.md`
+- the assignment templates under `.claude/assets/sc-rust/quality-mgr/templates/`
+
+When `quality-mgr` is used for Rust work, render the installed `.j2` assignment templates with `sc-compose` and pass the rendered JSON to the specialist Rust agents.
+
 ## Storage
 
 This package installs into `.claude/` only. No project-level state is written.
+
+## Logs
+
+`sc-rust` does not create its own log directory. Runtime logs come from the orchestrator or agent runner used by the consuming repo. When used with `quality-mgr`, keep using the repo’s standard agent-runner log location rather than introducing package-specific logging paths.
 
 ## Reference Files
 
@@ -69,3 +84,6 @@ Installed alongside the skills:
 | `references/production-checklist.md` | Prioritized service-hardening checklist for production reviews |
 | `references/framework-notes.md` | Tokio/Axum/Hyper/Tonic/Reqwest notes for service hardening |
 | `assets/sc-rust/quality-mgr/quality-mgr.rust.md` | Rust-specific quality-mgr supplement listing Rust reviewers and launch rules |
+| `assets/sc-rust/quality-mgr/templates/rust-best-practices-assignment.json.j2` | Renders fenced-JSON assignments for `rust-best-practices-agent` |
+| `assets/sc-rust/quality-mgr/templates/rust-service-hardening-assignment.json.j2` | Renders fenced-JSON assignments for `rust-service-hardening-agent` |
+| `assets/sc-rust/quality-mgr/templates/rust-qa-assignment.json.j2` | Renders fenced-JSON assignments for `rust-qa-agent` |

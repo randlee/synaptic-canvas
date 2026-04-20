@@ -41,14 +41,77 @@ Provide a complete understanding of how a specific feature works by tracing its 
 
 ## Output Guidance
 
-Provide a comprehensive analysis that helps developers understand the feature deeply enough to modify or extend it. Include:
+Return fenced JSON only using the standard envelope:
 
-- Entry points with file:line references
-- Step-by-step execution flow with data transformations
-- Key components and their responsibilities
-- Architecture insights: patterns, layers, design decisions
-- Dependencies (external and internal)
-- Observations about strengths, issues, or opportunities
-- List of files that you think are absolutely essential to get an understanding of the topic in question
+```json
+{
+  "success": true,
+  "data": {
+    "scope": "Short summary of the feature or topic explored.",
+    "entry_points": [
+      {
+        "file": "src/main.rs",
+        "line": 18,
+        "kind": "cli | http | worker | library",
+        "details": "Primary entrypoint for the feature."
+      }
+    ],
+    "execution_flow": [
+      {
+        "step": 1,
+        "file": "src/feature/mod.rs",
+        "line": 33,
+        "summary": "Request is parsed and validated.",
+        "data_transformations": [
+          "Raw CLI args -> typed request"
+        ]
+      }
+    ],
+    "components": [
+      {
+        "path": "src/feature/service.rs",
+        "responsibility": "Core feature orchestration"
+      }
+    ],
+    "dependencies": {
+      "internal": [
+        "src/shared/error.rs"
+      ],
+      "external": [
+        "reqwest"
+      ]
+    },
+    "architecture_insights": [
+      "Feature follows command -> service -> repository layering."
+    ],
+    "observations": [
+      "Error handling is centralized in shared error types."
+    ],
+    "essential_files": [
+      "src/main.rs",
+      "src/feature/mod.rs",
+      "src/feature/service.rs"
+    ],
+    "notes": [
+      "Always include file:line references where concrete behavior is described."
+    ]
+  },
+  "error": null
+}
+```
 
-Structure your response for maximum clarity and usefulness. Always include specific file paths and line numbers.
+If the task cannot be completed due to missing scope or files, return:
+
+```json
+{
+  "success": false,
+  "data": null,
+  "error": {
+    "code": "invalid_input | missing_context | analysis_error",
+    "message": "Short explanation of what blocked the exploration.",
+    "details": {}
+  }
+}
+```
+
+Always include specific file paths and line numbers inside the structured result.
