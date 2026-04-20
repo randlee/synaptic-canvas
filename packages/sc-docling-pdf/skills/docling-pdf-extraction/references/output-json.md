@@ -11,10 +11,10 @@ label, bounding boxes, and enrichment data.
 ## Enabling JSON Output
 
 ```bash
-docling convert INPUT.pdf --to json --output ./output --device mps
+docling INPUT.pdf --to json --output ./output --device mps
 
 # Typically paired with markdown:
-docling convert INPUT.pdf --to markdown --to json --output ./output --device mps
+docling INPUT.pdf --to md --to json --output ./output --device mps
 ```
 
 ---

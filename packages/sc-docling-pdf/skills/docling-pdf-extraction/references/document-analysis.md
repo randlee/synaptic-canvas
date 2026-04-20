@@ -45,7 +45,7 @@ print('DIGITAL' if chars > 100 else 'LIKELY SCANNED')
 
 ### Quick docling probe
 ```bash
-docling convert INPUT.pdf --to json --output ./probe --device mps
+docling INPUT.pdf --to json --output ./probe --device mps
 python3 -c "
 import json, sys
 with open(sys.argv[1]) as f: doc = json.load(f)
@@ -90,7 +90,7 @@ Rules of thumb:
 
 Always try `standard` pipeline first — only escalate to `vlm` if output is garbled:
 ```bash
-docling convert INPUT.pdf --to markdown --output ./probe-standard --device mps
+docling INPUT.pdf --to md --output ./probe-standard --device mps
 cat ./probe-standard/*.md | head -60
 ```
 

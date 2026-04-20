@@ -13,8 +13,8 @@ If you need tables, images, or diagrams → use `rich` profile instead.
 ## Command
 
 ```bash
-docling convert INPUT.pdf \
-  --to markdown \
+docling INPUT.pdf \
+  --to md \
   --output ./output \
   --no-ocr \
   --table-mode accurate \
@@ -32,9 +32,9 @@ docling convert INPUT.pdf \
 ## Batch
 
 ```bash
-docling convert ./pdfs/ \
+docling ./pdfs/ \
   --from pdf \
-  --to markdown \
+  --to md \
   --output ./output \
   --no-ocr \
   --table-mode accurate \

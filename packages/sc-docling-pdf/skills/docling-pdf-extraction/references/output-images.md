@@ -10,8 +10,8 @@ Use `--image-export-mode referenced` to save them as files.
 ## Enabling Image File Export
 
 ```bash
-docling convert INPUT.pdf \
-  --to markdown \
+docling INPUT.pdf \
+  --to md \
   --output ./output \
   --image-export-mode referenced \
   --device mps

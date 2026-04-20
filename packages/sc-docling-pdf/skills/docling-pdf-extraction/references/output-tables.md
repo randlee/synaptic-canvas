@@ -10,8 +10,8 @@ Tables appear as GFM tables in markdown and as structured objects in JSON.
 ## Enabling Best Table Extraction
 
 ```bash
-docling convert INPUT.pdf \
-  --to markdown --to json \
+docling INPUT.pdf \
+  --to md --to json \
   --output ./output \
   --table-mode accurate \
   --device mps
@@ -28,8 +28,8 @@ docling convert INPUT.pdf \
 ## Chart-to-Table Extraction
 
 ```bash
-docling convert INPUT.pdf \
-  --to markdown --to json \
+docling INPUT.pdf \
+  --to md --to json \
   --output ./output \
   --table-mode accurate \
   --enrich-chart-extraction \
@@ -106,9 +106,9 @@ If borderless tables are being missed:
 2. Escalate to `vlm` pipeline — reads the page visually:
 
 ```bash
-docling convert INPUT.pdf \
+docling INPUT.pdf \
   --pipeline vlm --vlm-model granite_docling \
-  --to markdown --to json \
+  --to md --to json \
   --output ./output \
   --table-mode accurate \
   --device mps

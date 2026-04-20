@@ -15,10 +15,10 @@ Use `vlm` **only** when the standard pipeline produces poor results:
 ## Command
 
 ```bash
-docling convert INPUT.pdf \
+docling INPUT.pdf \
   --pipeline vlm \
   --vlm-model granite_docling \
-  --to markdown \
+  --to md \
   --to json \
   --output ./output \
   --image-export-mode referenced \
@@ -38,14 +38,14 @@ docling convert INPUT.pdf \
 | Model | Flag | Quality | Speed | Size |
 |-------|------|---------|-------|------|
 | GraniteDocling | `--vlm-model granite_docling` | Best | Slowest | ~4 GB |
-| SmolDocling | `--vlm-model smol_docling` | Good | Faster | ~1.5 GB |
+| SmolDocling | `--vlm-model smoldocling` | Good | Faster | ~1.5 GB |
 
-Start with `smol_docling` for a quick quality check:
+Start with `smoldocling` for a quick quality check:
 
 ```bash
-docling convert INPUT.pdf \
-  --pipeline vlm --vlm-model smol_docling \
-  --to markdown --output ./probe-vlm --device mps
+docling INPUT.pdf \
+  --pipeline vlm --vlm-model smoldocling \
+  --to md --output ./probe-vlm --device mps
 
 cat ./probe-vlm/*.md | head -80
 ```
@@ -59,10 +59,10 @@ Only use `granite_docling` if smol output is insufficient.
 Enrichment flags work with VLM pipeline:
 
 ```bash
-docling convert INPUT.pdf \
+docling INPUT.pdf \
   --pipeline vlm \
   --vlm-model granite_docling \
-  --to markdown --to json \
+  --to md --to json \
   --output ./output \
   --image-export-mode referenced \
   --enrich-picture-classes \
@@ -76,10 +76,10 @@ docling convert INPUT.pdf \
 ## With OCR (Scanned + Complex Layout)
 
 ```bash
-docling convert INPUT.pdf \
+docling INPUT.pdf \
   --pipeline vlm --vlm-model granite_docling \
   --force-ocr --ocr-engine easyocr \
-  --to markdown --output ./output --device mps
+  --to md --output ./output --device mps
 ```
 
 ---
@@ -87,11 +87,11 @@ docling convert INPUT.pdf \
 ## Pre-downloading VLM Models
 
 ```bash
-docling tools models download --vlm-model granite_docling
-docling tools models download --vlm-model smol_docling
+docling-tools models download granitedocling
+docling-tools models download smoldocling
 
 # Use offline:
-docling convert INPUT.pdf --pipeline vlm --vlm-model granite_docling \
+docling INPUT.pdf --pipeline vlm --vlm-model granite_docling \
   --artifacts-path ~/.docling/models --device mps --output ./output
 ```
 
@@ -101,8 +101,8 @@ docling convert INPUT.pdf --pipeline vlm --vlm-model granite_docling \
 
 | Model | Pages | Approx. Time (Apple M-series) |
 |-------|-------|-------------------------------|
-| smol_docling | 10 | 3–8 min |
-| smol_docling | 50 | 15–40 min |
+| smoldocling | 10 | 3–8 min |
+| smoldocling | 50 | 15–40 min |
 | granite_docling | 10 | 8–20 min |
 | granite_docling | 50 | 45–120 min |
 
@@ -118,8 +118,8 @@ qpdf INPUT.pdf --pages . 31-60 -- part2.pdf
 ## Debug Layout
 
 ```bash
-docling convert INPUT.pdf \
-  --pipeline vlm --vlm-model smol_docling \
+docling INPUT.pdf \
+  --pipeline vlm --vlm-model smoldocling \
   --show-layout --output ./debug --device mps
 ```
 

@@ -14,8 +14,8 @@
 ## Command
 
 ```bash
-docling convert INPUT.pdf \
-  --to markdown \
+docling INPUT.pdf \
+  --to md \
   --to json \
   --output ./output \
   --image-export-mode referenced \
@@ -28,7 +28,7 @@ docling convert INPUT.pdf \
 
 | Flag | Reason |
 |------|--------|
-| `--to markdown --to json` | Markdown for reading; JSON for structured image metadata and table objects |
+| `--to md --to json` | Markdown for reading; JSON for structured image metadata and table objects |
 | `--image-export-mode referenced` | Saves images as PNG files, inserts `![]()` links — viewable, not base64 bloat |
 | `--table-mode accurate` | Thorough table structure extraction |
 | `--enrich-picture-classes` | Classifies each image: `photograph`, `diagram`, `chart`, `logo`, `screenshot` |
@@ -69,8 +69,8 @@ ls -lh ./output/INPUT-pictures/
 Omit it when captions are not needed:
 
 ```bash
-docling convert INPUT.pdf \
-  --to markdown \
+docling INPUT.pdf \
+  --to md \
   --output ./output \
   --image-export-mode referenced \
   --table-mode accurate \

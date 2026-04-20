@@ -92,16 +92,16 @@ Output format is independent of conversion profile. Multiple formats can be gene
 
 ```bash
 # Fastest — clean digital PDF
-docling convert INPUT.pdf --to markdown --output ./out --device mps
+docling INPUT.pdf --to md --output ./out --device mps
 
 # Datasheet with tables + images (most common)
-docling convert INPUT.pdf --to markdown --to json --output ./out \
+docling INPUT.pdf --to md --to json --output ./out \
   --image-export-mode referenced \
   --enrich-picture-classes --enrich-picture-description \
   --enrich-chart-extraction --device mps
 
 # Scanned document
-docling convert INPUT.pdf --to markdown --output ./out \
+docling INPUT.pdf --to md --output ./out \
   --force-ocr --ocr-engine easyocr --device mps
 ```
 

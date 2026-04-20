@@ -11,8 +11,8 @@
 ## Command
 
 ```bash
-docling convert INPUT.pdf \
-  --to markdown \
+docling INPUT.pdf \
+  --to md \
   --output ./output \
   --enrich-code \
   --enrich-formula \
@@ -33,8 +33,8 @@ docling convert INPUT.pdf \
 For technical docs that also have architecture diagrams or screenshots:
 
 ```bash
-docling convert INPUT.pdf \
-  --to markdown --to json \
+docling INPUT.pdf \
+  --to md --to json \
   --output ./output \
   --enrich-code \
   --enrich-formula \

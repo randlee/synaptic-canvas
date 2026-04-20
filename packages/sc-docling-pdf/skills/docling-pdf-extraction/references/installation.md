@@ -1,5 +1,7 @@
 # Installation — Docling CLI
 
+Verified against the Docling CLI and docs current on 2026-04-19.
+
 ## Check First
 
 ```bash
@@ -28,8 +30,8 @@ for candidate in \
   [ -x "$candidate" ] && echo "Found: $candidate" && break
 done
 
-# Also check pip
-pip show docling 2>/dev/null | grep -E "^(Name|Version|Location)"
+# Also check the Python package metadata
+python3 -m pip show docling 2>/dev/null | grep -E "^(Name|Version|Location)"
 ```
 
 If found but not on PATH, use the full path for all docling commands,
@@ -51,7 +53,7 @@ Requires Python 3.10+.
 # Recommended: virtual environment
 python3 -m venv ~/.venvs/docling
 source ~/.venvs/docling/bin/activate
-pip install docling
+python -m pip install -U docling
 
 # Add to ~/.zshrc for persistent access:
 echo 'export PATH="$HOME/.venvs/docling/bin:$PATH"' >> ~/.zshrc
@@ -59,14 +61,19 @@ source ~/.zshrc
 ```
 
 ```bash
-# Or with uv (fast)
-uv tool install docling
+# Standard + OCR + VLM support
+python -m pip install -U "docling[easyocr,vlm]"
+```
+
+```bash
+# Or with uv
+uv tool install 'docling[easyocr,vlm]'
 # uv tools are placed in ~/.local/bin — ensure that's on PATH
 ```
 
 ```bash
 # Or system-wide via pip3 (e.g. Python.framework installs)
-pip3 install docling
+python3 -m pip install -U docling
 # Binary lands in the Python framework bin, e.g.:
 #   /Library/Frameworks/Python.framework/Versions/3.11/bin/docling
 # Add to PATH if not already present:
@@ -74,13 +81,23 @@ echo 'export PATH="/Library/Frameworks/Python.framework/Versions/3.11/bin:$PATH"
 source ~/.zshrc
 ```
 
+```bash
+# Intel Macs: use the compatibility extra from the official docs
+python3 -m pip install -U "docling[mac_intel]"
+```
+
+Notes:
+- Apple Silicon: `--device mps` is usually the best choice.
+- Intel Mac: MPS is unavailable, so use `--device cpu`.
+- The `docling` package also installs the companion `docling-tools` CLI.
+
 ### Linux
 
 ```bash
 # Recommended: virtual environment
 python3 -m venv ~/.venvs/docling
 source ~/.venvs/docling/bin/activate
-pip install docling
+python -m pip install -U docling
 
 # Add to ~/.bashrc:
 echo 'export PATH="$HOME/.venvs/docling/bin:$PATH"' >> ~/.bashrc
@@ -88,8 +105,13 @@ source ~/.bashrc
 ```
 
 ```bash
+# Standard + OCR + VLM support
+python -m pip install -U "docling[easyocr,vlm]"
+```
+
+```bash
 # Or with pipx (manages isolated envs automatically)
-pipx install docling
+pipx install 'docling[easyocr,vlm]'
 # pipx ensures ~/.local/bin is on PATH
 ```
 
@@ -99,12 +121,17 @@ pipx install docling
 # PowerShell — recommended: virtual environment
 python -m venv $env:USERPROFILE\.venvs\docling
 & "$env:USERPROFILE\.venvs\docling\Scripts\Activate.ps1"
-pip install docling
+python -m pip install -U docling
+```
+
+```powershell
+# Standard + OCR + VLM support
+python -m pip install -U "docling[easyocr,vlm]"
 ```
 
 ```powershell
 # Or with uv
-uv tool install docling
+uv tool install "docling[easyocr,vlm]"
 # Binary at %USERPROFILE%\.local\bin\docling.exe
 # Add to PATH via System Properties > Environment Variables
 ```
@@ -117,9 +144,9 @@ uv tool install docling
 ## Optional Extras
 
 ```bash
-pip install docling[easyocr]    # best OCR engine for scanned docs
-pip install docling[rapidocr]   # lightweight OCR alternative
-pip install "docling[all]"      # all extras
+python3 -m pip install -U "docling[easyocr]"     # OCR for scanned docs
+python3 -m pip install -U "docling[rapidocr]"    # lightweight OCR alternative
+python3 -m pip install -U "docling[vlm]"         # VLM pipeline support
 ```
 
 ---
@@ -129,18 +156,19 @@ pip install "docling[all]"      # all extras
 Docling downloads AI models (~1–2 GB) on first use. Pre-download for offline / faster startup:
 
 ```bash
-docling tools models download
-docling tools models download --output-dir ~/.docling/models
+docling-tools models download
+docling-tools models download --output-dir ~/.docling/models
 
 # Reference pre-downloaded models:
-docling convert INPUT.pdf --artifacts-path ~/.docling/models
+docling --artifacts-path ~/.docling/models INPUT.pdf
 ```
 
 ### VLM Models (large, optional — only for `--pipeline vlm`)
 
 ```bash
-docling tools models download --vlm-model granite_docling  # ~4 GB, best quality
-docling tools models download --vlm-model smol_docling     # ~1.5 GB, faster
+# Downloader model names differ from CLI preset names.
+docling-tools models download granitedocling
+docling-tools models download smoldocling
 ```
 
 ---
@@ -149,8 +177,9 @@ docling tools models download --vlm-model smol_docling     # ~1.5 GB, faster
 
 ```bash
 docling --version
-docling convert https://arxiv.org/pdf/2408.09869 --to markdown --output /tmp/docling-test
-cat /tmp/docling-test/*.md | head -30
+docling https://arxiv.org/pdf/2408.09869 --output /tmp/docling-test
+ls /tmp/docling-test/
+sed -n '1,30p' /tmp/docling-test/*.md
 ```
 
 ---
@@ -183,11 +212,13 @@ python3 -c "import torch; print(torch.backends.mps.is_available())"
 
 **`torch` version conflict:**
 ```bash
-pip install docling --upgrade && pip install torch torchvision --upgrade
+python3 -m pip install -U docling
+python3 -m pip install -U torch torchvision
 ```
 
 **Homebrew Python / externally managed environment error:**
 ```bash
-pip install docling --break-system-packages
-# Or use a venv (preferred)
+python3 -m venv ~/.venvs/docling
+source ~/.venvs/docling/bin/activate
+python -m pip install -U docling
 ```

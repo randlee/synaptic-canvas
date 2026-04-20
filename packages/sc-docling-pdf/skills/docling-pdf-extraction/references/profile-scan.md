@@ -10,8 +10,8 @@
 ## Command
 
 ```bash
-docling convert INPUT.pdf \
-  --to markdown \
+docling INPUT.pdf \
+  --to md \
   --output ./output \
   --force-ocr \
   --ocr-engine easyocr \
@@ -61,12 +61,12 @@ Install EasyOCR: `pip install docling[easyocr]`
 
 **Low-resolution scan (< 150 DPI):** Rescan at 300 DPI if possible. Otherwise try:
 ```bash
-docling convert INPUT.pdf --force-ocr --ocr-engine tesseract --psm 6 --device mps
+docling INPUT.pdf --force-ocr --ocr-engine tesseract --psm 6 --device mps
 ```
 
 **Two-column scanned layout:** Escalate to VLM pipeline:
 ```bash
-docling convert INPUT.pdf --pipeline vlm --vlm-model granite_docling \
+docling INPUT.pdf --pipeline vlm --vlm-model granite_docling \
   --force-ocr --device mps --output ./output
 ```
 

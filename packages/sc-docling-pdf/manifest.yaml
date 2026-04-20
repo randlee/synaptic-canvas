@@ -43,6 +43,6 @@ install:
 requires:
   cli:
     - python >= 3.10
-    - docling >= 2.0   # installed via: pip install docling
+    - docling >= 2.90.0   # verified against current CLI/docs on 2026-04-19
   optional:
     - poppler          # pdfinfo, pdfimages, pdftotext — for document analysis

@@ -10,7 +10,7 @@ and editor reading. One `.md` file is produced per input document.
 ## Basic Usage
 
 ```bash
---to markdown   # default when no --to specified
+--to md   # default when no --to specified
 ```
 
 ---
@@ -62,7 +62,7 @@ code ./output/INPUT.md                # VS Code
 ## Batch
 
 ```bash
-docling convert ./pdfs/ --from pdf --to markdown --output ./output --device mps
+docling ./pdfs/ --from pdf --to md --output ./output --device mps
 ```
 
 One `.md` per PDF, named to match the source file.
@@ -73,7 +73,7 @@ One `.md` per PDF, named to match the source file.
 
 Markdown and JSON in one run:
 ```bash
-docling convert INPUT.pdf --to markdown --to json --output ./output
+docling INPUT.pdf --to md --to json --output ./output
 ```
 
 Use markdown for reading; JSON for structured access to metadata.
