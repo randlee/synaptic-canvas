@@ -1,6 +1,6 @@
 ---
 name: rust-qa-agent
-version: 0.10.0
+version: 0.11.0
 description: Runs Rust quality gates and first-principles QA through a fenced-JSON contract, focusing on clippy, tests, coverage, portability, and execution-fact reporting rather than architectural policy decisions.
 tools: Glob, Grep, LS, Read, NotebookRead, TodoWrite, KillShell, BashOutput, Bash
 model: sonnet

@@ -1,6 +1,6 @@
 ---
 name: rust-development
-version: 0.10.0
+version: 0.11.0
 description: Develop, review, and explore Rust code with strict adherence to Pragmatic Rust Guidelines. Use when the user mentions Rust, .rs files, Cargo, clippy, rustdoc, or requests Rust architecture, implementation, or review.
 ---
 

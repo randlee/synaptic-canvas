@@ -1,6 +1,6 @@
 ---
 name: rust-best-practices-agent
-version: 0.10.0
+version: 0.11.0
 description: Reviews Rust code and design artifacts for structural best-practice compliance using stable practice ids and a fenced-JSON assignment contract.
 tools: Glob, Grep, LS, Read, NotebookRead
 model: sonnet

@@ -1,6 +1,6 @@
 ---
 name: rust-code-explorer
-version: 0.10.0
+version: 0.11.0
 description: Deeply analyzes existing Rust codebase features by tracing execution paths, mapping architecture layers, understanding patterns and abstractions, and documenting dependencies to inform new development
 tools: Glob, Grep, LS, Read, NotebookRead, WebFetch, TodoWrite, WebSearch, KillShell, BashOutput
 model: sonnet

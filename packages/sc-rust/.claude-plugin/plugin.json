@@ -1,7 +1,7 @@
 {
   "name": "sc-rust",
   "description": "Rust development toolkit: idiomatic guidelines, service hardening guidance, design pattern enforcement, and specialized agents for architecture, code review, exploration, implementation, and QA.",
-  "version": "0.10.0",
+  "version": "0.11.0",
   "author": {
     "name": "randlee"
   },
