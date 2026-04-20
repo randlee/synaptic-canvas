@@ -95,61 +95,80 @@ Return fenced JSON only.
 
 ```json
 {
-  "status": "pass | findings",
-  "review_mode": "sprint_review",
-  "executed_checks": {
-    "fmt": {
-      "status": "pass | fail | not_run",
-      "command": "cargo fmt --all --check"
+  "success": true,
+  "data": {
+    "status": "pass | findings",
+    "review_mode": "sprint_review",
+    "executed_checks": {
+      "fmt": {
+        "status": "pass | fail | not_run",
+        "command": "cargo fmt --all --check"
+      },
+      "clippy": {
+        "status": "pass | fail | not_run",
+        "command": "cargo clippy --all-targets --all-features -- -D warnings"
+      },
+      "tests": {
+        "status": "pass | fail | not_run",
+        "command": "cargo test"
+      },
+      "coverage": {
+        "status": "pass | fail | not_run",
+        "line": 0.0,
+        "branch": 0.0,
+        "function": 0.0,
+        "adequate_for_risk": true
+      },
+      "artifacts": {
+        "status": "pass | fail | not_run",
+        "command": "optional artifact command block"
+      }
     },
-    "clippy": {
-      "status": "pass | fail | not_run",
-      "command": "cargo clippy --all-targets --all-features -- -D warnings"
+    "findings": [
+      {
+        "id": "QA-001",
+        "category": "guideline | portability | fmt | clippy | tests | coverage | artifacts | correctness",
+        "severity": "critical | important | minor",
+        "file": "src/lib.rs",
+        "line": 42,
+        "issue": "Windows-incompatible hardcoded /tmp path in test fixture setup.",
+        "recommendation": "Use tempfile or platform-aware temp directory APIs instead of a hardcoded Unix path.",
+        "evidence": "test helper constructs /tmp/session.sock directly."
+      }
+    ],
+    "summary": {
+      "total_findings": 1,
+      "by_severity": {
+        "critical": 0,
+        "important": 1,
+        "minor": 0
+      }
     },
-    "tests": {
-      "status": "pass | fail | not_run",
-      "command": "cargo test"
-    },
-    "coverage": {
-      "status": "pass | fail | not_run",
-      "line": 0.0,
-      "branch": 0.0,
-      "function": 0.0,
-      "adequate_for_risk": true
-    },
-    "artifacts": {
-      "status": "pass | fail | not_run",
-      "command": "optional artifact command block"
-    }
+    "notes": [
+      "A separate rust-best-practices review may be warranted if public trait boundaries changed."
+    ]
   },
-  "findings": [
-    {
-      "id": "QA-001",
-      "category": "guideline | portability | fmt | clippy | tests | coverage | artifacts | correctness",
-      "severity": "critical | important | minor",
-      "file": "src/lib.rs",
-      "line": 42,
-      "issue": "Windows-incompatible hardcoded /tmp path in test fixture setup.",
-      "recommendation": "Use tempfile or platform-aware temp directory APIs instead of a hardcoded Unix path.",
-      "evidence": "test helper constructs /tmp/session.sock directly."
-    }
-  ],
-  "summary": {
-    "total_findings": 1,
-    "by_severity": {
-      "critical": 0,
-      "important": 1,
-      "minor": 0
-    }
-  },
-  "notes": [
-    "A separate rust-best-practices review may be warranted if public trait boundaries changed."
-  ]
+  "error": null
 }
 ```
 
 Output rules:
-- `status` is `pass` only when no real findings remain in scope.
-- `status` is `findings` if any real finding exists, including failed requested checks.
+- `success` is `true` when the review completed, even if `data.status` is `findings`.
+- `data.status` is `pass` only when no real findings remain in scope.
+- `data.status` is `findings` if any real finding exists, including failed requested checks.
 - `category` must match the kind of problem reported.
 - Findings must be ordered by severity, then by remediation priority.
+
+If the input is invalid or the review cannot be completed, return:
+
+```json
+{
+  "success": false,
+  "data": null,
+  "error": {
+    "code": "invalid_input | execution_error | review_error",
+    "message": "Short explanation of what blocked the QA review.",
+    "details": {}
+  }
+}
+```

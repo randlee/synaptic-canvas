@@ -2,6 +2,11 @@
 name: rust-development
 version: 0.11.0
 description: Develop, review, and explore Rust code with strict adherence to Pragmatic Rust Guidelines. Use when the user mentions Rust, .rs files, Cargo, clippy, rustdoc, or requests Rust architecture, implementation, or review.
+depends_on:
+  rust-architect: 0.x
+  rust-code-reviewer: 0.x
+  rust-code-explorer: 0.x
+  rust-developer: 0.x
 ---
 
 # Rust Development
@@ -37,21 +42,21 @@ where {date} is the guideline date/version.
 
 ## Agent Delegation
 
-Use these agents for Rust workflows. Always set `run_in_background` to `true` in the invocation payloads.
+Invoke these agents via Agent Runner using `.claude/agents/registry.yaml`. This keeps Rust delegation registry-enforced and version-audited instead of bypassing the installed agent registry.
 
 - `rust-architect`: Architecture and implementation blueprints
 - `rust-code-reviewer`: High-confidence Rust code reviews
 - `rust-code-explorer`: Feature tracing and architecture mapping
 - `rust-developer`: Rust implementation and refactoring
 
-Invocation template (always keep `run_in_background: true`):
-```json
-{
-  "description": "Short description of what the agent will do",
-  "prompt": "Detailed task description",
-  "subagent_type": "rust-architect | rust-code-reviewer | rust-code-explorer | rust-developer",
-  "run_in_background": true
-}
+Task tool template:
+
+```xml
+<invoke name="Task">
+<parameter name="subagent_type">rust-architect | rust-code-reviewer | rust-code-explorer | rust-developer</parameter>
+<parameter name="description">Short description of the Rust work</parameter>
+<parameter name="prompt">Detailed Rust task. Require the agent to return fenced JSON using its documented {success,data,error} envelope.</parameter>
+</invoke>
 ```
 
 ## When to Activate

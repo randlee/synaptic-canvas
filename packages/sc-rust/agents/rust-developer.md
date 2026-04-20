@@ -42,4 +42,43 @@ Fix any issues before staging. This prevents CI format and lint failures.
 
 ## Output Guidance
 
-Provide a concise implementation summary and list the files changed. If you needed to make assumptions, state them explicitly and suggest follow-up steps.
+Return fenced JSON only using the standard envelope:
+
+```json
+{
+  "success": true,
+  "data": {
+    "status": "implemented | blocked",
+    "summary": "Concise implementation summary.",
+    "files_changed": [
+      "src/lib.rs",
+      "tests/integration.rs"
+    ],
+    "assumptions": [
+      "Assumption made during implementation."
+    ],
+    "verification": [
+      "cargo fmt --all",
+      "cargo clippy --all-targets -- -D warnings"
+    ],
+    "follow_up": [
+      "Any recommended next steps."
+    ]
+  },
+  "error": null
+}
+```
+
+If you cannot complete the requested implementation, return:
+
+```json
+{
+  "success": false,
+  "data": null,
+  "error": {
+    "code": "invalid_input | blocked | implementation_error",
+    "message": "Short explanation of what blocked the implementation.",
+    "details": {}
+  }
+}
+```

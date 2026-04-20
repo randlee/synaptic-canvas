@@ -91,38 +91,57 @@ Return fenced JSON only.
 
 ```json
 {
-  "status": "pass | findings",
-  "review_mode": "sprint_review",
-  "practice_mode": "selected",
-  "practices_reviewed": ["RBP-001", "RBP-004"],
-  "findings": [
-    {
-      "id": "RBP-001",
-      "practice_id": "RBP-004",
-      "severity": "critical | important | minor",
-      "file": "src/lib.rs",
-      "line": 42,
-      "issue": "Semantic user id is represented as a raw String across public boundaries.",
-      "recommendation": "Introduce a validated newtype and move parsing/validation behind that type.",
-      "evidence": "Three public functions accept raw String and re-run the same validation logic."
-    }
-  ],
-  "summary": {
-    "total_findings": 1,
-    "by_severity": {
-      "critical": 0,
-      "important": 1,
-      "minor": 0
-    }
+  "success": true,
+  "data": {
+    "status": "pass | findings",
+    "review_mode": "sprint_review",
+    "practice_mode": "selected",
+    "practices_reviewed": ["RBP-001", "RBP-004"],
+    "findings": [
+      {
+        "id": "RBP-F001",
+        "practice_id": "RBP-004",
+        "severity": "critical | important | minor",
+        "file": "src/lib.rs",
+        "line": 42,
+        "issue": "Semantic user id is represented as a raw String across public boundaries.",
+        "recommendation": "Introduce a validated newtype and move parsing/validation behind that type.",
+        "evidence": "Three public functions accept raw String and re-run the same validation logic."
+      }
+    ],
+    "summary": {
+      "total_findings": 1,
+      "by_severity": {
+        "critical": 0,
+        "important": 1,
+        "minor": 0
+      }
+    },
+    "notes": [
+      "Focused on practices explicitly requested by assignment."
+    ]
   },
-  "notes": [
-    "Focused on practices explicitly requested by assignment."
-  ]
+  "error": null
 }
 ```
 
 Output rules:
-- `status` is `pass` only when no real findings remain in scope.
-- `status` is `findings` if any real finding exists.
+- `success` is `true` when the review completed, even if `data.status` is `findings`.
+- `data.status` is `pass` only when no real findings remain in scope.
+- `data.status` is `findings` if any real finding exists.
 - `practice_id` is required for every finding.
 - Findings must be ordered by severity, then remediation priority.
+
+If the input is invalid or the review cannot be completed, return:
+
+```json
+{
+  "success": false,
+  "data": null,
+  "error": {
+    "code": "invalid_input | review_error",
+    "message": "Short explanation of what blocked the best-practices review.",
+    "details": {}
+  }
+}
+```

@@ -48,10 +48,29 @@ For Rust phase-end review:
 
 Render Rust reviewer assignments with `sc-compose` from these installed templates:
 
+- `.claude/assets/sc-rust/quality-mgr/templates/rust-qa-assignment.json.j2`
 - `.claude/assets/sc-rust/quality-mgr/templates/rust-best-practices-assignment.json.j2`
 - `.claude/assets/sc-rust/quality-mgr/templates/rust-service-hardening-assignment.json.j2`
 
 The rendered output is JSON and should be passed directly to the worker prompt. Keep the worker prompts sparse; do not push orchestration logic down into the workers.
+
+### QA Assignment Example
+
+```bash
+_VARS=$(mktemp)
+cat > "$_VARS" <<'JSON'
+{
+  "review_mode": "sprint_review",
+  "worktree_path": "/absolute/path/to/worktree",
+  "review_targets": ["src/", "Cargo.toml"]
+}
+JSON
+sc-compose render \
+  --root .claude/assets/sc-rust/quality-mgr/templates \
+  --file rust-qa-assignment.json.j2 \
+  --var-file "$_VARS"
+rm -f "$_VARS"
+```
 
 ### Best-Practices Assignment Example
 

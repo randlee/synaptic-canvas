@@ -2,6 +2,11 @@
 name: rust-best-practices
 version: 0.11.0
 description: Review Rust architecture plans, crate boundaries, and code for structural design-pattern compliance. Use when the task involves typestate, sealed traits, error contracts, wrapper/newtype design, object safety, interior mutability, or other type-system-driven Rust correctness patterns that go beyond general style guidance.
+depends_on:
+  rust-best-practices-agent: 0.x
+  rust-architect: 0.x
+  rust-code-reviewer: 0.x
+  rust-code-explorer: 0.x
 ---
 
 # Rust Best Practices
@@ -79,12 +84,31 @@ This skill delegates pattern review work to existing Rust agents when specialize
 
 | Operation | Agent | Returns |
 |-----------|-------|---------|
-| Dedicated structural pattern review | `rust-best-practices-agent` | Fenced JSON findings keyed by stable practice id |
-| Architecture or plan review | `rust-architect` | Blueprint or design findings |
-| Code review for structural findings | `rust-code-reviewer` | Findings summary |
-| Pattern discovery across a codebase | `rust-code-explorer` | Located files and pattern usage |
+| Dedicated structural pattern review | `rust-best-practices-agent` | Fenced JSON `{success,data,error}` with findings keyed by stable practice id |
+| Architecture or plan review | `rust-architect` | Fenced JSON `{success,data,error}` blueprint or design findings |
+| Code review for structural findings | `rust-code-reviewer` | Fenced JSON `{success,data,error}` findings summary |
+| Pattern discovery across a codebase | `rust-code-explorer` | Fenced JSON `{success,data,error}` with located files and pattern usage |
 
-When invoking an agent, instruct it to load `rust-best-practices` and the specific pattern references relevant to the requested review.
+Invoke these agents via Agent Runner using `.claude/agents/registry.yaml`. Require them to load `rust-best-practices` and the specific pattern references relevant to the requested review.
+
+Dedicated `rust-best-practices-agent` assignment template:
+
+```json
+{
+  "review_mode": "doc_review | sprint_review | phase_end",
+  "worktree_path": "/absolute/path/to/worktree",
+  "review_targets": [
+    "src/",
+    "Cargo.toml"
+  ],
+  "practice_mode": "all | selected",
+  "practice_ids": [
+    "RBP-001",
+    "RBP-004"
+  ],
+  "notes": "optional context"
+}
+```
 
 ## Output Expectations
 

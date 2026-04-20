@@ -98,55 +98,77 @@ Return fenced JSON only.
 
 ```json
 {
-  "status": "pass | findings | skipped",
-  "review_mode": "sprint_review",
-  "service_indicators_found": ["tokio", "#[tokio::main]", "axum::Router"],
-  "topics_reviewed": ["config_validation", "timeouts", "graceful_shutdown"],
-  "findings": [
-    {
-      "id": "RSH-001",
-      "topic": "timeouts",
-      "severity": "critical | important | minor",
-      "file": "src/client.rs",
-      "line": 27,
-      "issue": "Shared reqwest client has no timeout configured.",
-      "recommendation": "Set explicit request and connection timeouts on the shared client builder.",
-      "evidence": "Client::builder() is used without timeout settings."
-    }
-  ],
-  "summary": {
-    "total_findings": 1,
-    "by_severity": {
-      "critical": 1,
-      "important": 0,
-      "minor": 0
-    }
+  "success": true,
+  "data": {
+    "status": "pass | findings | skipped",
+    "review_mode": "sprint_review",
+    "service_indicators_found": ["tokio", "#[tokio::main]", "axum::Router"],
+    "topics_reviewed": ["config_validation", "timeouts", "graceful_shutdown"],
+    "findings": [
+      {
+        "id": "RSH-001",
+        "topic": "timeouts",
+        "severity": "critical | important | minor",
+        "file": "src/client.rs",
+        "line": 27,
+        "issue": "Shared reqwest client has no timeout configured.",
+        "recommendation": "Set explicit request and connection timeouts on the shared client builder.",
+        "evidence": "Client::builder() is used without timeout settings."
+      }
+    ],
+    "summary": {
+      "total_findings": 1,
+      "by_severity": {
+        "critical": 1,
+        "important": 0,
+        "minor": 0
+      }
+    },
+    "notes": [
+      "Service-hardening review applied because service indicators were detected."
+    ]
   },
-  "notes": [
-    "Service-hardening review applied because service indicators were detected."
-  ]
+  "error": null
 }
 ```
 
-When `status` is `skipped`, return:
+When `data.status` is `skipped`, return:
 
 ```json
 {
-  "status": "skipped",
-  "review_mode": "doc_review",
-  "service_indicators_found": [],
-  "topics_reviewed": [],
-  "findings": [],
-  "summary": {
-    "total_findings": 0,
-    "by_severity": {
-      "critical": 0,
-      "important": 0,
-      "minor": 0
-    }
+  "success": true,
+  "data": {
+    "status": "skipped",
+    "review_mode": "doc_review",
+    "service_indicators_found": [],
+    "topics_reviewed": [],
+    "findings": [],
+    "summary": {
+      "total_findings": 0,
+      "by_severity": {
+        "critical": 0,
+        "important": 0,
+        "minor": 0
+      }
+    },
+    "notes": [
+      "No service indicators were detected in Cargo manifests or obvious entrypoints."
+    ]
   },
-  "notes": [
-    "No service indicators were detected in Cargo manifests or obvious entrypoints."
-  ]
+  "error": null
+}
+```
+
+If the input is invalid or the review cannot be completed, return:
+
+```json
+{
+  "success": false,
+  "data": null,
+  "error": {
+    "code": "invalid_input | review_error",
+    "message": "Short explanation of what blocked the service-hardening review.",
+    "details": {}
+  }
 }
 ```
