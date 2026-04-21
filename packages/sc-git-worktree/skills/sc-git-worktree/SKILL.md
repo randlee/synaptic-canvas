@@ -60,7 +60,7 @@ Details and the handoff contract: `references/stack-layers.md`. The stack model,
 
 ## Standards and Paths
 - Repo root: current directory.
-- Default worktree base: `../{{REPO_NAME}}-worktrees`.
+- Default worktree base: `../<repo-name>-worktrees` where `<repo-name>` is the basename of the repo root directory, derived at runtime via `basename $(git rev-parse --show-toplevel)` (e.g. repo `my-project` → `../my-project-worktrees`).
 - Worktrees live in `<worktree_base>/<branch>`.
 - Tracking file (if used): `<worktree_base>/worktree-tracking.jsonl` must be updated on create/scan/cleanup/abandon. Allow a toggle to disable tracking for repos that don't use it.
 - Naming: worktree directory = branch name; branch naming follows repo policy.
