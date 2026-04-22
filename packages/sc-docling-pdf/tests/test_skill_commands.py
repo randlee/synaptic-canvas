@@ -118,6 +118,8 @@ def test_installation_doc_includes_runtime_validation_and_transformers_ceiling()
     assert "Validate Advanced Runtime" in content
     assert 'transformers<5.5' in content
     assert "HybridMambaAttentionDynamicCache" in content
+    assert "First-Use Download Note" in content
+    assert "Fall back to 'CPU'" in content
 
 
 def test_profile_matrix_covers_all_named_profiles() -> None:

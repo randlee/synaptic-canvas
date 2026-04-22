@@ -210,6 +210,16 @@ docling-tools models download granitedocling
 docling-tools models download smoldocling
 ```
 
+### First-Use Download Note
+
+The first run of some advanced features may spend minutes downloading model weights before any output files appear:
+- `--pipeline vlm --vlm-model smoldocling`
+- `--enrich-picture-description`
+- `--enrich-chart-extraction`
+
+If the process is alive and `~/.cache/huggingface/hub` is growing, it is usually still making progress.
+For repeated use, pre-download models first.
+
 ---
 
 ## Verify Installation
@@ -303,6 +313,17 @@ python3 -c "import torch; print(torch.backends.mps.is_available())"
 # False → upgrade: pip install torch --upgrade
 ```
 
+**Docling warns `MPS is not available in the system. Fall back to 'CPU'` even though Torch reports MPS available:**
+
+Docling's accelerator check can still choose CPU in some environments.
+Treat this as a performance issue, not necessarily a broken installation.
+
+Recommended responses:
+- rerun with `--device cpu` if you need a predictable path
+- use `--device cuda` on NVIDIA systems if available
+- expect slower advanced runs on CPU, especially `smoldocling` and picture-description workflows
+- prefer pre-downloading models before retrying
+
 **`torch` version conflict:**
 ```bash
 python3 -m pip install -U docling
@@ -329,6 +350,17 @@ If you cannot change the environment immediately, fall back to:
 - baseline `rich` without enrichment flags
 
 These worked in local integration tests for this skill.
+
+**Advanced run appears to hang with no output files yet**
+
+Check whether first-use model downloads are still in progress:
+
+```bash
+find ~/.cache/huggingface/hub -type f -mmin -5 | head
+du -sh ~/.cache/huggingface/hub/models--*
+```
+
+If those directories are growing, wait or pre-download models before retrying.
 
 **Homebrew Python / externally managed environment error:**
 ```bash
