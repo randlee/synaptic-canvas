@@ -52,6 +52,10 @@ If validation fails:
 - fix the environment before using `vlm` or enrichment-heavy commands
 - fall back to `text`, `scan`, or baseline `rich` without enrichment flags
 
+If the document may need OCR:
+- read `references/profile-scan.md` before running the command
+- be explicit about `--ocr-lang` for the document language; for English-only scans, use `--ocr-lang en`
+
 ---
 
 ## Step 2 — Analyze the Document
@@ -111,7 +115,8 @@ docling INPUT.pdf --to md --to json --output ./out \
 
 # Scanned document
 docling INPUT.pdf --to md --output ./out \
-  --force-ocr --ocr-engine easyocr --device mps
+  --force-ocr --ocr-engine easyocr --ocr-lang en \
+  --image-export-mode placeholder --device mps
 ```
 
 For all other cases, follow Steps 1–4 above.

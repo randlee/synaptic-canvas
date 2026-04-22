@@ -15,6 +15,8 @@ docling INPUT.pdf \
   --output ./output \
   --force-ocr \
   --ocr-engine easyocr \
+  --ocr-lang en \
+  --image-export-mode placeholder \
   --table-mode accurate \
   --device mps
 ```
@@ -23,8 +25,12 @@ docling INPUT.pdf \
 |------|--------|
 | `--force-ocr` | Discards any embedded text; re-reads everything via OCR. Use when embedded text is garbage. |
 | `--ocr-engine easyocr` | Best general-purpose OCR. Handles mixed fonts and printed text better than Tesseract. |
+| `--ocr-lang en` | For English-only scans, keeps EasyOCR on the smaller `english_g2` recognition model. |
+| `--image-export-mode placeholder` | Prevents Markdown from ballooning with embedded base64 page images on image-only scans. |
 | `--table-mode accurate` | Tables in scans are harder to detect; accurate mode uses more model capacity. |
 | `--device mps` | OCR models are GPU-intensive; MPS gives significant speedup on Mac. |
+
+If you want extracted PNGs from the scan as well as OCR text, replace `placeholder` with `referenced`.
 
 ### `--ocr` vs `--force-ocr`
 
@@ -51,9 +57,13 @@ Install EasyOCR: `pip install docling[easyocr]`
 
 ### Language hints
 ```bash
---ocr-lang "eng,fra"   # EasyOCR codes: en, fr, de, zh, ja ...
+--ocr-lang "en,fr"     # EasyOCR codes: en, fr, de, zh, ja ...
 --ocr-lang "eng,fra"   # Tesseract codes: eng, fra, deu, chi_sim ...
 ```
+
+If you omit `--ocr-lang`, Docling's EasyOCR integration defaults to `fr,de,es,en`.
+That usually triggers the broader `latin_g2.pth` recognition model on first use.
+For English-only technical PDFs, `--ocr-lang en` is the faster and more deterministic path.
 
 ---
 
@@ -79,6 +89,9 @@ OCR is significantly slower than text extraction:
 - 100 pages: 5–20 minutes
 
 Optimize: `--num-threads 8 --page-batch-size 2`
+
+First use of EasyOCR may also spend time downloading model weights into `~/.EasyOCR/model/`.
+If the first run fails with `CERTIFICATE_VERIFY_FAILED`, use the manual prefetch steps in `installation.md`.
 
 ---
 

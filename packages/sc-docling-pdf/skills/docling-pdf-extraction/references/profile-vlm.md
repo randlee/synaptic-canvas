@@ -30,7 +30,7 @@ docling INPUT.pdf \
 |------|--------|
 | `--pipeline vlm` | Switches to Vision-Language Model pipeline |
 | `--vlm-model granite_docling` | Best quality; IBM Granite optimized for documents |
-| `--device mps` | **Critical** — VLM is very GPU-intensive; CPU is impractically slow |
+| `--device mps` | Recommended on Apple Silicon; use `cpu` if Docling refuses MPS in your environment |
 
 ---
 
@@ -52,6 +52,10 @@ cat ./probe-vlm/*.md | head -80
 ```
 
 Only use `granite_docling` if smol output is insufficient.
+
+Practical notes from local validation:
+- On Apple Silicon, Granite may warn `MLX not available on Apple Silicon, falling back to Transformers`; the run can still complete successfully.
+- Hugging Face may warn about unauthenticated requests. `HF_TOKEN` improves rate limits, but is not required for the public models used here.
 
 ---
 
@@ -79,7 +83,7 @@ docling INPUT.pdf \
 ```bash
 docling INPUT.pdf \
   --pipeline vlm --vlm-model granite_docling \
-  --force-ocr --ocr-engine easyocr \
+  --force-ocr --ocr-engine easyocr --ocr-lang en \
   --to md --output ./output --device mps
 ```
 

@@ -35,6 +35,8 @@ def test_no_stale_cli_forms_remain_in_skill_docs() -> None:
             [
                 "docling INPUT.pdf --to md --output ./out --device mps",
                 "run the advanced-runtime validation block from `references/installation.md`",
+                "--ocr-lang en",
+                "--image-export-mode placeholder",
             ],
         ),
         (
@@ -43,7 +45,16 @@ def test_no_stale_cli_forms_remain_in_skill_docs() -> None:
         ),
         (
             "skills/docling-pdf-extraction/references/profile-scan.md",
-            ["docling INPUT.pdf", "--to md", "--force-ocr", "--ocr-engine easyocr", "--table-mode accurate", "--device mps"],
+            [
+                "docling INPUT.pdf",
+                "--to md",
+                "--force-ocr",
+                "--ocr-engine easyocr",
+                "--ocr-lang en",
+                "--image-export-mode placeholder",
+                "--table-mode accurate",
+                "--device mps",
+            ],
         ),
         (
             "skills/docling-pdf-extraction/references/profile-rich.md",
@@ -94,6 +105,12 @@ def test_no_stale_cli_forms_remain_in_skill_docs() -> None:
                 "docling-tools models download smoldocling",
                 "docling https://arxiv.org/pdf/2408.09869 --output /tmp/docling-test",
                 "HybridMambaAttentionDynamicCache",
+                "~/.EasyOCR/model",
+                "CERTIFICATE_VERIFY_FAILED",
+                "english_g2.pth",
+                "latin_g2.pth",
+                "HF_TOKEN",
+                "MLX not available on Apple Silicon, falling back to Transformers",
             ],
         ),
     ],
@@ -116,10 +133,12 @@ def test_installation_doc_explains_cli_vs_downloader_model_names() -> None:
 def test_installation_doc_includes_runtime_validation_and_transformers_ceiling() -> None:
     content = _read("skills/docling-pdf-extraction/references/installation.md")
     assert "Validate Advanced Runtime" in content
+    assert "Validate OCR Runtime" in content
     assert 'transformers<5.5' in content
     assert "HybridMambaAttentionDynamicCache" in content
     assert "First-Use Download Note" in content
     assert "Fall back to 'CPU'" in content
+    assert "For English-only OCR, prefer: --ocr-lang en" in content
 
 
 def test_profile_matrix_covers_all_named_profiles() -> None:

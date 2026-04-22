@@ -1,6 +1,6 @@
 # Installation — Docling CLI
 
-Verified against the Docling CLI and docs current on 2026-04-19.
+Verified against the Docling CLI and docs current on 2026-04-22.
 
 ## Runtime Tiers
 
@@ -210,6 +210,43 @@ docling-tools models download granitedocling
 docling-tools models download smoldocling
 ```
 
+### EasyOCR Models (optional but practical for `scan`)
+
+EasyOCR caches weights under `~/.EasyOCR/model/`.
+For English-only OCR, the common pair is:
+- `craft_mlt_25k.pth` for detection
+- `english_g2.pth` for recognition
+
+If you omit `--ocr-lang`, Docling's EasyOCR integration defaults to `fr,de,es,en`,
+which usually pulls the broader `latin_g2.pth` recognition model instead.
+
+If EasyOCR's first-run downloader fails on TLS or corporate cert settings,
+manual prefetch works:
+
+```bash
+mkdir -p ~/.EasyOCR/model
+cd ~/.EasyOCR/model
+
+curl -L -o craft_mlt_25k.zip \
+  https://github.com/JaidedAI/EasyOCR/releases/download/pre-v1.1.6/craft_mlt_25k.zip
+unzip -o craft_mlt_25k.zip craft_mlt_25k.pth
+rm craft_mlt_25k.zip
+
+curl -L -o english_g2.zip \
+  https://github.com/JaidedAI/EasyOCR/releases/download/v1.3/english_g2.zip
+unzip -o english_g2.zip english_g2.pth
+rm english_g2.zip
+```
+
+For Docling's default EasyOCR language set, replace `english_g2.zip` with:
+
+```bash
+curl -L -o latin_g2.zip \
+  https://github.com/JaidedAI/EasyOCR/releases/download/v1.3/latin_g2.zip
+unzip -o latin_g2.zip latin_g2.pth
+rm latin_g2.zip
+```
+
 ### First-Use Download Note
 
 The first run of some advanced features may spend minutes downloading model weights before any output files appear:
@@ -285,6 +322,26 @@ print("\\nOK: advanced runtime looks compatible")
 PY
 ```
 
+## Validate OCR Runtime
+
+If you expect to use the `scan` profile, verify the OCR package and cache layout too:
+
+```bash
+python3 - <<'PY'
+from pathlib import Path
+import importlib.metadata as md
+
+cache = Path.home() / ".EasyOCR" / "model"
+print("easyocr:", md.version("easyocr"))
+print("easyocr_cache:", cache)
+for name in ["craft_mlt_25k.pth", "english_g2.pth", "latin_g2.pth"]:
+    print(name, (cache / name).exists())
+
+print("\\nFor English-only OCR, prefer: --ocr-lang en")
+print("If you omit --ocr-lang, Docling defaults to EasyOCR languages: fr,de,es,en")
+PY
+```
+
 ---
 
 ## Accelerator Flag by Platform
@@ -335,6 +392,25 @@ python3 -m pip install -U torch torchvision
 python3 -m pip install -U "docling[vlm]" "peft>=0.18.1"
 ```
 
+**EasyOCR first run fails with `CERTIFICATE_VERIFY_FAILED`:**
+
+EasyOCR downloads via Python's built-in `urllib`, not the `pip`/`certifi` path.
+If `pip install` works but OCR model download fails, manually prefetch the model files into:
+
+```text
+~/.EasyOCR/model/
+```
+
+Use the **EasyOCR Models** commands above, then rerun OCR with an explicit language:
+
+```bash
+docling INPUT.pdf --to md --output ./output \
+  --force-ocr --ocr-engine easyocr --ocr-lang en \
+  --image-export-mode placeholder --device cpu
+```
+
+That path was validated locally for this skill.
+
 **`ImportError: cannot import name 'HybridMambaAttentionDynamicCache'`**
 
 This indicates a `transformers` compatibility mismatch in the Granite-based runtime.
@@ -361,6 +437,14 @@ du -sh ~/.cache/huggingface/hub/models--*
 ```
 
 If those directories are growing, wait or pre-download models before retrying.
+
+**VLM warns `MLX not available on Apple Silicon, falling back to Transformers`:**
+
+This warning did not prevent successful `smoldocling` or `granite_docling` runs in local tests.
+Treat it as an execution-path warning, not an automatic failure.
+
+If Hugging Face also warns about unauthenticated requests, you can still proceed.
+Set `HF_TOKEN` only if you need higher rate limits or faster repeated downloads.
 
 **Homebrew Python / externally managed environment error:**
 ```bash

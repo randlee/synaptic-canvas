@@ -77,8 +77,8 @@ docling INPUT.pdf \
 
 Notes:
 - `--enrich-picture-classes` adds class labels such as `diagram`, `chart`, or `photograph`
-- `--enrich-picture-description` adds image captions and is usually the slowest flag
-- `--enrich-chart-extraction` converts supported charts into tabular JSON, but is the most dependency-sensitive enrichment step
+- `--enrich-picture-description` adds `description` annotations to picture objects in JSON and is usually the slowest flag
+- `--enrich-chart-extraction` is the most dependency-sensitive enrichment step; inspect the JSON after the run rather than assuming every detected chart produced numeric series output
 - If you hit a Granite / `transformers` import error, remove the enrichment flags and use the baseline command
 
 ---
