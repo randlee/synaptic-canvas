@@ -87,10 +87,16 @@ docling INPUT.pdf --pipeline vlm --vlm-model granite_docling \
 ## Performance
 
 OCR is significantly slower than text extraction:
+- 1 text-heavy scanned page: often 10–20 seconds once models are already present
 - 10 pages: 30–120 seconds
 - 100 pages: 5–20 minutes
 
 Optimize: `--num-threads 8 --page-batch-size 2`
+
+Recommended usage modes:
+- Quick usable OCR text: `scan` with `--image-export-mode placeholder`
+- More reviewable output with extracted images: `scan` with `--image-export-mode referenced`
+- Highest effort when reading order or layout is still poor: escalate to `vlm` with OCR retained
 
 First use of EasyOCR may also spend time downloading model weights into `~/.EasyOCR/model/`.
 If the first run fails with `CERTIFICATE_VERIFY_FAILED`, use the manual prefetch steps in `installation.md`.

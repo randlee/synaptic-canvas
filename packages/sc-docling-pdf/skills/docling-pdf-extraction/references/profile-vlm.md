@@ -53,6 +53,11 @@ cat ./probe-vlm/*.md | head -80
 
 Only use `granite_docling` if smol output is insufficient.
 
+Recommended order:
+1. baseline `rich`
+2. `vlm` with `smoldocling` for a usable quality check
+3. `vlm` with `granite_docling` only if Smol still misses structure or reading order
+
 Practical notes from local validation:
 - On Apple Silicon, Granite may warn `MLX not available on Apple Silicon, falling back to Transformers`; the run can still complete successfully.
 - Hugging Face may warn about unauthenticated requests. `HF_TOKEN` improves rate limits, but is not required for the public models used here.
@@ -125,6 +130,15 @@ python3 -m pip install -U "transformers<5.5" "peft>=0.18.1"
 | smoldocling | 50 | 15–40 min |
 | granite_docling | 10 | 8–20 min |
 | granite_docling | 50 | 45–120 min |
+
+Quick versus highest-quality guidance:
+- `smoldocling`: use first when you want a faster "is VLM enough to fix this?" answer
+- `granite_docling`: use for the final higher-quality pass on the hardest layouts
+- Both can spend additional time on first use downloading model weights
+
+Observed local behavior:
+- 2-page paper subsets completed successfully for both Smol and Granite
+- Granite generally took longer, but both preserved the title and abstract on the same subset
 
 Split large documents first:
 ```bash

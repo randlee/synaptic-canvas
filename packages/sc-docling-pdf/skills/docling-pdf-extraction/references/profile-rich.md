@@ -10,6 +10,11 @@
 **Recommended default for most engineering/product documents.**
 Start with the baseline command below. Add enrichment flags only after the runtime validation in `installation.md` passes.
 
+Recommended usage modes:
+- Quick but thorough / agent-default: baseline `rich`
+- Slower, more descriptive output: add enrichment flags selectively
+- Highest effort for broken layout: escalate to `vlm`, usually `smoldocling` before `granite_docling`
+
 ---
 
 ## Command
@@ -85,14 +90,18 @@ Notes:
 
 ## Performance
 
-Baseline `rich` without enrichment:
+Quick usable baseline:
+- 2–5 page datasheet subset: often 10–30 seconds
 - 20-page datasheet: typically tens of seconds on Apple Silicon, longer on CPU
 
-With `--enrich-picture-description`:
-- 20-page datasheet with 5–10 images: 2–5 minutes
+Slower richer variant:
+- `--enrich-picture-classes` / `--enrich-chart-extraction`: usually still in the tens of seconds to low minutes range
+- `--enrich-picture-description`: usually the longest `rich` flag; a 20-page datasheet with 5–10 images can take 2–5 minutes
 
-Without `--enrich-picture-description`:
-- Same document: typically 30–90 seconds
+Recommendation:
+- Start with baseline `rich`
+- Add only the enrichment flags you actually need
+- If layout is still poor, move to `vlm` rather than stacking every enrichment flag by default
 
 ---
 

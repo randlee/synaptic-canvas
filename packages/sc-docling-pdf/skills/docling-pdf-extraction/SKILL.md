@@ -71,18 +71,38 @@ Before choosing a profile, inspect the document to understand its content type.
 
 ## Step 3 — Select a Conversion Profile
 
-| Profile | Document Type | Reference |
-|---------|--------------|-----------|
-| `text`  | Digital PDF, prose only, no images needed | `references/profile-text.md` |
-| `scan`  | Scanned or photographed, bitmapped text | `references/profile-scan.md` |
-| `rich`  | Datasheet, spec sheet, tables + photographs + diagrams ⭐ | `references/profile-rich.md` |
-| `vlm`   | Complex layout, dense mixed content, poor standard results | `references/profile-vlm.md` |
-| `code`  | Technical docs with code blocks or math formulas | `references/profile-code.md` |
+| Profile | Document Type | Speed / Quality | Reference |
+|---------|--------------|-----------------|-----------|
+| `text`  | Digital PDF, prose only, no images needed | Fastest, lowest overhead | `references/profile-text.md` |
+| `scan`  | Scanned or photographed, bitmapped text | Slower; OCR-first | `references/profile-scan.md` |
+| `rich`  | Datasheet, spec sheet, tables + photographs + diagrams ⭐ | Best default: quick and thorough | `references/profile-rich.md` |
+| `vlm`   | Complex layout, dense mixed content, poor standard results | Slowest, highest layout recovery | `references/profile-vlm.md` |
+| `code`  | Technical docs with code blocks or math formulas | Moderate cost, structure-focused | `references/profile-code.md` |
 
 **Tie-breaking rules:**
 - Prefer `rich` over `text` — it's a superset with minimal overhead
 - Prefer `rich` over `vlm` — VLM is 3–10× slower; only escalate when standard output is poor
 - Profiles can be combined: `scan` + `rich` flags are additive
+
+### Runtime Guide
+
+Use this rule of thumb when choosing between "usable now" and "best quality later":
+
+| Need | Recommended path |
+|------|------------------|
+| Clean text fast | `text` |
+| Engineering PDF with tables / images, good enough for most agents | baseline `rich` |
+| Scan / photo, readable text first | `scan` |
+| Code / math fidelity matters | `code` |
+| Layout is wrong or content is missing after baseline `rich` / `scan` | `vlm` with `smoldocling` first |
+| Final pass for hardest layouts when runtime is acceptable | `vlm` with `granite_docling` |
+
+Practical timing guidance from local runs:
+- `text`: seconds
+- baseline `rich`: tens of seconds
+- `scan`: tens of seconds to a few minutes
+- `smoldocling`: minutes
+- `granite_docling`: usually the longest path; reserve for cases where the faster paths are not good enough
 
 ---
 
@@ -105,18 +125,22 @@ Output format is independent of conversion profile. Multiple formats can be gene
 # Fastest — clean digital PDF
 docling INPUT.pdf --to md --output ./out --device mps
 
-# Datasheet with tables + images (most common baseline)
+# Quick, thorough default for engineering PDFs
 docling INPUT.pdf --to md --to json --output ./out \
   --image-export-mode referenced \
   --table-mode accurate --device mps
 
-# Add enrichment flags only after Step 1 validation passes
+# Slower, richer variant after Step 1 validation passes
 # --enrich-picture-classes --enrich-picture-description --enrich-chart-extraction
 
-# Scanned document
+# Scanned document: usable OCR text without bloated Markdown
 docling INPUT.pdf --to md --output ./out \
   --force-ocr --ocr-engine easyocr --ocr-lang en \
   --image-export-mode placeholder --device mps
+
+# Complex layout rescue: try Smol first, Granite only if needed
+# docling INPUT.pdf --pipeline vlm --vlm-model smoldocling --to md --to json ...
+# docling INPUT.pdf --pipeline vlm --vlm-model granite_docling --to md --to json ...
 ```
 
 For all other cases, follow Steps 1–4 above.

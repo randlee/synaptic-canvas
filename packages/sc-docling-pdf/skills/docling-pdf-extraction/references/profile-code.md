@@ -82,6 +82,11 @@ Both enrichment models add modest overhead vs `text` profile:
 - 20-page doc: ~15–45 seconds (vs ~10s for `text`)
 - Per-formula and per-code-block passes are lightweight vs `--enrich-picture-description`
 
+Recommended usage modes:
+- Quick usable technical text: baseline `text`
+- Better code / formula structure without a big runtime jump: `code`
+- When layout is also broken: combine `code` enrichment with `vlm`, but expect VLM-level runtimes
+
 If enrichment is unavailable in the environment, use:
 
 ```bash
