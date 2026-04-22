@@ -31,6 +31,8 @@ docling INPUT.pdf \
 | `--device mps` | OCR models are GPU-intensive; MPS gives significant speedup on Mac. |
 
 If you want extracted PNGs from the scan as well as OCR text, replace `placeholder` with `referenced`.
+For evaluation, prefer a text-heavy body page over a title page or cover page.
+Cover pages often produce very little OCR text even when the OCR path is working correctly.
 
 ### `--ocr` vs `--force-ocr`
 

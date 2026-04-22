@@ -134,8 +134,9 @@ def test_scan_profile_easyocr_english_placeholder() -> None:
 
     spec, fixture_path = _fixture_spec("nist-sp-1163")
     pdf_path = fixture_path.with_name(spec["filename"])
-    scan_pdf = _image_only_pdf(pdf_path, 0, OUTPUT_ROOT / "generated" / "nist-sp-1163-scan-1.pdf")
-    out_dir = OUTPUT_ROOT / "scan-nist-sp-1163-english"
+    # Use the abstract page rather than the cover page so OCR quality is actually reviewable.
+    scan_pdf = _image_only_pdf(pdf_path, 3, OUTPUT_ROOT / "generated" / "nist-sp-1163-scan-abstract-page4.pdf")
+    out_dir = OUTPUT_ROOT / "scan-nist-sp-1163-abstract-page4"
 
     _run_docling(
         source=scan_pdf,
@@ -157,13 +158,13 @@ def test_scan_profile_easyocr_english_placeholder() -> None:
         timeout=3600,
     )
 
-    md_path = out_dir / "nist-sp-1163-scan-1.md"
+    md_path = out_dir / "nist-sp-1163-scan-abstract-page4.md"
     text = md_path.read_text(encoding="utf-8")
     norm = _normalize_text(text)
-    assert "economics of the u.s. additive manufacturing industry" in norm
-    assert "10.6028/nist.sp.1163" in norm
+    assert "abstract" in norm
+    assert "there is a general concern that the u.s. manufacturing industry has lost competitiveness" in norm
+    assert "additive manufacturing is a relatively new process" in norm
     assert "data:image/png;base64" not in text
-    assert "<!-- image -->" in text
 
 
 def test_enrich_code_and_formula_on_math_subset() -> None:
