@@ -1,28 +1,33 @@
 # SC Session Tracking API
 
 Defines the shared session-tracking contract used by launchers, hooks, and
-future ATM / schooks integrations.
+future `atm` / `schooks` integrations.
 
 ## Scope
 
-This is a repo-level API, not a package-local detail. It currently covers:
+This is a cross-repo API, not a package-local detail.
+
+Current participants:
 
 - `sc-launch-term`
 - the global Claude `SessionStart` hook
 
-The same contract is intended to be reused by:
+Planned participants:
 
 - `sc-launchpad`
-- `schooks`
 - `atm`
+- `schooks`
 
 ## Goal
 
 Create a stable, repo-local session record under `.sc/sessions/` as early as
-possible so launched AI sessions can be located later even if the launching
-agent loses context or never produces a final report.
+possible so launched AI sessions can be located later even if:
 
-## Session Record Root
+- the launching agent loses context
+- the final report is never written
+- the child AI session exits unexpectedly
+
+## Session Root
 
 Session records are stored under the project root:
 
@@ -30,13 +35,15 @@ Session records are stored under the project root:
 .sc/sessions/<tool>/
 ```
 
-Current Claude path:
+Examples:
 
 ```text
-.sc/sessions/claude/<timestamp>-<launch_id>.json
+.sc/sessions/claude/
+.sc/sessions/codex/
+.sc/sessions/gemini/
 ```
 
-## Core Fields
+## Record Schema
 
 Each session record should use this shape:
 
@@ -46,7 +53,7 @@ Each session record should use this shape:
   "tool": "claude",
   "model": "haiku",
   "description": "Optional caller-supplied description",
-  "native_session_id": "claude-session-uuid",
+  "native_session_id": "tool-native session or thread id",
   "project_dir": "/abs/project",
   "cwd": "/abs/project",
   "transcript_path": "/abs/transcript.jsonl",
@@ -84,6 +91,18 @@ Reasons:
 The session filename timestamp is derived from the ULID timestamp, not from a
 separately generated wall-clock value.
 
+Filename convention:
+
+```text
+<ulid-derived-timestamp>-<launch_id>.json
+```
+
+Example:
+
+```text
+20260426191228947-01KQ5KA78KC0JQD4S6V9CBDXDN.json
+```
+
 ## Environment Contract
 
 Launchers may pass these environment variables into child sessions:
@@ -106,55 +125,239 @@ Example:
 /repo/.sc/sessions/claude/20260426191522251-01JVY7YVYH57FHE2S2P0S8F3XW.json
 ```
 
-## Hook Rules
+## Common Rules
 
-For Claude `SessionStart` integration:
-
-1. If `SC_LAUNCH_ID` and `SC_SESSION_RECORD` are both present:
-   - validate that `SC_SESSION_RECORD` is under
-     `CLAUDE_PROJECT_DIR/.sc/sessions/claude/`
-   - write that exact file
-   - store `launch_id = SC_LAUNCH_ID`
-2. If either value is missing or invalid:
-   - fall back to the hook's default session-record behavior
-3. Hook behavior must remain fail-open
-
-Only fresh session sources create new records:
-
-- `startup`
-- `clear`
-
-These sources must not create a new record:
-
-- `resume`
-- `compact`
-
-## Launcher Rules
-
-For visible terminal launchers such as `sc-launch-term`:
-
-1. Generate `launch_id`
-2. Compute the exact `SC_SESSION_RECORD` path
-3. Pass both values into the child environment
-4. Launch the terminal
-5. Poll the exact session-record path for a short period
-6. Return the path and `launch_id` to the caller
-
-No directory diffing is required when `SC_SESSION_RECORD` is known in advance.
-
-## Validation
+### Validation
 
 Hooks must validate `SC_SESSION_RECORD` before writing:
 
 - absolute path only
-- must resolve under `CLAUDE_PROJECT_DIR/.sc/sessions/claude/`
+- must resolve under the expected project-local `.sc/sessions/<tool>/` root
 - must end in `.json`
 
 On validation failure:
 
 - ignore the override
 - use normal fallback behavior
-- do not fail the Claude session launch
+- do not fail the launched AI session
+
+### Lifecycle
+
+New session records should be created only for fresh session sources.
+
+Updates should reuse the existing record when the tool reuses the same native
+session id.
+
+### Best-Effort Completion
+
+If the launcher can observe completion, it should update:
+
+- `status`
+- `end_time`
+- `exit_code`
+- `error`
+- `report_path`
+
+This is expected to be richer in `sc-launchpad` than in visible terminal
+launches.
+
+## Claude
+
+### Capture Mechanism
+
+Primary capture mechanism:
+
+- global `SessionStart` hook
+
+Current implementation:
+
+- `~/.claude/scripts/session-start.py`
+
+The hook writes project-local session records under:
+
+```text
+CLAUDE_PROJECT_DIR/.sc/sessions/claude/
+```
+
+### Startup Data Available
+
+From the Claude `SessionStart` payload and hook environment, the following are
+available at startup:
+
+- `session_id`
+- `transcript_path`
+- `cwd`
+- `source`
+- `CLAUDE_PROJECT_DIR`
+
+The global hook now supports:
+
+- `SC_LAUNCH_ID`
+- `SC_SESSION_RECORD`
+
+If both values are present and valid, the hook writes the exact requested file.
+
+### Record-Creation Rules
+
+Current global hook behavior:
+
+- create a new record for `startup`
+- create a new record for `clear`
+- do not create a new record for `resume`
+- do not create a new record for `compact`
+
+### Validation Status
+
+Validated locally with real Claude `haiku` launches:
+
+- direct non-interactive launches
+- interactive `sc-launch-term` launches in `iTerm2`
+- interactive `sc-launch-term` launches in `Ghostty`
+
+Observed results:
+
+- `native_session_id` is available at startup
+- `transcript_path` points at the real Claude JSONL transcript under
+  `~/.claude/projects/...`
+- the project-local `.sc/sessions/claude/...json` record is written at startup
+
+### Notes
+
+- `CLAUDE_PROJECT_DIR` is the correct storage anchor. `cwd` must not determine
+  the record location because the session may later `cd` elsewhere.
+- For visible terminal launching, the launcher knows the exact session record
+  path before Claude starts.
+
+## Codex
+
+### Capture Mechanisms
+
+Primary capture mechanisms:
+
+- Codex `SessionStart` hook stdin payload
+- Codex startup output
+
+The `SessionStart` hook is enabled when `features.codex_hooks = true`.
+
+### Startup Data Available
+
+Confirmed from Codex source and live local tests.
+
+The `SessionStart` hook input contains:
+
+- `session_id`
+- `transcript_path`
+- `cwd`
+- `hook_event_name`
+- `model`
+- `permission_mode`
+- `source`
+
+Observed live local test output from `codex exec` also prints the session id on
+startup.
+
+### Hook Output Behavior
+
+Codex `SessionStart` hooks can inject context into the session in two ways:
+
+- plain non-JSON stdout
+- JSON output with `hookSpecificOutput.additionalContext`
+
+Both were validated locally:
+
+- plain stdout hook forced the reply to `MANGO`
+- JSON `additionalContext` hook forced the reply to `PAPAYA`
+
+That proves the hook can affect the session before the first model response.
+
+### Environment Behavior
+
+The hook receives normal subprocess environment variables, but the session does
+not read modified env vars back from the hook process.
+
+In practice:
+
+- hook-to-session influence works through stdout-derived context
+- not through hook subprocess env mutation
+
+This is an inference from Codex source plus live behavior, not a documented
+Codex guarantee.
+
+### Transcript Path
+
+In the live local test, the hook-provided `transcript_path` already existed
+when the hook ran.
+
+That means Codex session tracking can usually record both:
+
+- `native_session_id`
+- `transcript_path`
+
+at startup time.
+
+### Config Sources
+
+Codex hook configuration can be loaded from:
+
+- `hooks.json`
+- `config.toml`
+
+layered through:
+
+- system config
+- user `CODEX_HOME`
+- current working directory
+- tree-local `.codex/config.toml`
+- repo-root `.codex/config.toml`
+
+### Current Recommendation
+
+For Codex session tracking:
+
+1. generate `launch_id` before launch
+2. compute the target `.sc/sessions/codex/...json` record path
+3. use a startup hook to capture `session_id`, `cwd`, and `transcript_path`
+4. write the project-local record immediately
+
+## Gemini
+
+### Current Status
+
+Gemini support is part of the shared API surface, but the startup capture path
+has not yet been verified to the same standard as Claude and Codex.
+
+### Expected Requirements
+
+Gemini integration should eventually provide the same core fields:
+
+- stable `launch_id`
+- native session identifier, if exposed
+- transcript or log path, if exposed
+- project-local `.sc/sessions/gemini/...json` record
+
+### Planned Investigation
+
+The preferred capture order is:
+
+1. native startup hook or startup payload, if Gemini exposes one
+2. deterministic startup stdout or stderr parsing
+3. filesystem watcher only as a fallback
+
+Until this is confirmed, Gemini should be treated as API-planned but not yet
+fully validated.
+
+## Launcher Rules
+
+For visible terminal launchers such as `sc-launch-term`:
+
+1. generate `launch_id`
+2. compute the exact `SC_SESSION_RECORD` path
+3. pass both values into the child environment
+4. launch the terminal
+5. poll the exact session-record path for a short period
+6. return the path and `launch_id` to the caller
+
+When `SC_SESSION_RECORD` is known in advance, directory diffing is not needed.
 
 ## Current Status
 
@@ -163,9 +366,10 @@ Implemented now:
 - Claude project-local session records
 - `SC_LAUNCH_ID` / `SC_SESSION_RECORD` contract for `sc-launch-term`
 - global Claude hook support for the override path
+- Codex `SessionStart` input and context-injection behavior verified locally
 
 Planned next:
 
 - `sc-launchpad` integration
 - richer completion updates (`end_time`, `report_path`, `exit_code`)
-- Codex / Gemini native-session capture into the same record model
+- Gemini startup capture validation
