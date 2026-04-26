@@ -23,6 +23,7 @@ artifacts:
     - commands/sc/codex.md
     - commands/sc/gemini.md
   scripts:
+    - scripts/launch_term_shared.py
     - scripts/sc-term-launch.sh
     - scripts/sc-term-launch.py
 

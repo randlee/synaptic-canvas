@@ -14,6 +14,17 @@ import time
 import urllib.parse
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from launch_term_shared import (
+    normalize_passthrough_args,
+    quote_powershell,
+    quote_shell,
+    resolve_identity,
+    resolve_team,
+    shell_mode_for_terminal,
+)
+
 
 MAC_TERMINALS = ("iterm2", "ghostty", "wezterm", "warp", "terminal")
 WINDOWS_TERMINALS = ("wt", "warp")
@@ -353,38 +364,6 @@ def run_launch(terminal: str, shell_command: str, dir_path: str, use_tab: bool, 
         launch_windows_terminal(shell_command, dir_path, use_tab)
         return
     fail(f"Unhandled terminal backend: {terminal}")
-
-
-def quote_shell(value: str) -> str:
-    return shlex.quote(value)
-
-
-def quote_powershell(value: str) -> str:
-    return "'" + value.replace("'", "''") + "'"
-
-
-def shell_mode_for_terminal(terminal: str) -> str:
-    if terminal == "wt":
-        return "powershell"
-    return "posix"
-
-
-def normalize_passthrough_args(args: list[str]) -> list[str]:
-    if args and args[0] == "--":
-        return args[1:]
-    return args
-
-
-def resolve_identity(identity: str | None) -> str | None:
-    team = os.environ.get("ATM_TEAM", "").strip()
-    if team and not identity:
-        fail(f"ATM_TEAM is set to '{team}'; supply --identity <name> for this launch")
-    return identity
-
-
-def resolve_team() -> str | None:
-    team = os.environ.get("ATM_TEAM", "").strip()
-    return team or None
 
 
 def register_team_member(

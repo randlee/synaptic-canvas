@@ -233,7 +233,7 @@
         "commands": 5,
         "skills": 0,
         "agents": 0,
-        "scripts": 1,
+        "scripts": 3,
         "schemas": 0
       },
       "dependencies": [
@@ -631,17 +631,18 @@
   "metadata": {
     "registryVersion": "2.0.0",
     "schemaVersion": "1.0.0",
-    "totalPackages": 10,
-    "totalCommands": 8,
+    "totalPackages": 11,
+    "totalCommands": 13,
     "totalSkills": 10,
     "totalAgents": 34,
-    "totalScripts": 16,
+    "totalScripts": 19,
     "categories": {
       "automation": [
         "sc-delay-tasks",
         "sc-ci-automation",
         "sc-startup",
         "sc-commit-push-pr",
+        "sc-launch-term",
         "sc-launchpad"
       ],
       "development-tools": [
@@ -684,9 +685,10 @@
         "sc-kanban",
         "sc-startup",
         "sc-commit-push-pr",
+        "sc-launch-term",
         "sc-launchpad"
       ],
-      "total_packages": 10
+      "total_packages": 11
     }
   }
 }

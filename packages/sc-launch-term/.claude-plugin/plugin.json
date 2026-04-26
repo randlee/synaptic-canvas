@@ -16,6 +16,11 @@
     "codex",
     "gemini"
   ],
+  "scripts": [
+    "./scripts/launch_term_shared.py",
+    "./scripts/sc-term-launch.sh",
+    "./scripts/sc-term-launch.py"
+  ],
   "commands": [
     "./commands/sc/sonnet.md",
     "./commands/sc/haiku.md",
