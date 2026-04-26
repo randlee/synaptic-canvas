@@ -61,7 +61,7 @@ Examples:
 Run and stop:
 
 ```bash
-python3 .claude/scripts/sc-term-launch.py launch-claude-model sonnet "<resolved_dir>" <TERM_ARG> <TAB_ARG> <IDENTITY_ARG> <CLAUDE_ARG_TAIL>
+.claude/scripts/sc-term-launch.sh launch-claude-model sonnet "<resolved_dir>" <TERM_ARG> <TAB_ARG> <IDENTITY_ARG> <CLAUDE_ARG_TAIL>
 ```
 
 ### With `--tmux`
@@ -71,7 +71,7 @@ python3 .claude/scripts/sc-term-launch.py launch-claude-model sonnet "<resolved_
 **Step 7** — Check whether tmux session naming is available:
 
 ```bash
-python3 .claude/scripts/sc-term-launch.py check-session "<SESSION_NAME>"
+.claude/scripts/sc-term-launch.sh check-session "<SESSION_NAME>"
 ```
 
 Parse JSON: `{"available": bool, "exists": bool, "next_name": str}`.
@@ -81,7 +81,7 @@ If `available` is false, stop and tell the user that local tmux support is unava
 If `exists` is false, run and stop:
 
 ```bash
-python3 .claude/scripts/sc-term-launch.py launch-claude-model sonnet "<resolved_dir>" <TERM_ARG> <TAB_ARG> <IDENTITY_ARG> --tmux "<SESSION_NAME>" <CLAUDE_ARG_TAIL>
+.claude/scripts/sc-term-launch.sh launch-claude-model sonnet "<resolved_dir>" <TERM_ARG> <TAB_ARG> <IDENTITY_ARG> --tmux "<SESSION_NAME>" <CLAUDE_ARG_TAIL>
 ```
 
 If `exists` is true, use `AskUserQuestion` exactly once with:
@@ -94,20 +94,20 @@ Handle responses:
 
 **Connect (no Claude)**:
 ```bash
-python3 .claude/scripts/sc-term-launch.py attach "<SESSION_NAME>" <TERM_ARG> <TAB_ARG>
+.claude/scripts/sc-term-launch.sh attach "<SESSION_NAME>" <TERM_ARG> <TAB_ARG>
 ```
 
 **Connect + Claude pane**:
 ```bash
-python3 .claude/scripts/sc-term-launch.py attach-pane-claude-model "<SESSION_NAME>" sonnet --cwd "<resolved_dir>" <TERM_ARG> <TAB_ARG> <IDENTITY_ARG> <CLAUDE_ARG_TAIL>
+.claude/scripts/sc-term-launch.sh attach-pane-claude-model "<SESSION_NAME>" sonnet --cwd "<resolved_dir>" <TERM_ARG> <TAB_ARG> <IDENTITY_ARG> <CLAUDE_ARG_TAIL>
 ```
 
 **New session (`next_name`)**:
 ```bash
-python3 .claude/scripts/sc-term-launch.py launch-claude-model sonnet "<resolved_dir>" <TERM_ARG> <TAB_ARG> <IDENTITY_ARG> --tmux "<next_name>" <CLAUDE_ARG_TAIL>
+.claude/scripts/sc-term-launch.sh launch-claude-model sonnet "<resolved_dir>" <TERM_ARG> <TAB_ARG> <IDENTITY_ARG> --tmux "<next_name>" <CLAUDE_ARG_TAIL>
 ```
 
 **Enter custom name** — ask for the session name in a follow-up message, then:
 ```bash
-python3 .claude/scripts/sc-term-launch.py launch-claude-model sonnet "<resolved_dir>" <TERM_ARG> <TAB_ARG> <IDENTITY_ARG> --tmux "<custom_name>" <CLAUDE_ARG_TAIL>
+.claude/scripts/sc-term-launch.sh launch-claude-model sonnet "<resolved_dir>" <TERM_ARG> <TAB_ARG> <IDENTITY_ARG> --tmux "<custom_name>" <CLAUDE_ARG_TAIL>
 ```

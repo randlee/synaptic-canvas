@@ -47,6 +47,8 @@ Notes:
   `atm teams add-member <team> <identity> --model <model> --cwd <dir>` before
   starting the AI tool. Pane-specific `--pane-id` wiring is intentionally left
   as a future follow-up.
+- The installed entrypoint is `.claude/scripts/sc-term-launch.sh`, which resolves a
+  Python 3 launcher in this order: `python3`, `py -3`, then `python`.
 - `--tmux` requires `tmux` to be installed and available on `PATH`.
 
 ## Installation

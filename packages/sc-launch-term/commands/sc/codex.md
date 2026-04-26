@@ -63,7 +63,7 @@ Examples:
 Run and stop:
 
 ```bash
-python3 .claude/scripts/sc-term-launch.py launch "codex --yolo -c features.codex_hooks=true" "<resolved_dir>" <TERM_ARG> <TAB_ARG> <IDENTITY_ARG> --member-model codex
+.claude/scripts/sc-term-launch.sh launch "codex --yolo -c features.codex_hooks=true" "<resolved_dir>" <TERM_ARG> <TAB_ARG> <IDENTITY_ARG> --member-model codex
 ```
 
 ### With `--tmux`
@@ -73,7 +73,7 @@ python3 .claude/scripts/sc-term-launch.py launch "codex --yolo -c features.codex
 **Step 7** — Check whether tmux session naming is available:
 
 ```bash
-python3 .claude/scripts/sc-term-launch.py check-session "<SESSION_NAME>"
+.claude/scripts/sc-term-launch.sh check-session "<SESSION_NAME>"
 ```
 
 Parse JSON: `{"available": bool, "exists": bool, "next_name": str}`.
@@ -83,7 +83,7 @@ If `available` is false, stop and tell the user that local tmux support is unava
 If `exists` is false, run and stop:
 
 ```bash
-python3 .claude/scripts/sc-term-launch.py launch "codex --yolo -c features.codex_hooks=true" "<resolved_dir>" <TERM_ARG> <TAB_ARG> <IDENTITY_ARG> --member-model codex --tmux "<SESSION_NAME>"
+.claude/scripts/sc-term-launch.sh launch "codex --yolo -c features.codex_hooks=true" "<resolved_dir>" <TERM_ARG> <TAB_ARG> <IDENTITY_ARG> --member-model codex --tmux "<SESSION_NAME>"
 ```
 
 If `exists` is true, use `AskUserQuestion` exactly once with:
@@ -96,20 +96,20 @@ Handle responses:
 
 **Connect (no Codex)**:
 ```bash
-python3 .claude/scripts/sc-term-launch.py attach "<SESSION_NAME>" <TERM_ARG> <TAB_ARG>
+.claude/scripts/sc-term-launch.sh attach "<SESSION_NAME>" <TERM_ARG> <TAB_ARG>
 ```
 
 **Connect + Codex pane**:
 ```bash
-python3 .claude/scripts/sc-term-launch.py attach-pane "<SESSION_NAME>" "codex --yolo -c features.codex_hooks=true" --cwd "<resolved_dir>" <TERM_ARG> <TAB_ARG> <IDENTITY_ARG> --member-model codex
+.claude/scripts/sc-term-launch.sh attach-pane "<SESSION_NAME>" "codex --yolo -c features.codex_hooks=true" --cwd "<resolved_dir>" <TERM_ARG> <TAB_ARG> <IDENTITY_ARG> --member-model codex
 ```
 
 **New session (`next_name`)**:
 ```bash
-python3 .claude/scripts/sc-term-launch.py launch "codex --yolo -c features.codex_hooks=true" "<resolved_dir>" <TERM_ARG> <TAB_ARG> <IDENTITY_ARG> --member-model codex --tmux "<next_name>"
+.claude/scripts/sc-term-launch.sh launch "codex --yolo -c features.codex_hooks=true" "<resolved_dir>" <TERM_ARG> <TAB_ARG> <IDENTITY_ARG> --member-model codex --tmux "<next_name>"
 ```
 
 **Enter custom name** — ask for the session name in a follow-up message, then:
 ```bash
-python3 .claude/scripts/sc-term-launch.py launch "codex --yolo -c features.codex_hooks=true" "<resolved_dir>" <TERM_ARG> <TAB_ARG> <IDENTITY_ARG> --member-model codex --tmux "<custom_name>"
+.claude/scripts/sc-term-launch.sh launch "codex --yolo -c features.codex_hooks=true" "<resolved_dir>" <TERM_ARG> <TAB_ARG> <IDENTITY_ARG> --member-model codex --tmux "<custom_name>"
 ```
