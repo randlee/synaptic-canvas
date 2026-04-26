@@ -19,7 +19,8 @@ Read `.claude/skills/rust-service-hardening/references/framework-notes.md` only 
 
 ## Input Contract
 
-Input must be fenced JSON. Do not proceed with free-form input.
+Input must be JSON, either as a raw JSON object or fenced JSON. Do not proceed
+with free-form input.
 
 ```json
 {
