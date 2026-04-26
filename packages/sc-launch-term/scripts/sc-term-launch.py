@@ -17,6 +17,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from launch_term_shared import (
+    build_claude_session_record_path,
+    generate_ulid,
     normalize_passthrough_args,
     quote_powershell,
     quote_shell,
@@ -30,6 +32,7 @@ MAC_TERMINALS = ("iterm2", "ghostty", "wezterm", "warp", "terminal")
 WINDOWS_TERMINALS = ("wt", "warp")
 CLAUDE_MODELS = ("sonnet", "haiku", "opus")
 TEAM_MEMBER_MODELS = CLAUDE_MODELS + ("codex", "gemini")
+MACOS_SHELL_SETTLE_DELAY_SECONDS = 0.8
 
 
 def emit_json(data: dict) -> None:
@@ -208,6 +211,7 @@ def launch_iterm2(shell_command: str, use_tab: bool) -> None:
     tell current window
       create tab with default profile
       tell current session of current tab
+        delay {MACOS_SHELL_SETTLE_DELAY_SECONDS}
         write text "{escaped}"
       end tell
     end tell
@@ -218,6 +222,7 @@ end tell'''
   activate
   create window with default profile
   tell current session of current window
+    delay {MACOS_SHELL_SETTLE_DELAY_SECONDS}
     write text "{escaped}"
   end tell
 end tell'''
@@ -259,6 +264,7 @@ def launch_ghostty(shell_command: str, dir_path: str, use_tab: bool) -> None:
     set tabRef to new tab in win with configuration cfg
     set targetTerm to focused terminal of tabRef
   end if
+  delay {MACOS_SHELL_SETTLE_DELAY_SECONDS}
   input text "{escaped_cmd}" to targetTerm
   send key "enter" to targetTerm
   focus targetTerm
@@ -270,6 +276,7 @@ end tell'''
   set initial working directory of cfg to "{escaped_dir}"
   set win to new window with configuration cfg
   set targetTerm to focused terminal of selected tab of win
+  delay {MACOS_SHELL_SETTLE_DELAY_SECONDS}
   input text "{escaped_cmd}" to targetTerm
   send key "enter" to targetTerm
   focus targetTerm
@@ -415,28 +422,47 @@ def build_claude_argv(model: str, extra_args: list[str], teammate_mode: bool) ->
     return command
 
 
+def apply_env_prefix(
+    command: str,
+    terminal: str,
+    env_vars: dict[str, str],
+) -> str:
+    filtered = {key: value for key, value in env_vars.items() if value}
+    if not filtered:
+        return command
+    shell_mode = shell_mode_for_terminal(terminal)
+    if shell_mode == "powershell":
+        assignments: list[str] = []
+        for key, value in filtered.items():
+            assignments.append(f"$env:{key} = {quote_powershell(value)}")
+        return "; ".join(assignments + [command])
+    exports: list[str] = []
+    for key, value in filtered.items():
+        exports.append(f"export {key}={quote_shell(value)}")
+    return " && ".join(exports + [command])
+
+
 def apply_atm_env_prefix(
     command: str,
     terminal: str,
     team: str | None,
     identity: str | None,
 ) -> str:
-    if not team and not identity:
-        return command
-    shell_mode = shell_mode_for_terminal(terminal)
-    if shell_mode == "powershell":
-        assignments: list[str] = []
-        if team:
-            assignments.append(f"$env:ATM_TEAM = {quote_powershell(team)}")
-        if identity:
-            assignments.append(f"$env:ATM_IDENTITY = {quote_powershell(identity)}")
-        return "; ".join(assignments + [command])
-    exports: list[str] = []
+    env_vars: dict[str, str] = {}
     if team:
-        exports.append(f"export ATM_TEAM={quote_shell(team)}")
+        env_vars["ATM_TEAM"] = team
     if identity:
-        exports.append(f"export ATM_IDENTITY={quote_shell(identity)}")
-    return " && ".join(exports + [command])
+        env_vars["ATM_IDENTITY"] = identity
+    return apply_env_prefix(command, terminal, env_vars)
+
+
+def wait_for_path(path: Path, timeout_seconds: float = 5.0, interval_seconds: float = 0.25) -> bool:
+    deadline = time.monotonic() + timeout_seconds
+    while time.monotonic() < deadline:
+        if path.exists():
+            return True
+        time.sleep(interval_seconds)
+    return path.exists()
 
 
 def build_tmux_launch(command: str, dir_path: str, session_name: str) -> str:
@@ -530,14 +556,34 @@ def handle_launch_claude_model(args: argparse.Namespace) -> None:
     team = resolve_team()
     identity = resolve_identity(args.identity)
     register_team_member(team, identity, args.model, args.dir)
+    launch_id = generate_ulid()
+    session_record = build_claude_session_record_path(args.dir, launch_id)
     extra_args = normalize_passthrough_args(getattr(args, "claude_args", []))
     command = render_command_argv(
         build_claude_argv(args.model, extra_args, teammate_mode=bool(args.tmux)),
         terminal,
     )
-    command = apply_atm_env_prefix(command, terminal, team, identity)
+    env_vars = {
+        "SC_LAUNCH_ID": launch_id,
+        "SC_SESSION_RECORD": str(session_record),
+    }
+    if team:
+        env_vars["ATM_TEAM"] = team
+    if identity:
+        env_vars["ATM_IDENTITY"] = identity
+    command = apply_env_prefix(command, terminal, env_vars)
     shell_command = prepare_shell_command(terminal, command, args.dir, args.tmux)
     run_launch(terminal, shell_command, args.dir, args.tab, title_from_label(args.model))
+    emit_json(
+        {
+            "ok": True,
+            "tool": "claude",
+            "model": args.model,
+            "launch_id": launch_id,
+            "session_record": str(session_record),
+            "session_record_found": wait_for_path(session_record),
+        }
+    )
 
 
 def handle_attach_pane_claude_model(args: argparse.Namespace) -> None:
@@ -548,18 +594,38 @@ def handle_attach_pane_claude_model(args: argparse.Namespace) -> None:
     team = resolve_team()
     identity = resolve_identity(args.identity)
     register_team_member(team, identity, args.model, args.cwd)
+    launch_id = generate_ulid()
+    session_record = build_claude_session_record_path(args.cwd, launch_id)
     extra_args = normalize_passthrough_args(getattr(args, "claude_args", []))
     command = render_command_argv(
         build_claude_argv(args.model, extra_args, teammate_mode=True),
         terminal,
     )
-    command = apply_atm_env_prefix(command, terminal, team, identity)
+    env_vars = {
+        "SC_LAUNCH_ID": launch_id,
+        "SC_SESSION_RECORD": str(session_record),
+    }
+    if team:
+        env_vars["ATM_TEAM"] = team
+    if identity:
+        env_vars["ATM_IDENTITY"] = identity
+    command = apply_env_prefix(command, terminal, env_vars)
     run_launch(
         terminal,
         build_tmux_attach_pane(args.session, command),
         os.getcwd(),
         args.tab,
         f"sc-launch-term pane {args.session}",
+    )
+    emit_json(
+        {
+            "ok": True,
+            "tool": "claude",
+            "model": args.model,
+            "launch_id": launch_id,
+            "session_record": str(session_record),
+            "session_record_found": wait_for_path(session_record),
+        }
     )
 
 

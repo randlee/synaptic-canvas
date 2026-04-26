@@ -122,3 +122,26 @@ def test_resolve_identity_requires_value_when_atm_team_set(monkeypatch):
 def test_resolve_identity_accepts_value_when_atm_team_set(monkeypatch):
     monkeypatch.setenv("ATM_TEAM", "atm-core")
     assert sc_term_launch.resolve_identity("alice") == "alice"
+
+
+def test_generate_ulid_and_session_path():
+    launch_id = sc_term_launch.generate_ulid()
+    path = sc_term_launch.build_claude_session_record_path("/tmp/project", launch_id)
+    assert len(launch_id) == 26
+    assert path.parent == Path("/tmp/project").resolve() / ".sc" / "sessions" / "claude"
+    assert path.stem.endswith(launch_id)
+
+
+def test_apply_env_prefix_with_session_tracking_posix():
+    command = sc_term_launch.apply_env_prefix(
+        "claude --model haiku",
+        "ghostty",
+        {
+            "SC_LAUNCH_ID": "01JVY7YVYH57FHE2S2P0S8F3XW",
+            "SC_SESSION_RECORD": "/tmp/project/.sc/sessions/claude/session.json",
+        },
+    )
+    assert (
+        command
+        == "export SC_LAUNCH_ID=01JVY7YVYH57FHE2S2P0S8F3XW && export SC_SESSION_RECORD=/tmp/project/.sc/sessions/claude/session.json && claude --model haiku"
+    )

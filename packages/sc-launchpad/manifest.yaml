@@ -21,6 +21,10 @@ artifacts:
     - scripts/launchpad_shared.py
     - scripts/sc_launchpad_task.py
 
+shared_scripts:
+  - source: packages/shared/scripts/launchpad_shared.py
+    target: scripts/launchpad_shared.py
+
 requires:
   cli:
     - python3
