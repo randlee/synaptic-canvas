@@ -160,6 +160,27 @@
       "category": "tools"
     },
     {
+      "name": "sc-launch-term",
+      "source": "./packages/sc-launch-term",
+      "description": "Launch Claude, Codex, and Gemini sessions in supported terminals with platform-aware terminal autodetect and optional tmux session management.\n",
+      "version": "0.10.0",
+      "author": {
+        "name": "randlee"
+      },
+      "license": "MIT",
+      "keywords": [
+        "terminal",
+        "launcher",
+        "macos",
+        "windows",
+        "tmux",
+        "claude",
+        "codex",
+        "gemini"
+      ],
+      "category": "tools"
+    },
+    {
       "name": "sc-kanban",
       "source": "./packages/sc-kanban",
       "description": "Kanban state machine for Synaptic Canvas: backlog \u2192 board \u2192 done with gate validation, scrubbing, and shared board config (v0.7).\n",

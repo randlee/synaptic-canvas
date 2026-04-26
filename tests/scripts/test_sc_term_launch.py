@@ -1,0 +1,124 @@
+"""Tests for the sc-launch-term terminal launcher."""
+
+from pathlib import Path
+import importlib.util
+
+import pytest
+
+
+spec = importlib.util.spec_from_file_location(
+    "sc_term_launch",
+    Path(__file__).parent.parent.parent
+    / "packages"
+    / "sc-launch-term"
+    / "scripts"
+    / "sc-term-launch.py",
+)
+sc_term_launch = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(sc_term_launch)
+
+
+def test_build_claude_argv_without_tmux():
+    command = sc_term_launch.build_claude_argv("sonnet", ["--continue"], teammate_mode=False)
+    assert command == [
+        "claude",
+        "--model",
+        "sonnet",
+        "--dangerously-skip-permissions",
+        "--continue",
+    ]
+
+
+def test_build_claude_argv_with_tmux():
+    command = sc_term_launch.build_claude_argv(
+        "haiku",
+        ["--resume", "abc123"],
+        teammate_mode=True,
+    )
+    assert command == [
+        "claude",
+        "--model",
+        "haiku",
+        "--dangerously-skip-permissions",
+        "--teammate-mode",
+        "tmux",
+        "--resume",
+        "abc123",
+    ]
+
+
+def test_render_command_argv_posix_quotes_spaces():
+    command = sc_term_launch.render_command_argv(
+        ["claude", "--model", "opus", "--resume", "session with spaces"],
+        "wezterm",
+    )
+    assert command == "claude --model opus --resume 'session with spaces'"
+
+
+def test_render_command_argv_powershell_quotes_spaces():
+    command = sc_term_launch.render_command_argv(
+        ["claude", "--model", "sonnet", "--resume", "session with spaces"],
+        "wt",
+    )
+    assert command == "& 'claude' '--model' 'sonnet' '--resume' 'session with spaces'"
+
+
+def test_parser_collects_passthrough_claude_args():
+    argv, passthrough = sc_term_launch.split_passthrough_argv(
+        [
+            "launch-claude-model",
+            "sonnet",
+            "/tmp/project",
+            "--terminal",
+            "wezterm",
+            "--",
+            "--continue",
+            "--resume",
+            "abc123",
+        ]
+    )
+    parser = sc_term_launch.build_parser()
+    args = parser.parse_args(argv)
+    assert args.subcommand == "launch-claude-model"
+    assert args.model == "sonnet"
+    assert args.dir == "/tmp/project"
+    assert args.terminal == "wezterm"
+    assert passthrough == ["--continue", "--resume", "abc123"]
+
+
+def test_apply_atm_env_prefix_posix():
+    command = sc_term_launch.apply_atm_env_prefix(
+        "claude --model sonnet",
+        "wezterm",
+        "annotations-test",
+        "alice",
+    )
+    assert (
+        command
+        == "export ATM_TEAM=annotations-test && export ATM_IDENTITY=alice && claude --model sonnet"
+    )
+
+
+def test_apply_atm_env_prefix_powershell():
+    command = sc_term_launch.apply_atm_env_prefix(
+        "& 'claude' '--model' 'sonnet'",
+        "wt",
+        "annotations-test",
+        "alice",
+    )
+    assert (
+        command
+        == "$env:ATM_TEAM = 'annotations-test'; $env:ATM_IDENTITY = 'alice'; & 'claude' '--model' 'sonnet'"
+    )
+
+
+def test_resolve_identity_requires_value_when_atm_team_set(monkeypatch):
+    monkeypatch.setenv("ATM_TEAM", "atm-core")
+    with pytest.raises(SystemExit) as exc_info:
+        sc_term_launch.resolve_identity(None)
+    assert exc_info.value.code == 1
+
+
+def test_resolve_identity_accepts_value_when_atm_team_set(monkeypatch):
+    monkeypatch.setenv("ATM_TEAM", "atm-core")
+    assert sc_term_launch.resolve_identity("alice") == "alice"

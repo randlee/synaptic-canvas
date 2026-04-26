@@ -1,7 +1,7 @@
 {
   "$schema": "https://yourcompany.github.io/schemas/package-registry.schema.json",
   "version": "2.0.0",
-  "generated": "2026-04-20T04:35:16Z",
+  "generated": "2026-04-26T05:19:45Z",
   "repo": "randlee/synaptic-canvas",
   "marketplace": {
     "name": "Synaptic Canvas",
@@ -203,6 +203,44 @@
       ],
       "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-github-issue/CHANGELOG.md",
       "lastUpdated": "2026-04-20",
+      "dependents": []
+    },
+    "sc-launch-term": {
+      "name": "sc-launch-term",
+      "version": "0.10.0",
+      "status": "beta",
+      "tier": 0,
+      "description": "Launch Claude, Codex, and Gemini sessions in supported terminals with platform-aware terminal autodetect and optional tmux session management.\n",
+      "github": "randlee/synaptic-canvas",
+      "repo": "https://github.com/randlee/synaptic-canvas",
+      "path": "packages/sc-launch-term",
+      "readme": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-launch-term/README.md",
+      "license": "MIT",
+      "author": {
+        "name": "randlee"
+      },
+      "tags": [
+        "terminal",
+        "launcher",
+        "macos",
+        "windows",
+        "tmux",
+        "claude",
+        "codex",
+        "gemini"
+      ],
+      "artifacts": {
+        "commands": 5,
+        "skills": 0,
+        "agents": 0,
+        "scripts": 1,
+        "schemas": 0
+      },
+      "dependencies": [
+        "python3"
+      ],
+      "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-launch-term/CHANGELOG.md",
+      "lastUpdated": "2026-04-25",
       "dependents": []
     },
     "sc-kanban": {
