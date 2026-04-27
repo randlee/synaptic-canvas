@@ -18,6 +18,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from launch_term_shared import (
     build_claude_session_record_path,
+    build_codex_session_record_path,
     generate_ulid,
     normalize_passthrough_args,
     quote_powershell,
@@ -505,6 +506,16 @@ def title_from_label(label: str) -> str:
     return f"sc-launch-term {label}"
 
 
+def session_tracking_for_member_model(
+    member_model: str | None,
+    dir_path: str,
+) -> tuple[str, Path] | tuple[None, None]:
+    if member_model == "codex":
+        launch_id = generate_ulid()
+        return launch_id, build_codex_session_record_path(dir_path, launch_id)
+    return None, None
+
+
 def handle_launch(args: argparse.Namespace) -> None:
     terminal = resolve_terminal(args.terminal)
     if args.tmux and not tmux_available():
@@ -513,9 +524,28 @@ def handle_launch(args: argparse.Namespace) -> None:
     team = resolve_team()
     identity = resolve_identity(args.identity)
     register_team_member(team, identity, args.member_model, args.dir)
-    command = apply_atm_env_prefix(args.command, terminal, team, identity)
+    launch_id, session_record = session_tracking_for_member_model(args.member_model, args.dir)
+    env_vars: dict[str, str] = {}
+    if launch_id and session_record:
+        env_vars["SC_LAUNCH_ID"] = launch_id
+        env_vars["SC_SESSION_RECORD"] = str(session_record)
+    if team:
+        env_vars["ATM_TEAM"] = team
+    if identity:
+        env_vars["ATM_IDENTITY"] = identity
+    command = apply_env_prefix(args.command, terminal, env_vars)
     shell_command = prepare_shell_command(terminal, command, args.dir, args.tmux)
     run_launch(terminal, shell_command, args.dir, args.tab, title_from_command(args.command))
+    if launch_id and session_record:
+        emit_json(
+            {
+                "ok": True,
+                "tool": args.member_model,
+                "launch_id": launch_id,
+                "session_record": str(session_record),
+                "session_record_found": wait_for_path(session_record),
+            }
+        )
 
 
 def handle_attach(args: argparse.Namespace) -> None:
@@ -538,7 +568,16 @@ def handle_attach_pane(args: argparse.Namespace) -> None:
     team = resolve_team()
     identity = resolve_identity(args.identity)
     register_team_member(team, identity, args.member_model, args.cwd)
-    command = apply_atm_env_prefix(args.command, terminal, team, identity)
+    launch_id, session_record = session_tracking_for_member_model(args.member_model, args.cwd)
+    env_vars: dict[str, str] = {}
+    if launch_id and session_record:
+        env_vars["SC_LAUNCH_ID"] = launch_id
+        env_vars["SC_SESSION_RECORD"] = str(session_record)
+    if team:
+        env_vars["ATM_TEAM"] = team
+    if identity:
+        env_vars["ATM_IDENTITY"] = identity
+    command = apply_env_prefix(args.command, terminal, env_vars)
     run_launch(
         terminal,
         build_tmux_attach_pane(args.session, command),
@@ -546,6 +585,16 @@ def handle_attach_pane(args: argparse.Namespace) -> None:
         args.tab,
         f"sc-launch-term pane {args.session}",
     )
+    if launch_id and session_record:
+        emit_json(
+            {
+                "ok": True,
+                "tool": args.member_model,
+                "launch_id": launch_id,
+                "session_record": str(session_record),
+                "session_record_found": wait_for_path(session_record),
+            }
+        )
 
 
 def handle_launch_claude_model(args: argparse.Namespace) -> None:

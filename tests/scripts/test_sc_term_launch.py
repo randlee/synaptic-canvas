@@ -132,6 +132,27 @@ def test_generate_ulid_and_session_path():
     assert path.stem.endswith(launch_id)
 
 
+def test_generate_codex_session_path():
+    launch_id = sc_term_launch.generate_ulid()
+    path = sc_term_launch.build_codex_session_record_path("/tmp/project", launch_id)
+    assert path.parent == Path("/tmp/project").resolve() / ".sc" / "sessions" / "codex"
+    assert path.stem.endswith(launch_id)
+
+
+def test_session_tracking_for_codex_member_model():
+    launch_id, session_record = sc_term_launch.session_tracking_for_member_model("codex", "/tmp/project")
+    assert launch_id is not None
+    assert session_record is not None
+    assert session_record.parent == Path("/tmp/project").resolve() / ".sc" / "sessions" / "codex"
+    assert session_record.stem.endswith(launch_id)
+
+
+def test_session_tracking_for_non_codex_member_model():
+    launch_id, session_record = sc_term_launch.session_tracking_for_member_model("gemini", "/tmp/project")
+    assert launch_id is None
+    assert session_record is None
+
+
 def test_apply_env_prefix_with_session_tracking_posix():
     command = sc_term_launch.apply_env_prefix(
         "claude --model haiku",

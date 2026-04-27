@@ -11,6 +11,7 @@ Current participants:
 
 - `sc-launch-term`
 - the global Claude `SessionStart` hook
+- the global Codex `SessionStart` hook
 
 Planned participants:
 
@@ -230,6 +231,12 @@ Observed results:
 
 ## Codex
 
+### Validated Version
+
+The behavior in this section was verified locally against:
+
+- `codex-cli 0.125.0`
+
 ### Capture Mechanisms
 
 Primary capture mechanisms:
@@ -238,6 +245,12 @@ Primary capture mechanisms:
 - Codex startup output
 
 The `SessionStart` hook is enabled when `features.codex_hooks = true`.
+
+Current global implementation:
+
+- `~/.codex/scripts/session-start.py`
+- `~/.codex/hooks.json`
+- `~/.codex/config.toml` with `features.codex_hooks = true`
 
 ### Startup Data Available
 
@@ -270,6 +283,14 @@ Both were validated locally:
 
 That proves the hook can affect the session before the first model response.
 
+The current global Codex hook uses structured JSON output with:
+
+- `hookSpecificOutput.hookEventName = "SessionStart"`
+- `hookSpecificOutput.additionalContext = "SESSION_ID=..."`
+
+This mirrors the Claude-side pattern of surfacing the native session id at
+startup, but uses Codex's hook output contract instead of plain stdout.
+
 ### Environment Behavior
 
 The hook receives normal subprocess environment variables, but the session does
@@ -295,6 +316,40 @@ That means Codex session tracking can usually record both:
 
 at startup time.
 
+### Validation Status
+
+Validated locally with both direct Codex execution and the global hook:
+
+- `codex exec` received `SESSION_ID=...` in startup context
+- the global Codex hook wrote project-local records under
+  `.sc/sessions/codex/...`
+- the written record contained:
+  - `native_session_id`
+  - `model`
+  - `project_dir`
+  - `cwd`
+  - `transcript_path`
+
+Validated locally from a visible terminal launch as well:
+
+- `sc-launch-term` successfully launched Codex with
+  `features.codex_hooks=true`
+- the terminal showed the hook-injected startup context line:
+  - `SESSION_ID=<codex-session-id> (starting fresh)`
+
+What is proven today:
+
+- the global Codex `SessionStart` hook fires
+- Codex accepts startup context injection through the hook
+- the hook can persist `.sc/sessions/codex/...` records at startup
+
+What is separate launcher work:
+
+- having `sc-launch-term` always pass `SC_LAUNCH_ID` / `SC_SESSION_RECORD`
+  for Codex the same way it does for Claude
+- having the launched Codex session reliably honor that exact precomputed file
+  path for every terminal backend
+
 ### Config Sources
 
 Codex hook configuration can be loaded from:
@@ -318,6 +373,8 @@ For Codex session tracking:
 2. compute the target `.sc/sessions/codex/...json` record path
 3. use a startup hook to capture `session_id`, `cwd`, and `transcript_path`
 4. write the project-local record immediately
+5. prefer structured `additionalContext` output for `SESSION_ID=...` injection
+   instead of relying on plain stdout parsing
 
 ## Gemini
 

@@ -86,6 +86,14 @@ def session_filename_from_launch_id(launch_id: str) -> str:
     return f"{prefix}-{launch_id}.json"
 
 
-def build_claude_session_record_path(project_dir: str | Path, launch_id: str) -> Path:
+def build_session_record_path(project_dir: str | Path, tool: str, launch_id: str) -> Path:
     root = Path(project_dir).expanduser().resolve()
-    return root / ".sc" / "sessions" / "claude" / session_filename_from_launch_id(launch_id)
+    return root / ".sc" / "sessions" / tool / session_filename_from_launch_id(launch_id)
+
+
+def build_claude_session_record_path(project_dir: str | Path, launch_id: str) -> Path:
+    return build_session_record_path(project_dir, "claude", launch_id)
+
+
+def build_codex_session_record_path(project_dir: str | Path, launch_id: str) -> Path:
+    return build_session_record_path(project_dir, "codex", launch_id)
