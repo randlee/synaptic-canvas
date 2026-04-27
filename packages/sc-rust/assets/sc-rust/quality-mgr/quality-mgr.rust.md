@@ -88,7 +88,7 @@ JSON
 sc-compose render \
   --root .claude/assets/sc-rust/quality-mgr/templates \
   --file rust-best-practices-assignment.json.j2 \
-  --var-file "$_VARS" \
+  --var-file "$_VARS"
 rm -f "$_VARS"
 ```
 
@@ -106,7 +106,7 @@ JSON
 sc-compose render \
   --root .claude/assets/sc-rust/quality-mgr/templates \
   --file rust-service-hardening-assignment.json.j2 \
-  --var-file "$_VARS" \
+  --var-file "$_VARS"
 rm -f "$_VARS"
 ```
 
