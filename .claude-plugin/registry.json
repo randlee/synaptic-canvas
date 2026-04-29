@@ -16,12 +16,12 @@
       "category": "tools",
       "artifacts": {
         "commands": 0,
-        "skills": 3,
+        "skills": 23,
         "agents": 0,
         "scripts": 0,
         "schemas": 0
       },
-      "lastUpdated": "2026-04-20T04:35:16.788270+00:00"
+      "lastUpdated": "2026-04-28T20:57:09.931997"
     },
     {
       "name": "sc-ci-automation",
@@ -38,7 +38,7 @@
         "scripts": 1,
         "schemas": 0
       },
-      "lastUpdated": "2026-04-20T04:35:16.789239+00:00"
+      "lastUpdated": "2026-04-28T20:57:09.932851"
     },
     {
       "name": "sc-codex",
@@ -52,10 +52,10 @@
         "commands": 1,
         "skills": 1,
         "agents": 1,
-        "scripts": 2,
+        "scripts": 9,
         "schemas": 2
       },
-      "lastUpdated": "2026-04-20T04:35:16.790035+00:00"
+      "lastUpdated": "2026-04-28T20:57:09.933546"
     },
     {
       "name": "sc-coding-agent-hardening",
@@ -67,12 +67,12 @@
       "category": "tools",
       "artifacts": {
         "commands": 0,
-        "skills": 1,
+        "skills": 5,
         "agents": 0,
         "scripts": 0,
         "schemas": 0
       },
-      "lastUpdated": "2026-04-20T04:35:16.790514+00:00"
+      "lastUpdated": "2026-04-28T20:57:09.934001"
     },
     {
       "name": "sc-commit-push-pr",
@@ -89,7 +89,7 @@
         "scripts": 9,
         "schemas": 0
       },
-      "lastUpdated": "2026-04-20T04:35:16.791173+00:00"
+      "lastUpdated": "2026-04-28T20:57:09.934600"
     },
     {
       "name": "sc-delay-tasks",
@@ -106,7 +106,7 @@
         "scripts": 2,
         "schemas": 0
       },
-      "lastUpdated": "2026-04-20T04:35:16.791779+00:00"
+      "lastUpdated": "2026-04-28T20:57:09.935179"
     },
     {
       "name": "sc-git-worktree",
@@ -123,7 +123,7 @@
         "scripts": 7,
         "schemas": 0
       },
-      "lastUpdated": "2026-04-20T04:35:16.792776+00:00"
+      "lastUpdated": "2026-04-28T20:57:09.936225"
     },
     {
       "name": "sc-github-issue",
@@ -140,7 +140,7 @@
         "scripts": 1,
         "schemas": 0
       },
-      "lastUpdated": "2026-04-20T04:35:16.793861+00:00"
+      "lastUpdated": "2026-04-28T20:57:09.937297"
     },
     {
       "name": "sc-kanban",
@@ -153,11 +153,11 @@
       "artifacts": {
         "commands": 1,
         "skills": 1,
-        "agents": 4,
+        "agents": 8,
         "scripts": 5,
         "schemas": 0
       },
-      "lastUpdated": "2026-04-20T04:35:16.794575+00:00"
+      "lastUpdated": "2026-04-28T20:57:09.937938"
     },
     {
       "name": "sc-manage",
@@ -174,7 +174,7 @@
         "scripts": 8,
         "schemas": 0
       },
-      "lastUpdated": "2026-04-20T04:35:16.795262+00:00"
+      "lastUpdated": "2026-04-28T20:57:09.939601"
     },
     {
       "name": "sc-repomix-nuget",
@@ -186,12 +186,12 @@
       "category": "tools",
       "artifacts": {
         "commands": 1,
-        "skills": 1,
+        "skills": 3,
         "agents": 3,
         "scripts": 3,
         "schemas": 0
       },
-      "lastUpdated": "2026-04-20T04:35:16.795931+00:00"
+      "lastUpdated": "2026-04-28T20:57:09.941192"
     },
     {
       "name": "sc-roslyn-diff",
@@ -208,7 +208,7 @@
         "scripts": 6,
         "schemas": 0
       },
-      "lastUpdated": "2026-04-20T04:35:16.796629+00:00"
+      "lastUpdated": "2026-04-28T20:57:09.941795"
     },
     {
       "name": "sc-rust",
@@ -220,12 +220,12 @@
       "category": "tools",
       "artifacts": {
         "commands": 0,
-        "skills": 3,
+        "skills": 25,
         "agents": 7,
         "scripts": 0,
         "schemas": 0
       },
-      "lastUpdated": "2026-04-20T04:35:16.797723+00:00"
+      "lastUpdated": "2026-04-28T20:57:09.942965"
     },
     {
       "name": "sc-startup",
@@ -238,11 +238,11 @@
       "artifacts": {
         "commands": 1,
         "skills": 1,
-        "agents": 2,
+        "agents": 4,
         "scripts": 1,
         "schemas": 0
       },
-      "lastUpdated": "2026-04-20T04:35:16.798463+00:00"
+      "lastUpdated": "2026-04-28T20:57:09.943623"
     },
     {
       "name": "sc-launch-term",
@@ -259,7 +259,7 @@
         "scripts": 3,
         "schemas": 0
       },
-      "lastUpdated": "2026-04-26T00:00:00+00:00"
+      "lastUpdated": "2026-04-28T20:57:09.938449"
     },
     {
       "name": "sc-launchpad",
@@ -276,17 +276,34 @@
         "scripts": 2,
         "schemas": 0
       },
-      "lastUpdated": "2026-04-25T23:48:47.713457"
+      "lastUpdated": "2026-04-28T20:57:09.939012"
+    },
+    {
+      "name": "sc-refactory",
+      "version": "0.1.0",
+      "description": "Design and install a rule-driven refactoring toolkit with startup policy injection, approved-fix lookup, curated rule authoring, and named-teammate orchestration for large migration campaigns.\n",
+      "author": "synaptic-canvas",
+      "license": "MIT",
+      "keywords": [],
+      "category": "tools",
+      "artifacts": {
+        "commands": 5,
+        "skills": 8,
+        "agents": 7,
+        "scripts": 10,
+        "schemas": 0
+      },
+      "lastUpdated": "2026-04-28T20:57:09.940607"
     }
   ],
   "metadata": {
-    "totalPackages": 16,
-    "totalCommands": 15,
-    "totalSkills": 19,
-    "totalAgents": 45,
-    "totalScripts": 50,
+    "totalPackages": 17,
+    "totalCommands": 20,
+    "totalSkills": 75,
+    "totalAgents": 58,
+    "totalScripts": 67,
     "totalSchemas": 2
   },
-  "generated": "2026-04-25T23:48:47.713478",
-  "lastUpdated": "2026-04-25T23:48:47.713479"
+  "generated": "2026-04-28T20:57:09.943637",
+  "lastUpdated": "2026-04-28T20:57:09.943638"
 }

@@ -260,7 +260,7 @@ def get_package_dirs(packages_dir: Path) -> list[Path]:
     return [
         d
         for d in packages_dir.iterdir()
-        if d.is_dir() and not d.name.startswith(".") and d.name != "shared"
+        if d.is_dir() and not d.name.startswith(".") and d.name not in {"shared", "docs"}
     ]
 
 
@@ -614,8 +614,8 @@ Examples:
     parser.add_argument(
         "--registry",
         type=Path,
-        default=Path("docs/registries/nuget/registry.json"),
-        help="Path to registry.json (default: docs/registries/nuget/registry.json)",
+        default=Path(".claude-plugin/registry.json"),
+        help="Path to registry.json (default: .claude-plugin/registry.json)",
     )
 
     args = parser.parse_args()
