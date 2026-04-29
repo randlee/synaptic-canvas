@@ -59,6 +59,16 @@ Notes:
 
 This package is intended for global command installation under `~/.claude/`.
 
+## Security and Runtime Notes
+
+- The commands launch locally installed CLIs only. They do not download code or open network connections by themselves.
+- `/sc:sonnet`, `/sc:haiku`, and `/sc:opus` invoke the local `claude` CLI with `--dangerously-skip-permissions`, so use this package only in environments where that launch model is acceptable.
+- `/sc:codex` and `/sc:gemini` forward to the local `codex` and `gemini` executables on `PATH`.
+- When `ATM_TEAM` is present, the launcher requires `--identity <name>` and exports both `ATM_TEAM` and `ATM_IDENTITY` into the child session.
+- In ATM teammate mode, the launcher also runs `atm teams add-member <team> <identity> --model <model> --cwd <dir>` before starting the tool.
+- `--tmux` creates or reuses a local tmux session and therefore depends on a trusted local `tmux` installation.
+- The installed wrapper is `.claude/scripts/sc-term-launch.sh`, which resolves Python through the local machine in this order: `python3`, `py -3`, then `python`.
+
 ## Examples
 
 ```bash
