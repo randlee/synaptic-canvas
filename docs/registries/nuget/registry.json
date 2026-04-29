@@ -1,18 +1,18 @@
 {
   "$schema": "https://yourcompany.github.io/schemas/package-registry.schema.json",
   "version": "2.0.0",
-  "generated": "2026-04-29T04:43:10Z",
+  "generated": "2026-04-29T04:44:47Z",
   "repo": "randlee/synaptic-canvas",
   "marketplace": {
     "name": "Synaptic Canvas",
-    "version": "0.11.0",
+    "version": "0.12.0",
     "status": "beta",
     "url": "https://github.com/randlee/synaptic-canvas"
   },
   "packages": {
     "sc-ci-automation": {
       "name": "sc-ci-automation",
-      "version": "0.11.0",
+      "version": "0.12.0",
       "status": "beta",
       "tier": 2,
       "description": "Run CI quality gates (pull \u2192 build \u2192 test) with optional auto-fix and PR creation. Coordinates pull from upstream, builds projects, runs tests, applies straightforward fixes, and creates PRs when all quality gates pass. Supports version bumping with --patch flag.\n",
@@ -50,7 +50,7 @@
     },
     "sc-codex": {
       "name": "sc-codex",
-      "version": "0.11.0",
+      "version": "0.12.0",
       "status": "beta",
       "tier": 0,
       "description": "Run Codex agents via a Task Tool-compatible runner, with hooks emulation and background execution support.\n",
@@ -87,7 +87,7 @@
     },
     "sc-delay-tasks": {
       "name": "sc-delay-tasks",
-      "version": "0.11.0",
+      "version": "0.12.0",
       "status": "beta",
       "tier": 0,
       "description": "Schedule delayed one-shot or bounded polling actions with minimal heartbeats. Useful for waiting before running checks (e.g., CI status) or polling with stop-on-success.\n",
@@ -124,7 +124,7 @@
     },
     "sc-git-worktree": {
       "name": "sc-git-worktree",
-      "version": "0.11.0",
+      "version": "0.12.0",
       "status": "beta",
       "tier": 1,
       "description": "Manage git worktrees with optional tracking and protected branch safeguards: create, scan, cleanup, abort, and update worktrees using a standard sibling folder layout with tracking documents. Prevents accidental deletion of protected branches.\n",
@@ -169,7 +169,7 @@
     },
     "sc-github-issue": {
       "name": "sc-github-issue",
-      "version": "0.11.0",
+      "version": "0.12.0",
       "status": "beta",
       "tier": 2,
       "description": "GitHub issue lifecycle management with worktree isolation: list, create, update, and fix issues with automated workflows including PR creation. Integrates with sc-git-worktree for safe isolation.\n",
@@ -207,7 +207,7 @@
     },
     "sc-launch-term": {
       "name": "sc-launch-term",
-      "version": "0.11.0",
+      "version": "0.12.0",
       "status": "beta",
       "tier": 0,
       "description": "Launch Claude, Codex, and Gemini sessions in supported terminals with platform-aware terminal autodetect and optional tmux session management.\n",
@@ -245,7 +245,7 @@
     },
     "sc-kanban": {
       "name": "sc-kanban",
-      "version": "0.11.0",
+      "version": "0.12.0",
       "status": "beta",
       "tier": 2,
       "description": "Kanban state machine for Synaptic Canvas: backlog \u2192 board \u2192 done with gate validation, scrubbing, and shared board config (v0.7).\n",
@@ -284,7 +284,7 @@
     },
     "sc-launchpad": {
       "name": "sc-launchpad",
-      "version": "0.11.0",
+      "version": "0.12.0",
       "status": "beta",
       "tier": 0,
       "description": "Launch Claude, Codex, or Gemini as a separate background sub-agent runtime, with explicit ATM teammate-mode normalization and roster registration.\n",
@@ -323,7 +323,7 @@
     },
     "sc-manage": {
       "name": "sc-manage",
-      "version": "0.11.0",
+      "version": "0.12.0",
       "status": "beta",
       "tier": 0,
       "description": "Manage Synaptic Canvas Claude packages. List available packages and their install status (local/global), and install or uninstall packages according to policy.\n",
@@ -359,7 +359,7 @@
     },
     "sc-repomix-nuget": {
       "name": "sc-repomix-nuget",
-      "version": "0.11.0",
+      "version": "0.12.0",
       "status": "beta",
       "tier": 1,
       "description": "Generate AI-optimized NuGet package context using Repomix with NuGet metadata (dependencies, dependents, namespaces, frameworks). Produces a compressed API surface.\n",
@@ -402,7 +402,7 @@
     },
     "sc-roslyn-diff": {
       "name": "sc-roslyn-diff",
-      "version": "0.11.0",
+      "version": "0.12.0",
       "status": "beta",
       "tier": 2,
       "description": "Semantic diffing for .NET source using roslyn-diff with JSON-first outputs, HTML reports, and git/PR-aware comparisons.\n",
@@ -443,7 +443,7 @@
     },
     "sc-startup": {
       "name": "sc-startup",
-      "version": "0.11.0",
+      "version": "0.12.0",
       "status": "beta",
       "tier": 2,
       "description": "Startup runner for Synaptic Canvas: read startup prompt, sync master checklist, optional PR triage, worktree hygiene, and CI pull, then emit a concise status with next steps. Supports read-only mode.\n",
@@ -482,7 +482,7 @@
     },
     "sc-commit-push-pr": {
       "name": "sc-commit-push-pr",
-      "version": "0.11.0",
+      "version": "0.12.0",
       "status": "beta",
       "tier": 2,
       "description": "Commit, push, and create PRs for GitHub and Azure DevOps",
@@ -521,7 +521,7 @@
     },
     "sc-rust": {
       "name": "sc-rust",
-      "version": "0.11.0",
+      "version": "0.12.0",
       "status": "beta",
       "tier": 2,
       "description": "Rust development toolkit: idiomatic guidelines, service hardening guidance, design pattern enforcement, and specialized agents for architecture, code review, exploration, implementation, and QA. Includes cross-platform portability guidelines for Ubuntu, macOS, and Windows.\n",
@@ -562,7 +562,7 @@
     },
     "sc-ai-cli": {
       "name": "sc-ai-cli",
-      "version": "0.11.0",
+      "version": "0.12.0",
       "status": "beta",
       "tier": 0,
       "description": "AI-first CLI design toolkit: create, review, and harden JSON-first CLIs with MCP-ready contract seams, typed error contracts, auditable mutations, repeatable scaffolding patterns, and stateful simulator design guidance.\n",
@@ -605,7 +605,7 @@
       "readme": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-coding-agent-hardening/README.md",
       "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-coding-agent-hardening/CHANGELOG.md",
       "dependents": [],
-      "version": "0.11.0",
+      "version": "0.12.0",
       "description": "Harden coding, QA, and orchestration agent prompts so straightforward defects are fixed instead of being dismissed as minor, pre-existing, non-blocking, or technical debt.\n",
       "license": "MIT",
       "author": {

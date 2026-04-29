@@ -73,25 +73,25 @@ agents:
     version: 0.9.0
   rust-architect:
     path: packages/sc-rust/agents/rust-architect.md
-    version: 0.11.0
+    version: 0.12.0
   rust-best-practices-agent:
     path: packages/sc-rust/agents/rust-best-practices-agent.md
-    version: 0.11.0
+    version: 0.12.0
   rust-code-explorer:
     path: packages/sc-rust/agents/rust-code-explorer.md
-    version: 0.11.0
+    version: 0.12.0
   rust-code-reviewer:
     path: packages/sc-rust/agents/rust-code-reviewer.md
-    version: 0.11.0
+    version: 0.12.0
   rust-developer:
     path: packages/sc-rust/agents/rust-developer.md
-    version: 0.11.0
+    version: 0.12.0
   rust-qa-agent:
     path: packages/sc-rust/agents/rust-qa-agent.md
-    version: 0.11.0
+    version: 0.12.0
   rust-service-hardening-agent:
     path: packages/sc-rust/agents/rust-service-hardening-agent.md
-    version: 0.11.0
+    version: 0.12.0
 skills:
   ci-automation:
     depends_on:

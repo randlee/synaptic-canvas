@@ -1,6 +1,6 @@
 ---
 name: sc-github-issue-pr
-version: 0.11.0
+version: 0.12.0
 description: Create pull requests for issue fixes with proper issue references and templating
 model: sonnet
 color: purple

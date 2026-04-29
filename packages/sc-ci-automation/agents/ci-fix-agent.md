@@ -1,6 +1,6 @@
 ---
 name: ci-fix-agent
-version: 0.11.0
+version: 0.12.0
 description: Apply straightforward fixes for build/test issues.
 ---
 

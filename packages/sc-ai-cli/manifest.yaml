@@ -1,5 +1,5 @@
 name: sc-ai-cli
-version: 0.11.0
+version: 0.12.0
 description: >
   AI-first CLI design toolkit: create, review, and harden JSON-first CLIs with
   MCP-ready contract seams, typed error contracts, auditable mutations, repeatable

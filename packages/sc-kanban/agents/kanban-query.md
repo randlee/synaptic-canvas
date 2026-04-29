@@ -1,6 +1,6 @@
 ---
 name: kanban-query
-version: 0.11.0
+version: 0.12.0
 description: Query backlog/board/done cards using shared board config.
 ---
 

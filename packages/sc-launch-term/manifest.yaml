@@ -1,5 +1,5 @@
 name: sc-launch-term
-version: 0.11.0
+version: 0.12.0
 description: >
   Launch Claude, Codex, and Gemini sessions in supported terminals with
   platform-aware terminal autodetect and optional tmux session management.

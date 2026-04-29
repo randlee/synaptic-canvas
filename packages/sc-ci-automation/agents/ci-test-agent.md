@@ -1,6 +1,6 @@
 ---
 name: ci-test-agent
-version: 0.11.0
+version: 0.12.0
 description: Run tests and classify failures/warnings.
 ---
 

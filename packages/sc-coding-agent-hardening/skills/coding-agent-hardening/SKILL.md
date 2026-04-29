@@ -1,6 +1,6 @@
 ---
 name: coding-agent-hardening
-version: 0.11.0
+version: 0.12.0
 description: Harden coding, QA, and orchestration agent prompts so they fix issues autonomously instead of letting findings pass through as minor, pre-existing, non-blocking, or technical debt. Use when editing existing agent prompts, review instructions, or orchestration workflows to remove permissive issue-handling behavior and tighten escalation criteria.
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: sc-checklist-status
-version: 0.11.0
+version: 0.12.0
 description: Read the master checklist, scan the repo for missing items, optionally update the checklist, and report a structured status.
 ---
 

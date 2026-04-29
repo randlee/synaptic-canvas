@@ -1,6 +1,6 @@
 ---
 name: rust-service-hardening-agent
-version: 0.11.0
+version: 0.12.0
 description: Reviews Rust services for runtime-hardening gaps through a fenced-JSON contract and returns a structured skipped result when service indicators are absent.
 tools: Glob, Grep, LS, Read, NotebookRead
 model: sonnet

@@ -1,6 +1,6 @@
 ---
 name: sc-worktree-update
-version: 0.11.0
+version: 0.12.0
 description: Update a protected branch in its worktree by pulling latest changes. Handle merge conflicts by returning control to main agent for user coordination.
 model: haiku
 color: blue
