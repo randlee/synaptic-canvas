@@ -2,6 +2,27 @@
 
 Internal shared scripts copied into each package to keep agent/script utilities consistent without cross-package imports.
 
+Packages can either use the legacy default sync target:
+
+```yaml
+artifacts:
+  scripts:
+    - scripts/sc_shared.py
+```
+
+or declare an explicit shared-script mapping when they need a unique installed
+filename:
+
+```yaml
+artifacts:
+  scripts:
+    - scripts/launchpad_shared.py
+
+shared_scripts:
+  - source: packages/shared/scripts/launchpad_shared.py
+    target: scripts/launchpad_shared.py
+```
+
 ## What it provides
 
 ### Allowed-path validation

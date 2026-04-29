@@ -179,6 +179,45 @@
       "category": "tools"
     },
     {
+      "name": "sc-launch-term",
+      "source": "./packages/sc-launch-term",
+      "description": "Launch Claude, Codex, and Gemini sessions in supported terminals with platform-aware terminal autodetect and optional tmux session management.\n",
+      "version": "0.10.0",
+      "author": {
+        "name": "randlee"
+      },
+      "license": "MIT",
+      "keywords": [
+        "terminal",
+        "launcher",
+        "macos",
+        "windows",
+        "tmux",
+        "claude",
+        "codex",
+        "gemini"
+      ],
+      "category": "tools"
+    },
+    {
+      "name": "sc-launchpad",
+      "source": "./packages/sc-launchpad",
+      "description": "Launch Claude, Codex, or Gemini as a separate background sub-agent runtime, with explicit ATM teammate-mode normalization and roster registration.\n",
+      "version": "0.10.0",
+      "author": {
+        "name": "synaptic-canvas"
+      },
+      "license": "MIT",
+      "keywords": [
+        "background-agents",
+        "claude",
+        "codex",
+        "gemini",
+        "atm"
+      ],
+      "category": "tools"
+    },
+    {
       "name": "sc-manage",
       "source": "./packages/sc-manage",
       "description": "Manage Synaptic Canvas Claude packages. List available packages and their install status (local/global), and install or uninstall packages according to policy.\n",

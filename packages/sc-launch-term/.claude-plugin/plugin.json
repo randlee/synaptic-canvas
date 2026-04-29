@@ -1,0 +1,31 @@
+{
+  "name": "sc-launch-term",
+  "description": "Launch Claude, Codex, and Gemini sessions in supported terminals with platform-aware terminal autodetect and optional tmux session management.",
+  "version": "0.10.0",
+  "author": {
+    "name": "randlee"
+  },
+  "license": "MIT",
+  "keywords": [
+    "terminal",
+    "launcher",
+    "macos",
+    "windows",
+    "tmux",
+    "claude",
+    "codex",
+    "gemini"
+  ],
+  "scripts": [
+    "./scripts/launch_term_shared.py",
+    "./scripts/sc-term-launch.sh",
+    "./scripts/sc-term-launch.py"
+  ],
+  "commands": [
+    "./commands/sc/sonnet.md",
+    "./commands/sc/haiku.md",
+    "./commands/sc/opus.md",
+    "./commands/sc/codex.md",
+    "./commands/sc/gemini.md"
+  ]
+}
