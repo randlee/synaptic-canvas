@@ -86,6 +86,44 @@ def _write_json(path: Path, payload: dict) -> None:
     path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
 
+def _write_dotnet_global_json(output_root: Path) -> None:
+    """Pin generated .NET fixtures to an installed SDK.
+
+    The repository root uses a strict global.json for CI reproducibility, but the
+    generated fixture projects live beneath that root and would otherwise inherit
+    the same SDK lock. Writing a local global.json keeps the template test
+    isolated from the repo-level SDK selection.
+    """
+    repo_global_json = REPO_ROOT / "global.json"
+    preferred_version = None
+    if repo_global_json.exists():
+        preferred_version = json.loads(repo_global_json.read_text(encoding="utf-8")).get("sdk", {}).get("version")
+
+    completed = subprocess.run(
+        ["dotnet", "--list-sdks"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if completed.returncode != 0:
+        return
+
+    installed_versions = [
+        line.split()[0]
+        for line in completed.stdout.splitlines()
+        if line.strip()
+    ]
+    if not installed_versions:
+        return
+
+    selected_version = preferred_version if preferred_version in installed_versions else installed_versions[-1]
+    payload = {"sdk": {"version": selected_version, "rollForward": "disable"}}
+    (output_root / "global.json").write_text(
+        json.dumps(payload, indent=2) + "\n",
+        encoding="utf-8",
+    )
+
+
 def _assert_simulator_controls(
     command_prefix: list[str],
     cwd: Path,
@@ -217,6 +255,7 @@ def _verify_dotnet(case: dict) -> None:
     output_root, vars_data = _prepare_case(case)
     state_file = output_root / vars_data["state_file_name"]
 
+    _write_dotnet_global_json(output_root)
     _run(["dotnet", "build", "-nologo"], cwd=output_root)
 
     set_result = _run(
