@@ -24,6 +24,12 @@ artifacts:
     - skills/rust-development/SKILL.md
     - skills/rust-development/guidelines.txt
     - skills/rust-development/cross-platform-guidelines.md
+    - skills/docs/README.md
+    - skills/libs/ux/README.md
+    - skills/libs/resilience/README.md
+    - skills/universal/README.md
+    - skills/ux/README.md
+    - skills/resilience/README.md
     - skills/rust-best-practices/SKILL.md
     - skills/rust-best-practices/patterns/practice-inventory.md
     - skills/rust-best-practices/patterns/enforcement-strategy.md
