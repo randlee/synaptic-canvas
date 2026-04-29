@@ -71,3 +71,16 @@ def test_install_sc_ai_cli_copies_template_assets(tmp_path: Path):
     assert (dest / "skills/creating-ai-clis/SKILL.md").exists()
     assert (dest / "skills/creating-ai-clis/assets/templates/rust/Cargo.toml.j2").exists()
     assert (dest / "skills/designing-cli-simulators/assets/templates/go/simulator.go.j2").exists()
+
+
+def test_install_sc_refactory_copies_plugin_artifact(tmp_path: Path):
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    _init_git_repo(repo)
+    dest = repo / ".claude"
+
+    rc = sc_install.main(["install", "sc-refactory", "--dest", str(dest)])
+    assert rc == 0
+
+    assert (dest / ".claude-plugin" / "plugin.json").exists()
+    assert (dest / "assets" / "startup-wrapper-template" / "team-lead.py").exists()

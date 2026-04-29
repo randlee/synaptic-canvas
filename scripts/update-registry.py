@@ -143,7 +143,7 @@ def find_packages(packages_dir: Path) -> list[Path]:
         [
             d
             for d in packages_dir.iterdir()
-            if d.is_dir() and not d.name.startswith(".") and d.name != "shared"
+            if d.is_dir() and not d.name.startswith(".") and d.name not in {"shared", "docs"}
         ]
     )
 

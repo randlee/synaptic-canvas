@@ -18,15 +18,7 @@
         "name": "randlee"
       },
       "license": "MIT",
-      "keywords": [
-        "cli",
-        "ai",
-        "mcp",
-        "templates",
-        "simulator",
-        "review",
-        "skills"
-      ],
+      "keywords": [],
       "category": "tools"
     },
     {
@@ -38,15 +30,7 @@
         "name": "randlee"
       },
       "license": "MIT",
-      "keywords": [
-        "ci",
-        "automation",
-        "testing",
-        "build",
-        "quality-gates",
-        "agents",
-        "workflow"
-      ],
+      "keywords": [],
       "category": "tools"
     },
     {
@@ -58,12 +42,7 @@
         "name": "synaptic-canvas"
       },
       "license": "MIT",
-      "keywords": [
-        "codex",
-        "agents",
-        "task-tool",
-        "cli"
-      ],
+      "keywords": [],
       "category": "tools"
     },
     {
@@ -75,14 +54,7 @@
         "name": "randlee"
       },
       "license": "MIT",
-      "keywords": [
-        "agents",
-        "prompt-hardening",
-        "qa",
-        "review",
-        "orchestration",
-        "skills"
-      ],
+      "keywords": [],
       "category": "tools"
     },
     {
@@ -94,13 +66,7 @@
         "name": "randlee"
       },
       "license": "MIT",
-      "keywords": [
-        "git",
-        "pr",
-        "github",
-        "azure-devops",
-        "workflow"
-      ],
+      "keywords": [],
       "category": "tools"
     },
     {
@@ -112,14 +78,7 @@
         "name": "randlee"
       },
       "license": "MIT",
-      "keywords": [
-        "delay",
-        "polling",
-        "scheduler",
-        "ci",
-        "workflow",
-        "agents"
-      ],
+      "keywords": [],
       "category": "tools"
     },
     {
@@ -131,13 +90,7 @@
         "name": "randlee"
       },
       "license": "MIT",
-      "keywords": [
-        "git",
-        "worktree",
-        "workflow",
-        "agents",
-        "branching"
-      ],
+      "keywords": [],
       "category": "tools"
     },
     {
@@ -149,14 +102,7 @@
         "name": "randlee"
       },
       "license": "MIT",
-      "keywords": [
-        "github",
-        "issues",
-        "workflow",
-        "agents",
-        "pull-requests",
-        "worktree"
-      ],
+      "keywords": [],
       "category": "tools"
     },
     {
@@ -168,14 +114,7 @@
         "name": "randlee"
       },
       "license": "MIT",
-      "keywords": [
-        "kanban",
-        "task-tracking",
-        "workflow",
-        "git",
-        "pr",
-        "gates"
-      ],
+      "keywords": [],
       "category": "tools"
     },
     {
@@ -187,16 +126,7 @@
         "name": "randlee"
       },
       "license": "MIT",
-      "keywords": [
-        "terminal",
-        "launcher",
-        "macos",
-        "windows",
-        "tmux",
-        "claude",
-        "codex",
-        "gemini"
-      ],
+      "keywords": [],
       "category": "tools"
     },
     {
@@ -208,13 +138,7 @@
         "name": "synaptic-canvas"
       },
       "license": "MIT",
-      "keywords": [
-        "background-agents",
-        "claude",
-        "codex",
-        "gemini",
-        "atm"
-      ],
+      "keywords": [],
       "category": "tools"
     },
     {
@@ -226,12 +150,7 @@
         "name": "synaptic-canvas"
       },
       "license": "MIT",
-      "keywords": [
-        "management",
-        "packages",
-        "installer",
-        "agents"
-      ],
+      "keywords": [],
       "category": "tools"
     },
     {
@@ -243,13 +162,7 @@
         "name": "synaptic-canvas"
       },
       "license": "MIT",
-      "keywords": [
-        "nuget",
-        "repomix",
-        "documentation",
-        "api",
-        "context"
-      ],
+      "keywords": [],
       "category": "tools"
     },
     {
@@ -261,16 +174,7 @@
         "name": "randlee"
       },
       "license": "MIT",
-      "keywords": [
-        "diff",
-        "roslyn",
-        "semantic",
-        "csharp",
-        "vb",
-        "git",
-        "azure",
-        "github"
-      ],
+      "keywords": [],
       "category": "tools"
     },
     {
@@ -282,17 +186,7 @@
         "name": "randlee"
       },
       "license": "MIT",
-      "keywords": [
-        "rust",
-        "development",
-        "service-hardening",
-        "tokio",
-        "code-review",
-        "architecture",
-        "qa",
-        "agents",
-        "skills"
-      ],
+      "keywords": [],
       "category": "tools"
     },
     {
@@ -304,14 +198,19 @@
         "name": "randlee"
       },
       "license": "MIT",
-      "keywords": [
-        "startup",
-        "checklist",
-        "git",
-        "ci",
-        "automation",
-        "agents"
-      ],
+      "keywords": [],
+      "category": "tools"
+    },
+    {
+      "name": "sc-refactory",
+      "source": "./packages/sc-refactory",
+      "description": "Design and install a rule-driven refactoring toolkit with startup policy injection, approved-fix lookup, curated rule authoring, and named-teammate orchestration for large migration campaigns.\n",
+      "version": "0.1.0",
+      "author": {
+        "name": "synaptic-canvas"
+      },
+      "license": "MIT",
+      "keywords": [],
       "category": "tools"
     }
   ]

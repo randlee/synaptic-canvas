@@ -1,0 +1,69 @@
+name: sc-refactory
+version: 0.1.0
+description: >
+  Design and install a rule-driven refactoring toolkit with startup policy
+  injection, approved-fix lookup, curated rule authoring, and named-teammate
+  orchestration for large migration campaigns.
+author: synaptic-canvas
+license: MIT
+tags:
+  - refactoring
+  - policy
+  - graph
+  - oxigraph
+  - migration
+  - teammates
+
+artifacts:
+  commands:
+    - commands/sc-refactory-design.md
+    - commands/sc-refactory-install.md
+    - commands/sc-refactor-lookup.md
+    - commands/sc-refactor-write.md
+    - commands/sc-refactor-plan.md
+  skills:
+    - skills/refactory-design/SKILL.md
+    - skills/refactory-install/SKILL.md
+    - skills/refactor-lookup/SKILL.md
+    - skills/refactor-lookup/workflows.md
+    - skills/refactor-write/SKILL.md
+    - skills/refactor-write/workflows.md
+    - skills/refactor-orchestrate/SKILL.md
+    - skills/quality-manager/SKILL.md
+  agents:
+    - agents/registry.yaml
+    - agents/refactor-lookup-agent.md
+    - agents/refactor-write-agent.md
+    - agents/refactor-dev-agent.md
+    - agents/refactor-qa-agent.md
+    - agents/refactor-orchestrator.md
+    - agents/quality-manager.md
+  scripts:
+    - scripts/install_refactory.py
+    - scripts/runtime.py
+    - scripts/sc_shared.py
+    - scripts/session_start.py
+    - scripts/preflight.py
+    - scripts/repair.py
+    - scripts/log_lookup.py
+    - scripts/rebuild_db.py
+    - scripts/sync_subset.py
+    - scripts/validate_agents.py
+  assets:
+    - assets/startup-wrapper-template/team-lead.py
+  plugin:
+    - .claude-plugin/plugin.json
+
+install:
+  scope: local-only
+
+requires:
+  - python3
+  - git
+  - cargo
+  - oxigraph
+  - PyYAML
+  - pydantic
+
+dependencies:
+  - "sc-startup >= 0.10.0"
