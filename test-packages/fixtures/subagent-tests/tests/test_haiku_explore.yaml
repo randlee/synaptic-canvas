@@ -22,7 +22,7 @@ execution:
     Delegate to Explore - do not search yourself.
   model: haiku
   tools:
-    - Task
+    - Agent
     - Bash
     - Read
     - Glob
@@ -30,12 +30,12 @@ execution:
   timeout_ms: 120000
 
 expectations:
-  # MUST happen: Task tool invoked
+  # MUST happen: Agent tool invoked
   - id: exp-001
-    description: Task tool invoked with haiku model
+    description: Agent tool invoked with haiku model
     type: tool_call
     expected:
-      tool: Task
+      tool: Agent
       pattern: "(explore|find|search).*yaml"
       flags: "i"
 

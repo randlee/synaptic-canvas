@@ -6,7 +6,7 @@ test_name: Plan agent invoked for feature design
 description: |
   Explicitly ask Claude to use the Plan agent to design a feature.
   This MUST trigger:
-  1. Task tool invocation
+  1. Agent tool invocation
   2. SubagentStart hook with agent_type "Plan"
   3. SubagentStop hook when planning completes
 
@@ -24,19 +24,19 @@ execution:
     Keep it brief - just 2-3 high level steps.
   model: haiku
   tools:
-    - Task
+    - Agent
     - Bash
     - Read
     - Write
   timeout_ms: 120000
 
 expectations:
-  # MUST happen: Task tool invoked
+  # MUST happen: Agent tool invoked
   - id: exp-001
-    description: Task tool invoked to spawn Plan agent
+    description: Agent tool invoked to spawn Plan agent
     type: tool_call
     expected:
-      tool: Task
+      tool: Agent
       pattern: "(plan|design|architect)"
       flags: "i"
 

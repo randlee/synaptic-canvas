@@ -408,6 +408,12 @@ class YAMLTestItem(pytest.Item):
                 if analyses:
                     self.collected_data.log_analysis = merge_log_analysis(analyses)
 
+                self.collected_data.execution_params = {
+                    "model": self.test_config.execution.model,
+                    "tools": list(self.test_config.execution.tools),
+                    "timeout_ms": self.test_config.execution.timeout_ms,
+                }
+
                 # Evaluate expectations
                 evaluator = ExpectationEvaluator(self.collected_data)
                 failures = []

@@ -48,6 +48,8 @@ Interpret arguments as follows:
 - `--json <object>`: treat the remaining arguments as Task Tool JSON and pass through unchanged.
 - Otherwise: treat the remaining arguments as the prompt string.
 
+After the child task completes, preserve any caller-specified post-processing in the original prompt. If the caller asks for a grade, summary, or strict output shape after waiting on Codex, provide that instead of defaulting to a generic status summary.
+
 When running:
 1) Build Task Tool JSON with `description`, `prompt`, `subagent_type: "sc-codex"` (unless user provided one).
    Default `run_in_background` to true unless `--no-background` is provided.
@@ -76,8 +78,10 @@ PY
 ```
 
 If the task is still running, return `agentId` and `output_file`.
-4) Return the Codex output and the `agentId`. If the task is still running at timeout, return `agentId` and `output_file`
+4) If the child run fails because a Codex-native model is unsupported for the current account, retry once with `gpt-5`/`gpt-5.2` compatibility mode before surfacing the error.
+5) Return the Codex output and the `agentId`. If the task is still running at timeout, return `agentId` and `output_file`
    and tell the user how to check status.
+6) If a caller provides `resume` but the prior transcript cannot be reopened or does not contain usable assistant output, return a concise error and stop. Do not fabricate prior context or a synthetic refinement result.
 
 ## Response
 
@@ -88,3 +92,4 @@ Return a JSON object with:
 - `output_file` (required when background mode is used)
 
 If background mode was used and `output_file` is missing, treat that as an error.
+If `resume` was requested but the transcript path is unavailable or unreadable, treat that as an error.

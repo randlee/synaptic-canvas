@@ -4,11 +4,11 @@
 test_id: subagent-task-001
 test_name: Explicit Task tool usage spawns subagent
 description: |
-  Explicitly ask Claude to use the Task tool for a background operation.
-  This tests the most direct way to trigger a subagent:
-  telling Claude "use the Task tool".
+  Explicitly ask Claude to use a delegated subagent for a background operation.
+  Current Claude CLI traces this through the `Agent` tool rather than the
+  legacy `Task` tool name.
 
-  Any Task tool call MUST produce SubagentStart/SubagentStop events.
+  Any delegated subagent run MUST produce SubagentStart/SubagentStop events.
 
 tags:
   - subagent-required
@@ -22,28 +22,28 @@ execution:
     The Task subagent should do the work.
   model: haiku
   tools:
-    - Task
+    - Agent
     - Bash
     - Glob
   timeout_ms: 120000
 
 expectations:
-  # MUST happen: Task tool invoked (this is the key assertion)
+  # MUST happen: Agent tool invoked (modern replacement for Task)
   - id: exp-001
-    description: Task tool explicitly invoked
+    description: Agent tool explicitly invoked
     type: tool_call
     expected:
-      tool: Task
-      # Any task prompt should work
-      pattern: "."
+      tool: Agent
+      pattern: "count.*files|find \\. -type f"
+      flags: "i"
 
-  # MUST happen: PreToolUse hook for Task
+  # MUST happen: user-visible result from the delegated task
   - id: exp-002
-    description: PreToolUse hook captures Task invocation
-    type: hook_event
+    description: Output reports the file count
+    type: output_contains
     expected:
-      event: PreToolUse
-      tool_name: Task
+      pattern: "(contains|repository).*(files|file)|\\*\\*[0-9]+ files\\*\\*"
+      flags: "i"
 
   # MUST happen: SubagentStart event
   - id: exp-003

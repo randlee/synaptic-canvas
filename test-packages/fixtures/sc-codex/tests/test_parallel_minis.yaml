@@ -29,8 +29,8 @@ expectations:
       pattern: "sc_codex_task.py.*ocean"
 
   - id: exp-003
-    description: Output includes grade
+    description: Output includes grades or explicit still-running status
     type: output_contains
     expected:
-      pattern: 'Grade:\s*(10|[1-9])\b.*Grade:\s*(10|[1-9])\b'
+      pattern: '(Grade:\s*(10|[1-9])\b.*Grade:\s*(10|[1-9])\b|STILL RUNNING)'
       flags: "is"

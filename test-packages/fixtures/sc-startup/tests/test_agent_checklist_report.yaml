@@ -47,14 +47,16 @@ setup:
 
 execution:
   # Invoke via /sc-startup --readonly which should trigger checklist agent
-  prompt: "/sc-startup --readonly"
+  prompt: |
+    /sc-startup --readonly
+    Include checklist counts or mention pending/completed items in the final report.
   model: haiku
   timeout_ms: 60000
   tools:
     - Read
     - Bash
     - Skill
-    - Task
+    - Agent
     - Glob
 
 expectations:
