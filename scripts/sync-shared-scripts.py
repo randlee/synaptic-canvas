@@ -10,7 +10,7 @@ Usage:
 import argparse
 import sys
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, NamedTuple
 
 try:
     import yaml
@@ -29,37 +29,102 @@ def read_bytes(path: Path) -> bytes:
     return path.read_bytes()
 
 
+class SharedScriptMapping(NamedTuple):
+    canonical: Path
+    target: Path
+
+
+def load_manifest_data(package_dir: Path) -> dict:
+    manifest = package_dir / "manifest.yaml"
+    if not manifest.exists() or not _YAML_AVAILABLE:
+        return {}
+    try:
+        return yaml.safe_load(manifest.read_text()) or {}
+    except Exception:
+        return {}
+
+
 def package_uses_scripts(package_dir: Path) -> bool:
     """Return True if the package declares scripts in its manifest artifacts."""
-    manifest = package_dir / "manifest.yaml"
-    if not manifest.exists():
+    data = load_manifest_data(package_dir)
+    if not data:
         return True  # no manifest — assume scripts needed (safe default)
-    if not _YAML_AVAILABLE:
-        return True  # can't parse — assume scripts needed
-    try:
-        data = yaml.safe_load(manifest.read_text())
-        artifacts = (data or {}).get("artifacts", {})
-        return bool(artifacts.get("scripts"))
-    except Exception:
-        return True  # parse error — assume scripts needed
+    artifacts = data.get("artifacts", {})
+    return bool(artifacts.get("scripts"))
+
+
+def has_package_specific_shared(package_dir: Path) -> bool:
+    scripts_dir = package_dir / "scripts"
+    if not scripts_dir.exists():
+        return False
+    return any(script.name != "sc_shared.py" for script in scripts_dir.glob("*_shared.py"))
+
+
+def explicit_shared_script_mappings(package_dir: Path, repo_root: Path) -> list[SharedScriptMapping]:
+    data = load_manifest_data(package_dir)
+    entries = data.get("shared_scripts")
+    if not isinstance(entries, list):
+        return []
+
+    mappings: list[SharedScriptMapping] = []
+    for entry in entries:
+        if not isinstance(entry, dict):
+            continue
+        source = entry.get("source")
+        target = entry.get("target")
+        if not isinstance(source, str) or not source.strip():
+            continue
+        if not isinstance(target, str) or not target.strip():
+            continue
+        mappings.append(
+            SharedScriptMapping(
+                canonical=(repo_root / source).resolve(),
+                target=package_dir / target,
+            )
+        )
+    return mappings
+
+
+def shared_script_mappings(package_dir: Path, repo_root: Path, default_canonical: Path) -> list[SharedScriptMapping]:
+    explicit = explicit_shared_script_mappings(package_dir, repo_root)
+    if explicit:
+        return explicit
+
+    if not package_uses_scripts(package_dir):
+        return []
+
+    if has_package_specific_shared(package_dir):
+        return []
+
+    return [
+        SharedScriptMapping(
+            canonical=default_canonical.resolve(),
+            target=package_dir / "scripts" / "sc_shared.py",
+        )
+    ]
+
+
+def describe_mapping(package_dir: Path, target: Path) -> str:
+    rel_target = target.relative_to(package_dir)
+    return f"{package_dir.name}:{rel_target.as_posix()}"
 
 
 def sync_shared_script(canonical: Path, packages_dir: Path) -> list[str]:
     changed = []
-    canonical_bytes = read_bytes(canonical)
+    repo_root = packages_dir.parent
 
     for package_dir in iter_packages(packages_dir):
         if package_dir.name == "shared":
             continue
-        if not package_uses_scripts(package_dir):
-            continue
-        scripts_dir = package_dir / "scripts"
-        scripts_dir.mkdir(parents=True, exist_ok=True)
-        target = scripts_dir / "sc_shared.py"
-        if target.exists() and target.read_bytes() == canonical_bytes:
-            continue
-        target.write_bytes(canonical_bytes)
-        changed.append(package_dir.name)
+        for mapping in shared_script_mappings(package_dir, repo_root, canonical):
+            if not mapping.canonical.exists():
+                continue
+            canonical_bytes = read_bytes(mapping.canonical)
+            mapping.target.parent.mkdir(parents=True, exist_ok=True)
+            if mapping.target.exists() and mapping.target.read_bytes() == canonical_bytes:
+                continue
+            mapping.target.write_bytes(canonical_bytes)
+            changed.append(describe_mapping(package_dir, mapping.target))
 
     return changed
 
@@ -89,9 +154,9 @@ def main() -> int:
 
     changed = sync_shared_script(args.canonical, args.packages_dir)
     if changed:
-        print("Updated sc_shared.py in:")
-        for name in changed:
-            print(f"  - {name}")
+        print("Updated shared scripts:")
+        for mapping in changed:
+            print(f"  - {mapping}")
     else:
         print("All packages already synchronized")
     return 0

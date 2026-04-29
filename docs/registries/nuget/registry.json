@@ -1,7 +1,7 @@
 {
   "$schema": "https://yourcompany.github.io/schemas/package-registry.schema.json",
   "version": "2.0.0",
-  "generated": "2026-04-20T04:35:16Z",
+  "generated": "2026-04-26T05:19:45Z",
   "repo": "randlee/synaptic-canvas",
   "marketplace": {
     "name": "Synaptic Canvas",
@@ -205,6 +205,44 @@
       "lastUpdated": "2026-04-20",
       "dependents": []
     },
+    "sc-launch-term": {
+      "name": "sc-launch-term",
+      "version": "0.10.0",
+      "status": "beta",
+      "tier": 0,
+      "description": "Launch Claude, Codex, and Gemini sessions in supported terminals with platform-aware terminal autodetect and optional tmux session management.\n",
+      "github": "randlee/synaptic-canvas",
+      "repo": "https://github.com/randlee/synaptic-canvas",
+      "path": "packages/sc-launch-term",
+      "readme": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-launch-term/README.md",
+      "license": "MIT",
+      "author": {
+        "name": "randlee"
+      },
+      "tags": [
+        "terminal",
+        "launcher",
+        "macos",
+        "windows",
+        "tmux",
+        "claude",
+        "codex",
+        "gemini"
+      ],
+      "artifacts": {
+        "commands": 5,
+        "skills": 0,
+        "agents": 0,
+        "scripts": 3,
+        "schemas": 0
+      },
+      "dependencies": [
+        "python3"
+      ],
+      "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-launch-term/CHANGELOG.md",
+      "lastUpdated": "2026-04-25",
+      "dependents": []
+    },
     "sc-kanban": {
       "name": "sc-kanban",
       "version": "0.10.0",
@@ -242,6 +280,43 @@
       ],
       "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-kanban/CHANGELOG.md",
       "lastUpdated": "2026-04-20",
+      "dependents": []
+    },
+    "sc-launchpad": {
+      "name": "sc-launchpad",
+      "version": "0.10.0",
+      "status": "beta",
+      "tier": 0,
+      "description": "Launch Claude, Codex, or Gemini as a separate background sub-agent runtime, with explicit ATM teammate-mode normalization and roster registration.\n",
+      "github": "randlee/synaptic-canvas",
+      "repo": "https://github.com/randlee/synaptic-canvas",
+      "path": "packages/sc-launchpad",
+      "license": "MIT",
+      "author": {
+        "name": "synaptic-canvas"
+      },
+      "tags": [
+        "background-agents",
+        "claude",
+        "codex",
+        "gemini",
+        "atm"
+      ],
+      "artifacts": {
+        "commands": 0,
+        "skills": 1,
+        "agents": 1,
+        "scripts": 2,
+        "schemas": 0
+      },
+      "dependencies": [
+        "python3",
+        "claude",
+        "codex",
+        "gemini",
+        "pydantic"
+      ],
+      "lastUpdated": "2026-04-25",
       "dependents": []
     },
     "sc-manage": {
@@ -556,17 +631,19 @@
   "metadata": {
     "registryVersion": "2.0.0",
     "schemaVersion": "1.0.0",
-    "totalPackages": 9,
-    "totalCommands": 8,
-    "totalSkills": 9,
-    "totalAgents": 33,
-    "totalScripts": 14,
+    "totalPackages": 11,
+    "totalCommands": 13,
+    "totalSkills": 10,
+    "totalAgents": 34,
+    "totalScripts": 19,
     "categories": {
       "automation": [
         "sc-delay-tasks",
         "sc-ci-automation",
         "sc-startup",
-        "sc-commit-push-pr"
+        "sc-commit-push-pr",
+        "sc-launch-term",
+        "sc-launchpad"
       ],
       "development-tools": [
         "sc-git-worktree",
@@ -607,9 +684,11 @@
         "sc-github-issue",
         "sc-kanban",
         "sc-startup",
-        "sc-commit-push-pr"
+        "sc-commit-push-pr",
+        "sc-launch-term",
+        "sc-launchpad"
       ],
-      "total_packages": 9
+      "total_packages": 11
     }
   }
 }
