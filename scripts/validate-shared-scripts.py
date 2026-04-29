@@ -24,7 +24,7 @@ except ImportError:
 
 def iter_packages(packages_dir: Path) -> Iterable[Path]:
     for path in sorted(packages_dir.iterdir()):
-        if path.is_dir() and not path.name.startswith("."):
+        if path.is_dir() and not path.name.startswith(".") and path.name not in {"shared", "docs"}:
             yield path
 
 
@@ -125,9 +125,6 @@ def compare_shared_script(canonical: Path, packages_dir: Path) -> tuple[list[str
     repo_root = packages_dir.parent
 
     for package_dir in iter_packages(packages_dir):
-        if package_dir.name == "shared":
-            continue
-
         for mapping in shared_script_mappings(package_dir, repo_root, canonical):
             if not mapping.canonical.exists():
                 invalid_sources.append(f"{describe_mapping(package_dir, mapping.target)} -> {mapping.canonical}")
@@ -148,9 +145,6 @@ def sync_shared_script(canonical: Path, packages_dir: Path) -> list[str]:
     repo_root = packages_dir.parent
 
     for package_dir in iter_packages(packages_dir):
-        if package_dir.name == "shared":
-            continue
-
         for mapping in shared_script_mappings(package_dir, repo_root, canonical):
             if not mapping.canonical.exists():
                 continue

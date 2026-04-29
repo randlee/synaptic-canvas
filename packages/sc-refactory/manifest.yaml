@@ -25,7 +25,9 @@ artifacts:
     - skills/refactory-design/SKILL.md
     - skills/refactory-install/SKILL.md
     - skills/refactor-lookup/SKILL.md
+    - skills/refactor-lookup/workflows.md
     - skills/refactor-write/SKILL.md
+    - skills/refactor-write/workflows.md
     - skills/refactor-orchestrate/SKILL.md
     - skills/quality-manager/SKILL.md
   agents:
@@ -39,6 +41,7 @@ artifacts:
   scripts:
     - scripts/install_refactory.py
     - scripts/runtime.py
+    - scripts/sc_shared.py
     - scripts/session_start.py
     - scripts/preflight.py
     - scripts/repair.py
