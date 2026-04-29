@@ -1,0 +1,40 @@
+{
+  "name": "sc-refactory",
+  "description": "Design and install a constrained refactoring toolkit with rule-backed lookup, QA gating, and named-teammate orchestration.",
+  "version": "0.1.0",
+  "author": {
+    "name": "synaptic-canvas"
+  },
+  "license": "MIT",
+  "keywords": [
+    "refactoring",
+    "policy",
+    "graph",
+    "oxigraph",
+    "migration",
+    "teammates"
+  ],
+  "commands": [
+    "./commands/sc-refactory-design.md",
+    "./commands/sc-refactory-install.md",
+    "./commands/sc-refactor-lookup.md",
+    "./commands/sc-refactor-write.md",
+    "./commands/sc-refactor-plan.md"
+  ],
+  "agents": [
+    "./agents/refactor-lookup-agent.md",
+    "./agents/refactor-write-agent.md",
+    "./agents/refactor-dev-agent.md",
+    "./agents/refactor-qa-agent.md",
+    "./agents/refactor-orchestrator.md",
+    "./agents/quality-manager.md"
+  ],
+  "skills": [
+    "./skills/refactory-design/SKILL.md",
+    "./skills/refactory-install/SKILL.md",
+    "./skills/refactor-lookup/SKILL.md",
+    "./skills/refactor-write/SKILL.md",
+    "./skills/refactor-orchestrate/SKILL.md",
+    "./skills/quality-manager/SKILL.md"
+  ]
+}
