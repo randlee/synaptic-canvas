@@ -1,0 +1,16 @@
+@prefix ref: <https://synaptic.canvas/refactor/> .
+
+ref:RULE_ID
+    a ref:Rule ;
+    ref:ruleId "RULE_ID" ;
+    ref:severity "warning" ;
+    ref:ruleText """
+Approved rule: SUMMARY
+
+How-to doc: .refactor/docs/DOC_NAME.md
+
+Allowed fix:
+- BOUNDED_FIX_1
+- BOUNDED_FIX_2
+""" ;
+    ref:triggeredByString "TRIGGER_VALUE" .

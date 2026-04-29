@@ -1,0 +1,42 @@
+agents:
+  refactor-lookup-agent:
+    version: 0.1.0
+    path: .claude/agents/refactor-lookup-agent.md
+  refactor-write-agent:
+    version: 0.1.0
+    path: .claude/agents/refactor-write-agent.md
+  refactor-dev-agent:
+    version: 0.1.0
+    path: .claude/agents/refactor-dev-agent.md
+  refactor-qa-agent:
+    version: 0.1.0
+    path: .claude/agents/refactor-qa-agent.md
+
+skills:
+  refactory-design:
+    version: 0.1.0
+    path: .claude/skills/refactory-design/SKILL.md
+  refactory-install:
+    version: 0.1.0
+    path: .claude/skills/refactory-install/SKILL.md
+  refactor-lookup:
+    version: 0.1.0
+    path: .claude/skills/refactor-lookup/SKILL.md
+    depends_on:
+      refactor-lookup-agent: "0.1.x"
+  refactor-write:
+    version: 0.1.0
+    path: .claude/skills/refactor-write/SKILL.md
+    depends_on:
+      refactor-write-agent: "0.1.x"
+  refactor-orchestrate:
+    version: 0.1.0
+    path: .claude/skills/refactor-orchestrate/SKILL.md
+    depends_on:
+      refactor-dev-agent: "0.1.x"
+      refactor-qa-agent: "0.1.x"
+  quality-manager:
+    version: 0.1.0
+    path: .claude/skills/quality-manager/SKILL.md
+    depends_on:
+      refactor-qa-agent: "0.1.x"
