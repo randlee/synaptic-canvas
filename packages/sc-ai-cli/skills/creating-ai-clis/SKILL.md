@@ -1,6 +1,6 @@
 ---
 name: creating-ai-clis
-version: 0.10.0
+version: 0.12.0
 description: Create or harden CLIs intended primarily for AI or system consumption and secondarily for humans. Use when designing or implementing a JSON-first CLI with an MCP-ready contract seam, where every command supports machine output, errors are typed and actionable, mutating commands are auditable via corresponding read commands, and external integrations need simulator-backed testing. Do not use for human-first shell utilities, one-off scripts, or text-only CLIs.
 ---
 

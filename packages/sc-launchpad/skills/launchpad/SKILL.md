@@ -1,6 +1,6 @@
 ---
 name: launchpad
-version: 0.10.0
+version: 0.12.0
 description: "Use when another workflow must launch Claude, Codex, or Gemini as a separate background sub-agent without opening a terminal. Spawns the `launchpad` agent with fenced JSON input and `run_in_background: true`."
 ---
 

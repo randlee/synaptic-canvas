@@ -1,6 +1,6 @@
 ---
 name: sc-git-diff
-version: 0.10.0
+version: 0.12.0
 description: Diff files from git history or PRs (GitHub/Azure) using roslyn-diff JSON output.
 model: sonnet
 color: blue
