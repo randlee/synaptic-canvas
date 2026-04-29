@@ -43,6 +43,12 @@ _CODEX_MODEL_MAP = {
 }
 
 _CLAUDE_MODELS = {"haiku", "sonnet", "opus"}
+_CODEX_ACCOUNT_FALLBACK = "gpt-5.2"
+_CODEX_NATIVE_MODELS = {
+    "gpt-5.2-codex",
+    "gpt-5.1-codex-max",
+    "gpt-5.1-codex-mini",
+}
 
 
 @lru_cache(maxsize=None)
@@ -151,14 +157,37 @@ def _preview(text: str, limit: int = 200) -> str:
 
 def run_sync(runner: RunnerType, model: str, prompt: str) -> str:
     _check_runner_available(runner)
+    attempted_model = model
     if runner == "codex":
-        cmd = ["codex", "exec", "--yolo", "--model", model, prompt]
+        res = subprocess.run(
+            ["codex", "exec", "--yolo", "--model", attempted_model, prompt],
+            text=True,
+            capture_output=True,
+        )
+        if res.returncode != 0 and _should_fallback_codex_model(attempted_model, res.stderr):
+            attempted_model = _CODEX_ACCOUNT_FALLBACK
+            res = subprocess.run(
+                ["codex", "exec", "--yolo", "--model", attempted_model, prompt],
+                text=True,
+                capture_output=True,
+            )
     else:
-        cmd = ["claude", "--model", model, "--print", prompt]
-    res = subprocess.run(cmd, text=True, capture_output=True)
+        res = subprocess.run(
+            ["claude", "--model", attempted_model, "--print", prompt],
+            text=True,
+            capture_output=True,
+        )
+
     if res.returncode != 0:
         raise RuntimeError(res.stderr.strip() or f"{runner} exited with code {res.returncode}")
     return res.stdout.strip()
+
+
+def _should_fallback_codex_model(model: str, stderr: str) -> bool:
+    if model not in _CODEX_NATIVE_MODELS:
+        return False
+    lowered = (stderr or "").lower()
+    return "not supported when using codex with a chatgpt account" in lowered
 
 
 def _timestamp() -> str:

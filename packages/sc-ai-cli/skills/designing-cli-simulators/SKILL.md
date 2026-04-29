@@ -1,6 +1,6 @@
 ---
 name: designing-cli-simulators
-version: 0.10.0
+version: 0.12.0
 description: Design stateful simulators for AI-facing CLIs that integrate with devices, networks, services, or databases. Use when a CLI needs realistic simulator-backed testing, configurable fault injection, persistent state, and a swappable adapter boundary so the same business logic runs against live and simulated backends. Do not use for shallow mocks, stateless test doubles, or CLIs with no external integration.
 ---
 

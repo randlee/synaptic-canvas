@@ -1,0 +1,32 @@
+name: sc-launch-term
+version: 0.12.0
+description: >
+  Launch Claude, Codex, and Gemini sessions in supported terminals with
+  platform-aware terminal autodetect and optional tmux session management.
+author: randlee
+license: MIT
+tags:
+  - terminal
+  - launcher
+  - macos
+  - windows
+  - tmux
+  - claude
+  - codex
+  - gemini
+
+artifacts:
+  commands:
+    - commands/sc/sonnet.md
+    - commands/sc/haiku.md
+    - commands/sc/opus.md
+    - commands/sc/codex.md
+    - commands/sc/gemini.md
+  scripts:
+    - scripts/launch_term_shared.py
+    - scripts/sc-term-launch.sh
+    - scripts/sc-term-launch.py
+
+requires:
+  cli:
+    - Python 3 launcher on PATH (`python3`, `py -3`, or `python`)

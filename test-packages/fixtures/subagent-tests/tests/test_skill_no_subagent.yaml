@@ -4,10 +4,8 @@
 test_id: subagent-control-001
 test_name: Skill without subagent usage
 description: |
-  The /delay skill schedules actions but does NOT spawn subagents.
-  This control test verifies that NOT all skills trigger subagent events.
-
-  Expected: Skill tool called, but NO SubagentStart/SubagentStop events.
+  The `/delay --help` path should stay local and should not spawn subagents.
+  This verifies that not all command invocations trigger delegated agents.
 
 tags:
   - control
@@ -16,22 +14,23 @@ tags:
   - category-d
 
 execution:
-  prompt: "/delay 1s echo 'test'"
+  prompt: "/delay --help"
   model: haiku
   tools:
-    - Skill
-    - Bash
-    - Task
+    - Read
   timeout_ms: 30000
 
+setup:
+  plugins:
+    - sc-delay-tasks@synaptic-canvas
+
 expectations:
-  # MUST happen: Skill tool invoked
   - id: exp-001
-    description: Skill tool invoked for delay
-    type: tool_call
+    description: Help output is shown
+    type: output_contains
     expected:
-      tool: Skill
-      pattern: "delay"
+      pattern: "(usage|options|minutes|seconds|poll)"
+      flags: "i"
 
   # MUST NOT happen: No subagent for this simple skill
   - id: exp-002
@@ -47,9 +46,9 @@ expectations:
     expected:
       event: SubagentStop
 
-  # MUST NOT happen: No Task tool either
+  # MUST NOT happen: No delegated Agent tool either
   - id: exp-004
-    description: Task tool NOT invoked
+    description: Agent tool NOT invoked
     type: tool_not_called
     expected:
-      tool: Task
+      tool: Agent

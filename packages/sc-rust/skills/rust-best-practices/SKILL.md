@@ -1,6 +1,6 @@
 ---
 name: rust-best-practices
-version: 0.11.0
+version: 0.12.0
 description: Review Rust architecture plans, crate boundaries, and code for structural design-pattern compliance. Use when the task involves typestate, sealed traits, error contracts, wrapper/newtype design, object safety, interior mutability, or other type-system-driven Rust correctness patterns that go beyond general style guidance.
 depends_on:
   rust-best-practices-agent: 0.x

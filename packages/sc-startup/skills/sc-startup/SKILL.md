@@ -1,6 +1,6 @@
 ---
 name: sc-startup
-version: 0.10.0
+version: 0.12.0
 description: "Run repo startup: prompt load, checklist sync, optional PR triage, worktree hygiene, and CI pull. Best-effort with structured status."
 entry_point: /sc-startup
 ---
@@ -11,7 +11,7 @@ Thin orchestration for the `/sc-startup` command. Validates config, launches bac
 
 ## Command
 - `/sc-startup [--pr] [--pull] [--fast] [--readonly]`
-- `/sc-startup --init` (config discovery and guided setup)
+- `/sc-startup --init` (config discovery and synthesized YAML preview)
 
 ## Agents
 - `ci-pr-agent` (PR list/fix; list-only when `--readonly`)
@@ -21,8 +21,8 @@ Thin orchestration for the `/sc-startup` command. Validates config, launches bac
 - `sc-startup-init` (detection-only: config presence, candidates, package detection; returns fenced JSON with YAML payload)
 
 ## Flow (best-effort)
-1. If `--init`: Agent Runner → `sc-startup-init` (detection-only). Parse results, use AskQuestion to fill missing/ambiguous settings (prompt path, checklist path, worktree-scan, pr-enabled, worktree-enabled). If not `--readonly`, write `.claude/sc-startup.yaml`; otherwise show synthesized YAML. Then continue.
-2. Load `.claude/sc-startup.yaml`; validate required keys and enabled feature dependencies. Fail closed with `DEPENDENCY.MISSING` if enabled package absent.
+1. If `--init`: Agent Runner → `sc-startup-init` (detection-only). Report detected prompt/checklist candidates, installed packages, missing keys, and synthesized YAML. Do not block on AskUserQuestion; exit after reporting findings.
+2. Load `.claude/sc-startup.yaml`; validate required keys and enabled feature dependencies. If config is missing or invalid, return concise guidance with detected candidates and recommend `--init` or manual file creation. Fail closed with `DEPENDENCY.MISSING` if enabled package absent.
 3. If `--fast`: read startup prompt only, summarize role, exit (no agents/checklist).
 4. If `--pr` and enabled: Agent Runner → `ci-pr-agent` (`--list --fix`, or list-only when `--readonly`).
 5. If worktree scan/cleanup enabled in config: Agent Runner → `sc-worktree-{scan|cleanup}` (scan/report-only when `--readonly`).
@@ -45,6 +45,7 @@ If `sc-checklist-status` reports `VALIDATION.INVALID_PATH` (path escape), explic
 - Default mutating; `--readonly` forces report-only everywhere.
 - No auto-commit of checklist changes.
 - Dependency validation required before launch; fail closed if missing.
+- Missing or invalid config must not trigger an interactive question loop.
 - Logging: Agent Runner audit logs under `.claude/state/logs/sc-startup/`; prune after ~14 days.
 
 ## Output Contract
