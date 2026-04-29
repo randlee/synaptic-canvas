@@ -1,6 +1,6 @@
 ---
 name: reviewing-ai-clis
-version: 0.10.0
+version: 0.11.0
 description: Critically review an existing CLI, MCP wrapper, or CLI plan for AI-first contract quality. Use when evaluating whether a CLI is JSON-first, has an MCP-ready contract seam without JSON reshaping, auditably models state changes, uses stateful simulator-backed testing for external integrations, and returns typed actionable errors. Do not use for general style review or human-first shell UX review.
 ---
 

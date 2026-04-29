@@ -1,6 +1,6 @@
 ---
 name: sc-startup-init
-version: 0.10.0
+version: 0.11.0
 description: Detect existing sc-startup config, suggest defaults, and report installed packages; returns fenced JSON with YAML payload for the skill to drive Q&A.
 ---
 
