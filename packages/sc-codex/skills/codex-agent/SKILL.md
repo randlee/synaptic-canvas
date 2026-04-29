@@ -43,3 +43,5 @@ Provide Task Tool input JSON with:
   - Poll `output_file` via a short Python loop (avoid `tail -f` and avoid `timeout`, which may be missing on macOS).
 - Blocking mode (default without `--background`) returns `{ "output", "agentId" }`.
 - The runner enforces schema validation and logs to `.claude/state/logs/<package-name>/`.
+- If a Codex-native model is rejected for the current account, retry once with `gpt-5.2` compatibility mode before failing.
+- If `resume` is provided but the prior transcript cannot be reopened or does not contain usable assistant output, return a concise error instead of inventing missing context.

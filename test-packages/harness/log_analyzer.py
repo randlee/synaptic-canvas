@@ -257,6 +257,18 @@ def analyze_logs(log_content: str) -> LogAnalysisResult:
 
         result.all_entries.append(entry)
 
+        if entry.level in (LogLevel.ERROR, LogLevel.CRITICAL) and entry.message.startswith("WARNING:"):
+            downgraded = LogEntry(
+                level=LogLevel.WARNING,
+                message=entry.message.removeprefix("WARNING:").strip(),
+                logger_name=entry.logger_name,
+                timestamp=entry.timestamp,
+                line_number=entry.line_number,
+                raw_line=entry.raw_line,
+            )
+            result.warnings.append(downgraded)
+            continue
+
         if entry.level == LogLevel.WARNING:
             result.warnings.append(entry)
         elif entry.level in (LogLevel.ERROR, LogLevel.CRITICAL):

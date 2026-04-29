@@ -17,7 +17,10 @@ setup:
     - rm -rf pm/
 
 execution:
-  prompt: "/sc-startup"
+  prompt: |
+    /sc-startup
+    If config is missing, provide setup guidance and stop immediately.
+    Do not ask follow-up questions.
   model: haiku
   timeout_ms: 45000
   tools:

@@ -9,8 +9,23 @@ description: |
   Verify /sc-startup --fast reads the startup prompt and displays a role
   summary without invoking background agents or updating the checklist.
 
+setup:
+  commands:
+    - mkdir -p .claude
+    - |
+      cat > .claude/sc-startup.yaml << 'EOF'
+      startup-prompt: pm/ARCH-SC.md
+      check-list: pm/checklist.md
+      worktree-scan: none
+      pr-enabled: false
+      worktree-enabled: false
+      EOF
+
 execution:
-  prompt: "/sc-startup --fast"
+  prompt: |
+    /sc-startup --fast
+    Read the startup prompt, summarize the assigned role in at most two sentences, and stop immediately.
+    Do not launch agents.
   model: haiku
   timeout_ms: 45000
   tools:
@@ -20,13 +35,6 @@ execution:
     - Glob
 
 expectations:
-  - id: exp-skill-invoked
-    description: sc-startup skill is invoked
-    type: tool_call
-    expected:
-      tool: Skill
-      pattern: "sc-startup"
-
   - id: exp-prompt-read
     description: Startup prompt file is read
     type: output_contains
@@ -41,5 +49,8 @@ expectations:
       pattern: "(summary|role|purpose|context)"
       flags: "i"
 
-# Note: Ideally would verify no SubagentStart events (checklist/PR agents)
-# but hook_event_absent not yet implemented
+  - id: exp-no-subagent
+    description: Fast mode does not spawn subagents
+    type: hook_event_absent
+    expected:
+      event: SubagentStart

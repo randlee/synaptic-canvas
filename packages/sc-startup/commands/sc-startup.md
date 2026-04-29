@@ -8,7 +8,7 @@ options:
   - name: --pull
     description: "Immediately deploy the `ci-automation` skill in pull-only mode to sync master → develop."
   - name: --init
-    description: "Run config discovery via `sc-startup-init` (detect existing config, candidates, plugins), then walk user through missing settings with AskQuestion before continuing."
+    description: "Run config discovery via `sc-startup-init` (detect existing config, candidates, plugins), report suggested YAML, and exit without blocking on questions."
   - name: --fast
     description: "Short-circuit: read the startup prompt only, assume the assigned role, and exit (no checklist, no agents, no status report)."
   - name: --readonly
@@ -45,8 +45,8 @@ Kick off the Synaptic Canvas project startup routine. Reads repo-specific config
 
 ## Execution Flow
 1) `--help`: Print concise usage, flags, and config example; exit without invoking agents.
-2) If `--init`: Agent Runner → `sc-startup-init` (detection only; fenced JSON with YAML payload). Parse results; use AskQuestion to resolve missing/ambiguous settings (prompt path, checklist path, worktree-scan mode, pr-enabled, worktree-enabled). If not `--readonly`, write `.claude/sc-startup.yaml`; otherwise show synthesized YAML only. Then continue with normal flow.
-3) Load `.claude/sc-startup.yaml`; resolve prompt/checklist paths; abort with help if invalid. Validate feature availability against installed packages; fail closed with `DEPENDENCY.MISSING` when enabled packages are absent.
+2) If `--init`: Agent Runner → `sc-startup-init` (detection only; fenced JSON with YAML payload). Show detected prompt/checklist candidates, installed packages, missing keys, and synthesized YAML. Do not block on AskUserQuestion. Exit after reporting findings; only mention that the user can write `.claude/sc-startup.yaml` or rerun once ready.
+3) Load `.claude/sc-startup.yaml`; resolve prompt/checklist paths; abort with concise guidance if invalid. If config is missing, do not ask follow-up questions: report the expected keys, any detected candidates, and recommend `--init` or manual config creation. Validate feature availability against installed packages; fail closed with `DEPENDENCY.MISSING` when enabled packages are absent.
 4) If `--fast`: Read `startup-prompt` only, summarize the role, and exit (skip checklist read, status, and all agents).
 5) If `--pr`: Launch background agent via Agent Runner for `ci-pr-agent`; default `--list --fix`, but `--readonly` forces list-only (no fixes). Capture fenced JSON and render as a table (explicit "No open PRs" if empty).
 6) If `worktree-scan` is `scan` or `cleanup`: Launch background `sc-worktree-scan` or `sc-worktree-cleanup` respectively; render results as a table. If `--readonly`, always run scan/report-only; for `cleanup` without `--readonly`, include a `worktrees_cleaned` column.
@@ -69,7 +69,7 @@ Kick off the Synaptic Canvas project startup routine. Reads repo-specific config
 - `ci-pr-agent`: Run with `--list --fix` when `--pr` is set; `--readonly` switches to list-only. Show PR table even if fixes fail (include errors).
 - `sc-worktree-scan` / `sc-worktree-cleanup`: Invoked based on `worktree-scan` value; show table with worktree path/branch/state and cleaned count when applicable; `--readonly` enforces scan/report-only.
 - `ci-automation` (pull-only mode): Launched when `--pull` is set to sync master → develop handle before checklist updates.
-- `sc-startup-init`: Detection-only (config presence, candidates, package detection). Returns fenced JSON with YAML payload; skill uses AskQuestion for any user prompts. No mutations.
+- `sc-startup-init`: Detection-only (config presence, candidates, package detection). Returns fenced JSON with YAML payload. No mutations and no blocking user prompts.
 - All invocations go through Agent Runner with registry version enforcement; treat malformed/unfenced JSON as failure and report succinctly.
 
 ## Output & UX
@@ -88,7 +88,7 @@ Kick off the Synaptic Canvas project startup routine. Reads repo-specific config
 ```
 
 ## Error Handling
-- Missing config/paths: abort with a short, actionable message showing the expected `.claude/sc-startup.yaml` keys.
+- Missing config/paths: abort with a short, actionable message showing the expected `.claude/sc-startup.yaml` keys, detected candidates, and the `--init` path. Never block on a question in this case.
 - Agent failure/timeout: continue aggregating other results; mark failure in the final report with suggested next actions.
 - Path safety: refuse absolute paths or locations outside the repo root.
 - Dependencies: if required packages are missing while enabled, fail closed with `DEPENDENCY.MISSING` and surface in the report.

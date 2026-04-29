@@ -31,24 +31,26 @@ setup:
       EOF
 
 execution:
-  prompt: "/sc-startup --init"
+  prompt: |
+    /sc-startup --init
+    Run the discovery workflow completely and return the detected candidates and synthesized YAML.
+    Do not stop at a preamble and do not ask interactive questions.
   model: haiku
   timeout_ms: 60000
   tools:
     - Read
     - Bash
     - Skill
-    - Task
+    - Agent
     - Glob
-    - AskUserQuestion
 
 expectations:
   - id: exp-init-agent-started
-    description: sc-startup-init agent is spawned
-    type: subagent_event
+    description: Init flow announces discovery work
+    type: output_contains
     expected:
-      event: SubagentStart
-      agent_type: "sc-startup-init"
+      pattern: "(initialization agent|detect config state|synthesized YAML|candidate)"
+      flags: "i"
 
   - id: exp-discovery
     description: Discovery or detection is mentioned

@@ -6,7 +6,7 @@ test_name: Explore agent invoked for codebase search
 description: |
   Explicitly ask Claude to use the Explore agent to find files.
   This MUST trigger:
-  1. Task tool invocation
+  1. Agent tool invocation
   2. SubagentStart hook with agent_type "Explore"
   3. SubagentStop hook when exploration completes
 
@@ -23,7 +23,7 @@ execution:
     Do NOT do this yourself - delegate to the Explore subagent.
   model: haiku
   tools:
-    - Task
+    - Agent
     - Bash
     - Read
     - Glob
@@ -31,13 +31,12 @@ execution:
   timeout_ms: 120000
 
 expectations:
-  # MUST happen: Task tool invoked
+  # MUST happen: Agent tool invoked
   - id: exp-001
-    description: Task tool invoked to spawn Explore agent
+    description: Agent tool invoked to spawn Explore agent
     type: tool_call
     expected:
-      tool: Task
-      # Task tool input should mention explore/search behavior
+      tool: Agent
       pattern: "(explore|search|find).*python"
       flags: "i"
 

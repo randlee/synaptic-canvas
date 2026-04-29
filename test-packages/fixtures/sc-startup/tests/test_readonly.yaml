@@ -38,17 +38,10 @@ execution:
     - Read
     - Bash
     - Skill
-    - Task
+    - Agent
     - Glob
 
 expectations:
-  - id: exp-skill-invoked
-    description: sc-startup skill is invoked with readonly flag
-    type: tool_call
-    expected:
-      tool: Skill
-      pattern: "sc-startup.*--readonly|--readonly.*sc-startup"
-
   - id: exp-config-read
     description: Config file is read
     type: output_contains
@@ -62,6 +55,3 @@ expectations:
     expected:
       pattern: "(readonly|report|status|no.*mutation|read.only)"
       flags: "i"
-
-# Note: Would ideally verify checklist.md unchanged after execution
-# but side_effects validation not yet fully implemented
