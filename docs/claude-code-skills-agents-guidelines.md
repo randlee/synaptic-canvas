@@ -1,4 +1,4 @@
-# Claude Code Skills and Agents Architecture Guidelines (v0.6)
+# Claude Code Skills and Agents Architecture Guidelines (v0.7)
 
 A practical guide for designing and implementing a two-tier skill/agent architecture that optimizes context efficiency, maintains clean separation of concerns, and enables scalable AI-assisted workflows.
 
