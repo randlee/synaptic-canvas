@@ -178,6 +178,67 @@ def copy_codex_auth(isolated_home: Path, source_home: Path | None = None) -> boo
     return copied_any
 
 
+def copy_claude_auth(isolated_home: Path, source_home: Path | None = None) -> bool:
+    """Restore Claude Code OAuth credentials in the isolated HOME.
+
+    Claude Code's auth requires two components that are resolved via
+    os.homedir() (which respects $HOME in Node.js):
+
+    1. ~/.claude.json — stores oauthAccount and preferences.
+    2. ~/Library/Keychains — macOS keychain directory where the managed
+       API key is stored. Symlinked (not copied) so the live keychain
+       database is used; copying the raw DB files is not safe.
+
+    Without these, the CLI reports "Not logged in" in isolated sessions
+    even though the real HOME is authenticated.
+
+    If ANTHROPIC_API_KEY is already set, it takes precedence and neither
+    component is needed.
+
+    Args:
+        isolated_home: The isolated HOME directory
+        source_home: Source HOME to copy from (default: actual HOME)
+
+    Returns:
+        True if auth was set up successfully, False otherwise
+    """
+    import os as _os
+    if _os.environ.get("ANTHROPIC_API_KEY"):
+        logger.debug("ANTHROPIC_API_KEY set — skipping Claude auth copy")
+        return False
+
+    source_home = source_home or Path.home()
+    ok = True
+
+    # 1. Copy ~/.claude.json (preferences + oauthAccount field)
+    src_json = source_home / ".claude.json"
+    if src_json.exists():
+        try:
+            shutil.copy2(src_json, isolated_home / ".claude.json")
+            logger.debug(f"Copied Claude config: {src_json}")
+        except Exception as exc:
+            logger.warning(f"Failed to copy ~/.claude.json: {exc}")
+            ok = False
+    else:
+        logger.debug("~/.claude.json not found — skipping")
+
+    # 2. Symlink ~/Library/Keychains so the managed API key is accessible.
+    #    The keychain DB files must not be copied; a symlink keeps them live.
+    src_keychains = source_home / "Library" / "Keychains"
+    dest_lib = isolated_home / "Library"
+    dest_keychains = dest_lib / "Keychains"
+    if src_keychains.exists() and not dest_keychains.exists():
+        try:
+            dest_lib.mkdir(parents=True, exist_ok=True)
+            dest_keychains.symlink_to(src_keychains)
+            logger.debug(f"Symlinked Keychains: {dest_keychains} -> {src_keychains}")
+        except Exception as exc:
+            logger.warning(f"Failed to symlink ~/Library/Keychains: {exc}")
+            ok = False
+
+    return ok
+
+
 def setup_test_environment(
     isolated_home: Path,
     project_path: Path,
@@ -214,6 +275,11 @@ def setup_test_environment(
     # Copy marketplace data if requested
     if copy_marketplace:
         copy_marketplace_data(isolated_home, source_home)
+
+    # Copy Claude Code OAuth credentials (~/.claude.json) so the CLI can
+    # authenticate under the isolated HOME. Skipped when ANTHROPIC_API_KEY
+    # is set — the key takes precedence and no file copy is needed.
+    copy_claude_auth(isolated_home, source_home)
 
     # Copy Codex auth/config into isolated HOME (if available)
     copy_codex_auth(isolated_home, source_home)
