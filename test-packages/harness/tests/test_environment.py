@@ -9,6 +9,7 @@ Tests the environment isolation functionality including:
 """
 
 import os
+import stat
 import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -18,6 +19,7 @@ import pytest
 from harness.environment import (
     DEFAULT_TEST_HOME_PREFIX,
     cleanup_test_environment,
+    copy_claude_auth,
     copy_marketplace_data,
     create_isolated_home,
     get_git_state,
@@ -59,6 +61,16 @@ class TestCreateIsolatedHome:
         finally:
             cleanup_test_environment(home1, force=True)
             cleanup_test_environment(home2, force=True)
+
+    def test_sets_private_permissions(self):
+        """Test that isolated HOME is private to the current user."""
+        with tempfile.TemporaryDirectory() as base_dir:
+            home = create_isolated_home(base_dir=base_dir)
+            try:
+                mode = stat.S_IMODE(home.stat().st_mode)
+                assert mode == 0o700
+            finally:
+                cleanup_test_environment(home, force=True)
 
     def test_custom_prefix(self):
         """Test creating home with custom prefix."""
@@ -131,6 +143,23 @@ class TestCopyMarketplaceData:
             assert result is False
 
 
+class TestCopyClaudeAuth:
+    """Tests for copy_claude_auth function."""
+
+    def test_copies_config_even_when_api_key_is_set(self, monkeypatch):
+        """Test OAuth files are copied even if the parent shell has an API key."""
+        with tempfile.TemporaryDirectory() as source_dir, tempfile.TemporaryDirectory() as dest_dir:
+            source_home = Path(source_dir)
+            dest_home = Path(dest_dir)
+            (source_home / ".claude.json").write_text('{"oauthAccount": {}}')
+            monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
+
+            result = copy_claude_auth(dest_home, source_home)
+
+            assert result is True
+            assert (dest_home / ".claude.json").exists()
+
+
 class TestSetupTestEnvironment:
     """Tests for setup_test_environment function."""
 
@@ -167,6 +196,36 @@ class TestSetupTestEnvironment:
                 assert env.get("TEST_HARNESS_VAR") == "test_value"
             finally:
                 del os.environ["TEST_HARNESS_VAR"]
+
+    def test_removes_anthropic_api_key_by_default(self):
+        """Test that ambient API keys do not override copied OAuth auth."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            isolated_home = Path(temp_dir)
+            project_path = Path("/fake/project")
+
+            os.environ["ANTHROPIC_API_KEY"] = "test-key"
+            try:
+                env = setup_test_environment(isolated_home, project_path)
+                assert "ANTHROPIC_API_KEY" not in env
+            finally:
+                del os.environ["ANTHROPIC_API_KEY"]
+
+    def test_can_preserve_anthropic_api_key(self):
+        """Test callers can explicitly opt into API key auth."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            isolated_home = Path(temp_dir)
+            project_path = Path("/fake/project")
+
+            os.environ["ANTHROPIC_API_KEY"] = "test-key"
+            try:
+                env = setup_test_environment(
+                    isolated_home,
+                    project_path,
+                    preserve_anthropic_api_key=True,
+                )
+                assert env["ANTHROPIC_API_KEY"] == "test-key"
+            finally:
+                del os.environ["ANTHROPIC_API_KEY"]
 
 
 class TestCleanupTestEnvironment:

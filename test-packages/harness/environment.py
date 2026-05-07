@@ -32,6 +32,7 @@ import logging
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
 import uuid
 from contextlib import contextmanager
@@ -88,6 +89,11 @@ def create_isolated_home(
         isolated_home.mkdir(parents=True, exist_ok=True)
     else:
         isolated_home = Path(tempfile.mkdtemp(prefix=prefix))
+
+    try:
+        os.chmod(isolated_home, 0o700)
+    except OSError as exc:
+        logger.warning(f"Failed to chmod isolated HOME {isolated_home}: {exc}")
 
     # Create .claude directory structure
     claude_dir = isolated_home / CLAUDE_DIR
@@ -192,8 +198,8 @@ def copy_claude_auth(isolated_home: Path, source_home: Path | None = None) -> bo
     Without these, the CLI reports "Not logged in" in isolated sessions
     even though the real HOME is authenticated.
 
-    If ANTHROPIC_API_KEY is already set, it takes precedence and neither
-    component is needed.
+    setup_test_environment removes ANTHROPIC_API_KEY by default so these
+    copied OAuth credentials are not bypassed by an ambient shell profile key.
 
     Args:
         isolated_home: The isolated HOME directory
@@ -202,11 +208,6 @@ def copy_claude_auth(isolated_home: Path, source_home: Path | None = None) -> bo
     Returns:
         True if auth was set up successfully, False otherwise
     """
-    import os as _os
-    if _os.environ.get("ANTHROPIC_API_KEY"):
-        logger.debug("ANTHROPIC_API_KEY set — skipping Claude auth copy")
-        return False
-
     source_home = source_home or Path.home()
     ok = True
 
@@ -221,6 +222,13 @@ def copy_claude_auth(isolated_home: Path, source_home: Path | None = None) -> bo
             ok = False
     else:
         logger.debug("~/.claude.json not found — skipping")
+
+    if sys.platform != "darwin":
+        logger.info(
+            "Skipping ~/Library/Keychains symlink on non-macOS platform: %s",
+            sys.platform,
+        )
+        return ok
 
     # 2. Symlink ~/Library/Keychains so the managed API key is accessible.
     #    The keychain DB files must not be copied; a symlink keeps them live.
@@ -244,6 +252,7 @@ def setup_test_environment(
     project_path: Path,
     copy_marketplace: bool = False,
     source_home: Path | None = None,
+    preserve_anthropic_api_key: bool = False,
 ) -> dict[str, str]:
     """Configure the test environment with HOME override.
 
@@ -255,6 +264,9 @@ def setup_test_environment(
         project_path: Path to the test project (where .claude/ settings are)
         copy_marketplace: Whether to copy marketplace data for plugin install
         source_home: Source HOME to copy marketplace data from
+        preserve_anthropic_api_key: Keep ANTHROPIC_API_KEY in the isolated
+            subprocess environment. Defaults to False so copied Claude Code
+            OAuth credentials are used instead of ambient shell profile keys.
 
     Returns:
         Dictionary of environment variables to use for subprocess calls
@@ -266,6 +278,14 @@ def setup_test_environment(
     # Start with current environment
     env = os.environ.copy()
 
+    # Prefer the logged-in Claude Code OAuth account by default. A parent shell
+    # API key can silently override browser auth and fail for unrelated billing
+    # reasons, so preserve it only when a caller explicitly opts in.
+    if not preserve_anthropic_api_key and env.pop("ANTHROPIC_API_KEY", None):
+        logger.info(
+            "Removed ANTHROPIC_API_KEY from isolated Claude environment to prefer copied OAuth auth"
+        )
+
     # Override HOME for isolation
     env["HOME"] = str(isolated_home)
 
@@ -276,9 +296,7 @@ def setup_test_environment(
     if copy_marketplace:
         copy_marketplace_data(isolated_home, source_home)
 
-    # Copy Claude Code OAuth credentials (~/.claude.json) so the CLI can
-    # authenticate under the isolated HOME. Skipped when ANTHROPIC_API_KEY
-    # is set — the key takes precedence and no file copy is needed.
+    # Copy Claude Code OAuth credentials so the CLI can authenticate under HOME.
     copy_claude_auth(isolated_home, source_home)
 
     # Copy Codex auth/config into isolated HOME (if available)
@@ -586,6 +604,7 @@ def isolated_claude_session(
     trace_path: str | Path | None = None,
     copy_marketplace: bool = False,
     cleanup: bool = True,
+    preserve_anthropic_api_key: bool = False,
 ) -> Generator[IsolatedSession, None, None]:
     """Context manager for running Claude in an isolated environment.
 
@@ -597,6 +616,9 @@ def isolated_claude_session(
         trace_path: Path to trace.jsonl for hook events (default: reports/trace.jsonl)
         copy_marketplace: Whether to copy marketplace data for plugin install
         cleanup: Whether to clean up isolated HOME on exit (default: True)
+        preserve_anthropic_api_key: Keep ANTHROPIC_API_KEY in the isolated
+            subprocess environment. Defaults to False so Claude Code OAuth
+            browser auth is preferred.
 
     Yields:
         IsolatedSession object for running commands and accessing paths
@@ -635,6 +657,7 @@ def isolated_claude_session(
             isolated_home=isolated_home,
             project_path=project_path,
             copy_marketplace=copy_marketplace,
+            preserve_anthropic_api_key=preserve_anthropic_api_key,
         )
 
         # Create session object
