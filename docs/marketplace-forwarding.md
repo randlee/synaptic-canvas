@@ -47,16 +47,9 @@ To reference a plugin from an external repo, use a `source` object:
   "name": "my-package",
   "description": "What this package does.",
   "version": "1.0.0",
-  "author": { "name": "yourorg" },
-  "license": "MIT",
-  "keywords": ["keyword1"],
-  "commands": ["./commands/my-command.md"],
-  "skills": ["./skills/my-skill/SKILL.md"],
-  "agents": ["./agents/my-agent.md"]
+  "author": { "name": "yourorg" }
 }
 ```
-
-Omit `commands`, `skills`, or `agents` arrays if the package has none.
 
 ## Linking to Synaptic Canvas
 
