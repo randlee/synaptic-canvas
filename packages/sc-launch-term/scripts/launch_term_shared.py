@@ -40,26 +40,36 @@ def resolve_team() -> str | None:
     return team or None
 
 
-_ADJECTIVES = [
-    "amber", "bold", "calm", "deft", "eager", "fleet", "gold", "hale",
-    "iron", "jade", "keen", "lean", "mint", "nova", "opal", "prim",
-    "quick", "rust", "sage", "teal", "umber", "vivid", "warm", "zeal",
+# Per-tool identity name pools.
+_IDENTITY_NAMES: dict[str, list[str]] = {
+    "gemini": ["Gamma", "Galaxian", "Grimaldi", "Ganymede", "Grogu",
+               "Grievous", "Greedo", "Glitch", "Gauss", "Glimmer"],
+    "codex":  ["Cipher", "Crypto", "Cryptex", "Cassian", "Crimson",
+               "Cloud", "Citan", "Caesar", "Cascade", "Chewbacca"],
+    "haiku":  ["Homer", "Helix", "Helios", "Horus", "Halo",
+               "Hal", "Hex", "Hive", "Heretic", "Hydra"],
+    "sonnet": ["Sinatra", "Santana", "Slash", "Spock", "Skynet",
+               "Striker", "Siren", "Sentinel", "Sting", "Synth"],
+    "opus":   ["Orion", "Oracle", "Omega", "Orwell", "Obiwan",
+               "Optimus", "Oblivion", "Onyx", "Odyssey", "Octane"],
+}
+
+_FALLBACK_NAMES: list[str] = [
+    "Amber", "Bold", "Calm", "Deft", "Eager",
+    "Fleet", "Gold", "Hale", "Iron", "Jade",
 ]
-_NOUNS = [
-    "atlas", "birch", "coral", "dune", "ember", "flint", "grove", "hawk",
-    "inlet", "junco", "kite", "lynx", "maple", "newt", "orca", "pike",
-    "quill", "raven", "stone", "thorn", "umbra", "vole", "wren", "yak",
-]
 
 
-def generate_identity() -> str:
-    import random
-    return f"{random.choice(_ADJECTIVES)}-{random.choice(_NOUNS)}"
+def generate_identity(tool: str | None = None) -> str:
+    pool = _IDENTITY_NAMES.get(tool or "", _FALLBACK_NAMES)
+    name = secrets.choice(pool)
+    suffix = secrets.token_hex(2)
+    return f"{name}-{suffix}"
 
 
-def resolve_identity(identity: str | None) -> str | None:
+def resolve_identity(identity: str | None, tool: str | None = None) -> str | None:
     if not identity:
-        identity = generate_identity()
+        identity = generate_identity(tool)
     return identity
 
 
