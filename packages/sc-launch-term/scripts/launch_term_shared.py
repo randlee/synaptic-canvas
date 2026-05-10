@@ -40,14 +40,26 @@ def resolve_team() -> str | None:
     return team or None
 
 
+_ADJECTIVES = [
+    "amber", "bold", "calm", "deft", "eager", "fleet", "gold", "hale",
+    "iron", "jade", "keen", "lean", "mint", "nova", "opal", "prim",
+    "quick", "rust", "sage", "teal", "umber", "vivid", "warm", "zeal",
+]
+_NOUNS = [
+    "atlas", "birch", "coral", "dune", "ember", "flint", "grove", "hawk",
+    "inlet", "junco", "kite", "lynx", "maple", "newt", "orca", "pike",
+    "quill", "raven", "stone", "thorn", "umbra", "vole", "wren", "yak",
+]
+
+
+def generate_identity() -> str:
+    import random
+    return f"{random.choice(_ADJECTIVES)}-{random.choice(_NOUNS)}"
+
+
 def resolve_identity(identity: str | None) -> str | None:
-    team = os.environ.get("ATM_TEAM", "").strip()
-    if team and not identity:
-        print(
-            f"ATM_TEAM is set to '{team}'; supply --identity <name> for this launch",
-            file=sys.stderr,
-        )
-        raise SystemExit(1)
+    if not identity:
+        identity = generate_identity()
     return identity
 
 

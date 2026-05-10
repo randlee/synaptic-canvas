@@ -13,7 +13,7 @@ Parse from `$ARGUMENTS`:
 - `--terminal <name>` optional explicit backend. Default: `auto`.
 - `--tab` optional request for a new tab instead of a new window when supported.
 - `--tmux` optional tmux session flow using the session name `"{folder} - codex"`.
-- `--identity <name>` required when `ATM_TEAM` is set in the current environment. Exports both `ATM_TEAM` and `ATM_IDENTITY=<name>` into the launched session.
+- `--identity <name>` optional. If omitted, a random name is generated. Exports both `ATM_TEAM` and `ATM_IDENTITY=<name>` into the launched session.
 
 Supported backends:
 - macOS: `iterm2`, `ghostty`, `wezterm`, `warp`, `terminal`
@@ -56,7 +56,7 @@ Examples:
 
 **Step 4** — Build `TERM_ARG`: `--terminal <name>` if supplied, otherwise omit.
 
-**Step 5** — Build `IDENTITY_ARG`: `--identity <name>` if supplied, otherwise omit. If `ATM_TEAM` is set in the current environment and no identity was provided, stop and tell the user that `--identity` is required.
+**Step 5** — Resolve identity: use `--identity <name>` if supplied, otherwise generate a random name. Build `IDENTITY_ARG` from the resolved value.
 
 ### Without `--tmux`
 
