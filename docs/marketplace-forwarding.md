@@ -55,5 +55,3 @@ Users add each marketplace independently:
 /plugin marketplace add randlee/synaptic-canvas
 /plugin marketplace add yourorg/your-marketplace
 ```
-
-There is no built-in forwarding between marketplaces. Each is a separate source.
