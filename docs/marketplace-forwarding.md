@@ -27,7 +27,14 @@
 }
 ```
 
-`source` must be a relative path to the package directory within the same repo.
+To reference a plugin from an external repo, use its GitHub URL as `source`:
+
+```json
+{
+  "name": "my-package",
+  "source": "https://github.com/yourorg/other-repo.git?path=plugins/my-package"
+}
+```
 
 ### `packages/my-package/.claude-plugin/plugin.json`
 
