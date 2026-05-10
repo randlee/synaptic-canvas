@@ -27,12 +27,16 @@
 }
 ```
 
-To reference a plugin from an external repo, use its GitHub URL as `source`:
+To reference a plugin from an external repo, use a `source` object:
 
 ```json
 {
   "name": "my-package",
-  "source": "https://github.com/yourorg/other-repo.git?path=plugins/my-package"
+  "source": {
+    "source": "git-subdir",
+    "url": "https://github.com/yourorg/other-repo.git",
+    "path": "plugins/my-package"
+  }
 }
 ```
 
