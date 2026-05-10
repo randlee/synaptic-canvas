@@ -2,7 +2,11 @@
 
 Source of truth: [anthropics/claude-plugins-public](https://github.com/anthropics/claude-plugins-public/blob/main/.claude-plugin/marketplace.json)
 
-## Required Files
+---
+
+## Part 1: Source Repo (the minimal marketplace)
+
+The repo hosting the plugin needs two files.
 
 ### `.claude-plugin/marketplace.json` (repo root)
 
@@ -36,9 +40,11 @@ Source of truth: [anthropics/claude-plugins-public](https://github.com/anthropic
 }
 ```
 
-## Referencing a Plugin from an External Repo
+---
 
-Use a `git-subdir` source object instead of a local path. Pin to a commit with `sha`, optionally a branch/tag with `ref`:
+## Part 2: Consuming Marketplace (synaptic-canvas side)
+
+To pull a plugin from the source repo into synaptic-canvas, add a `git-subdir` entry to `.claude-plugin/marketplace.json`. Pin to a branch with `ref` and optionally a commit with `sha`:
 
 ```json
 {
@@ -48,29 +54,12 @@ Use a `git-subdir` source object instead of a local path. Pin to a commit with `
   "category": "tools",
   "source": {
     "source": "git-subdir",
-    "url": "https://github.com/yourorg/other-repo.git",
-    "path": "plugins/my-package",
+    "url": "https://github.com/yourorg/your-marketplace.git",
+    "path": "packages/my-package",
     "ref": "main",
     "sha": "abc123..."
   }
 }
 ```
 
-## Linking to Synaptic Canvas
-
-To reference a Synaptic Canvas package from your marketplace, add an entry pointing to its repo:
-
-```json
-{
-  "name": "sc-git-worktree",
-  "description": "Manage git worktrees for parallel development.",
-  "author": { "name": "randlee" },
-  "category": "tools",
-  "source": {
-    "source": "git-subdir",
-    "url": "https://github.com/randlee/synaptic-canvas.git",
-    "path": "packages/sc-git-worktree",
-    "ref": "main"
-  }
-}
-```
+No code is copied. Synaptic Canvas points directly at the source repo. Updates to the source repo are picked up automatically when `ref` is a branch name.
