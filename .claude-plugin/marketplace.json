@@ -313,6 +313,19 @@
         "agents"
       ],
       "category": "tools"
+    },
+    {
+      "name": "sc-observability",
+      "description": "Skills for bootstrapping, adopting, and reviewing sc-observability in downstream Rust projects.",
+      "author": { "name": "randlee" },
+      "category": "tools",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/randlee/sc-observability.git",
+        "path": "packages/sc-observability",
+        "ref": "main"
+      },
+      "homepage": "https://github.com/randlee/sc-observability"
     }
   ]
 }
