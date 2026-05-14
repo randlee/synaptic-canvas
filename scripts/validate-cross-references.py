@@ -397,6 +397,10 @@ def validate_marketplace_consistency(
         warnings = []
 
         for plugin in marketplace.plugins:
+            # Skip remote (git-subdir) plugins — no local manifest to validate
+            if isinstance(plugin.source, dict):
+                continue
+
             # Find corresponding manifest
             pkg_name = plugin.name
             manifest_path = packages_dir / pkg_name / "manifest.yaml"

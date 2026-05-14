@@ -17,6 +17,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from launch_term_shared import (
+    _IDENTITY_NAMES,
     build_claude_session_record_path,
     build_codex_session_record_path,
     generate_ulid,
