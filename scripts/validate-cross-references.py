@@ -119,12 +119,14 @@ class PluginSchema(BaseModel):
 class MarketplacePluginSchema(BaseModel):
     """Schema for plugin entry in marketplace.json."""
 
+    model_config = {"extra": "allow"}
+
     name: str
-    source: str
+    source: Union[str, Dict]
     description: str
-    version: str
+    version: Optional[str] = None
     author: Union[str, Dict[str, str]]
-    license: str
+    license: Optional[str] = None
     keywords: List[str] = Field(default_factory=list)
     category: str
 
