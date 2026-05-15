@@ -21,7 +21,7 @@ import json
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 import yaml
 from pydantic import BaseModel, Field, field_validator
@@ -121,19 +121,23 @@ class SyncValidationResult:
 class MarketplacePlugin(BaseModel):
     """Plugin entry in marketplace.json."""
 
+    model_config = {"extra": "allow"}
+
     name: str = Field(pattern=r"^[a-z0-9][a-z0-9-]*$")
-    source: str
+    source: Union[str, dict]
     description: str
-    version: str = Field(pattern=r"^\d+\.\d+\.\d+$")
     author: dict[str, str]
-    license: str
-    keywords: list[str] = Field(default_factory=list)
     category: str
+    version: Optional[str] = Field(default=None, pattern=r"^\d+\.\d+\.\d+$")
+    license: Optional[str] = None
+    keywords: list[str] = Field(default_factory=list)
 
     @field_validator("version")
     @classmethod
     def validate_semver(cls, v):
         """Validate semantic version format."""
+        if v is None:
+            return v
         parts = v.split(".")
         if len(parts) != 3:
             raise ValueError("Version must be X.Y.Z format")

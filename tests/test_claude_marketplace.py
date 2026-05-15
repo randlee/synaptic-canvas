@@ -50,9 +50,8 @@ def test_marketplace_json_valid():
     assert "owner" in data, "marketplace.json missing 'owner' field"
     assert "plugins" in data, "marketplace.json missing 'plugins' field"
     expected_plugins = _plugin_packages()
-    assert len(data["plugins"]) == len(expected_plugins), f"Expected {len(expected_plugins)} plugins, found {len(data['plugins'])}"
-    plugin_names = [p["name"] for p in data["plugins"]]
-    assert plugin_names == expected_plugins, f"Expected plugins {expected_plugins}, got {plugin_names}"
+    local_plugins = [p["name"] for p in data["plugins"] if isinstance(p.get("source"), str)]
+    assert local_plugins == expected_plugins, f"Expected local plugins {expected_plugins}, got {local_plugins}"
 
 
 def test_all_packages_have_plugin_json():
@@ -85,12 +84,14 @@ def test_plugin_json_schema_valid():
 
 
 def test_marketplace_package_sources_exist():
-    """Verify all package sources referenced in marketplace exist."""
+    """Verify all local package sources referenced in marketplace exist."""
     marketplace = Path(".claude-plugin/marketplace.json")
     data = json.loads(marketplace.read_text())
 
     for plugin in data["plugins"]:
         source = plugin["source"]
+        if isinstance(source, dict):
+            continue  # git-subdir remote reference — no local path to check
         source_path = Path(source.lstrip("./"))
         assert source_path.exists(), f"Source path '{source}' does not exist"
         assert source_path.is_dir(), f"Source path '{source}' is not a directory"
@@ -133,6 +134,8 @@ def test_marketplace_metadata_consistency():
     marketplace_data = json.loads(marketplace.read_text())
 
     for marketplace_plugin in marketplace_data["plugins"]:
+        if isinstance(marketplace_plugin.get("source"), dict):
+            continue  # git-subdir remote reference — no local plugin.json to compare
         pkg_name = marketplace_plugin["name"]
         plugin_json = Path(f"packages/{pkg_name}/.claude-plugin/plugin.json")
         plugin_data = json.loads(plugin_json.read_text())
