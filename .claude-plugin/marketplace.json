@@ -160,6 +160,24 @@
       "category": "tools"
     },
     {
+      "name": "sc-just",
+      "source": "./packages/sc-just",
+      "description": "Set up repo-local just task runners with a curated Justfile, optional .just/ helper scripts, and starter templates for minimal, Python, Go, .NET, and Rust repos.",
+      "version": "0.1.0",
+      "author": {
+        "name": "randlee"
+      },
+      "license": "MIT",
+      "keywords": [
+        "just",
+        "task-runner",
+        "automation",
+        "templates",
+        "skills"
+      ],
+      "category": "tools"
+    },
+    {
       "name": "sc-kanban",
       "source": "./packages/sc-kanban",
       "description": "Kanban state machine for Synaptic Canvas: backlog \u2192 board \u2192 done with gate validation, scrubbing, and shared board config (v0.7).\n",
@@ -317,7 +335,9 @@
     {
       "name": "sc-observability",
       "description": "Skills for bootstrapping, adopting, and reviewing sc-observability in downstream Rust projects.",
-      "author": { "name": "randlee" },
+      "author": {
+        "name": "randlee"
+      },
       "category": "tools",
       "source": {
         "source": "git-subdir",

@@ -285,6 +285,22 @@ def find_in_list(items: list[dict[str, Any]], name: str) -> Optional[dict[str, A
     return None
 
 
+def is_local_marketplace_plugin(plugin: dict[str, Any]) -> bool:
+    """
+    Determine whether a marketplace plugin is expected to resolve to this repo's
+    local packages directory.
+
+    Local packages typically use a string source like ``./packages/<name>``.
+    Forwarded marketplace entries use structured sources such as ``git-subdir``
+    and should not trigger "missing in packages/" warnings.
+    """
+    source = plugin.get("source")
+    if isinstance(source, str):
+        normalized = source.strip()
+        return normalized.startswith("./packages/") or normalized.startswith("packages/")
+    return False
+
+
 def validate_marketplace_sync(
     packages_dir: Path,
     marketplace_path: Path,
@@ -439,7 +455,11 @@ def validate_marketplace_sync(
 
     for plugin in marketplace_plugins:
         plugin_name = plugin.get("name")
-        if plugin_name and plugin_name not in package_names:
+        if (
+            plugin_name
+            and plugin_name not in package_names
+            and is_local_marketplace_plugin(plugin)
+        ):
             warnings.append(
                 f"{plugin_name} in marketplace.json but not in packages/"
             )

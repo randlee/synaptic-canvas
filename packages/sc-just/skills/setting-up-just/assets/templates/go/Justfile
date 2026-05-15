@@ -1,0 +1,22 @@
+set windows-shell := ["pwsh", "-NoLogo", "-Command"]
+
+python_cmd := if os_family() == "windows" { "python" } else { "python3" }
+
+default: help
+
+help:
+    {{python_cmd}} .just/print_help.py
+
+build:
+    go build ./...
+
+fmt:
+    gofmt -w .
+
+lint:
+    go vet ./...
+
+test:
+    go test ./...
+
+ci: fmt lint test

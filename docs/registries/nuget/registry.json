@@ -1,7 +1,7 @@
 {
   "$schema": "https://yourcompany.github.io/schemas/package-registry.schema.json",
   "version": "2.0.0",
-  "generated": "2026-04-29T04:44:47Z",
+  "generated": "2026-05-15T21:50:55Z",
   "repo": "randlee/synaptic-canvas",
   "marketplace": {
     "name": "Synaptic Canvas",
@@ -628,14 +628,50 @@
       },
       "dependencies": [],
       "lastUpdated": "2026-04-29"
+    },
+    "sc-just": {
+      "name": "sc-just",
+      "status": "beta",
+      "tier": 2,
+      "github": "randlee/synaptic-canvas",
+      "repo": "https://github.com/randlee/synaptic-canvas",
+      "path": "packages/sc-just",
+      "readme": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-just/README.md",
+      "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-just/CHANGELOG.md",
+      "dependents": [],
+      "version": "0.1.0",
+      "description": "Set up repo-local just task runners with a curated Justfile, optional .just/ helper scripts, and starter templates for minimal, Python, Go, .NET, and Rust repos.\n",
+      "license": "MIT",
+      "author": {
+        "name": "randlee"
+      },
+      "tags": [
+        "just",
+        "task-runner",
+        "automation",
+        "templates",
+        "skills"
+      ],
+      "artifacts": {
+        "commands": 0,
+        "skills": 1,
+        "agents": 0,
+        "scripts": 0,
+        "schemas": 0
+      },
+      "dependencies": [
+        "just",
+        "python3"
+      ],
+      "lastUpdated": "2026-05-15"
     }
   },
   "metadata": {
     "registryVersion": "2.0.0",
     "schemaVersion": "1.0.0",
-    "totalPackages": 11,
+    "totalPackages": 12,
     "totalCommands": 13,
-    "totalSkills": 10,
+    "totalSkills": 11,
     "totalAgents": 34,
     "totalScripts": 19,
     "categories": {
@@ -645,7 +681,8 @@
         "sc-startup",
         "sc-commit-push-pr",
         "sc-launch-term",
-        "sc-launchpad"
+        "sc-launchpad",
+        "sc-just"
       ],
       "development-tools": [
         "sc-git-worktree",
@@ -688,9 +725,10 @@
         "sc-startup",
         "sc-commit-push-pr",
         "sc-launch-term",
-        "sc-launchpad"
+        "sc-launchpad",
+        "sc-just"
       ],
-      "total_packages": 11
+      "total_packages": 12
     }
   }
 }

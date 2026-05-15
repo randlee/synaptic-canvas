@@ -1,0 +1,72 @@
+template_version = "0.1.0"
+
+[repo]
+name = ""
+
+[help]
+usage = "just <recipe>"
+
+[[help.sections]]
+title = "General"
+
+[[help.sections.recipes]]
+name = "help"
+description = "Show this help."
+
+[[help.sections.recipes]]
+name = "lint"
+description = "Run Python lint checks."
+
+[[help.sections.recipes]]
+name = "test"
+description = "Run Python tests."
+
+[[help.sections.recipes]]
+name = "ci"
+description = "Run lint and test."
+
+[[help.sections]]
+title = "Formatting"
+
+[[help.sections.recipes]]
+name = "fmt"
+description = "Run the default formatting gate."
+
+[[help.sections.recipes]]
+name = "fmt check"
+description = "Run the configured non-mutating formatting gate."
+
+[[help.sections.recipes]]
+name = "fmt write"
+description = "Apply the configured formatting commands."
+
+[[help.sections.recipes]]
+name = "fmt apply"
+description = "Apply the configured formatting commands."
+
+[fmt]
+default_mode = "check"
+
+[fmt.steps]
+check = [
+  ["python", "-m", "ruff", "format", "--check", "."],
+  ["python", "-m", "ruff", "check", "."],
+]
+write = [
+  ["python", "-m", "ruff", "format", "."],
+  ["python", "-m", "ruff", "check", "--fix", "."],
+]
+apply = [
+  ["python", "-m", "ruff", "format", "."],
+  ["python", "-m", "ruff", "check", "--fix", "."],
+]
+
+[lint]
+steps = [
+  ["python", "-m", "ruff", "check", "."],
+]
+
+[test]
+steps = [
+  ["python", "-m", "pytest", "-q"],
+]

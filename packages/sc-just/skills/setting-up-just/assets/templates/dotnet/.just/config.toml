@@ -1,0 +1,26 @@
+template_version = "0.1.0"
+
+[repo]
+name = ""
+
+[help]
+usage = "just <recipe>"
+
+[[help.sections]]
+title = "General"
+
+[[help.sections.recipes]]
+name = "help"
+description = "Show this help."
+
+[[help.sections.recipes]]
+name = "build"
+description = "Run dotnet build from repo root."
+
+[[help.sections.recipes]]
+name = "test"
+description = "Run dotnet test from repo root."
+
+[[help.sections.recipes]]
+name = "ci"
+description = "Run build and test."

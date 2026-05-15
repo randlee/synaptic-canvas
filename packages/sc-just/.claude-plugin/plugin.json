@@ -1,0 +1,19 @@
+{
+  "name": "sc-just",
+  "description": "Set up repo-local just task runners with a curated Justfile, optional .just/ helper scripts, and starter templates for minimal, Python, Go, .NET, and Rust repos.",
+  "version": "0.1.0",
+  "author": {
+    "name": "randlee"
+  },
+  "license": "MIT",
+  "keywords": [
+    "just",
+    "task-runner",
+    "automation",
+    "templates",
+    "skills"
+  ],
+  "skills": [
+    "./skills/setting-up-just/SKILL.md"
+  ]
+}

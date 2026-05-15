@@ -1,0 +1,83 @@
+template_version = "0.1.0"
+
+[repo]
+name = ""
+
+[help]
+usage = "just <recipe>"
+
+[[help.sections]]
+title = "General"
+
+[[help.sections.recipes]]
+name = "help"
+description = "Show this help."
+
+[[help.sections.recipes]]
+name = "build"
+description = "Build the Rust workspace."
+
+[[help.sections.recipes]]
+name = "test"
+description = "Run Rust tests."
+
+[[help.sections.recipes]]
+name = "ci"
+description = "Run lint and test."
+
+[[help.sections]]
+title = "Formatting"
+
+[[help.sections.recipes]]
+name = "fmt"
+description = "Run the default formatting gate."
+
+[[help.sections.recipes]]
+name = "fmt check"
+description = "Run the configured non-mutating formatting gate."
+
+[[help.sections.recipes]]
+name = "fmt write"
+description = "Apply the configured formatting commands."
+
+[[help.sections.recipes]]
+name = "fmt apply"
+description = "Apply the configured formatting commands."
+
+[[help.sections]]
+title = "Lint"
+
+[[help.sections.recipes]]
+name = "lint"
+description = "Run the default lint set."
+
+[[help.sections.recipes]]
+name = "lint fmt"
+description = "Run only the formatting gate."
+
+[[help.sections.recipes]]
+name = "lint clippy"
+description = "Run only clippy with warnings denied."
+
+[fmt]
+default_mode = "check"
+
+[fmt.commands]
+check = ["just", "_fmt-check"]
+write = ["just", "_fmt-write"]
+apply = ["just", "_fmt-write"]
+
+[lint]
+default_target = "all"
+
+[lint.targets]
+all = [
+  ["just", "_lint-fmt"],
+  ["just", "_lint-clippy"],
+]
+fmt = [
+  ["just", "_lint-fmt"],
+]
+clippy = [
+  ["just", "_lint-clippy"],
+]
