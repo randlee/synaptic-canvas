@@ -123,6 +123,27 @@
       "category": "tools"
     },
     {
+      "name": "sc-docling-pdf",
+      "source": "./packages/sc-docling-pdf",
+      "description": "Convert PDF documents to markdown and structured output using the docling CLI. Selects the optimal conversion profile based on document content: clean text, scanned/OCR, rich datasheets with images and tables, complex layouts via VLM, or technical documents with code and formulas. Extracts images as referenced PNG files for viewing. No MCP required — pure CLI workflow for Claude Code.",
+      "version": "0.1.0",
+      "author": {
+        "name": "randlee"
+      },
+      "license": "MIT",
+      "keywords": [
+        "pdf",
+        "docling",
+        "conversion",
+        "markdown",
+        "ocr",
+        "images",
+        "tables",
+        "datasheets"
+      ],
+      "category": "tools"
+    },
+    {
       "name": "sc-git-worktree",
       "source": "./packages/sc-git-worktree",
       "description": "Manage git worktrees with optional tracking and protected branch safeguards: create, scan, cleanup, abort, and update worktrees using a standard sibling folder layout with tracking documents. Prevents accidental deletion of protected branches.\n",
