@@ -387,16 +387,32 @@ class ExpectationEvaluator:
             return self._evaluate_tool_call(
                 expectation_id, description, expected
             )
+        elif expectation_type == ExpectationType.TOOL_NOT_CALLED:
+            return self._evaluate_tool_not_called(
+                expectation_id, description, expected
+            )
         elif expectation_type == ExpectationType.HOOK_EVENT:
             return self._evaluate_hook_event(
+                expectation_id, description, expected
+            )
+        elif expectation_type == ExpectationType.HOOK_EVENT_ABSENT:
+            return self._evaluate_hook_event_absent(
                 expectation_id, description, expected
             )
         elif expectation_type == ExpectationType.SUBAGENT_EVENT:
             return self._evaluate_subagent_event(
                 expectation_id, description, expected
             )
+        elif expectation_type == ExpectationType.SUBAGENT_LIFECYCLE:
+            return self._evaluate_subagent_lifecycle(
+                expectation_id, description, expected
+            )
         elif expectation_type == ExpectationType.OUTPUT_CONTAINS:
             return self._evaluate_output_contains(
+                expectation_id, description, expected
+            )
+        elif expectation_type == ExpectationType.EXECUTION_PARAM:
+            return self._evaluate_execution_param(
                 expectation_id, description, expected
             )
         else:
@@ -419,6 +435,8 @@ class ExpectationEvaluator:
         """Evaluate a tool_call expectation."""
         tool_name = expected.get("tool", "")
         pattern = expected.get("pattern", "")
+        flags = self._regex_flags(expected.get("flags", ""))
+        compiled = re.compile(pattern, flags) if pattern else None
 
         # Search for matching tool call
         for i, tc in enumerate(self.data.tool_calls, 1):
@@ -427,7 +445,7 @@ class ExpectationEvaluator:
 
             # Check pattern against tool input
             input_str = json.dumps(tc.tool_input)
-            if re.search(pattern, input_str):
+            if compiled is None or compiled.search(input_str):
                 # Match found
                 output_preview = ""
                 if tc.tool_response:
@@ -449,9 +467,7 @@ class ExpectationEvaluator:
                     },
                     matched_at={
                         "sequence": i,
-                        "timestamp": (
-                            tc.pre_timestamp.isoformat() if tc.pre_timestamp else ""
-                        ),
+                        "timestamp": tc.pre_timestamp or tc.post_timestamp or datetime.now(),
                     },
                 )
 
@@ -466,6 +482,37 @@ class ExpectationEvaluator:
             failure_reason=f"No {tool_name} call matching pattern: {pattern}",
         )
 
+    def _evaluate_tool_not_called(
+        self,
+        expectation_id: str,
+        description: str,
+        expected: dict[str, Any],
+    ) -> Expectation:
+        """Evaluate a tool_not_called expectation."""
+        matched = self._evaluate_tool_call(expectation_id, description, expected)
+        if matched.status == TestStatus.FAIL:
+            return Expectation(
+                id=expectation_id,
+                description=description,
+                type=ExpectationType.TOOL_NOT_CALLED,
+                status=TestStatus.PASS,
+                expected=expected,
+                actual=None,
+            )
+
+        return Expectation(
+            id=expectation_id,
+            description=description,
+            type=ExpectationType.TOOL_NOT_CALLED,
+            status=TestStatus.FAIL,
+            expected=expected,
+            actual=matched.actual,
+            failure_reason=(
+                f"Found unexpected {expected.get('tool', '')} call matching pattern: "
+                f"{expected.get('pattern', '')}"
+            ),
+        )
+
     def _evaluate_hook_event(
         self,
         expectation_id: str,
@@ -474,7 +521,17 @@ class ExpectationEvaluator:
     ) -> Expectation:
         """Evaluate a hook_event expectation."""
         event_type = expected.get("event", "")
-        filters = expected.get("filters", {})
+        filters = dict(expected.get("filters", {}))
+        has_fields = expected.get("has_field")
+        for key, value in expected.items():
+            if key in {"event", "filters", "has_field"}:
+                continue
+            filters.setdefault(key, value)
+        required_fields: list[str] = []
+        if isinstance(has_fields, str):
+            required_fields = [has_fields]
+        elif isinstance(has_fields, list):
+            required_fields = [field for field in has_fields if isinstance(field, str)]
 
         # Search for matching event
         for event in self.data.raw_hook_events:
@@ -484,20 +541,24 @@ class ExpectationEvaluator:
 
             # Check filters
             if filters:
-                match = all(
-                    event.get(k) == v for k, v in filters.items()
-                )
+                match = all(event.get(k) == v for k, v in filters.items())
                 if not match:
                     continue
+            if required_fields and any(not event.get(field) for field in required_fields):
+                continue
 
             # Match found
+            actual = {"event": evt}
+            actual.update({k: event.get(k) for k in filters})
+            for field in required_fields:
+                actual[field] = event.get(field)
             return Expectation(
                 id=expectation_id,
                 description=description,
                 type=ExpectationType.HOOK_EVENT,
                 status=TestStatus.PASS,
                 expected=expected,
-                actual=event,
+                actual=actual,
             )
 
         # No match found
@@ -509,6 +570,34 @@ class ExpectationEvaluator:
             expected=expected,
             actual=None,
             failure_reason=f"No {event_type} event found matching filters",
+        )
+
+    def _evaluate_hook_event_absent(
+        self,
+        expectation_id: str,
+        description: str,
+        expected: dict[str, Any],
+    ) -> Expectation:
+        """Evaluate a hook_event_absent expectation."""
+        matched = self._evaluate_hook_event(expectation_id, description, expected)
+        if matched.status == TestStatus.FAIL:
+            return Expectation(
+                id=expectation_id,
+                description=description,
+                type=ExpectationType.HOOK_EVENT_ABSENT,
+                status=TestStatus.PASS,
+                expected=expected,
+                actual=None,
+            )
+
+        return Expectation(
+            id=expectation_id,
+            description=description,
+            type=ExpectationType.HOOK_EVENT_ABSENT,
+            status=TestStatus.FAIL,
+            expected=expected,
+            actual=matched.actual,
+            failure_reason=f"Unexpected {expected.get('event', '')} event was found",
         )
 
     def _evaluate_subagent_event(
@@ -556,6 +645,49 @@ class ExpectationEvaluator:
             expected=expected,
             actual=None,
             failure_reason=f"No {event_type} event found for agent",
+        )
+
+    def _evaluate_subagent_lifecycle(
+        self,
+        expectation_id: str,
+        description: str,
+        expected: dict[str, Any],
+    ) -> Expectation:
+        """Evaluate a subagent_lifecycle expectation."""
+        correlation = expected.get("correlation", "agent_id")
+        if correlation != "agent_id":
+            return Expectation(
+                id=expectation_id,
+                description=description,
+                type=ExpectationType.SUBAGENT_LIFECYCLE,
+                status=TestStatus.FAIL,
+                expected=expected,
+                actual=None,
+                failure_reason=f"Unsupported lifecycle correlation: {correlation}",
+            )
+
+        for subagent in self.data.subagents:
+            if subagent.start_timestamp and subagent.stop_timestamp:
+                return Expectation(
+                    id=expectation_id,
+                    description=description,
+                    type=ExpectationType.SUBAGENT_LIFECYCLE,
+                    status=TestStatus.PASS,
+                    expected=expected,
+                    actual={
+                        "agent_id": subagent.agent_id,
+                        "agent_type": subagent.agent_type,
+                    },
+                )
+
+        return Expectation(
+            id=expectation_id,
+            description=description,
+            type=ExpectationType.SUBAGENT_LIFECYCLE,
+            status=TestStatus.FAIL,
+            expected=expected,
+            actual=None,
+            failure_reason="No subagent had both start and stop events",
         )
 
     def _evaluate_output_contains(
@@ -615,6 +747,50 @@ class ExpectationEvaluator:
             actual=None,
             failure_reason=f"Pattern not found in output: {pattern}",
         )
+
+    def _evaluate_execution_param(
+        self,
+        expectation_id: str,
+        description: str,
+        expected: dict[str, Any],
+    ) -> Expectation:
+        """Evaluate an execution_param expectation."""
+        param = expected.get("param", "")
+        value = expected.get("value")
+        execution_params = getattr(self.data, "execution_params", {}) or {}
+        actual_value = execution_params.get(param)
+
+        if actual_value == value:
+            return Expectation(
+                id=expectation_id,
+                description=description,
+                type=ExpectationType.EXECUTION_PARAM,
+                status=TestStatus.PASS,
+                expected=expected,
+                actual={param: actual_value},
+            )
+
+        return Expectation(
+            id=expectation_id,
+            description=description,
+            type=ExpectationType.EXECUTION_PARAM,
+            status=TestStatus.FAIL,
+            expected=expected,
+            actual={param: actual_value},
+            failure_reason=f"Execution param {param!r} was {actual_value!r}, expected {value!r}",
+        )
+
+    @staticmethod
+    def _regex_flags(flags: str) -> int:
+        compiled = 0
+        for flag in flags or "":
+            if flag == "i":
+                compiled |= re.IGNORECASE
+            elif flag == "m":
+                compiled |= re.MULTILINE
+            elif flag == "s":
+                compiled |= re.DOTALL
+        return compiled
 
 
 # =============================================================================

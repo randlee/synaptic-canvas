@@ -38,7 +38,7 @@ Implement the retry policy described in the architecture plan.
 
 ## Run a full QA pass
 
-Use `rust-qa-agent` to enforce guidelines, run all quality gates, and report findings.
+Use `rust-qa-agent` to enforce first-principles QA, run quality gates, and report execution-backed findings.
 
 ```
 Run a full QA pass on the changes from the last sprint.
@@ -46,10 +46,24 @@ Run a full QA pass on the changes from the last sprint.
 
 The agent:
 1. Reads `guidelines.txt` and `cross-platform-guidelines.md`
-2. Performs a critical best-practices review
-3. Runs clippy, unit tests, integration tests, doc tests, release tests
-4. Measures coverage
+2. Runs fmt/clippy/tests and optional coverage
+3. Checks for portability and guideline violations surfaced directly by changed code
+4. Reports execution facts without taking over structural-pattern or service-hardening review policy
 5. Returns a structured fenced JSON report with PASS/FAIL gate and all findings
+
+## Run a dedicated Rust best-practices review
+
+Use `rust-best-practices-agent` when the goal is structural pattern review rather than general QA execution.
+
+```
+Run a sprint-scope best-practices review on the changed Rust files using RBP-001, RBP-004, RBP-006, and RBP-007.
+```
+
+The agent:
+1. Reads the canonical best-practices inventory and enforcement strategy
+2. Loads the specific per-pattern references needed for the selected practice ids
+3. Reviews only the assigned Rust patterns
+4. Returns a fenced JSON findings report keyed by stable practice id
 
 ## Enforce design patterns during planning
 
@@ -63,7 +77,7 @@ The skill checks for typestate opportunities, error inventory completeness, seal
 
 ## Review a Rust service for production gaps
 
-Use `rust-service-hardening` when the code in question is a service rather than a general-purpose crate.
+Use `rust-service-hardening` or `rust-service-hardening-agent` when the code in question is a service rather than a general-purpose crate.
 
 ```
 Review this Axum service for production hardening gaps before we ship it.
@@ -75,6 +89,20 @@ Start with the skill's Tier 1 checks:
 3. Graceful shutdown and draining
 
 Then continue through tracing, request IDs, retries, backpressure, `spawn_blocking`, body limits, dependency hygiene, health checks, and CI/release gates.
+
+## Run a dedicated Rust service-hardening review
+
+Use `rust-service-hardening-agent` when you want a runtime-hardening review separate from generic Rust QA.
+
+```
+Run a phase-end service-hardening review on this Tokio/Axum service.
+```
+
+The agent:
+1. Performs a quick service-indicator check before reviewing
+2. Returns `skipped` immediately when the target is not actually service-like
+3. Uses the service-hardening checklist and framework notes for findings
+4. Returns fenced JSON only
 
 ## Harden a Tokio service before rollout
 

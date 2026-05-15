@@ -31,6 +31,43 @@ def test_resolve_model_invalid_codex() -> None:
         task_runner.resolve_model("codex", "sonnet")
 
 
+def test_codex_account_fallback_detection() -> None:
+    assert (
+        task_runner._should_fallback_codex_model(
+            "gpt-5.2-codex",
+            "The 'gpt-5.2-codex' model is not supported when using Codex with a ChatGPT account.",
+        )
+        is True
+    )
+    assert task_runner._should_fallback_codex_model("gpt-5.2", "unsupported") is False
+
+
+def test_run_sync_retries_codex_with_general_model(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls = []
+
+    class Result:
+        def __init__(self, returncode: int, stdout: str = "", stderr: str = ""):
+            self.returncode = returncode
+            self.stdout = stdout
+            self.stderr = stderr
+
+    def fake_run(cmd, text, capture_output):
+        calls.append(cmd)
+        if len(calls) == 1:
+            return Result(
+                1,
+                stderr="The 'gpt-5.2-codex' model is not supported when using Codex with a ChatGPT account.",
+            )
+        return Result(0, stdout="ok")
+
+    monkeypatch.setattr(task_runner, "_check_runner_available", lambda runner: f"{runner} 1.0")
+    monkeypatch.setattr(task_runner.subprocess, "run", fake_run)
+
+    assert task_runner.run_sync("codex", "gpt-5.2-codex", "hello") == "ok"
+    assert calls[0][4] == "gpt-5.2-codex"
+    assert calls[1][4] == "gpt-5.2"
+
+
 def test_resolve_runner_prefers_claude(monkeypatch: pytest.MonkeyPatch) -> None:
     def fake_check(runner: str) -> str:
         if runner == "claude":

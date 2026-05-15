@@ -13,7 +13,7 @@ Usage:
 import argparse
 import sys
 from pathlib import Path
-from typing import Iterable, Tuple
+from typing import Iterable, NamedTuple
 
 try:
     import yaml
@@ -32,19 +32,28 @@ def read_bytes(path: Path) -> bytes:
     return path.read_bytes()
 
 
+class SharedScriptMapping(NamedTuple):
+    canonical: Path
+    target: Path
+
+
+def load_manifest_data(package_dir: Path) -> dict:
+    manifest = package_dir / "manifest.yaml"
+    if not manifest.exists() or not _YAML_AVAILABLE:
+        return {}
+    try:
+        return yaml.safe_load(manifest.read_text()) or {}
+    except Exception:
+        return {}
+
+
 def package_uses_scripts(package_dir: Path) -> bool:
     """Return True if the package manifest declares scripts artifacts."""
-    manifest = package_dir / "manifest.yaml"
-    if not manifest.exists():
+    data = load_manifest_data(package_dir)
+    if not data:
         return True  # No manifest: assume scripts are used
-    if not _YAML_AVAILABLE:
-        return True  # Can't parse: assume scripts are used
-    try:
-        data = yaml.safe_load(manifest.read_text())
-        artifacts = (data or {}).get("artifacts", {})
-        return bool(artifacts.get("scripts"))
-    except Exception:
-        return True
+    artifacts = data.get("artifacts", {})
+    return bool(artifacts.get("scripts"))
 
 
 def has_package_specific_shared(package_dir: Path) -> bool:
@@ -60,56 +69,97 @@ def has_package_specific_shared(package_dir: Path) -> bool:
     return False
 
 
-def compare_shared_script(canonical: Path, packages_dir: Path) -> Tuple[list[str], list[str]]:
+def explicit_shared_script_mappings(package_dir: Path, repo_root: Path) -> list[SharedScriptMapping]:
+    data = load_manifest_data(package_dir)
+    entries = data.get("shared_scripts")
+    if not isinstance(entries, list):
+        return []
+
+    mappings: list[SharedScriptMapping] = []
+    for entry in entries:
+        if not isinstance(entry, dict):
+            continue
+        source = entry.get("source")
+        target = entry.get("target")
+        if not isinstance(source, str) or not source.strip():
+            continue
+        if not isinstance(target, str) or not target.strip():
+            continue
+        mappings.append(
+            SharedScriptMapping(
+                canonical=(repo_root / source).resolve(),
+                target=package_dir / target,
+            )
+        )
+    return mappings
+
+
+def shared_script_mappings(package_dir: Path, repo_root: Path, default_canonical: Path) -> list[SharedScriptMapping]:
+    explicit = explicit_shared_script_mappings(package_dir, repo_root)
+    if explicit:
+        return explicit
+
+    if not package_uses_scripts(package_dir):
+        return []
+
+    if has_package_specific_shared(package_dir):
+        return []
+
+    return [
+        SharedScriptMapping(
+            canonical=default_canonical.resolve(),
+            target=package_dir / "scripts" / "sc_shared.py",
+        )
+    ]
+
+
+def describe_mapping(package_dir: Path, target: Path) -> str:
+    rel_target = target.relative_to(package_dir)
+    return f"{package_dir.name}:{rel_target.as_posix()}"
+
+
+def compare_shared_script(canonical: Path, packages_dir: Path) -> tuple[list[str], list[str], list[str]]:
     mismatched = []
     missing = []
-    canonical_bytes = read_bytes(canonical)
+    invalid_sources = []
+    repo_root = packages_dir.parent
 
     for package_dir in iter_packages(packages_dir):
         if package_dir.name == "shared":
             continue
 
-        # Skip packages that don't declare scripts in their manifest
-        if not package_uses_scripts(package_dir):
-            continue
+        for mapping in shared_script_mappings(package_dir, repo_root, canonical):
+            if not mapping.canonical.exists():
+                invalid_sources.append(f"{describe_mapping(package_dir, mapping.target)} -> {mapping.canonical}")
+                continue
 
-        # Skip packages that have migrated to package-specific shared modules
-        if has_package_specific_shared(package_dir):
-            continue
+            canonical_bytes = read_bytes(mapping.canonical)
+            if not mapping.target.exists():
+                missing.append(describe_mapping(package_dir, mapping.target))
+                continue
+            if mapping.target.read_bytes() != canonical_bytes:
+                mismatched.append(describe_mapping(package_dir, mapping.target))
 
-        target = package_dir / "scripts" / "sc_shared.py"
-        if not target.exists():
-            missing.append(package_dir.name)
-            continue
-        if target.read_bytes() != canonical_bytes:
-            mismatched.append(package_dir.name)
-
-    return mismatched, missing
+    return mismatched, missing, invalid_sources
 
 
 def sync_shared_script(canonical: Path, packages_dir: Path) -> list[str]:
     changed = []
-    canonical_bytes = read_bytes(canonical)
+    repo_root = packages_dir.parent
 
     for package_dir in iter_packages(packages_dir):
         if package_dir.name == "shared":
             continue
 
-        # Skip packages that don't declare scripts in their manifest
-        if not package_uses_scripts(package_dir):
-            continue
-
-        # Skip packages that have migrated to package-specific shared modules
-        if has_package_specific_shared(package_dir):
-            continue
-
-        scripts_dir = package_dir / "scripts"
-        scripts_dir.mkdir(parents=True, exist_ok=True)
-        target = scripts_dir / "sc_shared.py"
-        if target.exists() and target.read_bytes() == canonical_bytes:
-            continue
-        target.write_bytes(canonical_bytes)
-        changed.append(package_dir.name)
+        for mapping in shared_script_mappings(package_dir, repo_root, canonical):
+            if not mapping.canonical.exists():
+                continue
+            canonical_bytes = read_bytes(mapping.canonical)
+            mapping.target.parent.mkdir(parents=True, exist_ok=True)
+            if mapping.target.exists() and mapping.target.read_bytes() == canonical_bytes:
+                continue
+            mapping.target.write_bytes(canonical_bytes)
+            changed.append(describe_mapping(package_dir, mapping.target))
 
     return changed
 
@@ -142,27 +192,30 @@ def main() -> int:
         print(f"Error: packages directory not found: {args.packages_dir}")
         return 1
 
-    mismatched, missing = compare_shared_script(args.canonical, args.packages_dir)
+    mismatched, missing, invalid_sources = compare_shared_script(args.canonical, args.packages_dir)
     initial_mismatched = list(mismatched)
     initial_missing = list(missing)
+    initial_invalid_sources = list(invalid_sources)
 
     if args.check:
         changed = []
     else:
         changed = sync_shared_script(args.canonical, args.packages_dir)
         # Re-check to report any remaining mismatches after sync
-        mismatched, missing = compare_shared_script(args.canonical, args.packages_dir)
+        mismatched, missing, invalid_sources = compare_shared_script(args.canonical, args.packages_dir)
 
     issues = []
     if missing:
-        issues.append(f"Missing sc_shared.py: {', '.join(missing)}")
+        issues.append(f"Missing shared script targets: {', '.join(missing)}")
     if mismatched:
-        issues.append(f"Mismatched sc_shared.py: {', '.join(mismatched)}")
+        issues.append(f"Mismatched shared script targets: {', '.join(mismatched)}")
+    if invalid_sources:
+        issues.append(f"Missing shared script sources: {', '.join(invalid_sources)}")
 
     if changed:
-        print("Synchronized sc_shared.py in:")
-        for name in changed:
-            print(f"  - {name}")
+        print("Synchronized shared scripts:")
+        for mapping in changed:
+            print(f"  - {mapping}")
 
     if issues:
         print("\nShared script validation failed:")
@@ -170,7 +223,7 @@ def main() -> int:
             print(f"  - {issue}")
         return 1
 
-    if not args.check and (changed or initial_mismatched or initial_missing):
+    if not args.check and (changed or initial_mismatched or initial_missing or initial_invalid_sources):
         print("\nShared script validation failed: files were out of sync and were updated.")
         return 1
 

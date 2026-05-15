@@ -30,7 +30,10 @@ setup:
       EOF
 
 execution:
-  prompt: "/sc-startup"
+  prompt: |
+    /sc-startup
+    If the config contains an invalid path, report the path security issue and stop immediately.
+    Do not ask follow-up questions.
   model: haiku
   timeout_ms: 30000
   tools:

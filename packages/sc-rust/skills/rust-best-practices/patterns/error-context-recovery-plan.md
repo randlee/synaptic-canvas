@@ -273,6 +273,18 @@ echo "$output" | jq -e '.recovery | length > 0' || exit 1
 
 ---
 
+## Acceptance Checklist
+
+An error-contract implementation is not complete unless:
+
+- all important user-visible error paths include recovery guidance
+- JSON error output uses a consistent structure
+- stable error codes are documented for scripting consumers
+- docs links are included where they materially help recovery
+- command-line tools use meaningful, documented exit behavior
+
+---
+
 ## Migration Strategy for Existing Code
 
 ### Step 1: Introduce the library crate (non-breaking)

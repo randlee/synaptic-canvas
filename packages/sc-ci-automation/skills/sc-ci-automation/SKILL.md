@@ -1,6 +1,6 @@
 ---
 name: sc-ci-automation
-version: 0.10.0
+version: 0.12.0
 description: Run CI quality gates with optional auto-fix and PR creation.
 entry_point: /sc-ci-automation
 ---

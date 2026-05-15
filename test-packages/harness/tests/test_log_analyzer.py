@@ -142,6 +142,14 @@ class TestAnalyzeLogs:
         assert result.errors[0].level == LogLevel.ERROR
         assert result.errors[0].message == "This is an error"
 
+    def test_error_wrapped_warning_is_downgraded(self):
+        """Test that wrapper ERROR lines containing WARNING text count as warnings."""
+        content = "ERROR:test.module:WARNING: proceeding, even though PATH update failed"
+        result = analyze_logs(content)
+        assert len(result.errors) == 0
+        assert len(result.warnings) == 1
+        assert result.warnings[0].message == "proceeding, even though PATH update failed"
+
     def test_simple_format_critical(self):
         """Test parsing CRITICAL level as error."""
         content = "CRITICAL:test.module:Critical error"

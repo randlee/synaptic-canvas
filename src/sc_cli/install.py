@@ -48,7 +48,7 @@ import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional
+from typing import Any, Dict, Iterable, List, Optional
 
 # Optional YAML support
 try:  # pragma: no cover - exercised in environment when available
@@ -86,6 +86,7 @@ PACKAGES_DIR = REPO_ROOT / "packages"
 @dataclass
 class Manifest:
     name: str
+    version: str
     path: Path
     description: str
     artifacts: Dict[str, List[str]]
@@ -108,6 +109,7 @@ def _parse_manifest(pkg_dir: Path) -> Manifest:
         desc = (data.get("description") or "").strip()
         return Manifest(
             name=data.get("name") or pkg_dir.name,
+            version=str(data.get("version") or ""),
             path=pkg_dir,
             description=desc,
             artifacts={k: list(v or []) for k, v in artifacts.items()},
@@ -117,8 +119,11 @@ def _parse_manifest(pkg_dir: Path) -> Manifest:
     # Fallback: minimal line parser for artifacts sections
     artifacts: Dict[str, List[str]] = {"commands": [], "skills": [], "agents": [], "scripts": [], "assets": []}
     current: Optional[str] = None
+    version = ""
     for line in _read_file(manifest_path).splitlines():
         line = line.rstrip()
+        if line.strip().startswith("version:"):
+            version = line.split(":", 1)[1].strip().strip('"')
         if line.strip().endswith(":"):
             key = line.strip()[:-1]
             if key in artifacts:
@@ -130,7 +135,14 @@ def _parse_manifest(pkg_dir: Path) -> Manifest:
             item = line.split("- ", 1)[1].strip()
             artifacts[current].append(item)
     # Best-effort description: not critical
-    return Manifest(name=pkg_dir.name, path=pkg_dir, description="", artifacts=artifacts, variables={})
+    return Manifest(
+        name=pkg_dir.name,
+        version=version,
+        path=pkg_dir,
+        description="",
+        artifacts=artifacts,
+        variables={},
+    )
 
 
 def _available_packages() -> Iterable[Path]:
@@ -896,7 +908,7 @@ def _read_repo_version() -> Optional[str]:
     return None
 
 
-def _parse_frontmatter_simple(md_path: Path) -> Dict[str, str]:
+def _parse_frontmatter_simple(md_path: Path) -> Dict[str, Any]:
     """Parse YAML frontmatter at top of a Markdown file (best-effort)."""
     text = _read_file(md_path)
     if not text.startswith("---"):
@@ -920,11 +932,12 @@ def _parse_frontmatter_simple(md_path: Path) -> Dict[str, str]:
     if yaml is not None:
         try:
             data = yaml.safe_load(fm_text) or {}
-            return {k: str(v) for k, v in data.items() if isinstance(k, str)}
+            if isinstance(data, dict):
+                return {k: v for k, v in data.items() if isinstance(k, str)}
         except Exception:
             pass
     # naive parse key: value
-    out: Dict[str, str] = {}
+    out: Dict[str, Any] = {}
     for line in fm_text.splitlines():
         if ":" in line:
             k, v = line.split(":", 1)
@@ -973,24 +986,26 @@ def _resolve_install_dest(
     return None
 
 
-def _parse_skill_metadata(skill_md_path: Path) -> Dict[str, any]:
+def _parse_skill_metadata(skill_md_path: Path) -> Dict[str, Any]:
     """Parse skill metadata from SKILL.md frontmatter.
 
     Returns dict with keys: name, entry_point, depends_on (optional), version
     """
     fm = _parse_frontmatter_simple(skill_md_path)
-    metadata: Dict[str, any] = {
+    metadata: Dict[str, Any] = {
         "name": fm.get("name", ""),
         "entry_point": fm.get("entry_point", ""),
         "version": fm.get("version", ""),
     }
 
-    # Parse depends_on if present (would be in YAML as nested dict)
-    depends_str = fm.get("depends_on", "")
-    if depends_str:
-        # Simple parsing for "key: value, key: value" format
+    depends_on = fm.get("depends_on")
+    if isinstance(depends_on, dict):
+        metadata["depends_on"] = {
+            str(k): str(v) for k, v in depends_on.items() if isinstance(k, str)
+        }
+    elif depends_on:
         metadata["depends_on"] = {}
-        for item in depends_str.split(","):
+        for item in str(depends_on).split(","):
             item = item.strip()
             if ":" in item:
                 k, v = item.split(":", 1)
@@ -999,7 +1014,12 @@ def _parse_skill_metadata(skill_md_path: Path) -> Dict[str, any]:
     return metadata
 
 
-def _update_registry(dest_path: Path, artifact_rel_paths: List[str]) -> int:
+def _update_registry(
+    dest_path: Path,
+    artifact_rel_paths: List[str],
+    *,
+    package_version: Optional[str] = None,
+) -> int:
     """Create or merge .claude/agents/registry.yaml with installed agents and skills.
 
     Args:
@@ -1034,7 +1054,7 @@ def _update_registry(dest_path: Path, artifact_rel_paths: List[str]) -> int:
     registry.setdefault("agents", {})
     registry.setdefault("skills", {})
 
-    root_version = _read_repo_version()
+    expected_version = package_version or _read_repo_version()
 
     # Process agents
     for rel in artifact_rel_paths:
@@ -1044,13 +1064,13 @@ def _update_registry(dest_path: Path, artifact_rel_paths: List[str]) -> int:
         installed_md = dest_path / rel
         fm = _parse_frontmatter_simple(installed_md)
         ver = fm.get("version") or ""
-        if root_version and ver and ver != root_version:
+        if expected_version and ver and ver != expected_version:
             error(
-                f"version mismatch for agent {name}: frontmatter={ver} repo={root_version}"
+                f"version mismatch for agent {name}: frontmatter={ver} package={expected_version}"
             )
             return 1
         registry["agents"][name] = {
-            "version": ver or (root_version or ""),
+            "version": ver or (expected_version or ""),
             "path": f".claude/{rel}",
         }
 
@@ -1066,7 +1086,7 @@ def _update_registry(dest_path: Path, artifact_rel_paths: List[str]) -> int:
             if skill_md.exists():
                 metadata = _parse_skill_metadata(skill_md)
                 skill_entry = {
-                    "version": metadata.get("version") or (root_version or ""),
+                    "version": metadata.get("version") or (expected_version or ""),
                 }
 
                 # Add entry_point if present
@@ -1244,7 +1264,11 @@ def cmd_install(
         install_one(rel)
 
     # Update registry.yaml (agents and skills)
-    rc = _update_registry(dest_path, installed_artifacts)
+    rc = _update_registry(
+        dest_path,
+        installed_artifacts,
+        package_version=manifest.version or None,
+    )
     if rc != 0:
         return rc
 

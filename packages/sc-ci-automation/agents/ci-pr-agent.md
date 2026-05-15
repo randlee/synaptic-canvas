@@ -1,6 +1,6 @@
 ---
 name: ci-pr-agent
-version: 0.10.0
+version: 0.12.0
 description: Commit, push, and create PR after quality gates pass.
 ---
 

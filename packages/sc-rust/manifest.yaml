@@ -1,5 +1,5 @@
 name: sc-rust
-version: 0.10.0
+version: 0.12.0
 description: >
   Rust development toolkit: idiomatic guidelines, service hardening guidance,
   design pattern enforcement, and specialized agents for architecture, code review,
@@ -24,11 +24,25 @@ artifacts:
     - skills/rust-development/SKILL.md
     - skills/rust-development/guidelines.txt
     - skills/rust-development/cross-platform-guidelines.md
+    - skills/docs/README.md
+    - skills/libs/ux/README.md
+    - skills/libs/resilience/README.md
+    - skills/universal/README.md
+    - skills/ux/README.md
+    - skills/resilience/README.md
     - skills/rust-best-practices/SKILL.md
+    - skills/rust-best-practices/patterns/practice-inventory.md
     - skills/rust-best-practices/patterns/enforcement-strategy.md
     - skills/rust-best-practices/patterns/error-context-recovery-plan.md
     - skills/rust-best-practices/patterns/typestate-plan.md
     - skills/rust-best-practices/patterns/sealed-traits-plan.md
+    - skills/rust-best-practices/patterns/newtype-zero-cost-plan.md
+    - skills/rust-best-practices/patterns/deref-coercion-plan.md
+    - skills/rust-best-practices/patterns/interior-mutability-plan.md
+    - skills/rust-best-practices/patterns/infallible-plan.md
+    - skills/rust-best-practices/patterns/trait-object-safety-plan.md
+    - skills/rust-best-practices/patterns/cow-plan.md
+    - skills/rust-best-practices/patterns/phantomdata-capability-token-plan.md
     - skills/rust-service-hardening/SKILL.md
     - skills/rust-service-hardening/references/production-checklist.md
     - skills/rust-service-hardening/references/framework-notes.md
@@ -38,6 +52,13 @@ artifacts:
     - agents/rust-code-explorer.md
     - agents/rust-developer.md
     - agents/rust-qa-agent.md
+    - agents/rust-best-practices-agent.md
+    - agents/rust-service-hardening-agent.md
+  assets:
+    - assets/sc-rust/quality-mgr/quality-mgr.rust.md
+    - assets/sc-rust/quality-mgr/templates/rust-qa-assignment.json.j2
+    - assets/sc-rust/quality-mgr/templates/rust-best-practices-assignment.json.j2
+    - assets/sc-rust/quality-mgr/templates/rust-service-hardening-assignment.json.j2
 
 # Installation policy
 install:
@@ -48,3 +69,4 @@ requires:
   cli:
     - cargo >= 1.87
     - cargo-llvm-cov
+    - sc-compose

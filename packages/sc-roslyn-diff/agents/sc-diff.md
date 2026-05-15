@@ -1,6 +1,6 @@
 ---
 name: sc-diff
-version: 0.10.0
+version: 0.12.0
 description: Run roslyn-diff on file or folder pairs with JSON-first output and optional HTML reports.
 model: sonnet
 color: blue

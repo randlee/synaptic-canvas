@@ -26,7 +26,7 @@ With that said, there are a few guidelines which are particularly important to h
 
 * **Create Idiomatic Rust API Patterns**. The more your APIs, whether public or internal, look and feel like the majority of
 Rust code in the world, the better it is for AI. Follow the [Rust API Guidelines](https://rust-lang.github.io/api-guidelines/checklist.html)
-along with the guidelines from [Library / UX](../libs/ux).
+along with the guidelines from [Library / UX](../libs/ux/README.md).
 
 * **Provide Thorough Docs**. Agents love good detailed docs. Include docs for all of your modules and public items in your crate.
 Assume the reader has a solid, but not expert, level of understanding of Rust, and that the reader understands the standard library.
@@ -34,8 +34,8 @@ Follow
 [C-CRATE-DOC](https://rust-lang.github.io/api-guidelines/checklist.html#c-crate-doc),
 [C-FAILURE](https://rust-lang.github.io/api-guidelines/checklist.html#c-failure),
 [C-LINK](https://rust-lang.github.io/api-guidelines/checklist.html#c-link), and
-[M-MODULE-DOCS](../docs/#M-MODULE-DOCS)
-[M-CANONICAL-DOCS](../docs/#M-CANONICAL-DOCS).
+[M-MODULE-DOCS](../docs/README.md#M-MODULE-DOCS)
+[M-CANONICAL-DOCS](../docs/README.md#M-CANONICAL-DOCS).
 
 * **Provide Thorough Examples**. Your documentation should have directly usable examples, the repository should include more elaborate ones.
 Follow
@@ -89,7 +89,7 @@ application-level error types.
 
 Libraries (crates used by more than one crate) should always follow [M-ERRORS-CANONICAL-STRUCTS] instead.
 
-[M-ERRORS-CANONICAL-STRUCTS]: ../libs/ux/#M-ERRORS-CANONICAL-STRUCTS
+[M-ERRORS-CANONICAL-STRUCTS]: ../libs/ux/README.md#M-ERRORS-CANONICAL-STRUCTS
 
 
 
@@ -211,7 +211,7 @@ This does not apply to `std` or 3rd party types; these should always be re-expor
 >
 > The `#[doc(inline)]` trick above does not change [M-NO-GLOB-REEXPORTS]; you generally should not re-export items via wildcards.
 
-[M-NO-GLOB-REEXPORTS]: ../libs/resilience/#M-NO-GLOB-REEXPORTS
+[M-NO-GLOB-REEXPORTS]: ../libs/resilience/README.md#M-NO-GLOB-REEXPORTS
 
 
 
@@ -651,12 +651,12 @@ exceptions, life cycle issues should likewise not be made the subject of some ma
 way they are needed, their disposal is governed by `Drop`, and only `Drop`.
 
 Regarding factories, at least the term should be avoided. While the concept `FooFactory` has its use, its canonical
-Rust name is `Builder` (compare [M-INIT-BUILDER](../libs/ux/#M-INIT-BUILDER)). A builder that can produce items repeatedly is still a builder.
+Rust name is `Builder` (compare [M-INIT-BUILDER](../libs/ux/README.md#M-INIT-BUILDER)). A builder that can produce items repeatedly is still a builder.
 
 In addition, accepting factories (builders) as parameters is an unidiomatic import of OO concepts into Rust. If
 repeatable instantiation is required, functions should ask for an `impl Fn() -> Foo` over a `FooBuilder` or
 similar. In contrast, standalone builders have their use, but primarily to reduce parametric permutation complexity
-around optional values (again, [M-INIT-BUILDER](../libs/ux/#M-INIT-BUILDER)).
+around optional values (again, [M-INIT-BUILDER](../libs/ux/README.md#M-INIT-BUILDER)).
 
 
 
@@ -907,7 +907,7 @@ fn parse_uri(s: &str) -> Result<Uri, ParseError> { };
 > For any user input or calling sequence that would otherwise panic, you should also explore if you can use the type
 > system to avoid panicking code paths altogether.
 
-[M-PANIC-IS-STOP]: ../universal/#M-PANIC-IS-STOP
+[M-PANIC-IS-STOP]: ../universal/README.md#M-PANIC-IS-STOP
 
 
 
@@ -1648,7 +1648,7 @@ impl Library {
 }
 ```
 
-[M-RUNTIME-ABSTRACTED]: ../ux/#M-RUNTIME-ABSTRACTED
+[M-RUNTIME-ABSTRACTED]: ../ux/README.md#M-RUNTIME-ABSTRACTED
 
 
 
@@ -1858,7 +1858,7 @@ async fn read_database(x: &DataAccess) { ... }
 ```
 
 [M-AVOID-WRAPPERS]: ./#M-AVOID-WRAPPERS
-[M-MOCKABLE-SYSCALLS]: ../resilience/#M-MOCKABLE-SYSCALLS
+[M-MOCKABLE-SYSCALLS]: ../resilience/README.md#M-MOCKABLE-SYSCALLS
 [M-ABSTRACTIONS-DONT-NEST]: ./#M-ABSTRACTIONS-DONT-NEST
 
 
@@ -2434,4 +2434,3 @@ should be free to do so.
 
 
 ---
-

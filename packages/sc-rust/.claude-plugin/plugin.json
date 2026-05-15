@@ -1,7 +1,7 @@
 {
   "name": "sc-rust",
   "description": "Rust development toolkit: idiomatic guidelines, service hardening guidance, design pattern enforcement, and specialized agents for architecture, code review, exploration, implementation, and QA.",
-  "version": "0.10.0",
+  "version": "0.12.0",
   "author": {
     "name": "randlee"
   },
@@ -17,10 +17,12 @@
   ],
   "agents": [
     "./agents/rust-architect.md",
+    "./agents/rust-best-practices-agent.md",
     "./agents/rust-code-explorer.md",
     "./agents/rust-code-reviewer.md",
     "./agents/rust-developer.md",
-    "./agents/rust-qa-agent.md"
+    "./agents/rust-qa-agent.md",
+    "./agents/rust-service-hardening-agent.md"
   ],
   "skills": [
     "./skills/rust-development/SKILL.md",

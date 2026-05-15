@@ -1,7 +1,13 @@
 ---
 name: rust-service-hardening
-version: 0.10.0
+version: 0.12.0
 description: Harden Rust backend services for production readiness. Use when working on Tokio, Axum, Hyper, Tonic, or Reqwest-based services and you need guidance or review for config validation, structured tracing, request IDs, timeouts, retries, graceful shutdown, backpressure, body limits, health checks, metrics, and dependency hygiene. Not for non-service Rust crates, embedded Rust, pure sync CLI tools, or low-level libraries without runtime, network, or server concerns.
+depends_on:
+  rust-service-hardening-agent: 0.x
+  rust-architect: 0.x
+  rust-code-reviewer: 0.x
+  rust-code-explorer: 0.x
+  rust-qa-agent: 0.x
 ---
 
 # Rust Service Hardening
@@ -70,12 +76,41 @@ Use these existing `sc-rust` agents for service-hardening workflows:
 
 | Operation | Agent | Returns |
 |-----------|-------|---------|
-| Design review or rollout hardening plan | `rust-architect` | Architecture blueprint or hardening plan with concrete implementation guidance |
-| Sprint review or diff-scoped service-hardening review | `rust-code-reviewer` | High-confidence review findings limited to applicable service-hardening topics |
-| Codebase tracing before review | `rust-code-explorer` | Codepath map showing where startup, request handling, clients, queues, and shutdown behavior live |
-| Validation pass after changes | `rust-qa-agent` | QA report covering tests, quality gates, and broader validation after hardening work |
+| Dedicated service-hardening review | `rust-service-hardening-agent` | Fenced JSON `{success,data,error}` findings or a structured `skipped` result when service indicators are absent |
+| Design review or rollout hardening plan | `rust-architect` | Fenced JSON `{success,data,error}` architecture blueprint or hardening plan |
+| Sprint review or diff-scoped service-hardening review | `rust-code-reviewer` | Fenced JSON `{success,data,error}` findings limited to applicable service-hardening topics |
+| Codebase tracing before review | `rust-code-explorer` | Fenced JSON `{success,data,error}` codepath map for startup, request handling, clients, queues, and shutdown behavior |
+| Validation pass after changes | `rust-qa-agent` | Fenced JSON `{success,data,error}` QA report covering tests, quality gates, and broader validation after hardening work |
 
-When delegating, use the same `run_in_background: true` payload format used by the other `sc-rust` skills and keep the prompt focused on service-hardening concerns rather than general Rust style issues.
+Invoke these agents via Agent Runner using `.claude/agents/registry.yaml`, and keep the prompt focused on service-hardening concerns rather than general Rust style issues.
+
+Dedicated `rust-service-hardening-agent` assignment template:
+
+```json
+{
+  "review_mode": "doc_review | sprint_review | phase_end",
+  "worktree_path": "/absolute/path/to/worktree",
+  "review_targets": [
+    "src/",
+    "Cargo.toml"
+  ],
+  "topics": [
+    "config_validation",
+    "timeouts",
+    "graceful_shutdown"
+  ],
+  "service_indicator_dependencies": [
+    "tokio",
+    "axum",
+    "hyper",
+    "tonic",
+    "warp",
+    "actix-web",
+    "reqwest"
+  ],
+  "notes": "optional context"
+}
+```
 
 ## Review Modes
 
@@ -93,9 +128,10 @@ Use this mode when reviewing a plan, service design, or rollout readiness:
 Use this mode for review of recent changes or a narrow file set:
 
 1. Read `references/production-checklist.md`
-2. Delegate to `rust-code-reviewer`
-3. Limit findings to applicable service-hardening topics only
-4. Prioritize issues with clear operational impact over general style commentary
+2. Prefer `rust-service-hardening-agent` for dedicated runtime-hardening review
+3. Use `rust-code-reviewer` only when the request is a broader Rust review that should include service-hardening concerns
+4. Limit findings to applicable service-hardening topics only
+5. Prioritize issues with clear operational impact over general style commentary
 
 ### Codebase tracing before review
 
@@ -109,6 +145,29 @@ If the service boundaries are unclear, use `rust-code-explorer` first to locate:
 ### Validation pass after changes
 
 Use `rust-qa-agent` when the user wants a QA run after hardening changes or asks for broader validation beyond review guidance.
+
+Suggested `rust-qa-agent` assignment:
+
+```json
+{
+  "worktree_path": "/absolute/path/to/worktree",
+  "review_mode": "sprint_review | phase_end",
+  "review_targets": [
+    "src/",
+    "Cargo.toml"
+  ],
+  "run_checks": {
+    "fmt": true,
+    "clippy": true,
+    "tests": true,
+    "coverage": false
+  },
+  "baseline_ref": "optional git ref",
+  "artifact_regeneration_required": false,
+  "artifact_commands": "",
+  "notes": "optional context"
+}
+```
 
 ## Relationship to Other Skills
 

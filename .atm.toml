@@ -1,0 +1,13 @@
+[core]
+default_team = "synaptic-canvas"
+identity = "team-lead"
+
+# Post-send hooks for notifying agents when they receive messages
+# Uncomment and create scripts/atm-nudge.sh if you want automatic notifications
+# [[atm.post_send_hooks]]
+# recipient = "team-lead"
+# command = ["scripts/atm-nudge.sh", "team-lead"]
+
+# [[atm.post_send_hooks]]
+# recipient = "codex-dev"
+# command = ["scripts/atm-nudge.sh", "codex-dev"]
