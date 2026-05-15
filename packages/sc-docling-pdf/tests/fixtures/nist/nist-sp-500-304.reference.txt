@@ -1,0 +1,14 @@
+Conformance Testing Methodology Framework for ANSI/NIST-ITL 1-2011 Update: 2013, Data Format for the Interchange of Fingerprint, Facial & Other Biometric Information
+
+Foreword
+The existence of biometric standards alone is not enough to demonstrate that products meet the technical requirements specified in the standards.
+
+1 Introduction
+This publication defines a conformance testing methodology framework (CTMF) which includes elements of a conformance testing methodology (CTM), conformance test assertions, and conformance test procedures applicable to ANSI/NIST-ITL 2011 Update: 2013 (AN-2013).
+
+List anchor text
+Table 5.1 - Assertion Syntax: Value-Type Definitions
+Table 5.2 - Assertion Syntax: Defined Values
+Table 5.3 - Assertion Syntax: Value-based Image Metadata Tags
+
+This file is intentionally a short semantic reference, not a full-text transcription.

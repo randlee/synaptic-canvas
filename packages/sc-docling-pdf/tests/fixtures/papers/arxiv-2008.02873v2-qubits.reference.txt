@@ -1,0 +1,8 @@
+High-Fidelity Control of Superconducting Qubits Using Direct Microwave Synthesis in Higher Nyquist Zones
+
+Quantum Engineering and Computing Group, Raytheon BBN Technologies, Cambridge, MA 02138 USA
+
+ABSTRACT
+Control electronics for superconducting quantum processors have strict requirements for accurate command of the sensitive quantum states of their qubits.
+
+This file is intentionally a short semantic reference, not a full-text transcription.

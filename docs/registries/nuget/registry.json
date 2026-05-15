@@ -122,6 +122,45 @@
       "lastUpdated": "2026-04-29",
       "dependents": []
     },
+    "sc-docling-pdf": {
+      "name": "sc-docling-pdf",
+      "version": "0.1.0",
+      "status": "beta",
+      "tier": 0,
+      "description": "Convert PDF documents to markdown and structured output using the docling CLI. Selects the optimal conversion profile based on document content: clean text, scanned/OCR, rich datasheets with images and tables, complex layouts via VLM, or technical documents with code and formulas. Extracts images as referenced PNG files for viewing. No MCP required — pure CLI workflow for Claude Code.",
+      "github": "randlee/synaptic-canvas",
+      "repo": "https://github.com/randlee/synaptic-canvas",
+      "path": "packages/sc-docling-pdf",
+      "readme": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-docling-pdf/README.md",
+      "license": "MIT",
+      "author": {
+        "name": "randlee"
+      },
+      "tags": [
+        "pdf",
+        "docling",
+        "conversion",
+        "markdown",
+        "ocr",
+        "images",
+        "tables",
+        "datasheets"
+      ],
+      "artifacts": {
+        "commands": 0,
+        "skills": 1,
+        "agents": 0,
+        "scripts": 0,
+        "schemas": 0
+      },
+      "dependencies": [
+        "python3",
+        "docling"
+      ],
+      "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-docling-pdf/CHANGELOG.md",
+      "lastUpdated": "2026-05-14",
+      "dependents": []
+    },
     "sc-git-worktree": {
       "name": "sc-git-worktree",
       "version": "0.12.0",

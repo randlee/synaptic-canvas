@@ -1,0 +1,24 @@
+id: arxiv-2008.02873v2-qubits
+title: "High-Fidelity Control of Superconducting Qubits Using Direct Microwave Synthesis in Higher Nyquist Zones"
+filename: arxiv-2008.02873v2-qubits.pdf
+source_url: https://arxiv.org/pdf/2008.02873v2.pdf
+publisher: arXiv / IEEE Transactions on Quantum Engineering
+publication_date: 2020-12
+pages: 12
+sha256: d25686efc7068882cb39126eaac7019b74e42b56ea4589dc5d9057cbaac1a86d
+license_note: Selected because the PDF states CC BY 4.0.
+profiles:
+  - text
+  - rich
+reference_text_file: arxiv-2008.02873v2-qubits.reference.txt
+expected:
+  must_contain:
+    - "High-Fidelity Control of Superconducting Qubits Using Direct Microwave Synthesis in Higher Nyquist Zones"
+    - "Quantum Engineering and Computing Group"
+    - "ABSTRACT"
+    - "superconducting quantum processors"
+    - "Index Terms"
+  min_headings: 3
+  min_figures: 1
+notes:
+  - Good scientific-paper fixture with affiliations, abstract, engineering notation, and figure/citation structure.

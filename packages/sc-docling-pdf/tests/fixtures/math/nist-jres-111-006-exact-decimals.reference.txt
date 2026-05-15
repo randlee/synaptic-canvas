@@ -1,0 +1,9 @@
+Integer representation of decimal numbers for exact computations
+
+Abstract
+A scheme is presented and software is documented for representing as integers input decimal numbers that have been stored in a computer as double precision floating point numbers.
+
+1 Introduction
+Mainstream computers base integer and floating point arithmetic on fixed word lengths.
+
+This file is intentionally a short semantic reference, not a full-text transcription.

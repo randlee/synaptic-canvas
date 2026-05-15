@@ -1,0 +1,141 @@
+# Output: JSON
+
+## Overview
+
+The JSON output contains the full Docling document model — every element
+(paragraphs, tables, images, headers, lists) with text content, structural
+label, bounding boxes, and enrichment data.
+
+---
+
+## Enabling JSON Output
+
+```bash
+docling INPUT.pdf --to json --output ./output --device mps
+
+# Typically paired with markdown:
+docling INPUT.pdf --to md --to json --output ./output --device mps
+```
+
+---
+
+## Top-Level Structure
+
+```json
+{
+  "schema_name": "DoclingDocument",
+  "version": "1.10.0",
+  "name": "INPUT",
+  "origin": { "filename": "INPUT.pdf", "mimetype": "application/pdf" },
+  "furniture": { ... },
+  "body": { "children": [ ... ] },
+  "texts": [ ... ],
+  "tables": [ ... ],
+  "pictures": [ ... ],
+  "pages": { ... }
+}
+```
+
+Current Docling JSON is a referenced document graph:
+- `body.children` contains `$ref` pointers into arrays such as `texts`, `tables`, and `pictures`
+- page metadata lives under `pages`
+- `origin.page_count` may be absent, so do not rely on it being present
+
+---
+
+## Element Labels
+
+The referenced content items in `texts`, `tables`, `pictures`, and related arrays carry labels:
+
+| Label | Content |
+|-------|---------|
+| `title` | Document title |
+| `section_header` | Chapter or section heading |
+| `text` | Body paragraph |
+| `table` | Structured table |
+| `picture` | Image or diagram |
+| `list_item` | Bullet or numbered list item |
+| `code` | Code block |
+| `formula` | Mathematical expression |
+| `caption` | Figure or table caption |
+| `footnote` | Footnote text |
+
+---
+
+## Navigation Scripts
+
+```python
+import json
+
+with open("./output/INPUT.json") as f:
+    doc = json.load(f)
+
+# Resolve the body order into concrete items
+def deref(ref):
+    _, collection, index = ref["$ref"].split("/")
+    return doc[collection][int(index)]
+
+ordered_items = [deref(ref) for ref in doc["body"]["children"]]
+
+# Document outline (headers only)
+for item in ordered_items:
+    if item.get("label") in ("title", "section_header"):
+        level = item.get("level", 1)
+        print("  " * (level - 1) + item.get("text", ""))
+
+# Count elements by label
+from collections import Counter
+counts = Counter(i.get("label", "?") for i in ordered_items)
+for label, n in counts.most_common():
+    print(f"{n:4d}  {label}")
+
+# Page count
+print(len(doc["pages"]), "pages")
+```
+
+---
+
+## Bounding Boxes
+
+Every element includes `prov` with page number and bounding box:
+
+```json
+"prov": [{
+  "page_no": 3,
+  "bbox": { "l": 72.0, "t": 145.2, "r": 540.0, "b": 200.5, "coord_origin": "BOTTOMLEFT" }
+}]
+```
+
+Coordinates are in PDF points (1 pt = 1/72 inch), origin bottom-left.
+
+---
+
+## Enrichment Data in JSON
+
+### Picture with classification + caption
+```json
+{
+  "label": "picture",
+  "classification": { "predicted_class": "diagram", "confidence": 0.94 },
+  "description": "A block diagram showing the system architecture...",
+  "image": { "uri": "INPUT-pictures/picture-0003.png" }
+}
+```
+
+### Formula
+```json
+{ "label": "formula", "text": "$P = IV\\cos\\theta$" }
+```
+
+---
+
+## When to Use JSON vs Markdown
+
+| Use Case | Format |
+|----------|--------|
+| Reading content / LLM input | Markdown |
+| Image metadata, classifications, captions | JSON |
+| Table data with merged cells | JSON |
+| Chart extracted data | JSON |
+| Bounding boxes / page location | JSON |
+| Building a downstream pipeline | JSON |

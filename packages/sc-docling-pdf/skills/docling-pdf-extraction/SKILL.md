@@ -1,0 +1,146 @@
+---
+name: docling-pdf-extraction
+version: 0.1.0
+description: >
+  Convert PDF documents to markdown, extract images and tables using the docling CLI.
+  Use when asked to convert a PDF, extract a datasheet, get images from a PDF, or
+  process any document into structured output. Triggers: 'convert pdf', 'pdf to
+  markdown', 'extract images from pdf', 'datasheet', 'get tables from pdf',
+  'extract diagrams'. No MCP required — uses docling CLI only.
+entry_point: /docling-pdf
+triggers:
+  - convert pdf
+  - pdf to markdown
+  - extract images
+  - extract tables
+  - datasheet
+  - docling
+  - ocr pdf
+---
+
+# Docling PDF Extraction
+
+Convert PDFs to markdown and structured output using the docling CLI.
+Selects the optimal conversion profile based on document content.
+
+## Step 1 — Verify Installation and Runtime Compatibility
+
+```bash
+which docling && docling --version
+```
+
+If not found on PATH, also check common install locations — Claude Code's bash
+PATH may differ from the interactive shell:
+
+```bash
+for p in "$HOME/.local/bin/docling" "$HOME/.venvs/docling/bin/docling" \
+  "$(python3 -m site --user-base 2>/dev/null)/bin/docling" \
+  "/opt/homebrew/bin/docling"; do
+  [ -x "$p" ] && echo "Found at: $p" && break
+done
+```
+
+If found at a non-PATH location, use the full path for all `docling` commands,
+or export that directory to PATH for the session.
+
+If not installed: **read `references/installation.md` before proceeding.**
+
+On first use in a session, and after any Docling / `transformers` / `peft` upgrade,
+run the advanced-runtime validation block from `references/installation.md`.
+
+If validation fails:
+- fix the environment before using `vlm` or enrichment-heavy commands
+- fall back to `text`, `scan`, or baseline `rich` without enrichment flags
+
+If the document may need OCR:
+- read `references/profile-scan.md` before running the command
+- be explicit about `--ocr-lang` for the document language; for English-only scans, use `--ocr-lang en`
+
+---
+
+## Step 2 — Analyze the Document
+
+Before choosing a profile, inspect the document to understand its content type.
+
+**Read `references/document-analysis.md`** to determine:
+- Is text selectable (digital) or bitmapped (scanned)?
+- Are there tables? Images? Diagrams? Charts? Code? Math?
+- Is the layout simple or complex (multi-column, dense mixed content)?
+
+---
+
+## Step 3 — Select a Conversion Profile
+
+| Profile | Document Type | Speed / Quality | Reference |
+|---------|--------------|-----------------|-----------|
+| `text`  | Digital PDF, prose only, no images needed | Fastest, lowest overhead | `references/profile-text.md` |
+| `scan`  | Scanned or photographed, bitmapped text | Slower; OCR-first | `references/profile-scan.md` |
+| `rich`  | Datasheet, spec sheet, tables + photographs + diagrams ⭐ | Best default: quick and thorough | `references/profile-rich.md` |
+| `vlm`   | Complex layout, dense mixed content, poor standard results | Slowest, highest layout recovery | `references/profile-vlm.md` |
+| `code`  | Technical docs with code blocks or math formulas | Moderate cost, structure-focused | `references/profile-code.md` |
+
+**Tie-breaking rules:**
+- Prefer `rich` over `text` — it's a superset with minimal overhead
+- Prefer `rich` over `vlm` — VLM is 3–10× slower; only escalate when standard output is poor
+- Profiles can be combined: `scan` + `rich` flags are additive
+
+### Runtime Guide
+
+Use this rule of thumb when choosing between "usable now" and "best quality later":
+
+| Need | Recommended path |
+|------|------------------|
+| Clean text fast | `text` |
+| Engineering PDF with tables / images, good enough for most agents | baseline `rich` |
+| Scan / photo, readable text first | `scan` |
+| Code / math fidelity matters | `code` |
+| Layout is wrong or content is missing after baseline `rich` / `scan` | `vlm` with `smoldocling` first |
+| Final pass for hardest layouts when runtime is acceptable | `vlm` with `granite_docling` |
+
+Practical timing guidance from local runs:
+- `text`: seconds
+- baseline `rich`: tens of seconds
+- `scan`: tens of seconds to a few minutes
+- `smoldocling`: minutes
+- `granite_docling`: usually the longest path; reserve for cases where the faster paths are not good enough
+
+---
+
+## Step 4 — Select Output Format(s)
+
+Output format is independent of conversion profile. Multiple formats can be generated in one run.
+
+| Need | Reference |
+|------|-----------|
+| LLM consumption, reading in editor | `references/output-markdown.md` |
+| Viewing extracted photographs and diagrams | `references/output-images.md` |
+| Working with tables or chart data | `references/output-tables.md` |
+| Structured access, metadata, bounding boxes | `references/output-json.md` |
+
+---
+
+## Quick Reference
+
+```bash
+# Fastest — clean digital PDF
+docling INPUT.pdf --to md --output ./out --device mps
+
+# Quick, thorough default for engineering PDFs
+docling INPUT.pdf --to md --to json --output ./out \
+  --image-export-mode referenced \
+  --table-mode accurate --device mps
+
+# Slower, richer variant after Step 1 validation passes
+# --enrich-picture-classes --enrich-picture-description --enrich-chart-extraction
+
+# Scanned document: usable OCR text without bloated Markdown
+docling INPUT.pdf --to md --output ./out \
+  --force-ocr --ocr-engine easyocr --ocr-lang en \
+  --image-export-mode placeholder --device mps
+
+# Complex layout rescue: try Smol first, Granite only if needed
+# docling INPUT.pdf --pipeline vlm --vlm-model smoldocling --to md --to json ...
+# docling INPUT.pdf --pipeline vlm --vlm-model granite_docling --to md --to json ...
+```
+
+For all other cases, follow Steps 1–4 above.

@@ -1,0 +1,50 @@
+name: sc-docling-pdf
+version: 0.1.0
+description: >
+  Convert PDF documents to markdown and structured output using the docling CLI.
+  Selects the optimal conversion profile based on document content: clean text,
+  scanned/OCR, rich datasheets with images and tables, complex layouts via VLM,
+  or technical documents with code and formulas. Extracts images as referenced
+  PNG files for viewing. No MCP required — pure CLI workflow for Claude Code.
+author: randlee
+license: MIT
+tags:
+  - pdf
+  - docling
+  - conversion
+  - markdown
+  - ocr
+  - images
+  - tables
+  - datasheets
+
+# Files to install (relative to package root)
+artifacts:
+  skills:
+    - skills/docling-pdf-extraction/SKILL.md
+    - skills/docling-pdf-extraction/references/installation.md
+    - skills/docling-pdf-extraction/references/document-analysis.md
+    - skills/docling-pdf-extraction/references/profile-text.md
+    - skills/docling-pdf-extraction/references/profile-scan.md
+    - skills/docling-pdf-extraction/references/profile-rich.md
+    - skills/docling-pdf-extraction/references/profile-vlm.md
+    - skills/docling-pdf-extraction/references/profile-code.md
+    - skills/docling-pdf-extraction/references/output-markdown.md
+    - skills/docling-pdf-extraction/references/output-images.md
+    - skills/docling-pdf-extraction/references/output-tables.md
+    - skills/docling-pdf-extraction/references/output-json.md
+
+# Installation policy
+install:
+  scope: local-only
+
+# Runtime requirements
+requires:
+  cli:
+    - python >= 3.10
+    - docling >= 2.90.0   # verified against current CLI/docs on 2026-04-19
+  optional:
+    - poppler          # pdfinfo, pdfimages, pdftotext — for document analysis
+    - docling[easyocr,vlm]  # for VLM and enrichment-heavy workflows
+    - peft >= 0.18.1        # required by Granite-based advanced runtime
+    - transformers < 5.5    # known-good ceiling for Granite chart/VLM runtime in this skill
