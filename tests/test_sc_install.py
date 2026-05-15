@@ -71,3 +71,20 @@ def test_install_sc_ai_cli_copies_template_assets(tmp_path: Path):
     assert (dest / "skills/creating-ai-clis/SKILL.md").exists()
     assert (dest / "skills/creating-ai-clis/assets/templates/rust/Cargo.toml.j2").exists()
     assert (dest / "skills/designing-cli-simulators/assets/templates/go/simulator.go.j2").exists()
+
+
+def test_install_sc_docling_pdf_copies_skill_and_references(tmp_path: Path):
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    _init_git_repo(repo)
+    dest = repo / ".claude"
+
+    rc = sc_install.main(["install", "sc-docling-pdf", "--dest", str(dest)])
+    assert rc == 0
+
+    skill_dir = dest / "skills/docling-pdf-extraction"
+    assert (skill_dir / "SKILL.md").exists()
+    assert (skill_dir / "references/installation.md").exists()
+    assert (skill_dir / "references/profile-rich.md").exists()
+    assert (skill_dir / "references/profile-scan.md").exists()
+    assert (skill_dir / "references/profile-vlm.md").exists()

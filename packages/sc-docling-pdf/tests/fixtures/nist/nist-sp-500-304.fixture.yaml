@@ -1,0 +1,26 @@
+id: nist-sp-500-304
+title: "Conformance Testing Methodology Framework for ANSI/NIST-ITL 1-2011 Update: 2013, Data Format for the Interchange of Fingerprint, Facial & Other Biometric Information"
+filename: nist-sp-500-304.pdf
+source_url: https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.500-304.pdf
+doi_url: https://doi.org/10.6028/NIST.SP.500-304
+publisher: National Institute of Standards and Technology
+publication_date: 2015-06
+pages: 75
+sha256: 60f1dfc36a4915392e6d1f6d9fb75563299dad5daa50602e638a3d640960fafb
+license_note: U.S. government work from NIST; the PDF states it is not subject to copyright.
+profiles:
+  - text
+  - rich
+reference_text_file: nist-sp-500-304.reference.txt
+expected:
+  must_contain:
+    - "Conformance Testing Methodology Framework"
+    - "List of Tables and Figures"
+    - "1 Introduction"
+    - "Table 5.1 - Assertion Syntax: Value-Type Definitions"
+    - "The existence of biometric standards alone is not enough"
+  min_tables: 10
+  min_headings: 5
+notes:
+  - Good fixture for long titles, contents pages, section numbering, and table-heavy extraction.
+  - Useful for validating that markdown/json output preserves requirements/assertions language.

@@ -1,0 +1,114 @@
+# Profile: `rich` — Datasheets, Specs, Tables + Images ⭐
+
+## When to Use
+- Component datasheets, product specifications, application notes
+- Any PDF with embedded photographs, vector diagrams, or schematics
+- Documents with tables (bordered or borderless)
+- Bar/pie/line charts to convert to tabular data
+- Technical documents where images carry meaningful content
+
+**Recommended default for most engineering/product documents.**
+Start with the baseline command below. Add enrichment flags only after the runtime validation in `installation.md` passes.
+
+Recommended usage modes:
+- Quick but thorough / agent-default: baseline `rich`
+- Slower, more descriptive output: add enrichment flags selectively
+- Highest effort for broken layout: escalate to `vlm`, usually `smoldocling` before `granite_docling`
+
+---
+
+## Command
+
+```bash
+docling INPUT.pdf \
+  --to md \
+  --to json \
+  --output ./output \
+  --image-export-mode referenced \
+  --table-mode accurate \
+  --device mps
+```
+
+| Flag | Reason |
+|------|--------|
+| `--to md --to json` | Markdown for reading; JSON for structured image metadata and table objects |
+| `--image-export-mode referenced` | Saves images as PNG files, inserts `![]()` links — viewable, not base64 bloat |
+| `--table-mode accurate` | Thorough table structure extraction |
+| `--device mps` | GPU acceleration if available; use `--device cpu` elsewhere |
+
+---
+
+## Output Structure
+
+```
+./output/
+  INPUT.md                  ← Markdown with image references and tables
+  INPUT.json                ← Full document model
+  INPUT-pictures/
+    picture-0001.png
+    picture-0002.png
+    ...
+```
+
+Image references in markdown:
+```markdown
+![](INPUT-pictures/picture-0001.png)
+```
+
+View extracted images:
+```bash
+open ./output/INPUT-pictures/    # Mac: opens Finder/Preview
+ls -lh ./output/INPUT-pictures/
+```
+
+---
+
+## Optional Enrichment Variant
+
+Only use this after the Step 1 validation passes:
+
+```bash
+docling INPUT.pdf \
+  --to md \
+  --to json \
+  --output ./output \
+  --image-export-mode referenced \
+  --table-mode accurate \
+  --enrich-picture-classes \
+  --enrich-picture-description \
+  --enrich-chart-extraction \
+  --device mps
+```
+
+Notes:
+- `--enrich-picture-classes` adds class labels such as `diagram`, `chart`, or `photograph`
+- `--enrich-picture-description` adds `description` annotations to picture objects in JSON and is usually the slowest flag
+- `--enrich-chart-extraction` is the most dependency-sensitive enrichment step; inspect the JSON after the run rather than assuming every detected chart produced numeric series output
+- If you hit a Granite / `transformers` import error, remove the enrichment flags and use the baseline command
+
+---
+
+## Performance
+
+Quick usable baseline:
+- 2–5 page datasheet subset: often 10–30 seconds
+- 20-page datasheet: typically tens of seconds on Apple Silicon, longer on CPU
+
+Slower richer variant:
+- `--enrich-picture-classes` / `--enrich-chart-extraction`: usually still in the tens of seconds to low minutes range
+- `--enrich-picture-description`: usually the longest `rich` flag; a 20-page datasheet with 5–10 images can take 2–5 minutes
+
+Recommendation:
+- Start with baseline `rich`
+- Add only the enrichment flags you actually need
+- If layout is still poor, move to `vlm` rather than stacking every enrichment flag by default
+
+---
+
+## Upgrade Path
+
+Text layout garbled despite good image extraction?
+→ Escalate to `vlm` profile; carry enrichment flags forward only if runtime validation passes.
+
+Document is also scanned?
+→ Add `--force-ocr --ocr-engine easyocr` to this command.

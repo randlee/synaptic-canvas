@@ -1,0 +1,24 @@
+id: nist-jres-111-006-exact-decimals
+title: "Integer representation of decimal numbers for exact computations"
+filename: nist-jres-111-006-exact-decimals.pdf
+source_url: https://math.nist.gov/~JBernal/exact.pdf
+doi_url: https://doi.org/10.6028/jres.111.006
+publisher: National Institute of Standards and Technology
+publication_date: 2006-03
+pages: 23
+sha256: 25b3ba5fc20f95813511b8b8398a44008cf092c5e468cd763257e6aa48cb8e20
+license_note: U.S. government work from NIST.
+profiles:
+  - text
+  - code
+reference_text_file: nist-jres-111-006-exact-decimals.reference.txt
+expected:
+  must_contain:
+    - "Integer representation of decimal numbers for exact computations"
+    - "Abstract"
+    - "1 Introduction"
+    - "double precision floating point numbers"
+    - "exact computations"
+  min_headings: 3
+notes:
+  - Math-heavy fixture with inline math, structured sections, and theorem-style academic prose.

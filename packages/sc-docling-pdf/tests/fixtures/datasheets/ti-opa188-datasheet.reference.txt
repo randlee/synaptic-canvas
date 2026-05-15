@@ -1,0 +1,14 @@
+OPA188 Precision, Low-Noise, Rail-to-Rail Output, 36-V, Zero-Drift Operational Amplifier
+
+1 Features
+Low offset voltage: 25 uV (maximum)
+Zero drift: 0.03 uV/C
+
+2 Applications
+Weight scale
+Analog input module
+
+3 Description
+The OPA188 operational amplifier uses TI's proprietary auto-zeroing techniques to provide low offset voltage and near zero-drift over time and temperature.
+
+This file is intentionally a short semantic reference, not a full-text transcription.
