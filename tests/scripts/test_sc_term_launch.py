@@ -112,16 +112,24 @@ def test_apply_atm_env_prefix_powershell():
     )
 
 
-def test_resolve_identity_requires_value_when_atm_team_set(monkeypatch):
+def test_resolve_identity_generates_random_when_omitted(monkeypatch):
     monkeypatch.setenv("ATM_TEAM", "atm-core")
-    with pytest.raises(SystemExit) as exc_info:
-        sc_term_launch.resolve_identity(None)
-    assert exc_info.value.code == 1
+    identity = sc_term_launch.resolve_identity(None)
+    assert identity is not None
+    assert len(identity) > 0
 
 
 def test_resolve_identity_accepts_value_when_atm_team_set(monkeypatch):
     monkeypatch.setenv("ATM_TEAM", "atm-core")
     assert sc_term_launch.resolve_identity("alice") == "alice"
+
+
+def test_resolve_identity_uses_tool_pool(monkeypatch):
+    monkeypatch.setenv("ATM_TEAM", "atm-core")
+    identity = sc_term_launch.resolve_identity(None, "gemini")
+    name, suffix = identity.rsplit("-", 1)
+    assert name in sc_term_launch._IDENTITY_NAMES["gemini"]
+    assert len(suffix) == 4
 
 
 def test_generate_ulid_and_session_path():

@@ -40,14 +40,36 @@ def resolve_team() -> str | None:
     return team or None
 
 
-def resolve_identity(identity: str | None) -> str | None:
-    team = os.environ.get("ATM_TEAM", "").strip()
-    if team and not identity:
-        print(
-            f"ATM_TEAM is set to '{team}'; supply --identity <name> for this launch",
-            file=sys.stderr,
-        )
-        raise SystemExit(1)
+# Per-tool identity name pools.
+_IDENTITY_NAMES: dict[str, list[str]] = {
+    "gemini": ["Gamma", "Galaxian", "Grimaldi", "Ganymede", "Grogu",
+               "Grievous", "Greedo", "Glitch", "Gauss", "Glimmer"],
+    "codex":  ["Cipher", "Crypto", "Cryptex", "Cassian", "Crimson",
+               "Cloud", "Citan", "Caesar", "Cascade", "Chewbacca"],
+    "haiku":  ["Homer", "Helix", "Helios", "Horus", "Halo",
+               "Hal", "Hex", "Hive", "Heretic", "Hydra"],
+    "sonnet": ["Sinatra", "Santana", "Slash", "Spock", "Skynet",
+               "Striker", "Siren", "Sentinel", "Sting", "Synth"],
+    "opus":   ["Orion", "Oracle", "Omega", "Orwell", "Obiwan",
+               "Optimus", "Oblivion", "Onyx", "Odyssey", "Octane"],
+}
+
+_FALLBACK_NAMES: list[str] = [
+    "Amber", "Bold", "Calm", "Deft", "Eager",
+    "Fleet", "Gold", "Hale", "Iron", "Jade",
+]
+
+
+def generate_identity(tool: str | None = None) -> str:
+    pool = _IDENTITY_NAMES.get(tool or "", _FALLBACK_NAMES)
+    name = secrets.choice(pool)
+    suffix = secrets.token_hex(2)
+    return f"{name}-{suffix}"
+
+
+def resolve_identity(identity: str | None, tool: str | None = None) -> str | None:
+    if not identity:
+        identity = generate_identity(tool)
     return identity
 
 

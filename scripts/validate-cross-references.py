@@ -119,12 +119,14 @@ class PluginSchema(BaseModel):
 class MarketplacePluginSchema(BaseModel):
     """Schema for plugin entry in marketplace.json."""
 
+    model_config = {"extra": "allow"}
+
     name: str
-    source: str
+    source: Union[str, Dict]
     description: str
-    version: str
+    version: Optional[str] = None
     author: Union[str, Dict[str, str]]
-    license: str
+    license: Optional[str] = None
     keywords: List[str] = Field(default_factory=list)
     category: str
 
@@ -395,6 +397,10 @@ def validate_marketplace_consistency(
         warnings = []
 
         for plugin in marketplace.plugins:
+            # Skip remote (git-subdir) plugins — no local manifest to validate
+            if isinstance(plugin.source, dict):
+                continue
+
             # Find corresponding manifest
             pkg_name = plugin.name
             manifest_path = packages_dir / pkg_name / "manifest.yaml"

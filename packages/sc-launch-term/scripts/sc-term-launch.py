@@ -17,6 +17,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from launch_term_shared import (
+    _IDENTITY_NAMES,
     build_claude_session_record_path,
     build_codex_session_record_path,
     generate_ulid,
@@ -522,7 +523,7 @@ def handle_launch(args: argparse.Namespace) -> None:
         fail("tmux is not available on PATH; omit --tmux or install tmux")
 
     team = resolve_team()
-    identity = resolve_identity(args.identity)
+    identity = resolve_identity(args.identity, args.member_model)
     register_team_member(team, identity, args.member_model, args.dir)
     launch_id, session_record = session_tracking_for_member_model(args.member_model, args.dir)
     env_vars: dict[str, str] = {}
@@ -566,7 +567,7 @@ def handle_attach_pane(args: argparse.Namespace) -> None:
     if not tmux_available():
         fail("tmux is not available on PATH; cannot attach a pane")
     team = resolve_team()
-    identity = resolve_identity(args.identity)
+    identity = resolve_identity(args.identity, args.member_model)
     register_team_member(team, identity, args.member_model, args.cwd)
     launch_id, session_record = session_tracking_for_member_model(args.member_model, args.cwd)
     env_vars: dict[str, str] = {}
@@ -603,7 +604,7 @@ def handle_launch_claude_model(args: argparse.Namespace) -> None:
         fail("tmux is not available on PATH; omit --tmux or install tmux")
 
     team = resolve_team()
-    identity = resolve_identity(args.identity)
+    identity = resolve_identity(args.identity, args.model)
     register_team_member(team, identity, args.model, args.dir)
     launch_id = generate_ulid()
     session_record = build_claude_session_record_path(args.dir, launch_id)
@@ -641,7 +642,7 @@ def handle_attach_pane_claude_model(args: argparse.Namespace) -> None:
         fail("tmux is not available on PATH; cannot attach a pane")
 
     team = resolve_team()
-    identity = resolve_identity(args.identity)
+    identity = resolve_identity(args.identity, args.model)
     register_team_member(team, identity, args.model, args.cwd)
     launch_id = generate_ulid()
     session_record = build_claude_session_record_path(args.cwd, launch_id)

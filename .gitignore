@@ -1,3 +1,6 @@
+# sc-compose logs
+.sc-compose/logs/
+
 # Local temp files
 .tmp/
 temp/

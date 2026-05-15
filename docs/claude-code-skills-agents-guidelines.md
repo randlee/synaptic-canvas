@@ -1,4 +1,4 @@
-# Claude Code Skills and Agents Architecture Guidelines (v0.6)
+# Claude Code Skills and Agents Architecture Guidelines (v0.7)
 
 A practical guide for designing and implementing a two-tier skill/agent architecture that optimizes context efficiency, maintains clean separation of concerns, and enables scalable AI-assisted workflows.
 
@@ -9,6 +9,7 @@ A practical guide for designing and implementing a two-tier skill/agent architec
 3. [Scope of Applicability](#scope-of-applicability)
 4. [Design Principles](#design-principles)
 5. [Skills: The Discovery Layer](#skills-the-discovery-layer)
+   - [CLI Dependency Verification](#cli-dependency-verification)
 6. [Agents: The Execution Layer](#agents-the-execution-layer)
 7. [Context Efficiency Patterns](#context-efficiency-patterns)
 8. [Structured Response Contracts](#structured-response-contracts)
@@ -468,6 +469,56 @@ description: Create, manage, and clean up git worktrees for parallel development
 description: Helps with git operations.
 ```
 
+### CLI Dependency Verification
+
+Any skill that depends on an external CLI application MUST verify the dependency as its **first executable step** — before any agent delegation or workflow logic. This prevents opaque agent failures and gives the user actionable remediation.
+
+#### Required Step 1 template
+
+```markdown
+## Step 1 — Verify [CLI] Installation
+
+\`\`\`bash
+which <cli> && <cli> --version
+\`\`\`
+
+If not found on PATH, also check common install locations — Claude Code's bash
+environment may not share PATH with the interactive shell:
+
+\`\`\`bash
+for p in "$HOME/.local/bin/<cli>" "$HOME/.venvs/<cli>/bin/<cli>" \
+  "$(python3 -m site --user-base 2>/dev/null)/bin/<cli>" \
+  "/opt/homebrew/bin/<cli>"; do
+  [ -x "$p" ] && echo "Found at: $p" && break
+done
+\`\`\`
+
+If found at a non-PATH location, use the full path for all commands, or export
+the directory to PATH for this session:
+\`\`\`bash
+export PATH="$HOME/.local/bin:$PATH"   # adjust to actual location
+\`\`\`
+
+If not installed: **read `references/installation-and-troubleshooting.md` before proceeding.**
+```
+
+Add a minimum version check when the skill has version requirements:
+
+```bash
+<cli> --version   # capture output; halt and direct to installation doc if < X.Y.Z
+```
+
+#### Normative rules
+
+- Verification MUST appear as the first step in SKILL.md, not buried after agent delegation.
+- Skills MUST reference `references/installation-and-troubleshooting.md` when the CLI is absent (see [File Organization](#file-organization)).
+- Do NOT silently proceed with degraded behavior when a CLI is missing; surface the gap and stop.
+- If `manifest.yaml` declares `requires.cli` entries, the SKILL.md MUST include this Step 1 block — this gives the validation script (`validate-agents.py`) a checkable invariant.
+
+#### Why PATH differs in Claude Code
+
+Claude Code's bash environment inherits a minimal PATH that may omit directories populated by shell init files (`.zshrc`, `.bashrc`, pyenv shims, Homebrew, etc.). A CLI that works interactively can silently be absent from the agent's PATH. The two-stage check (`which` + fallback loop) is the reliable pattern for this environment.
+
 ---
 
 ## Agents: The Execution Layer
@@ -903,7 +954,9 @@ Guardrails:
 │   │   └── workflows.md
 │   └── publishing-nuget/
 │       ├── SKILL.md
-│       └── registry-config.md
+│       ├── registry-config.md
+│       └── references/
+│           └── installation-and-troubleshooting.md   # Required for CLI-dependent skills
 ├── agents/
 │   ├── registry.yaml           # Version registry + skill constraints
 │   ├── sc-worktree-create.md
@@ -927,6 +980,20 @@ Rationale:
 - Agents use noun-verb to signal concrete actions (execution surface).
 - Keep prefixes aligned (e.g., `sc-`) so filtering by namespace is predictable.
 
+### `references/installation-and-troubleshooting.md` (required for CLI-dependent skills)
+
+Any skill with CLI dependencies MUST ship a `references/installation-and-troubleshooting.md`. Normative content:
+
+| Section | Content |
+|---------|---------|
+| **Check First** | `which <cli> && <cli> --version`; skip install if found |
+| **Find Existing Install** | Full-path fallback search across common locations |
+| **Install** | Platform-specific steps (macOS, Linux, Windows) |
+| **Minimum Version** | Required version and upgrade path |
+| **PATH Troubleshooting** | How to add install dir to PATH; Claude Code bash note |
+| **Validation** | Command to confirm working install post-setup |
+| **Known Issues** | Common gotchas (venv isolation, pip vs. pipx, Homebrew caveats) |
+
 ---
 
 ## Best Practices
@@ -940,6 +1007,7 @@ Rationale:
 7. **Single Responsibility**: One agent, one task
 8. **Document Error Boundaries**: Clear separation of agent vs. skill error handling
 9. **Parallel Guardrails**: Cap concurrency, set timeouts, use correlation_ids
+10. **Verify CLI Dependencies Early**: Skills depending on external CLIs MUST check installation and PATH as Step 1, before any agent delegation. Direct to `references/installation-and-troubleshooting.md` on failure. Never proceed silently with a missing CLI.
 
 ---
 
@@ -953,6 +1021,7 @@ Rationale:
 6. **Agents Returning Markdown for Users**: Agents return JSON; skills present to users
 7. **Complex Branching**: When an agent grows complex, split it
 8. **Windows-Style Paths**: Use forward slashes
+9. **Silent CLI Dependency Failures**: A skill that delegates to an agent when the required CLI is missing wastes agent context and produces an opaque error. Always gate on CLI presence in the skill before invocation — surface the gap and stop.
 
 ---
 
@@ -976,11 +1045,12 @@ Rationale:
 
 ---
 
-Document version: 0.6
-Last updated: 2026-03-09
+Document version: 0.7
+Last updated: 2026-05-05
 
 | Version | Date       | Notes |
 |---------|------------|-------|
+| 0.7     | 2026-05-05 | Added CLI Dependency Verification: normative Step 1 template, PATH fallback pattern, `references/installation-and-troubleshooting.md` spec, Best Practice #10, Anti-Pattern #9. |
 | 0.6     | 2026-03-09 | Added Named Teammate Pattern section: persistent tmux teammate vs background agent distinction, SKILL.md guidance for named-teammate skills (no Agent Delegation section required), and relaxed Agent Template rules for messaging-based interaction model. |
 | 0.5     | 2025-12-11 | Normalized versioning, tightened response contracts, added Agent Runner invocation contract, parallel aggregation policy, and safety/state guardrails. |
 | 0.4     | 2025-11-01 | Prior baseline for two-tier skills/agents architecture. |
