@@ -1,4 +1,5 @@
 import ast
+import os
 import importlib.util
 import shutil
 import subprocess
@@ -31,6 +32,7 @@ def _run_script(script: Path, cwd: Path, *args: str, expected_returncode: int = 
         cwd=cwd,
         capture_output=True,
         text=True,
+        env=os.environ.copy(),
         check=False,
     )
     assert completed.returncode == expected_returncode, (
@@ -263,6 +265,13 @@ def test_python_task_runner_normalizes_python_token(tmp_path) -> None:
     assert normalized[0][0] == sys.executable
 
 
+def test_python_task_runner_normalizes_single_command_shape(tmp_path) -> None:
+    template_root = _copy_template(tmp_path, "python")
+    module = _load_module("python_task_runner_single_command", template_root / ".just" / "task_runner.py")
+    normalized = module.normalize_steps(["{{python_cmd}}", "-c", "print('ok')"])
+    assert normalized == [[sys.executable, "-c", "print('ok')"]]
+
+
 def test_python_run_tests_uses_configured_steps(tmp_path) -> None:
     template_root = _copy_template(tmp_path, "python")
     marker = template_root / "test.txt"
@@ -344,6 +353,103 @@ def test_go_print_help_reads_config(tmp_path) -> None:
     assert "Go task runner" in completed.stdout
     assert "Run go build ./... from repo root." in completed.stdout
     assert "Run go test ./... from repo root." in completed.stdout
+
+
+def test_go_print_help_uses_configured_runner_label(tmp_path) -> None:
+    template_root = _copy_template(tmp_path, "go")
+    (template_root / ".just" / "config.toml").write_text(
+        textwrap.dedent(
+            """
+            template_version = "0.1.0"
+            [repo]
+            name = "demo"
+            [help]
+            usage = "just <recipe>"
+            runner_label = "Custom runner"
+            [[help.sections]]
+            title = "General"
+            [[help.sections.recipes]]
+            name = "help"
+            description = "Show this help."
+            """
+        ).strip()
+        + "\n",
+        encoding="utf-8",
+    )
+    completed = _run_script(template_root / ".just" / "print_help.py", template_root)
+    assert "demo Custom runner" in completed.stdout
+
+
+def test_go_run_fmt_check_returns_one_for_unformatted_files(tmp_path) -> None:
+    template_root = _copy_template(tmp_path, "go")
+    fake_bin = template_root / "bin"
+    fake_bin.mkdir()
+    fake_gofmt = fake_bin / "gofmt"
+    fake_gofmt.write_text(
+        textwrap.dedent(
+            """\
+            #!/usr/bin/env python3
+            import sys
+            if sys.argv[1] == "-l":
+                print("needs-format.go")
+                raise SystemExit(0)
+            raise SystemExit(0)
+            """
+        ),
+        encoding="utf-8",
+    )
+    fake_gofmt.chmod(0o755)
+    env = os.environ.copy()
+    env["PATH"] = f"{fake_bin}{os.pathsep}{env['PATH']}"
+    completed = subprocess.run(
+        [sys.executable, str(template_root / ".just" / "run_fmt.py")],
+        cwd=template_root,
+        capture_output=True,
+        text=True,
+        env=env,
+        check=False,
+    )
+    assert completed.returncode == 1
+    assert "needs-format.go" in completed.stdout
+
+
+def test_go_run_fmt_write_invokes_gofmt_write(tmp_path) -> None:
+    template_root = _copy_template(tmp_path, "go")
+    fake_bin = template_root / "bin"
+    fake_bin.mkdir()
+    marker = template_root / "gofmt-args.txt"
+    fake_gofmt = fake_bin / "gofmt"
+    fake_gofmt.write_text(
+        textwrap.dedent(
+            f"""\
+            #!/usr/bin/env python3
+            from pathlib import Path
+            import sys
+            Path({str(marker)!r}).write_text(" ".join(sys.argv[1:]), encoding="utf-8")
+            raise SystemExit(0)
+            """
+        ),
+        encoding="utf-8",
+    )
+    fake_gofmt.chmod(0o755)
+    env = os.environ.copy()
+    env["PATH"] = f"{fake_bin}{os.pathsep}{env['PATH']}"
+    completed = subprocess.run(
+        [sys.executable, str(template_root / ".just" / "run_fmt.py"), "write"],
+        cwd=template_root,
+        capture_output=True,
+        text=True,
+        env=env,
+        check=False,
+    )
+    assert completed.returncode == 0
+    assert marker.read_text(encoding="utf-8") == "-w ."
+
+
+def test_go_justfile_ci_uses_non_mutating_fmt() -> None:
+    justfile = (TEMPLATE_ROOT / "go" / "Justfile").read_text(encoding="utf-8")
+    assert "@just fmt check" in justfile
+    assert "ci: fmt lint test" not in justfile
 
 
 def test_go_print_help_missing_config_fails(tmp_path) -> None:
@@ -521,6 +627,38 @@ def test_rust_run_lint_supports_legacy_targets_schema(tmp_path) -> None:
     assert marker.read_text(encoding="utf-8") == "lint"
 
 
+def test_rust_run_lint_normalizes_python_token(tmp_path) -> None:
+    template_root = _copy_template(tmp_path, "rust")
+    marker = template_root / "token-lint.txt"
+    (template_root / ".just" / "config.toml").write_text(
+        textwrap.dedent(
+            f"""
+            template_version = "0.1.0"
+            [repo]
+            name = ""
+            [help]
+            usage = "just <recipe>"
+            [fmt]
+            default_mode = "check"
+            [fmt.steps]
+            check = []
+            write = []
+            apply = []
+            [lint]
+            default_target = "all"
+            [lint.steps_by_target]
+            all = [["{{{{python_cmd}}}}", "-c", "from pathlib import Path; Path({str(marker)!r}).write_text('lint', encoding='utf-8')"]]
+            fmt = []
+            clippy = []
+            """
+        ).strip()
+        + "\n",
+        encoding="utf-8",
+    )
+    _run_script(template_root / ".just" / "run_lint.py", template_root)
+    assert marker.read_text(encoding="utf-8") == "lint"
+
+
 def test_rust_run_lint_empty_target_fails(tmp_path) -> None:
     template_root = _copy_template(tmp_path, "rust")
     (template_root / ".just" / "config.toml").write_text(
@@ -562,6 +700,31 @@ def test_dotnet_print_help_reads_config(tmp_path) -> None:
     assert ".NET task runner" in completed.stdout
     assert "Run dotnet build from repo root." in completed.stdout
     assert "Run dotnet test from repo root." in completed.stdout
+
+
+def test_dotnet_print_help_uses_configured_runner_label(tmp_path) -> None:
+    template_root = _copy_template(tmp_path, "dotnet")
+    (template_root / ".just" / "config.toml").write_text(
+        textwrap.dedent(
+            """
+            template_version = "0.1.0"
+            [repo]
+            name = "demo"
+            [help]
+            usage = "just <recipe>"
+            runner_label = "Task surface"
+            [[help.sections]]
+            title = "General"
+            [[help.sections.recipes]]
+            name = "help"
+            description = "Show this help."
+            """
+        ).strip()
+        + "\n",
+        encoding="utf-8",
+    )
+    completed = _run_script(template_root / ".just" / "print_help.py", template_root)
+    assert "demo Task surface" in completed.stdout
 
 
 def test_dotnet_print_help_renders_all_sections(tmp_path) -> None:

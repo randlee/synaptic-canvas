@@ -38,6 +38,7 @@ artifacts:
     - skills/setting-up-just/assets/templates/go/Justfile
     - skills/setting-up-just/assets/templates/go/.just/config.toml
     - skills/setting-up-just/assets/templates/go/.just/print_help.py
+    - skills/setting-up-just/assets/templates/go/.just/run_fmt.py
     - skills/setting-up-just/assets/templates/dotnet/Justfile
     - skills/setting-up-just/assets/templates/dotnet/.just/config.toml
     - skills/setting-up-just/assets/templates/dotnet/.just/print_help.py

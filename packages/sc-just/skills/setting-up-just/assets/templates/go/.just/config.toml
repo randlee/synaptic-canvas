@@ -5,6 +5,7 @@ name = ""
 
 [help]
 usage = "just <recipe>"
+runner_label = "Go task runner"
 
 [[help.sections]]
 title = "General"
@@ -19,7 +20,19 @@ description = "Run go build ./... from repo root."
 
 [[help.sections.recipes]]
 name = "fmt"
-description = "Run gofmt -w . from repo root."
+description = "Run the default formatting gate."
+
+[[help.sections.recipes]]
+name = "fmt check"
+description = "List files that need gofmt changes without mutating them."
+
+[[help.sections.recipes]]
+name = "fmt write"
+description = "Apply gofmt changes. This mutates files."
+
+[[help.sections.recipes]]
+name = "fmt apply"
+description = "Apply gofmt changes. This mutates files."
 
 [[help.sections.recipes]]
 name = "lint"
@@ -31,4 +44,8 @@ description = "Run go test ./... from repo root."
 
 [[help.sections.recipes]]
 name = "ci"
-description = "Run fmt, lint, and test."
+description = "Run non-mutating fmt, lint, and test."
+
+[fmt]
+default_mode = "check"
+paths = ["."]

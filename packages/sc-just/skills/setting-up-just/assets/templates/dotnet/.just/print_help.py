@@ -25,6 +25,7 @@ def repo_name(config: dict) -> str:
 def render_help(config: dict) -> str:
     sections = config.get("help", {}).get("sections", [])
     usage = config.get("help", {}).get("usage", "just <recipe>")
+    runner_label = config.get("help", {}).get("runner_label", ".NET task runner")
     recipes = [
         recipe
         for section in sections
@@ -32,7 +33,7 @@ def render_help(config: dict) -> str:
     ]
     width = max((len(recipe.get("name", "")) for recipe in recipes), default=4)
     lines = [
-        f"{repo_name(config)} .NET task runner",
+        f"{repo_name(config)} {runner_label}",
         "",
         "Usage:",
         f"  {usage}",

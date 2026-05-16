@@ -15,6 +15,8 @@ Each template also ships a `.just/config.toml`. The helpers are intended to stay
 generic; repo-specific commands, aliases, and discovery settings live in that
 config file.
 The helper scripts require `python3 >= 3.11` because they use `tomllib`.
+Installed package payload is declared in `manifest.yaml`; `.claude-plugin/plugin.json`
+is metadata for marketplace registration and discovery.
 
 ## Included Template Profiles
 

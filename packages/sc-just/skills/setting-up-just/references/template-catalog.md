@@ -70,14 +70,17 @@ Included files:
 - `Justfile`
 - `.just/config.toml`
 - `.just/print_help.py`
+- `.just/run_fmt.py`
 
 Characteristics:
 - `just build` runs `go build ./...`
 - `just test` runs `go test ./...`
-- `just fmt` runs `gofmt -w .`
+- `just fmt` defaults to a non-mutating `gofmt -l .` gate
+- `just fmt write` and `just fmt apply` run `gofmt -w .`
 - `just lint` runs `go vet ./...`
 - `.just/config.toml` carries help text and lightweight repo metadata for the
   default template
+- the help and fmt helpers require `python3 >= 3.11`
 
 For repos that need custom package targeting, generation steps, or nonstandard
 build/test orchestration, start from this template and add repo-specific scripts
@@ -99,6 +102,7 @@ Characteristics:
 - `just ci` runs `build` then `test`
 - `.just/config.toml` only carries help text and lightweight repo metadata for
   the default template
+- the help helper requires `python3 >= 3.11`
 
 For multi-solution or highly customized repos, start from this template and add
 repo-specific scripts only when the direct root commands stop being adequate.
@@ -121,6 +125,8 @@ Included files:
 Characteristics:
 - `fmt` delegates to Python helpers using the same `steps`-driven config pattern
   as the `minimal` and `python` templates
+- Rust-only `lint <target>` variants such as `lint fmt` and `lint clippy` are
+  available in addition to the default `lint`
 - `lint all` runs `fmt` then `clippy`
 - `build` and `test` stay as direct Cargo recipes
 - Windows-aware shell and `clippy` target selection match the `atm-core` style

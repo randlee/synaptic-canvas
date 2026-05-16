@@ -5,6 +5,7 @@ name = ""
 
 [help]
 usage = "just <recipe>"
+runner_label = ".NET task runner"
 
 [[help.sections]]
 title = "General"

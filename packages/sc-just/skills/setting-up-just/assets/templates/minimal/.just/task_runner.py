@@ -62,7 +62,9 @@ def _normalize_part(part: str) -> str:
     return part
 
 
-def normalize_steps(steps: list[list[str]]) -> list[list[str]]:
+def normalize_steps(steps: list[str] | list[list[str]]) -> list[list[str]]:
+    if steps and isinstance(steps[0], str):
+        steps = [steps]
     return [[_normalize_part(part) for part in step] for step in steps]
 
 

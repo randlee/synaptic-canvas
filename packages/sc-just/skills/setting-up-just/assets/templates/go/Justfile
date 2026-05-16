@@ -10,8 +10,8 @@ help:
 build:
     go build ./...
 
-fmt:
-    gofmt -w .
+fmt mode='check':
+    {{python_cmd}} .just/run_fmt.py {{mode}}
 
 lint:
     go vet ./...
@@ -19,4 +19,7 @@ lint:
 test:
     go test ./...
 
-ci: fmt lint test
+ci:
+    @just fmt check
+    @just lint
+    @just test

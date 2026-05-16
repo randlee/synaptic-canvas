@@ -7,6 +7,8 @@ import subprocess
 import sys
 import tomllib
 
+PYTHON_CMD_TOKEN = "{{python_cmd}}"
+
 
 def repo_root() -> Path:
     return Path(__file__).resolve().parent.parent
@@ -21,8 +23,11 @@ def load_config() -> dict:
 
 def normalize_steps(value: list[str] | list[list[str]]) -> list[list[str]]:
     if value and isinstance(value[0], str):
-        return [value]
-    return value
+        value = [value]
+    return [
+        [sys.executable if part == PYTHON_CMD_TOKEN else part for part in step]
+        for step in value
+    ]
 
 
 def main(argv: list[str]) -> int:

@@ -22,6 +22,7 @@ def render_help(config: dict) -> str:
     usage = config.get("help", {}).get("usage", "just <recipe>")
     configured_name = config.get("repo", {}).get("name", "").strip()
     display_name = configured_name or repo_root().name
+    runner_label = config.get("help", {}).get("runner_label", "Go task runner")
     recipes = [
         recipe
         for section in sections
@@ -29,7 +30,7 @@ def render_help(config: dict) -> str:
     ]
     width = max((len(recipe.get("name", "")) for recipe in recipes), default=4)
     lines = [
-        f"{display_name} Go task runner",
+        f"{display_name} {runner_label}",
         "",
         "Usage:",
         f"  {usage}",

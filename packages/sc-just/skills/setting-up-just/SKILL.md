@@ -31,7 +31,7 @@ Do not use this skill for:
 - large build-system migrations that should stay in an existing framework
 - repos that already have a strong task-runner standard the user wants preserved
 
-## Step 1 - Verify Dependencies
+## Step 1 — Verify `just` And `python3`
 
 Before editing files:
 1. Verify `just >= 1.0` is installed:
@@ -40,11 +40,10 @@ Before editing files:
 2. Verify `python3 >= 3.11` is available:
    - `command -v python3 || command -v python`
    - `python3 -c "import sys; print(sys.version)" || python -c "import sys; print(sys.version)"`
-3. If either command is missing from `PATH`, check common install locations before
+3. If either command is missing from `PATH`, probe common install locations before
    assuming the tool is absent:
-   - `~/.cargo/bin`
-   - `/opt/homebrew/bin`
-   - `$HOME/.local/bin`
+   - `for candidate in "$HOME/.cargo/bin/just" "/opt/homebrew/bin/just" "$HOME/.local/bin/just"; do [ -x "$candidate" ] && "$candidate" --version; done`
+   - `for candidate in "/opt/homebrew/bin/python3" "$HOME/.local/bin/python3"; do [ -x "$candidate" ] && "$candidate" -c "import sys; print(sys.version)"; done`
 4. Enforce the version floor before continuing:
    - stop if `just --version` reports lower than `1.0`
    - stop if the resolved Python interpreter reports lower than `3.11`

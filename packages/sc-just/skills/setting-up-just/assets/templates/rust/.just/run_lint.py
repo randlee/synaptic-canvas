@@ -7,6 +7,8 @@ import subprocess
 import sys
 import tomllib
 
+PYTHON_CMD_TOKEN = "{{python_cmd}}"
+
 
 def repo_root() -> Path:
     return Path(__file__).resolve().parent.parent
@@ -17,6 +19,15 @@ def load_config() -> dict:
     if not path.exists():
         raise FileNotFoundError(f"missing config file: {path}")
     return tomllib.loads(path.read_text(encoding="utf-8"))
+
+
+def normalize_steps(steps: list[str] | list[list[str]]) -> list[list[str]]:
+    if steps and isinstance(steps[0], str):
+        steps = [steps]
+    return [
+        [sys.executable if part == PYTHON_CMD_TOKEN else part for part in step]
+        for step in steps
+    ]
 
 
 def main(argv: list[str]) -> int:
@@ -35,11 +46,12 @@ def main(argv: list[str]) -> int:
         print("unknown lint target:", target, file=sys.stderr)
         print(f"expected one of: {valid}", file=sys.stderr)
         return 2
-    if not commands:
+    normalized_commands = normalize_steps(commands)
+    if not normalized_commands:
         print(f"lint target {target!r} is not configured", file=sys.stderr)
         return 2
 
-    for command in commands:
+    for command in normalized_commands:
         completed = subprocess.run(command, cwd=repo_root())
         if completed.returncode != 0:
             return completed.returncode
