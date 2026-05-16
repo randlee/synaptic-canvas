@@ -19,6 +19,12 @@ def load_config() -> dict:
     return tomllib.loads(path.read_text(encoding="utf-8"))
 
 
+def normalize_steps(value: list[str] | list[list[str]]) -> list[list[str]]:
+    if value and isinstance(value[0], str):
+        return [value]
+    return value
+
+
 def main(argv: list[str]) -> int:
     try:
         config = load_config()
@@ -27,16 +33,23 @@ def main(argv: list[str]) -> int:
         return 2
 
     fmt_config = config.get("fmt", {})
-    commands = fmt_config.get("commands", {})
+    steps_by_mode = fmt_config.get("steps") or fmt_config.get("commands", {})
     mode = argv[1] if len(argv) > 1 else fmt_config.get("default_mode", "check")
-    command = commands.get(mode)
-    if command is None:
-        valid = ", ".join(commands.keys())
+    steps = steps_by_mode.get(mode)
+    if steps is None:
+        valid = ", ".join(steps_by_mode.keys())
         print("unknown fmt mode:", mode, file=sys.stderr)
         print(f"expected one of: {valid}", file=sys.stderr)
         return 2
-    completed = subprocess.run(command, cwd=repo_root())
-    return completed.returncode
+    normalized_steps = normalize_steps(steps)
+    if not normalized_steps:
+        print(f"fmt mode {mode!r} is not configured", file=sys.stderr)
+        return 2
+    for command in normalized_steps:
+        completed = subprocess.run(command, cwd=repo_root())
+        if completed.returncode != 0:
+            return completed.returncode
+    return 0
 
 
 if __name__ == "__main__":

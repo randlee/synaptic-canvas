@@ -14,6 +14,7 @@ surface.
 Each template also ships a `.just/config.toml`. The helpers are intended to stay
 generic; repo-specific commands, aliases, and discovery settings live in that
 config file.
+The helper scripts require `python3 >= 3.11` because they use `tomllib`.
 
 ## Included Template Profiles
 
@@ -28,7 +29,7 @@ config file.
 ## Requirements
 
 - `just`
-- `python3`
+- `python3 >= 3.11`
 
 The Python template assumes `ruff` and `pytest`. The Go template assumes `go`.
 The Rust template assumes `cargo` and `clippy`. The `.NET` template assumes

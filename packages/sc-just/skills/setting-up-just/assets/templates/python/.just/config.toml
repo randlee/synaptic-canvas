@@ -49,24 +49,24 @@ default_mode = "check"
 
 [fmt.steps]
 check = [
-  ["python", "-m", "ruff", "format", "--check", "."],
-  ["python", "-m", "ruff", "check", "."],
+  ["{{python_cmd}}", "-m", "ruff", "format", "--check", "."],
+  ["{{python_cmd}}", "-m", "ruff", "check", "."],
 ]
 write = [
-  ["python", "-m", "ruff", "format", "."],
-  ["python", "-m", "ruff", "check", "--fix", "."],
+  ["{{python_cmd}}", "-m", "ruff", "format", "."],
+  ["{{python_cmd}}", "-m", "ruff", "check", "--fix", "."],
 ]
 apply = [
-  ["python", "-m", "ruff", "format", "."],
-  ["python", "-m", "ruff", "check", "--fix", "."],
+  ["{{python_cmd}}", "-m", "ruff", "format", "."],
+  ["{{python_cmd}}", "-m", "ruff", "check", "--fix", "."],
 ]
 
 [lint]
 steps = [
-  ["python", "-m", "ruff", "check", "."],
+  ["{{python_cmd}}", "-m", "ruff", "check", "."],
 ]
 
 [test]
 steps = [
-  ["python", "-m", "pytest", "-q"],
+  ["{{python_cmd}}", "-m", "pytest", "-q"],
 ]

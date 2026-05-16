@@ -19,6 +19,7 @@ artifacts:
     - skills/setting-up-just/SKILL.md
     - skills/setting-up-just/references/template-catalog.md
     - skills/setting-up-just/references/adoption-workflow.md
+    - skills/setting-up-just/references/installation-and-troubleshooting.md
   assets:
     - skills/setting-up-just/assets/templates/minimal/Justfile
     - skills/setting-up-just/assets/templates/minimal/.just/config.toml
@@ -50,5 +51,6 @@ install:
   scope: local-only
 
 requires:
-  - just
-  - python3
+  cli:
+    - just >= 1.0
+    - python3 >= 3.11

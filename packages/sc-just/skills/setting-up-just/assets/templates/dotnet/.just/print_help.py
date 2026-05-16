@@ -22,6 +22,32 @@ def repo_name(config: dict) -> str:
     return configured_name or repo_root().name
 
 
+def render_help(config: dict) -> str:
+    sections = config.get("help", {}).get("sections", [])
+    usage = config.get("help", {}).get("usage", "just <recipe>")
+    recipes = [
+        recipe
+        for section in sections
+        for recipe in section.get("recipes", [])
+    ]
+    width = max((len(recipe.get("name", "")) for recipe in recipes), default=4)
+    lines = [
+        f"{repo_name(config)} .NET task runner",
+        "",
+        "Usage:",
+        f"  {usage}",
+        "",
+    ]
+    for section in sections:
+        lines.append(f"{section.get('title', 'Recipes')}:")
+        for recipe in section.get("recipes", []):
+            lines.append(
+                f"  {recipe.get('name', '').ljust(width)}  {recipe.get('description', '')}"
+            )
+        lines.append("")
+    return "\n".join(lines).rstrip() + "\n"
+
+
 def main() -> int:
     try:
         config = load_config()
@@ -29,27 +55,7 @@ def main() -> int:
         print(str(exc))
         return 2
 
-    help_config = config.get("help", {})
-    recipe_lines = []
-    for section in help_config.get("sections", []):
-        if section.get("title") != "General":
-            continue
-        recipe_lines.append(f"{section.get('title', 'Recipes')}:")
-        for recipe in section.get("recipes", []):
-            recipe_lines.append(f"  {recipe.get('name', ''):<12} {recipe.get('description', '')}")
-        recipe_lines.append("")
-
-    lines = [
-        f"{repo_name(config)} .NET task runner",
-        "",
-        "Usage:",
-        f"  {help_config.get('usage', 'just <recipe>')}",
-        "  just build",
-        "  just test",
-        "",
-        *recipe_lines,
-    ]
-    print("\n".join(lines))
+    print(render_help(config), end="")
     return 0
 
 

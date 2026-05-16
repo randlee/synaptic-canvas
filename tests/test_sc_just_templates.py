@@ -175,6 +175,7 @@ def test_python_task_runner_loads_config(tmp_path) -> None:
     config = module.load_config()
     assert config["fmt"]["default_mode"] == "check"
     assert config["lint"]["steps"]
+    assert config["test"]["steps"][0][0] == "{{python_cmd}}"
 
 
 def test_python_print_help_reads_config(tmp_path) -> None:
@@ -255,6 +256,13 @@ def test_python_run_lint_uses_configured_steps(tmp_path) -> None:
     assert marker.read_text(encoding="utf-8") == "lint"
 
 
+def test_python_task_runner_normalizes_python_token(tmp_path) -> None:
+    template_root = _copy_template(tmp_path, "python")
+    module = _load_module("python_task_runner_normalize", template_root / ".just" / "task_runner.py")
+    normalized = module.normalize_steps([["{{python_cmd}}", "-c", "print('ok')"]])
+    assert normalized[0][0] == sys.executable
+
+
 def test_python_run_tests_uses_configured_steps(tmp_path) -> None:
     template_root = _copy_template(tmp_path, "python")
     marker = template_root / "test.txt"
@@ -283,6 +291,39 @@ def test_python_run_tests_uses_configured_steps(tmp_path) -> None:
     )
     _run_script(template_root / ".just" / "run_tests.py", template_root)
     assert marker.read_text(encoding="utf-8") == "test"
+
+
+def test_python_run_lint_empty_steps_fails(tmp_path) -> None:
+    template_root = _copy_template(tmp_path, "python")
+    (template_root / ".just" / "config.toml").write_text(
+        textwrap.dedent(
+            """
+            template_version = "0.1.0"
+            [repo]
+            name = ""
+            [help]
+            usage = "just <recipe>"
+            [fmt]
+            default_mode = "check"
+            [fmt.steps]
+            check = []
+            write = []
+            apply = []
+            [lint]
+            steps = []
+            [test]
+            steps = []
+            """
+        ).strip()
+        + "\n",
+        encoding="utf-8",
+    )
+    completed = _run_script(
+        template_root / ".just" / "run_lint.py",
+        template_root,
+        expected_returncode=2,
+    )
+    assert "lint is not configured" in completed.stdout
 
 
 def test_python_task_runner_missing_config_raises(tmp_path) -> None:
@@ -347,13 +388,13 @@ def test_rust_run_fmt_uses_configured_commands(tmp_path) -> None:
             usage = "just <recipe>"
             [fmt]
             default_mode = "check"
-            [fmt.commands]
-            check = [{sys.executable!r}, "-c", "from pathlib import Path; Path({str(marker)!r}).write_text('fmt', encoding='utf-8')"]
-            write = [{sys.executable!r}, "-c", "import sys; sys.exit(0)"]
-            apply = [{sys.executable!r}, "-c", "import sys; sys.exit(0)"]
+            [fmt.steps]
+            check = [[{sys.executable!r}, "-c", "from pathlib import Path; Path({str(marker)!r}).write_text('fmt', encoding='utf-8')"]]
+            write = [[{sys.executable!r}, "-c", "import sys; sys.exit(0)"]]
+            apply = [[{sys.executable!r}, "-c", "import sys; sys.exit(0)"]]
             [lint]
             default_target = "all"
-            [lint.targets]
+            [lint.steps_by_target]
             all = []
             fmt = []
             clippy = []
@@ -390,13 +431,13 @@ def test_rust_run_lint_stops_on_first_failure(tmp_path) -> None:
             usage = "just <recipe>"
             [fmt]
             default_mode = "check"
-            [fmt.commands]
-            check = [{sys.executable!r}, "-c", "import sys; sys.exit(0)"]
-            write = [{sys.executable!r}, "-c", "import sys; sys.exit(0)"]
-            apply = [{sys.executable!r}, "-c", "import sys; sys.exit(0)"]
+            [fmt.steps]
+            check = [[{sys.executable!r}, "-c", "import sys; sys.exit(0)"]]
+            write = [[{sys.executable!r}, "-c", "import sys; sys.exit(0)"]]
+            apply = [[{sys.executable!r}, "-c", "import sys; sys.exit(0)"]]
             [lint]
             default_target = "all"
-            [lint.targets]
+            [lint.steps_by_target]
             all = [
               [{sys.executable!r}, "-c", "import sys; sys.exit(3)"],
               [{sys.executable!r}, "-c", "from pathlib import Path; Path({str(marker)!r}).write_text('late', encoding='utf-8')"],
@@ -416,12 +457,148 @@ def test_rust_run_lint_stops_on_first_failure(tmp_path) -> None:
     assert not marker.exists()
 
 
+def test_rust_run_fmt_supports_legacy_commands_schema(tmp_path) -> None:
+    template_root = _copy_template(tmp_path, "rust")
+    marker = template_root / "legacy-fmt.txt"
+    (template_root / ".just" / "config.toml").write_text(
+        textwrap.dedent(
+            f"""
+            template_version = "0.1.0"
+            [repo]
+            name = ""
+            [help]
+            usage = "just <recipe>"
+            [fmt]
+            default_mode = "check"
+            [fmt.commands]
+            check = [{sys.executable!r}, "-c", "from pathlib import Path; Path({str(marker)!r}).write_text('fmt', encoding='utf-8')"]
+            write = [{sys.executable!r}, "-c", "import sys; sys.exit(0)"]
+            apply = [{sys.executable!r}, "-c", "import sys; sys.exit(0)"]
+            [lint]
+            default_target = "all"
+            [lint.steps_by_target]
+            all = [[{sys.executable!r}, "-c", "import sys; sys.exit(0)"]]
+            fmt = [[{sys.executable!r}, "-c", "import sys; sys.exit(0)"]]
+            clippy = [[{sys.executable!r}, "-c", "import sys; sys.exit(0)"]]
+            """
+        ).strip()
+        + "\n",
+        encoding="utf-8",
+    )
+    _run_script(template_root / ".just" / "run_fmt.py", template_root)
+    assert marker.read_text(encoding="utf-8") == "fmt"
+
+
+def test_rust_run_lint_supports_legacy_targets_schema(tmp_path) -> None:
+    template_root = _copy_template(tmp_path, "rust")
+    marker = template_root / "legacy-lint.txt"
+    (template_root / ".just" / "config.toml").write_text(
+        textwrap.dedent(
+            f"""
+            template_version = "0.1.0"
+            [repo]
+            name = ""
+            [help]
+            usage = "just <recipe>"
+            [fmt]
+            default_mode = "check"
+            [fmt.steps]
+            check = [[{sys.executable!r}, "-c", "import sys; sys.exit(0)"]]
+            write = [[{sys.executable!r}, "-c", "import sys; sys.exit(0)"]]
+            apply = [[{sys.executable!r}, "-c", "import sys; sys.exit(0)"]]
+            [lint]
+            default_target = "all"
+            [lint.targets]
+            all = [[{sys.executable!r}, "-c", "from pathlib import Path; Path({str(marker)!r}).write_text('lint', encoding='utf-8')"]]
+            fmt = []
+            clippy = []
+            """
+        ).strip()
+        + "\n",
+        encoding="utf-8",
+    )
+    _run_script(template_root / ".just" / "run_lint.py", template_root)
+    assert marker.read_text(encoding="utf-8") == "lint"
+
+
+def test_rust_run_lint_empty_target_fails(tmp_path) -> None:
+    template_root = _copy_template(tmp_path, "rust")
+    (template_root / ".just" / "config.toml").write_text(
+        textwrap.dedent(
+            """
+            template_version = "0.1.0"
+            [repo]
+            name = ""
+            [help]
+            usage = "just <recipe>"
+            [fmt]
+            default_mode = "check"
+            [fmt.steps]
+            check = []
+            write = []
+            apply = []
+            [lint]
+            default_target = "all"
+            [lint.steps_by_target]
+            all = []
+            fmt = []
+            clippy = []
+            """
+        ).strip()
+        + "\n",
+        encoding="utf-8",
+    )
+    completed = _run_script(
+        template_root / ".just" / "run_lint.py",
+        template_root,
+        expected_returncode=2,
+    )
+    assert "not configured" in completed.stderr
+
+
 def test_dotnet_print_help_reads_config(tmp_path) -> None:
     template_root = _copy_template(tmp_path, "dotnet")
     completed = _run_script(template_root / ".just" / "print_help.py", template_root)
     assert ".NET task runner" in completed.stdout
     assert "Run dotnet build from repo root." in completed.stdout
     assert "Run dotnet test from repo root." in completed.stdout
+
+
+def test_dotnet_print_help_renders_all_sections(tmp_path) -> None:
+    template_root = _copy_template(tmp_path, "dotnet")
+    (template_root / ".just" / "config.toml").write_text(
+        textwrap.dedent(
+            """
+            template_version = "0.1.0"
+            [repo]
+            name = ""
+            [help]
+            usage = "just <recipe>"
+            [[help.sections]]
+            title = "General"
+            [[help.sections.recipes]]
+            name = "help"
+            description = "Show this help."
+            [[help.sections]]
+            title = "Extra"
+            [[help.sections.recipes]]
+            name = "doctor"
+            description = "Run extra checks."
+            """
+        ).strip()
+        + "\n",
+        encoding="utf-8",
+    )
+    completed = _run_script(template_root / ".just" / "print_help.py", template_root)
+    assert "Extra:" in completed.stdout
+    assert "Run extra checks." in completed.stdout
+
+
+def test_dotnet_print_help_has_single_trailing_newline(tmp_path) -> None:
+    template_root = _copy_template(tmp_path, "dotnet")
+    completed = _run_script(template_root / ".just" / "print_help.py", template_root)
+    assert completed.stdout.endswith("\n")
+    assert not completed.stdout.endswith("\n\n")
 
 
 def test_dotnet_print_help_missing_config_fails(tmp_path) -> None:

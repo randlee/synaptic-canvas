@@ -26,7 +26,7 @@ Avoid copying more helper files than the repo needs.
 
 ## 3. Adapt the Command Surface
 
-Prefer these recipe names unless the repo has a strong existing standard:
+Prefer these recipe names when relevant unless the repo has a strong existing standard:
 - `help`
 - `fmt`
 - `lint`
@@ -64,12 +64,15 @@ Keep repo-specific commands, aliases, and discovery settings in
 Run the safest commands first:
 - `just --version`
 - `just help`
-- `just fmt check`
+- `just fmt check` or the repo-safe equivalent
 - `just lint`
 - `just test`
 
 If a template command fails because the tool is wrong for the repo, change the
-helper script immediately instead of documenting the failure away.
+`.just/config.toml` first instead of documenting the failure away. Only change
+helper code when the config layer is no longer sufficient. If the verification
+surface still fails after adaptation, stop and report the failing command rather
+than leaving a broken template behind.
 
 ## 6. Document Only When the Repo Already Documents Local Tooling
 

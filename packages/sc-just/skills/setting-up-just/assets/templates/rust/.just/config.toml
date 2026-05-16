@@ -62,15 +62,21 @@ description = "Run only clippy with warnings denied."
 [fmt]
 default_mode = "check"
 
-[fmt.commands]
-check = ["just", "_fmt-check"]
-write = ["just", "_fmt-write"]
-apply = ["just", "_fmt-write"]
+[fmt.steps]
+check = [
+  ["just", "_fmt-check"],
+]
+write = [
+  ["just", "_fmt-write"],
+]
+apply = [
+  ["just", "_fmt-write"],
+]
 
 [lint]
 default_target = "all"
 
-[lint.targets]
+[lint.steps_by_target]
 all = [
   ["just", "_lint-fmt"],
   ["just", "_lint-clippy"],

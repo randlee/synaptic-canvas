@@ -15,7 +15,7 @@ def main() -> int:
     except (FileNotFoundError, tomllib.TOMLDecodeError) as exc:
         print(str(exc), file=sys.stderr)
         return 2
-    return run_steps(config.get("lint", {}).get("steps", []))
+    return run_steps("lint", config.get("lint", {}).get("steps", []))
 
 
 if __name__ == "__main__":

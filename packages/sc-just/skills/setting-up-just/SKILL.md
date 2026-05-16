@@ -31,13 +31,29 @@ Do not use this skill for:
 - large build-system migrations that should stay in an existing framework
 - repos that already have a strong task-runner standard the user wants preserved
 
-## Dependency Check
+## Step 1 - Verify Dependencies
 
 Before editing files:
-1. Verify `just` is installed with `command -v just` and `just --version`.
-2. Inspect the repo for existing task surfaces such as `Makefile`, `package.json`,
+1. Verify `just >= 1.0` is installed:
+   - `command -v just || which just`
+   - `just --version`
+2. Verify `python3 >= 3.11` is available:
+   - `command -v python3 || command -v python`
+   - `python3 -c "import sys; print(sys.version)" || python -c "import sys; print(sys.version)"`
+3. If either command is missing from `PATH`, check common install locations before
+   assuming the tool is absent:
+   - `~/.cargo/bin`
+   - `/opt/homebrew/bin`
+   - `$HOME/.local/bin`
+4. Enforce the version floor before continuing:
+   - stop if `just --version` reports lower than `1.0`
+   - stop if the resolved Python interpreter reports lower than `3.11`
+5. If dependency discovery or version checks fail, read
+   `references/installation-and-troubleshooting.md` and do not continue until the
+   tool is both discoverable and new enough.
+6. Inspect the repo for existing task surfaces such as `Makefile`, `package.json`,
    `pyproject.toml`, `Cargo.toml`, `scripts/`, or CI workflows.
-3. If a `Justfile` already exists, merge carefully instead of replacing it.
+7. If a `Justfile` already exists, merge carefully instead of replacing it.
 
 ## Template Selection
 
@@ -51,7 +67,8 @@ Read `references/template-catalog.md` and choose the closest profile:
 - `rust` for Cargo workspaces that want the `atm-core` shape
 
 Then read `references/adoption-workflow.md` and adapt the copied files to the
-repo's real toolchain.
+repo's real toolchain. If dependency setup is failing, also read
+`references/installation-and-troubleshooting.md`.
 
 ## Workflow
 
@@ -70,8 +87,13 @@ When applying this skill:
    - `just fmt check` or the repo-safe equivalent
    - `just lint`
    - `just test`
-7. If a recipe fails because the repo uses different tooling, update the helper scripts
-   instead of leaving broken defaults behind.
+7. If a verification command fails, do not leave the template in a knowingly
+   broken state:
+   - change `.just/config.toml` first when the repo uses different commands
+   - only add or change helper scripts when direct config updates are no longer
+     adequate
+   - if the repo surface is still unresolved, report the failure clearly and stop
+     instead of claiming the setup is complete
 
 ## Output Expectations
 
@@ -79,7 +101,14 @@ When using this skill, report:
 - which template profile you selected and why
 - what commands were wired into `fmt`, `lint`, `test`, and `ci`
 - any repo-specific deviations from the starter template
+- whether `.just/config.toml` stayed sufficient or whether helper code had to change
 - which verification commands passed and which were not run
+
+## References
+
+- `references/template-catalog.md`
+- `references/adoption-workflow.md`
+- `references/installation-and-troubleshooting.md`
 
 ## Agent Delegation
 

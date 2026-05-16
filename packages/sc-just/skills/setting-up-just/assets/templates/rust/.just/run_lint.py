@@ -27,13 +27,16 @@ def main(argv: list[str]) -> int:
         return 2
 
     lint_config = config.get("lint", {})
-    targets = lint_config.get("targets", {})
+    targets = lint_config.get("steps_by_target") or lint_config.get("targets", {})
     target = argv[1] if len(argv) > 1 else lint_config.get("default_target", "all")
     commands = targets.get(target)
     if commands is None:
         valid = ", ".join(targets.keys())
         print("unknown lint target:", target, file=sys.stderr)
         print(f"expected one of: {valid}", file=sys.stderr)
+        return 2
+    if not commands:
+        print(f"lint target {target!r} is not configured", file=sys.stderr)
         return 2
 
     for command in commands:

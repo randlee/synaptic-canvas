@@ -660,8 +660,8 @@
         "schemas": 0
       },
       "dependencies": [
-        "just",
-        "python3"
+        "just >= 1.0",
+        "python3 >= 3.11"
       ],
       "lastUpdated": "2026-05-15"
     }

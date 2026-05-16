@@ -25,7 +25,7 @@ def main(argv: list[str]) -> int:
         print("unknown fmt mode:", mode, file=sys.stderr)
         print(f"expected one of: {valid}", file=sys.stderr)
         return 2
-    return run_steps(steps)
+    return run_steps("fmt", steps)
 
 
 if __name__ == "__main__":

@@ -1,6 +1,16 @@
 # Template Catalog
 
-This skill ships three starter profiles under `assets/templates/`.
+This skill ships five starter profiles under `assets/templates/`.
+
+Every shipped `.just/config.toml` includes:
+
+```toml
+template_version = "0.1.0"
+```
+
+That value records which starter bundle the repo was copied from. Keep it
+aligned with the shipped template version unless you intentionally want the repo
+to advertise a local fork.
 
 ## `minimal`
 
@@ -45,6 +55,8 @@ Characteristics:
 - `test` runs `pytest -q`
 - repo-specific command variants should be edited in `.just/config.toml`, not the
   Python helpers
+- Python module commands use the `{{python_cmd}}` runtime token so the helper can
+  expand them to the current interpreter path
 
 Adjust command prefixes if the repo uses `uv run`, `poetry run`, `pipenv run`,
 or a checked-in venv path.
@@ -69,7 +81,7 @@ Characteristics:
 
 For repos that need custom package targeting, generation steps, or nonstandard
 build/test orchestration, start from this template and add repo-specific scripts
- only when the direct root commands stop being adequate.
+only when the direct root commands stop being adequate.
 
 ## `dotnet`
 
@@ -107,7 +119,8 @@ Included files:
 - `.just/run_lint.py`
 
 Characteristics:
-- `fmt` delegates to Python helpers that call `just _fmt-check` or `just _fmt-write`
+- `fmt` delegates to Python helpers using the same `steps`-driven config pattern
+  as the `minimal` and `python` templates
 - `lint all` runs `fmt` then `clippy`
 - `build` and `test` stay as direct Cargo recipes
 - Windows-aware shell and `clippy` target selection match the `atm-core` style

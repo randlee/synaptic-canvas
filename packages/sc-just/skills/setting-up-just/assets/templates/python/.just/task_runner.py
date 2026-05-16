@@ -4,7 +4,10 @@ from __future__ import annotations
 
 from pathlib import Path
 import subprocess
+import sys
 import tomllib
+
+PYTHON_CMD_TOKEN = "{{python_cmd}}"
 
 
 def repo_root() -> Path:
@@ -53,9 +56,23 @@ def render_help(config: dict) -> str:
     return "\n".join(lines).rstrip() + "\n"
 
 
-def run_steps(steps: list[list[str]]) -> int:
+def _normalize_part(part: str) -> str:
+    if part == PYTHON_CMD_TOKEN:
+        return sys.executable
+    return part
+
+
+def normalize_steps(steps: list[list[str]]) -> list[list[str]]:
+    return [[_normalize_part(part) for part in step] for step in steps]
+
+
+def run_steps(label: str, steps: list[list[str]]) -> int:
+    if not steps:
+        print(f"{label} is not configured. Edit .just/config.toml and add command steps.")
+        return 2
+
     root = repo_root()
-    for step in steps:
+    for step in normalize_steps(steps):
         print("+", " ".join(step))
         completed = subprocess.run(step, cwd=root)
         if completed.returncode != 0:
