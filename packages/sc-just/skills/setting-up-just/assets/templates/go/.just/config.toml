@@ -1,0 +1,43 @@
+template_version = "0.1.0"
+
+[repo]
+name = ""
+
+[help]
+usage = "just <recipe>"
+runner_label = "Go task runner"
+
+[[help.sections]]
+title = "General"
+
+[[help.sections.recipes]]
+name = "help"
+description = "Show this help."
+
+[[help.sections.recipes]]
+name = "build"
+description = "Run go build ./... from repo root."
+
+[[help.sections.recipes]]
+name = "fmt"
+description = "Run the default formatting gate."
+
+[[help.sections.recipes]]
+name = "fmt [check|write|apply]"
+description = "Run the default gate or apply gofmt changes. `write` and `apply` mutate files."
+
+[[help.sections.recipes]]
+name = "lint"
+description = "Run go vet ./... from repo root."
+
+[[help.sections.recipes]]
+name = "test"
+description = "Run go test ./... from repo root."
+
+[[help.sections.recipes]]
+name = "ci"
+description = "Run non-mutating fmt, lint, and test."
+
+[fmt]
+default_mode = "check"
+paths = ["."]

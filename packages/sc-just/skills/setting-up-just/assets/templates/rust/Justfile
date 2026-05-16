@@ -1,0 +1,39 @@
+set windows-shell := ["pwsh", "-NoLogo", "-Command"]
+
+python_cmd := if os_family() == "windows" { "python" } else { "python3" }
+clippy_cmd := if os_family() == "windows" { "cargo clippy --workspace --all-targets --target x86_64-pc-windows-msvc -- -D warnings" } else { "cargo clippy --workspace --all-targets -- -D warnings" }
+
+default: help
+
+help:
+    {{python_cmd}} .just/print_help.py
+
+[private]
+_fmt-write:
+    cargo fmt --all
+
+[private]
+_fmt-check:
+    cargo fmt --all --check
+
+fmt mode='check':
+    {{python_cmd}} .just/run_fmt.py {{mode}}
+
+[private]
+_lint-fmt:
+    @just fmt check
+
+[private]
+_lint-clippy:
+    {{clippy_cmd}}
+
+build:
+    cargo build --workspace
+
+test:
+    cargo test --workspace
+
+lint target='all':
+    {{python_cmd}} .just/run_lint.py {{target}}
+
+ci: lint test

@@ -1,0 +1,51 @@
+template_version = "0.1.0"
+
+[repo]
+name = ""
+
+[help]
+usage = "just <recipe>"
+
+[[help.sections]]
+title = "General"
+
+[[help.sections.recipes]]
+name = "help"
+description = "Show this help."
+
+[[help.sections.recipes]]
+name = "lint"
+description = "Run the repo lint surface."
+
+[[help.sections.recipes]]
+name = "test"
+description = "Run the repo test surface."
+
+[[help.sections.recipes]]
+name = "ci"
+description = "Run lint and test."
+
+[[help.sections]]
+title = "Formatting"
+
+[[help.sections.recipes]]
+name = "fmt"
+description = "Run the default formatting gate."
+
+[[help.sections.recipes]]
+name = "fmt [check|write|apply]"
+description = "Run the default, non-mutating, or mutating formatting gate."
+
+[fmt]
+default_mode = "check"
+
+[fmt.steps]
+check = []
+write = []
+apply = []
+
+[lint]
+steps = []
+
+[test]
+steps = []

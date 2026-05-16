@@ -30,6 +30,7 @@ load_json = sync_module.load_json
 load_manifest = sync_module.load_manifest
 get_package_dirs = sync_module.get_package_dirs
 find_in_list = sync_module.find_in_list
+is_local_marketplace_plugin = sync_module.is_local_marketplace_plugin
 validate_marketplace_sync = sync_module.validate_marketplace_sync
 fix_sync_issues = sync_module.fix_sync_issues
 SyncValidationResult = sync_module.SyncValidationResult
@@ -347,6 +348,25 @@ def test_find_in_list_empty_list():
     """Test searching empty list."""
     result = find_in_list([], "pkg1")
     assert result is None
+
+
+def test_is_local_marketplace_plugin_true_for_packages_path():
+    """Test local package detection for repo-local package sources."""
+    assert is_local_marketplace_plugin({"source": "./packages/test-package"}) is True
+
+
+def test_is_local_marketplace_plugin_false_for_forwarded_git_subdir():
+    """Test forwarded marketplace detection for git-subdir sources."""
+    assert is_local_marketplace_plugin(
+        {
+            "source": {
+                "source": "git-subdir",
+                "url": "https://github.com/example/marketplace.git",
+                "path": "packages/test-package",
+                "ref": "main",
+            }
+        }
+    ) is False
 
 
 # ============================================================================
@@ -692,6 +712,78 @@ def test_validate_marketplace_sync_multiple_packages(temp_dir):
     assert result.value.is_valid()
     assert result.value.total_packages == 2
     assert result.value.packages_validated == 2
+
+
+def test_validate_marketplace_sync_ignores_forwarded_marketplace_warning(
+    complete_setup,
+):
+    """Test that forwarded marketplace entries do not warn as missing locally."""
+    marketplace_path = complete_setup["marketplace_path"]
+    with open(marketplace_path) as f:
+        marketplace = json.load(f)
+
+    marketplace["plugins"].append(
+        {
+            "name": "forwarded-package",
+            "source": {
+                "source": "git-subdir",
+                "url": "https://github.com/example/marketplace.git",
+                "path": "packages/forwarded-package",
+                "ref": "main",
+            },
+            "description": "Forwarded package",
+            "author": {"name": "test-author"},
+            "category": "tools",
+        }
+    )
+
+    with open(marketplace_path, "w") as f:
+        json.dump(marketplace, f)
+
+    result = validate_marketplace_sync(
+        packages_dir=complete_setup["packages_dir"],
+        marketplace_path=marketplace_path,
+        registry_path=complete_setup["registry_path"],
+        verbose=False,
+    )
+
+    assert isinstance(result, Success)
+    assert all("forwarded-package" not in warning for warning in result.warnings)
+
+
+def test_validate_marketplace_sync_warns_for_local_marketplace_entry_missing_package(
+    complete_setup,
+):
+    """Test that repo-local marketplace entries still warn when missing locally."""
+    marketplace_path = complete_setup["marketplace_path"]
+    with open(marketplace_path) as f:
+        marketplace = json.load(f)
+
+    marketplace["plugins"].append(
+        {
+            "name": "missing-local-package",
+            "source": "./packages/missing-local-package",
+            "description": "Missing local package",
+            "version": "1.0.0",
+            "author": {"name": "test-author"},
+            "license": "MIT",
+            "keywords": [],
+            "category": "tools",
+        }
+    )
+
+    with open(marketplace_path, "w") as f:
+        json.dump(marketplace, f)
+
+    result = validate_marketplace_sync(
+        packages_dir=complete_setup["packages_dir"],
+        marketplace_path=marketplace_path,
+        registry_path=complete_setup["registry_path"],
+        verbose=False,
+    )
+
+    assert isinstance(result, Success)
+    assert any("missing-local-package" in warning for warning in result.warnings)
 
 
 # ============================================================================
