@@ -38,11 +38,11 @@ install locations before concluding the dependency is missing:
 Useful checks:
 
 ```bash
-ls ~/.cargo/bin/just
-ls /opt/homebrew/bin/just
-ls "$HOME/.local/bin/just"
-ls /opt/homebrew/bin/python3
-ls "$HOME/.local/bin/python3"
+[ -x "$HOME/.cargo/bin/just" ] && "$HOME/.cargo/bin/just" --version
+[ -x "/opt/homebrew/bin/just" ] && "/opt/homebrew/bin/just" --version
+[ -x "$HOME/.local/bin/just" ] && "$HOME/.local/bin/just" --version
+[ -x "/opt/homebrew/bin/python3" ] && "/opt/homebrew/bin/python3" -c "import sys; print(sys.version)"
+[ -x "$HOME/.local/bin/python3" ] && "$HOME/.local/bin/python3" -c "import sys; print(sys.version)"
 ```
 
 If the binary exists but is not on `PATH`, either invoke it with its absolute

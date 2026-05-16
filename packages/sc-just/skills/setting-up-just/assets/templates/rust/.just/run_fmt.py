@@ -51,7 +51,11 @@ def main(argv: list[str]) -> int:
         print(f"fmt mode {mode!r} is not configured", file=sys.stderr)
         return 2
     for command in normalized_steps:
-        completed = subprocess.run(command, cwd=repo_root())
+        try:
+            completed = subprocess.run(command, cwd=repo_root())
+        except FileNotFoundError:
+            print(f"missing command: {command[0]}", file=sys.stderr)
+            return 127
         if completed.returncode != 0:
             return completed.returncode
     return 0

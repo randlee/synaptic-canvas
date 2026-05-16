@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import sys
 import tomllib
 
 def repo_root() -> Path:
@@ -48,7 +49,7 @@ def main() -> int:
     try:
         print(render_help(load_config()), end="")
     except (FileNotFoundError, tomllib.TOMLDecodeError) as exc:
-        print(str(exc))
+        print(str(exc), file=sys.stderr)
         return 2
     return 0
 

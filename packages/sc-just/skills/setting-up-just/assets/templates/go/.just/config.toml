@@ -23,16 +23,8 @@ name = "fmt"
 description = "Run the default formatting gate."
 
 [[help.sections.recipes]]
-name = "fmt check"
-description = "List files that need gofmt changes without mutating them."
-
-[[help.sections.recipes]]
-name = "fmt write"
-description = "Apply gofmt changes. This mutates files."
-
-[[help.sections.recipes]]
-name = "fmt apply"
-description = "Apply gofmt changes. This mutates files."
+name = "fmt [check|write|apply]"
+description = "Run the default gate or apply gofmt changes. `write` and `apply` mutate files."
 
 [[help.sections.recipes]]
 name = "lint"

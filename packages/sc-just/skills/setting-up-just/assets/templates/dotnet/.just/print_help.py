@@ -2,6 +2,7 @@
 # sc-just-template-version: 0.1.0
 from __future__ import annotations
 
+import sys
 import tomllib
 from pathlib import Path
 
@@ -53,7 +54,7 @@ def main() -> int:
     try:
         config = load_config()
     except (FileNotFoundError, tomllib.TOMLDecodeError) as exc:
-        print(str(exc))
+        print(str(exc), file=sys.stderr)
         return 2
 
     print(render_help(config), end="")

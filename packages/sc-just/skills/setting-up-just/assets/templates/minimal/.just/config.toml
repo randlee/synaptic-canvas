@@ -33,16 +33,8 @@ name = "fmt"
 description = "Run the default formatting gate."
 
 [[help.sections.recipes]]
-name = "fmt check"
-description = "Run the non-mutating formatting gate."
-
-[[help.sections.recipes]]
-name = "fmt write"
-description = "Apply formatting changes."
-
-[[help.sections.recipes]]
-name = "fmt apply"
-description = "Apply formatting changes."
+name = "fmt [check|write|apply]"
+description = "Run the default, non-mutating, or mutating formatting gate."
 
 [fmt]
 default_mode = "check"

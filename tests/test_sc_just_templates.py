@@ -77,7 +77,7 @@ def test_minimal_task_runner_reports_unconfigured(tmp_path, capsys) -> None:
     result = module.run_steps("lint", [])
     assert result == 2
     captured = capsys.readouterr()
-    assert "lint is not configured" in captured.out
+    assert "lint is not configured" in captured.err
 
 
 def test_minimal_task_runner_propagates_failure(tmp_path) -> None:
@@ -332,7 +332,7 @@ def test_python_run_lint_empty_steps_fails(tmp_path) -> None:
         template_root,
         expected_returncode=2,
     )
-    assert "lint is not configured" in completed.stdout
+    assert "lint is not configured" in completed.stderr
 
 
 def test_python_task_runner_missing_config_raises(tmp_path) -> None:
@@ -460,14 +460,14 @@ def test_go_print_help_missing_config_fails(tmp_path) -> None:
         template_root,
         expected_returncode=2,
     )
-    assert "missing config file" in completed.stdout
+    assert "missing config file" in completed.stderr
 
 
 def test_rust_print_help_reads_config(tmp_path) -> None:
     template_root = _copy_template(tmp_path, "rust")
     completed = _run_script(template_root / ".just" / "print_help.py", template_root)
     assert "Build the Rust workspace." in completed.stdout
-    assert "Run only clippy with warnings denied." in completed.stdout
+    assert "Run the default lint set or a Rust-only lint target." in completed.stdout
 
 
 def test_rust_run_fmt_unknown_mode(tmp_path) -> None:
@@ -772,4 +772,77 @@ def test_dotnet_print_help_missing_config_fails(tmp_path) -> None:
         template_root,
         expected_returncode=2,
     )
-    assert "missing config file" in completed.stdout
+    assert "missing config file" in completed.stderr
+
+
+def test_minimal_task_runner_missing_command_is_clean(tmp_path, capsys) -> None:
+    template_root = _copy_template(tmp_path, "minimal")
+    module = _load_module("minimal_task_runner_missing_command", template_root / ".just" / "task_runner.py")
+    result = module.run_steps("lint", [["definitely-not-a-real-command-12345"]])
+    assert result == 127
+    captured = capsys.readouterr()
+    assert "missing command: definitely-not-a-real-command-12345" in captured.err
+    assert "Traceback" not in captured.err
+
+
+def test_python_task_runner_missing_command_is_clean(tmp_path, capsys) -> None:
+    template_root = _copy_template(tmp_path, "python")
+    module = _load_module("python_task_runner_missing_command", template_root / ".just" / "task_runner.py")
+    result = module.run_steps("lint", [["definitely-not-a-real-command-12345"]])
+    assert result == 127
+    captured = capsys.readouterr()
+    assert "missing command: definitely-not-a-real-command-12345" in captured.err
+    assert "Traceback" not in captured.err
+
+
+def test_go_run_fmt_missing_gofmt_is_clean(tmp_path) -> None:
+    template_root = _copy_template(tmp_path, "go")
+    env = os.environ.copy()
+    env["PATH"] = str(tmp_path / "missing-bin-dir")
+    completed = subprocess.run(
+        [sys.executable, str(template_root / ".just" / "run_fmt.py")],
+        cwd=template_root,
+        capture_output=True,
+        text=True,
+        env=env,
+        check=False,
+    )
+    assert completed.returncode == 127
+    assert "missing command: gofmt" in completed.stderr
+    assert "Traceback" not in completed.stderr
+
+
+def test_rust_run_lint_missing_command_is_clean(tmp_path) -> None:
+    template_root = _copy_template(tmp_path, "rust")
+    (template_root / ".just" / "config.toml").write_text(
+        textwrap.dedent(
+            """
+            template_version = "0.1.0"
+            [repo]
+            name = ""
+            [help]
+            usage = "just <recipe>"
+            [fmt]
+            default_mode = "check"
+            [fmt.steps]
+            check = []
+            write = []
+            apply = []
+            [lint]
+            default_target = "all"
+            [lint.steps_by_target]
+            all = [["definitely-not-a-real-command-12345"]]
+            fmt = []
+            clippy = []
+            """
+        ).strip()
+        + "\n",
+        encoding="utf-8",
+    )
+    completed = _run_script(
+        template_root / ".just" / "run_lint.py",
+        template_root,
+        expected_returncode=127,
+    )
+    assert "missing command: definitely-not-a-real-command-12345" in completed.stderr
+    assert "Traceback" not in completed.stderr

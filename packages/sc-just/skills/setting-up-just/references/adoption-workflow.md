@@ -47,6 +47,10 @@ If the repo already has stable entry points, call them:
 - `npm test`
 - `pnpm lint`
 
+Some profiles also expose argument-driven recipes instead of separate recipe
+names. The Rust template, for example, supports `just lint <target>` for
+targets such as `all`, `fmt`, and `clippy`.
+
 ## 4. Keep Logic Out of the Justfile
 
 Follow the `atm-core` pattern when recipes start accumulating:

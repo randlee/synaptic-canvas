@@ -25,13 +25,17 @@ def fmt_paths(config: dict) -> list[str]:
 
 
 def run_check(paths: list[str]) -> int:
-    completed = subprocess.run(
-        ["gofmt", "-l", *paths],
-        cwd=repo_root(),
-        capture_output=True,
-        text=True,
-        check=False,
-    )
+    try:
+        completed = subprocess.run(
+            ["gofmt", "-l", *paths],
+            cwd=repo_root(),
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except FileNotFoundError:
+        print("missing command: gofmt", file=sys.stderr)
+        return 127
     if completed.returncode != 0:
         if completed.stdout:
             print(completed.stdout, end="", file=sys.stderr)
@@ -48,7 +52,11 @@ def run_check(paths: list[str]) -> int:
 
 
 def run_write(paths: list[str]) -> int:
-    completed = subprocess.run(["gofmt", "-w", *paths], cwd=repo_root(), check=False)
+    try:
+        completed = subprocess.run(["gofmt", "-w", *paths], cwd=repo_root(), check=False)
+    except FileNotFoundError:
+        print("missing command: gofmt", file=sys.stderr)
+        return 127
     return completed.returncode
 
 

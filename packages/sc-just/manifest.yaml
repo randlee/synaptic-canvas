@@ -14,6 +14,8 @@ tags:
   - templates
   - skills
 
+# Installation source of truth: files copied from this package are declared
+# under artifacts below. `.claude-plugin/plugin.json` is marketplace metadata.
 artifacts:
   skills:
     - skills/setting-up-just/SKILL.md

@@ -70,13 +70,20 @@ def normalize_steps(steps: list[str] | list[list[str]]) -> list[list[str]]:
 
 def run_steps(label: str, steps: list[list[str]]) -> int:
     if not steps:
-        print(f"{label} is not configured. Edit .just/config.toml and add command steps.")
+        print(
+            f"{label} is not configured. Edit .just/config.toml and add command steps.",
+            file=sys.stderr,
+        )
         return 2
 
     root = repo_root()
     for step in normalize_steps(steps):
         print("+", " ".join(step))
-        completed = subprocess.run(step, cwd=root)
+        try:
+            completed = subprocess.run(step, cwd=root)
+        except FileNotFoundError:
+            print(f"missing command: {step[0]}", file=sys.stderr)
+            return 127
         if completed.returncode != 0:
             return completed.returncode
     return 0

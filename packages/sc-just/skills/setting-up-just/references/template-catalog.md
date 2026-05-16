@@ -31,6 +31,7 @@ Characteristics:
 - routes execution through Python helpers
 - keeps all repo-specific commands in `.just/config.toml`
 - intentionally ships placeholder command arrays in config that must be customized
+- the helpers require `python3 >= 3.11`
 
 Choose this when the repo is unusual, mixed-language, or you want a neutral
 starting point.
@@ -131,6 +132,7 @@ Characteristics:
 - `build` and `test` stay as direct Cargo recipes
 - Windows-aware shell and `clippy` target selection match the `atm-core` style
 - repo-specific command surfaces stay in `.just/config.toml`
+- the helpers require `python3 >= 3.11`
 
 Use this when the repo already centers on Cargo and you want the `Justfile`
 structure to stay close to `atm-core` without copying its repo-specific lints.
