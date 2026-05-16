@@ -1,4 +1,5 @@
 import ast
+import json
 import os
 import importlib.util
 import shutil
@@ -45,6 +46,17 @@ def _run_script(script: Path, cwd: Path, *args: str, expected_returncode: int = 
         f"stderr:\n{completed.stderr}"
     )
     return completed
+
+
+def _toml_str(v: str) -> str:
+    """Produce a TOML basic string literal for any string value.
+
+    On Windows, sys.executable paths contain backslashes. Python repr() produces
+    single-quoted literal strings where backslashes are not escape sequences in
+    TOML, causing subprocess to receive wrong paths. json.dumps() produces a
+    double-quoted TOML basic string with proper backslash escaping.
+    """
+    return json.dumps(v)
 
 
 def _load_module(module_name: str, module_path: Path):
@@ -148,7 +160,7 @@ def test_minimal_run_lint_uses_configured_steps(tmp_path) -> None:
             write = []
             apply = []
             [lint]
-            steps = [[{sys.executable!r}, "-c", "from pathlib import Path; Path({str(marker)!r}).write_text('ok', encoding='utf-8')"]]
+            steps = [[{_toml_str(sys.executable)}, "-c", "from pathlib import Path; Path({marker.as_posix()!r}).write_text('ok', encoding='utf-8')"]]
             [test]
             steps = []
             """
@@ -201,7 +213,7 @@ def test_python_run_fmt_runs_configured_mode(tmp_path) -> None:
             [fmt]
             default_mode = "check"
             [fmt.steps]
-            check = [[{sys.executable!r}, "-c", "from pathlib import Path; Path({str(marker)!r}).write_text('fmt', encoding='utf-8')"]]
+            check = [[{_toml_str(sys.executable)}, "-c", "from pathlib import Path; Path({marker.as_posix()!r}).write_text('fmt', encoding='utf-8')"]]
             write = []
             apply = []
             [lint]
@@ -246,7 +258,7 @@ def test_python_run_lint_uses_configured_steps(tmp_path) -> None:
             write = []
             apply = []
             [lint]
-            steps = [[{sys.executable!r}, "-c", "from pathlib import Path; Path({str(marker)!r}).write_text('lint', encoding='utf-8')"]]
+            steps = [[{_toml_str(sys.executable)}, "-c", "from pathlib import Path; Path({marker.as_posix()!r}).write_text('lint', encoding='utf-8')"]]
             [test]
             steps = []
             """
@@ -292,7 +304,7 @@ def test_python_run_tests_uses_configured_steps(tmp_path) -> None:
             [lint]
             steps = []
             [test]
-            steps = [[{sys.executable!r}, "-c", "from pathlib import Path; Path({str(marker)!r}).write_text('test', encoding='utf-8')"]]
+            steps = [[{_toml_str(sys.executable)}, "-c", "from pathlib import Path; Path({marker.as_posix()!r}).write_text('test', encoding='utf-8')"]]
             """
         ).strip()
         + "\n",
@@ -380,15 +392,35 @@ def test_go_print_help_uses_configured_runner_label(tmp_path) -> None:
     assert "demo Custom runner" in completed.stdout
 
 
+def _make_fake_gofmt(fake_bin: Path, script_body: str) -> None:
+    """Create a cross-platform fake gofmt executable in fake_bin.
+
+    On POSIX, creates a shebang Python script named 'gofmt'. On Windows,
+    creates a .bat wrapper that invokes the Python script, since Windows
+    subprocess PATH lookup requires a recognised extension (.exe/.bat).
+    """
+    if sys.platform == "win32":
+        fake_py = fake_bin / "gofmt.py"
+        fake_py.write_text(script_body, encoding="utf-8")
+        bat = fake_bin / "gofmt.bat"
+        bat.write_text(
+            f'@"{sys.executable}" "%~dp0gofmt.py" %*\r\n',
+            encoding="utf-8",
+        )
+    else:
+        fake_gofmt = fake_bin / "gofmt"
+        fake_gofmt.write_text("#!/usr/bin/env python3\n" + script_body, encoding="utf-8")
+        fake_gofmt.chmod(0o755)
+
+
 def test_go_run_fmt_check_returns_one_for_unformatted_files(tmp_path) -> None:
     template_root = _copy_template(tmp_path, "go")
     fake_bin = template_root / "bin"
     fake_bin.mkdir()
-    fake_gofmt = fake_bin / "gofmt"
-    fake_gofmt.write_text(
+    _make_fake_gofmt(
+        fake_bin,
         textwrap.dedent(
             """\
-            #!/usr/bin/env python3
             import sys
             if sys.argv[1] == "-l":
                 print("needs-format.go")
@@ -396,9 +428,7 @@ def test_go_run_fmt_check_returns_one_for_unformatted_files(tmp_path) -> None:
             raise SystemExit(0)
             """
         ),
-        encoding="utf-8",
     )
-    fake_gofmt.chmod(0o755)
     env = os.environ.copy()
     env["PATH"] = f"{fake_bin}{os.pathsep}{env['PATH']}"
     completed = subprocess.run(
@@ -418,20 +448,17 @@ def test_go_run_fmt_write_invokes_gofmt_write(tmp_path) -> None:
     fake_bin = template_root / "bin"
     fake_bin.mkdir()
     marker = template_root / "gofmt-args.txt"
-    fake_gofmt = fake_bin / "gofmt"
-    fake_gofmt.write_text(
+    _make_fake_gofmt(
+        fake_bin,
         textwrap.dedent(
             f"""\
-            #!/usr/bin/env python3
             from pathlib import Path
             import sys
-            Path({str(marker)!r}).write_text(" ".join(sys.argv[1:]), encoding="utf-8")
+            Path({marker.as_posix()!r}).write_text(" ".join(sys.argv[1:]), encoding="utf-8")
             raise SystemExit(0)
             """
         ),
-        encoding="utf-8",
     )
-    fake_gofmt.chmod(0o755)
     env = os.environ.copy()
     env["PATH"] = f"{fake_bin}{os.pathsep}{env['PATH']}"
     completed = subprocess.run(
@@ -495,9 +522,9 @@ def test_rust_run_fmt_uses_configured_commands(tmp_path) -> None:
             [fmt]
             default_mode = "check"
             [fmt.steps]
-            check = [[{sys.executable!r}, "-c", "from pathlib import Path; Path({str(marker)!r}).write_text('fmt', encoding='utf-8')"]]
-            write = [[{sys.executable!r}, "-c", "import sys; sys.exit(0)"]]
-            apply = [[{sys.executable!r}, "-c", "import sys; sys.exit(0)"]]
+            check = [[{_toml_str(sys.executable)}, "-c", "from pathlib import Path; Path({marker.as_posix()!r}).write_text('fmt', encoding='utf-8')"]]
+            write = [[{_toml_str(sys.executable)}, "-c", "import sys; sys.exit(0)"]]
+            apply = [[{_toml_str(sys.executable)}, "-c", "import sys; sys.exit(0)"]]
             [lint]
             default_target = "all"
             [lint.steps_by_target]
@@ -538,15 +565,15 @@ def test_rust_run_lint_stops_on_first_failure(tmp_path) -> None:
             [fmt]
             default_mode = "check"
             [fmt.steps]
-            check = [[{sys.executable!r}, "-c", "import sys; sys.exit(0)"]]
-            write = [[{sys.executable!r}, "-c", "import sys; sys.exit(0)"]]
-            apply = [[{sys.executable!r}, "-c", "import sys; sys.exit(0)"]]
+            check = [[{_toml_str(sys.executable)}, "-c", "import sys; sys.exit(0)"]]
+            write = [[{_toml_str(sys.executable)}, "-c", "import sys; sys.exit(0)"]]
+            apply = [[{_toml_str(sys.executable)}, "-c", "import sys; sys.exit(0)"]]
             [lint]
             default_target = "all"
             [lint.steps_by_target]
             all = [
-              [{sys.executable!r}, "-c", "import sys; sys.exit(3)"],
-              [{sys.executable!r}, "-c", "from pathlib import Path; Path({str(marker)!r}).write_text('late', encoding='utf-8')"],
+              [{_toml_str(sys.executable)}, "-c", "import sys; sys.exit(3)"],
+              [{_toml_str(sys.executable)}, "-c", "from pathlib import Path; Path({marker.as_posix()!r}).write_text('late', encoding='utf-8')"],
             ]
             fmt = []
             clippy = []
@@ -577,15 +604,15 @@ def test_rust_run_fmt_supports_legacy_commands_schema(tmp_path) -> None:
             [fmt]
             default_mode = "check"
             [fmt.commands]
-            check = [{sys.executable!r}, "-c", "from pathlib import Path; Path({str(marker)!r}).write_text('fmt', encoding='utf-8')"]
-            write = [{sys.executable!r}, "-c", "import sys; sys.exit(0)"]
-            apply = [{sys.executable!r}, "-c", "import sys; sys.exit(0)"]
+            check = [{_toml_str(sys.executable)}, "-c", "from pathlib import Path; Path({marker.as_posix()!r}).write_text('fmt', encoding='utf-8')"]
+            write = [{_toml_str(sys.executable)}, "-c", "import sys; sys.exit(0)"]
+            apply = [{_toml_str(sys.executable)}, "-c", "import sys; sys.exit(0)"]
             [lint]
             default_target = "all"
             [lint.steps_by_target]
-            all = [[{sys.executable!r}, "-c", "import sys; sys.exit(0)"]]
-            fmt = [[{sys.executable!r}, "-c", "import sys; sys.exit(0)"]]
-            clippy = [[{sys.executable!r}, "-c", "import sys; sys.exit(0)"]]
+            all = [[{_toml_str(sys.executable)}, "-c", "import sys; sys.exit(0)"]]
+            fmt = [[{_toml_str(sys.executable)}, "-c", "import sys; sys.exit(0)"]]
+            clippy = [[{_toml_str(sys.executable)}, "-c", "import sys; sys.exit(0)"]]
             """
         ).strip()
         + "\n",
@@ -609,13 +636,13 @@ def test_rust_run_lint_supports_legacy_targets_schema(tmp_path) -> None:
             [fmt]
             default_mode = "check"
             [fmt.steps]
-            check = [[{sys.executable!r}, "-c", "import sys; sys.exit(0)"]]
-            write = [[{sys.executable!r}, "-c", "import sys; sys.exit(0)"]]
-            apply = [[{sys.executable!r}, "-c", "import sys; sys.exit(0)"]]
+            check = [[{_toml_str(sys.executable)}, "-c", "import sys; sys.exit(0)"]]
+            write = [[{_toml_str(sys.executable)}, "-c", "import sys; sys.exit(0)"]]
+            apply = [[{_toml_str(sys.executable)}, "-c", "import sys; sys.exit(0)"]]
             [lint]
             default_target = "all"
             [lint.targets]
-            all = [[{sys.executable!r}, "-c", "from pathlib import Path; Path({str(marker)!r}).write_text('lint', encoding='utf-8')"]]
+            all = [[{_toml_str(sys.executable)}, "-c", "from pathlib import Path; Path({marker.as_posix()!r}).write_text('lint', encoding='utf-8')"]]
             fmt = []
             clippy = []
             """
@@ -647,7 +674,7 @@ def test_rust_run_lint_normalizes_python_token(tmp_path) -> None:
             [lint]
             default_target = "all"
             [lint.steps_by_target]
-            all = [["{{{{python_cmd}}}}", "-c", "from pathlib import Path; Path({str(marker)!r}).write_text('lint', encoding='utf-8')"]]
+            all = [["{{{{python_cmd}}}}", "-c", "from pathlib import Path; Path({marker.as_posix()!r}).write_text('lint', encoding='utf-8')"]]
             fmt = []
             clippy = []
             """
