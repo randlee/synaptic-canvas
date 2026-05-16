@@ -1,4 +1,6 @@
 import ast
+import contextlib
+import io
 import json
 import os
 import importlib.util
@@ -6,6 +8,7 @@ import shutil
 import subprocess
 import sys
 import textwrap
+import unittest.mock
 from pathlib import Path
 
 
@@ -392,85 +395,42 @@ def test_go_print_help_uses_configured_runner_label(tmp_path) -> None:
     assert "demo Custom runner" in completed.stdout
 
 
-def _make_fake_gofmt(fake_bin: Path, script_body: str) -> None:
-    """Create a cross-platform fake gofmt executable in fake_bin.
-
-    On POSIX, creates a shebang Python script named 'gofmt'. On Windows,
-    creates a .bat wrapper that invokes the Python script, since Windows
-    subprocess PATH lookup requires a recognised extension (.exe/.bat).
-    """
-    if sys.platform == "win32":
-        fake_py = fake_bin / "gofmt.py"
-        fake_py.write_text(script_body, encoding="utf-8")
-        bat = fake_bin / "gofmt.bat"
-        bat.write_text(
-            f'@"{sys.executable}" "%~dp0gofmt.py" %*\r\n',
-            encoding="utf-8",
-        )
-    else:
-        fake_gofmt = fake_bin / "gofmt"
-        fake_gofmt.write_text("#!/usr/bin/env python3\n" + script_body, encoding="utf-8")
-        fake_gofmt.chmod(0o755)
-
-
 def test_go_run_fmt_check_returns_one_for_unformatted_files(tmp_path) -> None:
+    # Load run_fmt as a module and mock subprocess so the test is cross-platform
+    # (Windows CreateProcess won't find shebang scripts or .bat files when searching
+    # PATH for a bare "gofmt" command name).
     template_root = _copy_template(tmp_path, "go")
-    fake_bin = template_root / "bin"
-    fake_bin.mkdir()
-    _make_fake_gofmt(
-        fake_bin,
-        textwrap.dedent(
-            """\
-            import sys
-            if sys.argv[1] == "-l":
-                print("needs-format.go")
-                raise SystemExit(0)
-            raise SystemExit(0)
-            """
-        ),
+    module = _load_module("go_run_fmt", template_root / ".just" / "run_fmt.py")
+    fake_result = subprocess.CompletedProcess(
+        args=["gofmt", "-l", "."],
+        returncode=0,
+        stdout="needs-format.go\n",
+        stderr="",
     )
-    env = os.environ.copy()
-    env["PATH"] = f"{fake_bin}{os.pathsep}{env['PATH']}"
-    completed = subprocess.run(
-        [sys.executable, str(template_root / ".just" / "run_fmt.py")],
-        cwd=template_root,
-        capture_output=True,
-        text=True,
-        env=env,
-        check=False,
-    )
-    assert completed.returncode == 1
-    assert "needs-format.go" in completed.stdout
+    buf = io.StringIO()
+    with unittest.mock.patch.object(module, "subprocess") as mock_subp, \
+         contextlib.redirect_stdout(buf):
+        mock_subp.run.return_value = fake_result
+        rc = module.run_check(["."])
+    assert rc == 1
+    assert "needs-format.go" in buf.getvalue()
 
 
 def test_go_run_fmt_write_invokes_gofmt_write(tmp_path) -> None:
+    # Load run_fmt as a module and mock subprocess so the test is cross-platform.
     template_root = _copy_template(tmp_path, "go")
-    fake_bin = template_root / "bin"
-    fake_bin.mkdir()
-    marker = template_root / "gofmt-args.txt"
-    _make_fake_gofmt(
-        fake_bin,
-        textwrap.dedent(
-            f"""\
-            from pathlib import Path
-            import sys
-            Path({marker.as_posix()!r}).write_text(" ".join(sys.argv[1:]), encoding="utf-8")
-            raise SystemExit(0)
-            """
-        ),
-    )
-    env = os.environ.copy()
-    env["PATH"] = f"{fake_bin}{os.pathsep}{env['PATH']}"
-    completed = subprocess.run(
-        [sys.executable, str(template_root / ".just" / "run_fmt.py"), "write"],
-        cwd=template_root,
-        capture_output=True,
-        text=True,
-        env=env,
-        check=False,
-    )
-    assert completed.returncode == 0
-    assert marker.read_text(encoding="utf-8") == "-w ."
+    module = _load_module("go_run_fmt", template_root / ".just" / "run_fmt.py")
+    captured: list[list[str]] = []
+
+    def fake_run(args, **kwargs):
+        captured.append(list(args))
+        return subprocess.CompletedProcess(args=args, returncode=0, stdout="", stderr="")
+
+    with unittest.mock.patch.object(module, "subprocess") as mock_subp:
+        mock_subp.run.side_effect = fake_run
+        rc = module.run_write(["."])
+    assert rc == 0
+    assert captured == [["gofmt", "-w", "."]]
 
 
 def test_go_justfile_ci_uses_non_mutating_fmt() -> None:
