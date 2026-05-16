@@ -1,0 +1,19 @@
+set windows-shell := ["pwsh", "-NoLogo", "-Command"]
+
+python_cmd := if os_family() == "windows" { "python" } else { "python3" }
+
+default: help
+
+help:
+    {{python_cmd}} .just/print_help.py
+
+fmt mode='check':
+    {{python_cmd}} .just/run_fmt.py {{mode}}
+
+lint:
+    {{python_cmd}} .just/run_lint.py
+
+test:
+    {{python_cmd}} .just/run_tests.py
+
+ci: lint test

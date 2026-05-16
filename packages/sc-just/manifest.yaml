@@ -1,0 +1,59 @@
+name: sc-just
+version: 0.1.0
+description: >
+  Set up repo-local just task runners with a curated Justfile, optional .just/
+  helper scripts, and starter templates for minimal, Python, Go, .NET, and
+  Rust repos.
+author: randlee
+license: MIT
+category: tools
+tags:
+  - just
+  - task-runner
+  - automation
+  - templates
+  - skills
+
+# Installation source of truth: files copied from this package are declared
+# under artifacts below. `.claude-plugin/plugin.json` is marketplace metadata.
+artifacts:
+  skills:
+    - skills/setting-up-just/SKILL.md
+    - skills/setting-up-just/references/template-catalog.md
+    - skills/setting-up-just/references/adoption-workflow.md
+    - skills/setting-up-just/references/installation-and-troubleshooting.md
+  assets:
+    - skills/setting-up-just/assets/templates/minimal/Justfile
+    - skills/setting-up-just/assets/templates/minimal/.just/config.toml
+    - skills/setting-up-just/assets/templates/minimal/.just/print_help.py
+    - skills/setting-up-just/assets/templates/minimal/.just/task_runner.py
+    - skills/setting-up-just/assets/templates/minimal/.just/run_fmt.py
+    - skills/setting-up-just/assets/templates/minimal/.just/run_lint.py
+    - skills/setting-up-just/assets/templates/minimal/.just/run_tests.py
+    - skills/setting-up-just/assets/templates/python/Justfile
+    - skills/setting-up-just/assets/templates/python/.just/config.toml
+    - skills/setting-up-just/assets/templates/python/.just/print_help.py
+    - skills/setting-up-just/assets/templates/python/.just/task_runner.py
+    - skills/setting-up-just/assets/templates/python/.just/run_fmt.py
+    - skills/setting-up-just/assets/templates/python/.just/run_lint.py
+    - skills/setting-up-just/assets/templates/python/.just/run_tests.py
+    - skills/setting-up-just/assets/templates/go/Justfile
+    - skills/setting-up-just/assets/templates/go/.just/config.toml
+    - skills/setting-up-just/assets/templates/go/.just/print_help.py
+    - skills/setting-up-just/assets/templates/go/.just/run_fmt.py
+    - skills/setting-up-just/assets/templates/dotnet/Justfile
+    - skills/setting-up-just/assets/templates/dotnet/.just/config.toml
+    - skills/setting-up-just/assets/templates/dotnet/.just/print_help.py
+    - skills/setting-up-just/assets/templates/rust/Justfile
+    - skills/setting-up-just/assets/templates/rust/.just/config.toml
+    - skills/setting-up-just/assets/templates/rust/.just/print_help.py
+    - skills/setting-up-just/assets/templates/rust/.just/run_fmt.py
+    - skills/setting-up-just/assets/templates/rust/.just/run_lint.py
+
+install:
+  scope: local-only
+
+requires:
+  cli:
+    - just >= 1.0
+    - python3 >= 3.11

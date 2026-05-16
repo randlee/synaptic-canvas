@@ -169,6 +169,23 @@
       "lastUpdated": "2026-04-29T04:44:47.190573+00:00"
     },
     {
+      "name": "sc-just",
+      "version": "0.1.0",
+      "description": "Set up repo-local just task runners with a curated Justfile, optional .just/ helper scripts, and starter templates for minimal, Python, Go, .NET, and Rust repos.\n",
+      "author": "randlee",
+      "license": "MIT",
+      "keywords": [],
+      "category": "tools",
+      "artifacts": {
+        "commands": 0,
+        "skills": 1,
+        "agents": 0,
+        "scripts": 0,
+        "schemas": 0
+      },
+      "lastUpdated": "2026-05-15T21:50:55.867734+00:00"
+    },
+    {
       "name": "sc-kanban",
       "version": "0.12.0",
       "description": "Kanban state machine for Synaptic Canvas: backlog \u2192 board \u2192 done with gate validation, scrubbing, and shared board config (v0.7).\n",
@@ -306,13 +323,13 @@
     }
   ],
   "metadata": {
-    "totalPackages": 16,
+    "totalPackages": 17,
     "totalCommands": 10,
-    "totalSkills": 19,
+    "totalSkills": 20,
     "totalAgents": 45,
     "totalScripts": 50,
     "totalSchemas": 2
   },
-  "generated": "2026-04-29T04:44:47.196466+00:00",
-  "lastUpdated": "2026-04-29T04:44:47.196467+00:00"
+  "generated": "2026-05-15T21:50:55.867734+00:00",
+  "lastUpdated": "2026-05-15T21:50:55.867734+00:00"
 }

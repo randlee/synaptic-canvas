@@ -211,6 +211,9 @@ class SecurityScanner:
                 # Skip this script itself
                 if "security-scan" in file_path:
                     continue
+                # Skip known false positives: variable names that contain secret-like keywords
+                if "PYTHON_CMD_TOKEN" in line_content:
+                    continue
 
                 issues.append(
                     SecurityIssue(
