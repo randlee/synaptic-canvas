@@ -16,6 +16,7 @@ tags:
 artifacts:
   skills:
     - skills/beads-export/SKILL.md
+    - skills/beads-export/references/installation-and-troubleshooting.md
   scripts:
     - scripts/beads_export.py
     - scripts/beads_export_common.py

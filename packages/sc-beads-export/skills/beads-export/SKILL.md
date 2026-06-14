@@ -40,7 +40,27 @@ which python3 && python3 --version
 which zip || true
 ```
 
-If `bd` or `python3` is missing, stop and report the gap clearly.
+If `which` fails but you believe one of these tools is installed, check common non-PATH locations before concluding it is missing:
+
+```bash
+for candidate in \
+  "$HOME/.local/bin/bd" \
+  "$HOME/.venvs/beads/bin/bd" \
+  "$(python3 -m site --user-base 2>/dev/null)/bin/bd" \
+  "/opt/homebrew/bin/bd" \
+  "/usr/local/bin/bd"; do
+  [ -x "$candidate" ] && echo "Found bd at: $candidate" && break
+done
+
+for candidate in \
+  "$(command -v python3 2>/dev/null)" \
+  "/opt/homebrew/bin/python3" \
+  "/usr/local/bin/python3"; do
+  [ -x "$candidate" ] && echo "Found python3 at: $candidate" && break
+done
+```
+
+If `bd` or `python3` is still missing, stop and read `references/installation-and-troubleshooting.md` before proceeding.
 
 `zip` is only required if the user asked for a packaged archive.
 

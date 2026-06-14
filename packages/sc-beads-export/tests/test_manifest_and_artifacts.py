@@ -76,3 +76,13 @@ def test_manifest_declares_required_runtime_dependencies() -> None:
     assert "python >= 3.10" in requires["cli"]
     assert "bd" in requires["cli"]
     assert "markdown" in requires["python"]
+
+
+def test_cli_dependent_skill_ships_installation_reference() -> None:
+    manifest = _load_manifest()
+    skill_content = (PACKAGE_ROOT / "skills" / "beads-export" / "SKILL.md").read_text(encoding="utf-8")
+    install_ref = "skills/beads-export/references/installation-and-troubleshooting.md"
+
+    assert "bd" in manifest["requires"]["cli"]
+    assert install_ref in manifest["artifacts"]["skills"]
+    assert "references/installation-and-troubleshooting.md" in skill_content

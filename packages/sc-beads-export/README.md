@@ -15,6 +15,7 @@ Security: See [SECURITY.md](../../../SECURITY.md) for repository security policy
 
 ## Installed Components
 - Skill: `skills/beads-export/SKILL.md`
+- Reference: `skills/beads-export/references/installation-and-troubleshooting.md`
 - Scripts: `scripts/beads_export.py`, `scripts/beads_export_linkify.py`, `scripts/beads_export_html.py`, `scripts/beads_export_common.py`
 
 ## Usage
