@@ -1,7 +1,7 @@
 {
   "$schema": "https://yourcompany.github.io/schemas/package-registry.schema.json",
   "version": "2.0.0",
-  "generated": "2026-05-15T21:50:55Z",
+  "generated": "2026-06-14T00:34:32Z",
   "repo": "randlee/synaptic-canvas",
   "marketplace": {
     "name": "Synaptic Canvas",
@@ -159,6 +159,43 @@
       ],
       "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-docling-pdf/CHANGELOG.md",
       "lastUpdated": "2026-05-14",
+      "dependents": []
+    },
+    "sc-beads-export": {
+      "name": "sc-beads-export",
+      "version": "0.1.0",
+      "status": "beta",
+      "tier": 2,
+      "description": "Export scoped beads subtrees to hierarchical markdown, rewrite bead-id references to relative links, validate the result, optionally generate a static HTML viewer, and package the export as a zip archive.",
+      "github": "randlee/synaptic-canvas",
+      "repo": "https://github.com/randlee/synaptic-canvas",
+      "path": "packages/sc-beads-export",
+      "readme": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-beads-export/README.md",
+      "license": "MIT",
+      "author": {
+        "name": "randlee"
+      },
+      "tags": [
+        "beads",
+        "export",
+        "markdown",
+        "html",
+        "archive"
+      ],
+      "artifacts": {
+        "commands": 0,
+        "skills": 1,
+        "agents": 0,
+        "scripts": 4,
+        "schemas": 0
+      },
+      "dependencies": [
+        "python >= 3.10",
+        "bd",
+        "markdown"
+      ],
+      "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-beads-export/CHANGELOG.md",
+      "lastUpdated": "2026-06-13",
       "dependents": []
     },
     "sc-git-worktree": {

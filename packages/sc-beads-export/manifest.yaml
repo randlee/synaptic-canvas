@@ -1,0 +1,35 @@
+name: sc-beads-export
+version: 0.1.0
+description: >
+  Export scoped beads subtrees to hierarchical markdown, rewrite bead-id references
+  to relative links, validate the result, optionally generate a static HTML viewer,
+  and package the export as a zip archive.
+author: randlee
+license: MIT
+tags:
+  - beads
+  - export
+  - markdown
+  - html
+  - archive
+
+artifacts:
+  skills:
+    - skills/beads-export/SKILL.md
+  scripts:
+    - scripts/beads_export.py
+    - scripts/beads_export_common.py
+    - scripts/beads_export_linkify.py
+    - scripts/beads_export_html.py
+
+install:
+  scope: local-only
+
+requires:
+  cli:
+    - python >= 3.10
+    - bd
+  python:
+    - markdown
+  optional:
+    - zip

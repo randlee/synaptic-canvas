@@ -43,4 +43,4 @@ jobs:
           pip install -r requirements-dev.txt
 
       - name: Run tests
-        run: pytest tests/ -v
+        run: pytest tests/ packages/sc-beads-export/tests -v

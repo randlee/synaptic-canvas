@@ -1,0 +1,19 @@
+{
+  "name": "sc-beads-export",
+  "description": "Export scoped beads subtrees to hierarchical markdown, rewrite bead-id references to relative links, validate the result, optionally generate a static HTML viewer, and package the export as a zip archive.",
+  "version": "0.1.0",
+  "author": {
+    "name": "randlee"
+  },
+  "license": "MIT",
+  "keywords": [
+    "beads",
+    "export",
+    "markdown",
+    "html",
+    "archive"
+  ],
+  "skills": [
+    "./skills/beads-export/SKILL.md"
+  ]
+}

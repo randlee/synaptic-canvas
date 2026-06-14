@@ -11,6 +11,7 @@ jsonschema>=4.22            # Schema validation
 # Reporting
 tabulate>=0.9.0             # Table formatting for reports
 jinja2>=3.1.0               # HTML template rendering
+Markdown>=3.0              # Static HTML export rendering for sc-beads-export
 
 # HTTP Requests (for Azure DevOps REST API)
 requests>=2.31.0            # HTTP library for REST API calls
