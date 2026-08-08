@@ -20,7 +20,7 @@ from launchpad_shared import build_child_env, resolve_teammate_mode
 
 
 ToolName = Literal["claude", "codex", "gemini"]
-ClaudeModel = Literal["sonnet", "haiku", "opus"]
+ClaudeModel = Literal["sonnet", "haiku", "opus", "fable"]
 CodexModel = Literal[
     "codex",
     "codex-max",
@@ -51,9 +51,12 @@ CLAUDE_MODEL_MAP = {
     "sonnet": "sonnet",
     "haiku": "haiku",
     "opus": "opus",
+    "fable": "fable",
     "claude-sonnet-4-6": "sonnet",
     "claude-haiku-4-5": "haiku",
     "claude-opus-4-1": "opus",
+    "claude-fable-5": "fable",
+    "claude-fable-5[1m]": "fable",
 }
 
 

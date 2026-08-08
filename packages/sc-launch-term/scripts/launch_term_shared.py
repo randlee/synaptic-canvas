@@ -52,6 +52,8 @@ _IDENTITY_NAMES: dict[str, list[str]] = {
                "Striker", "Siren", "Sentinel", "Sting", "Synth"],
     "opus":   ["Orion", "Oracle", "Omega", "Orwell", "Obiwan",
                "Optimus", "Oblivion", "Onyx", "Odyssey", "Octane"],
+    "fable":  ["Fable", "Folklore", "Fiction", "Fairytale", "Fantasy",
+               "Fathom", "Fresco", "Fableton", "Figment", "Fablewood"],
 }
 
 _FALLBACK_NAMES: list[str] = [

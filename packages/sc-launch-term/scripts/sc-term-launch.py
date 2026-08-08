@@ -30,9 +30,9 @@ from launch_term_shared import (
 )
 
 
-MAC_TERMINALS = ("iterm2", "ghostty", "wezterm", "warp", "terminal")
+MAC_TERMINALS = ("iterm2", "ghostty", "wezterm", "warp", "cmux", "terminal")
 WINDOWS_TERMINALS = ("wt", "warp")
-CLAUDE_MODELS = ("sonnet", "haiku", "opus")
+CLAUDE_MODELS = ("sonnet", "haiku", "opus", "fable")
 TEAM_MEMBER_MODELS = CLAUDE_MODELS + ("codex", "gemini")
 MACOS_SHELL_SETTLE_DELAY_SECONDS = 0.8
 
@@ -89,6 +89,8 @@ def available_terminals() -> list[str]:
             available.append("wezterm")
         if detect_macos_app("Warp"):
             available.append("warp")
+        if command_exists("cmux"):
+            available.append("cmux")
         if detect_macos_app("Terminal"):
             available.append("terminal")
         return available
@@ -336,6 +338,26 @@ def launch_warp(shell_command: str, dir_path: str, use_tab: bool, title: str) ->
     fail("Warp automation is only supported on macOS and Windows")
 
 
+def launch_cmux(shell_command: str, dir_path: str, use_tab: bool, title: str) -> None:
+    """Launch a command in a cmux workspace, which is cmux's tab primitive."""
+    del use_tab  # cmux workspaces are always tab-like targets.
+    subprocess.run(
+        [
+            "cmux",
+            "new-workspace",
+            "--cwd",
+            dir_path,
+            "--name",
+            title,
+            "--command",
+            shell_command,
+            "--focus",
+            "true",
+        ],
+        check=True,
+    )
+
+
 def preferred_windows_shell() -> list[str]:
     if command_exists("pwsh"):
         return ["pwsh", "-NoExit", "-Command"]
@@ -368,6 +390,9 @@ def run_launch(terminal: str, shell_command: str, dir_path: str, use_tab: bool, 
         return
     if terminal == "warp":
         launch_warp(shell_command, dir_path, use_tab, title)
+        return
+    if terminal == "cmux":
+        launch_cmux(shell_command, dir_path, use_tab, title)
         return
     if terminal == "wt":
         launch_windows_terminal(shell_command, dir_path, use_tab)

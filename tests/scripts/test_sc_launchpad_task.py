@@ -86,6 +86,18 @@ def test_build_command_for_claude():
     ]
 
 
+def test_normalize_fable_model_aliases():
+    for model in ("fable", "claude-fable-5", "claude-fable-5[1m]"):
+        payload = sc_launchpad_task.LaunchpadInput(
+            description="Launch Fable",
+            prompt="Review the diff",
+            tool="claude",
+            model=model,
+            cwd="/tmp",
+        )
+        assert sc_launchpad_task.normalize_tool_model(payload) == "fable"
+
+
 def test_build_command_for_codex():
     payload = sc_launchpad_task.LaunchpadInput(
         description="Launch Codex",

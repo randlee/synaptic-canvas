@@ -1,6 +1,6 @@
 # sc-launchpad
 
-Launch Claude, Codex, or Gemini as a background sub-agent runtime without
+Launch Claude (including the `fable` model), Codex, or Gemini as a background sub-agent runtime without
 opening a visible terminal window.
 
 ## Included Artifacts
@@ -50,6 +50,9 @@ Otherwise, the runtime clears both ATM variables before spawning the child.
 - The `launchpad` agent is intentionally thin: it should make one runtime call and return the runtime stdout exactly as emitted.
 - The runtime expects absolute working-directory paths in launch payloads.
 - This package depends on local Python 3 plus whichever AI CLI you are launching.
+
+For Claude launches, `model` accepts `sonnet`, `haiku`, `opus`, or `fable`,
+plus the corresponding supported full model names.
 
 ## Installation
 

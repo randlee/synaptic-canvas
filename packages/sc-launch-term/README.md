@@ -8,6 +8,7 @@ autodetect launcher.
 - `/sc:sonnet`
 - `/sc:haiku`
 - `/sc:opus`
+- `/sc:fable`
 - `/sc:codex`
 - `/sc:gemini`
 
@@ -24,18 +25,19 @@ Each command accepts:
 
 Autodetect order:
 
-- macOS: `iterm2`, `ghostty`, `wezterm`, `warp`, `terminal`
+- macOS: `iterm2`, `ghostty`, `wezterm`, `warp`, `cmux`, `terminal`
 - Windows: `wt`, `warp`
 
 Supported explicit values:
 
-- macOS: `auto`, `iterm2`, `ghostty`, `wezterm`, `warp`, `terminal`
+- macOS: `auto`, `iterm2`, `ghostty`, `wezterm`, `warp`, `cmux`, `terminal`
 - Windows: `auto`, `wt`, `windows-terminal`, `warp`
 
 Notes:
 
 - Warp automation uses Warp launch configurations and opens a new window.
-- `/sc:sonnet`, `/sc:haiku`, and `/sc:opus` launch `claude` directly with
+- cmux automation creates and focuses a new cmux workspace, which is cmux's tab primitive.
+- `/sc:sonnet`, `/sc:haiku`, `/sc:opus`, and `/sc:fable` launch `claude` directly with
   `--model <name> --dangerously-skip-permissions`, so they no longer depend on
   shell aliases or functions.
 - When `--tmux` is used with those Claude model commands, the launcher also
@@ -62,8 +64,9 @@ This package is intended for global command installation under `~/.claude/`.
 ## Security and Runtime Notes
 
 - The commands launch locally installed CLIs only. They do not download code or open network connections by themselves.
-- `/sc:sonnet`, `/sc:haiku`, and `/sc:opus` invoke the local `claude` CLI with `--dangerously-skip-permissions`, so use this package only in environments where that launch model is acceptable.
+- `/sc:sonnet`, `/sc:haiku`, `/sc:opus`, and `/sc:fable` invoke the local `claude` CLI with `--dangerously-skip-permissions`, so use this package only in environments where that launch model is acceptable.
 - `/sc:codex` and `/sc:gemini` forward to the local `codex` and `gemini` executables on `PATH`.
+- cmux requires the local `cmux` CLI on `PATH`; cmux launches always target a new workspace/tab.
 - When `ATM_TEAM` is present, the launcher requires `--identity <name>` and exports both `ATM_TEAM` and `ATM_IDENTITY` into the child session.
 - In ATM teammate mode, the launcher also runs `atm teams add-member <team> <identity> --model <model> --cwd <dir>` before starting the tool.
 - `--tmux` creates or reuses a local tmux session and therefore depends on a trusted local `tmux` installation.
@@ -75,6 +78,7 @@ This package is intended for global command installation under `~/.claude/`.
 /sc:sonnet ~/projects/foo
 /sc:haiku ~/projects/foo --terminal ghostty
 /sc:opus ~/projects/foo --tab
+/sc:fable ~/projects/foo --terminal cmux --tab
 /sc:codex ~/projects/foo --identity alice
 /sc:sonnet ~/projects/foo -- --continue
 /sc:codex ~/projects/foo --tmux

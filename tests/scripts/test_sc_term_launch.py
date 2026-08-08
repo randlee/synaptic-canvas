@@ -47,6 +47,16 @@ def test_build_claude_argv_with_tmux():
     ]
 
 
+def test_build_claude_argv_for_fable():
+    command = sc_term_launch.build_claude_argv("fable", [], teammate_mode=False)
+    assert command == [
+        "claude",
+        "--model",
+        "fable",
+        "--dangerously-skip-permissions",
+    ]
+
+
 def test_render_command_argv_posix_quotes_spaces():
     command = sc_term_launch.render_command_argv(
         ["claude", "--model", "opus", "--resume", "session with spaces"],
@@ -174,3 +184,31 @@ def test_apply_env_prefix_with_session_tracking_posix():
         command
         == "export SC_LAUNCH_ID=01JVY7YVYH57FHE2S2P0S8F3XW && export SC_SESSION_RECORD=/tmp/project/.sc/sessions/claude/session.json && claude --model haiku"
     )
+
+
+def test_launch_cmux_creates_focused_workspace(monkeypatch):
+    calls = []
+
+    def fake_run(command, *, check):
+        calls.append((command, check))
+
+    monkeypatch.setattr(sc_term_launch.subprocess, "run", fake_run)
+    sc_term_launch.launch_cmux("claude --model fable", "/tmp/project", True, "fable")
+
+    assert calls == [
+        (
+            [
+                "cmux",
+                "new-workspace",
+                "--cwd",
+                "/tmp/project",
+                "--name",
+                "fable",
+                "--command",
+                "claude --model fable",
+                "--focus",
+                "true",
+            ],
+            True,
+        )
+    ]

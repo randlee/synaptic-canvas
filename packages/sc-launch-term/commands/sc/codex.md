@@ -16,11 +16,12 @@ Parse from `$ARGUMENTS`:
 - `--identity <name>` optional. If omitted, a random name is generated. Exports both `ATM_TEAM` and `ATM_IDENTITY=<name>` into the launched session.
 
 Supported backends:
-- macOS: `iterm2`, `ghostty`, `wezterm`, `warp`, `terminal`
+- macOS: `iterm2`, `ghostty`, `wezterm`, `warp`, `cmux`, `terminal`
 - Windows: `wt`, `warp`
 
 Backend notes:
 - Warp opens a new window only; reject `--tab` if `warp` is selected.
+- cmux creates and focuses a new workspace, which is cmux's tab primitive.
 - `--tmux` requires `tmux` on `PATH`. On Windows, only use it if your shell already supports `tmux`.
 - If `ATM_TEAM` is set and `--identity` is supplied, the launcher registers the member first with `atm teams add-member <team> <identity> --model codex --cwd <dir>`.
 
