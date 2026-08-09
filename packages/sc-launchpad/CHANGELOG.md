@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Unreleased]
 ### Added
 - Added Claude Fable model aliases to the background launch runtime.
+- Added Sol, Terra, and Luna Codex model aliases with Terra routing for deprecated `codex`.
 
 ## [0.10.0] - 2026-04-25
 ### Added

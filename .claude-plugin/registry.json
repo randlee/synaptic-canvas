@@ -205,24 +205,24 @@
     {
       "name": "sc-launch-term",
       "version": "0.12.0",
-      "description": "Launch Claude (including Fable), Codex, and Gemini sessions in supported terminals with platform-aware autodetect, cmux workspace tabs, and optional tmux session management.\n",
+      "description": "Launch Claude (including Fable), Codex (including Sol, Terra, and Luna), and Gemini sessions in supported terminals with platform-aware autodetect, cmux workspace tabs, and optional tmux session management.\n",
       "author": "randlee",
       "license": "MIT",
       "keywords": [],
       "category": "tools",
       "artifacts": {
-        "commands": 6,
+        "commands": 9,
         "skills": 0,
         "agents": 0,
         "scripts": 3,
         "schemas": 0
       },
-      "lastUpdated": "2026-08-05T17:32:19.946825"
+      "lastUpdated": "2026-08-09T14:54:36.245664"
     },
     {
       "name": "sc-launchpad",
       "version": "0.12.0",
-      "description": "Launch Claude (including Fable), Codex, or Gemini as a separate background sub-agent runtime, with explicit ATM teammate-mode normalization and roster registration.\n",
+      "description": "Launch Claude (including Fable), Codex (including Sol, Terra, and Luna), or Gemini as a separate background sub-agent runtime, with explicit ATM teammate-mode normalization and roster registration.\n",
       "author": "synaptic-canvas",
       "license": "MIT",
       "keywords": [],
@@ -234,7 +234,7 @@
         "scripts": 2,
         "schemas": 0
       },
-      "lastUpdated": "2026-08-05T17:32:20.088148"
+      "lastUpdated": "2026-08-09T14:54:36.395961"
     },
     {
       "name": "sc-manage",
@@ -324,12 +324,12 @@
   ],
   "metadata": {
     "totalPackages": 18,
-    "totalCommands": 16,
+    "totalCommands": 19,
     "totalSkills": 21,
     "totalAgents": 45,
     "totalScripts": 50,
     "totalSchemas": 2
   },
-  "generated": "2026-08-05T17:32:20.088180",
-  "lastUpdated": "2026-08-05T17:32:20.088182"
+  "generated": "2026-08-09T14:54:36.395998",
+  "lastUpdated": "2026-08-09T14:54:36.396000"
 }

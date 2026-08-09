@@ -23,6 +23,13 @@ ToolName = Literal["claude", "codex", "gemini"]
 ClaudeModel = Literal["sonnet", "haiku", "opus", "fable"]
 CodexModel = Literal[
     "codex",
+    "sol",
+    "terra",
+    "luna",
+    "gpt-5.6-sol",
+    "gpt-5.6-terra",
+    "gpt-5.6-luna",
+    "gpt-5.6",
     "codex-max",
     "max",
     "codex-mini",
@@ -35,7 +42,16 @@ CodexModel = Literal[
 ]
 
 CODEX_MODEL_MAP = {
-    "codex": "gpt-5.2-codex",
+    # `codex` remains a deprecated compatibility alias for Terra.
+    "codex": "gpt-5.6-terra",
+    "sol": "gpt-5.6-sol",
+    "terra": "gpt-5.6-terra",
+    "luna": "gpt-5.6-luna",
+    "gpt-5.6-sol": "gpt-5.6-sol",
+    "gpt-5.6-terra": "gpt-5.6-terra",
+    "gpt-5.6-luna": "gpt-5.6-luna",
+    "gpt-5.6": "gpt-5.6-sol",
+    # Preserve explicit legacy model requests without using them as defaults.
     "gpt-5.2-codex": "gpt-5.2-codex",
     "codex-max": "gpt-5.1-codex-max",
     "max": "gpt-5.1-codex-max",
@@ -45,6 +61,12 @@ CODEX_MODEL_MAP = {
     "gpt-5.1-codex-mini": "gpt-5.1-codex-mini",
     "gpt-5": "gpt-5.2",
     "gpt-5.2": "gpt-5.2",
+}
+
+CODEX_ROSTER_MODEL_MAP = {
+    "gpt-5.6-sol": "sol",
+    "gpt-5.6-terra": "terra",
+    "gpt-5.6-luna": "luna",
 }
 
 CLAUDE_MODEL_MAP = {
@@ -110,7 +132,9 @@ def error_response(error: LaunchpadError, data: dict | None = None) -> dict:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--json", action="store_true", help="Treat remaining args as JSON payload")
+    parser.add_argument(
+        "--json", action="store_true", help="Treat remaining args as JSON payload"
+    )
     parser.add_argument("args", nargs="*", help="JSON payload")
     return parser.parse_args()
 
@@ -159,13 +183,13 @@ def normalize_tool_model(payload: LaunchpadInput) -> str | None:
         return normalized
     if payload.tool == "codex":
         if payload.model is None:
-            return "gpt-5.2-codex"
+            return "gpt-5.6-terra"
         normalized = CODEX_MODEL_MAP.get(payload.model)
         if normalized is None:
             raise LaunchpadError(
                 "VALIDATION.INVALID_MODEL",
                 f"Unsupported Codex model: {payload.model}",
-                suggested_action="Use codex, max, mini, gpt-5, or a known Codex model alias.",
+                suggested_action="Use sol, terra, luna, codex (deprecated), or a known Codex model alias.",
             )
         return normalized
     return payload.model
@@ -174,6 +198,10 @@ def normalize_tool_model(payload: LaunchpadInput) -> str | None:
 def roster_model(payload: LaunchpadInput, normalized_model: str | None) -> str:
     if payload.tool == "claude":
         return normalized_model or "sonnet"
+    if payload.tool == "codex":
+        return CODEX_ROSTER_MODEL_MAP.get(
+            normalized_model or "", normalized_model or "terra"
+        )
     return payload.tool
 
 
@@ -212,7 +240,11 @@ def maybe_add_member(
     # TODO: When pane-aware launchpad mode exists, append `--pane-id <pane-id>` here.
     result = subprocess.run(command, text=True, capture_output=True, env=parent_env)
     if result.returncode != 0:
-        message = result.stderr.strip() or result.stdout.strip() or "atm teams add-member failed"
+        message = (
+            result.stderr.strip()
+            or result.stdout.strip()
+            or "atm teams add-member failed"
+        )
         raise LaunchpadError(
             "ATM.ADD_MEMBER_FAILED",
             message,
@@ -247,8 +279,12 @@ def run_payload(payload: LaunchpadInput, parent_env: dict[str, str]) -> dict:
     cwd = resolve_cwd(payload.cwd)
     ensure_command(payload.tool)
     normalized_model = normalize_tool_model(payload)
-    teammate_mode, team, identity = resolve_teammate_mode(parent_env, payload.atm_identity)
-    maybe_add_member(parent_env, teammate_mode, team, identity, payload, normalized_model, cwd)
+    teammate_mode, team, identity = resolve_teammate_mode(
+        parent_env, payload.atm_identity
+    )
+    maybe_add_member(
+        parent_env, teammate_mode, team, identity, payload, normalized_model, cwd
+    )
     child_env = build_child_env(parent_env, teammate_mode, team, identity)
     command = build_command(payload, normalized_model)
     result = subprocess.run(

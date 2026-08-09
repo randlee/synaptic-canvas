@@ -1,7 +1,8 @@
 name: sc-launchpad
 version: 0.12.0
 description: >
-  Launch Claude (including Fable), Codex, or Gemini as a separate background
+  Launch Claude (including Fable), Codex (including Sol, Terra, and Luna), or
+  Gemini as a separate background
   sub-agent runtime, with explicit ATM teammate-mode normalization and roster
   registration.
 author: synaptic-canvas
@@ -10,6 +11,9 @@ tags:
   - background-agents
   - claude
   - codex
+  - sol
+  - terra
+  - luna
   - gemini
   - fable
   - atm

@@ -1,6 +1,6 @@
 # sc-launchpad
 
-Launch Claude (including the `fable` model), Codex, or Gemini as a background sub-agent runtime without
+Launch Claude (including the `fable` model), Codex (including `sol`, `terra`, and `luna`), or Gemini as a background sub-agent runtime without
 opening a visible terminal window.
 
 ## Included Artifacts
@@ -54,6 +54,11 @@ Otherwise, the runtime clears both ATM variables before spawning the child.
 For Claude launches, `model` accepts `sonnet`, `haiku`, `opus`, or `fable`,
 plus the corresponding supported full model names.
 
+For Codex launches, `model` accepts `sol`, `terra`, or `luna`. The deprecated
+`codex` alias routes to `gpt-5.6-terra`; the runtime also accepts the known
+legacy Codex aliases for compatibility. The canonical model IDs are
+`gpt-5.6-sol`, `gpt-5.6-terra`, and `gpt-5.6-luna`.
+
 ## Installation
 
 ```bash
@@ -70,8 +75,9 @@ surface where orchestrator skills or agents need background launch support.
   "description": "Run a background code review",
   "prompt": "Review the changed files for risks and missing tests.",
   "tool": "codex",
+  "model": "terra",
   "cwd": "/abs/path/to/repo",
   "atm_identity": "reviewer-1",
-  "extra_args": ["--model", "gpt-5.5"]
+  "extra_args": ["--skip-git-repo-check"]
 }
 ```

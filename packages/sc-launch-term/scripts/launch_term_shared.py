@@ -7,7 +7,6 @@ from datetime import UTC, datetime
 import os
 import secrets
 import shlex
-import sys
 from pathlib import Path
 
 
@@ -42,28 +41,125 @@ def resolve_team() -> str | None:
 
 # Per-tool identity name pools.
 _IDENTITY_NAMES: dict[str, list[str]] = {
-    "gemini": ["Gamma", "Galaxian", "Grimaldi", "Ganymede", "Grogu",
-               "Grievous", "Greedo", "Glitch", "Gauss", "Glimmer"],
-    "codex":  ["Cipher", "Crypto", "Cryptex", "Cassian", "Crimson",
-               "Cloud", "Citan", "Caesar", "Cascade", "Chewbacca"],
-    "haiku":  ["Homer", "Helix", "Helios", "Horus", "Halo",
-               "Hal", "Hex", "Hive", "Heretic", "Hydra"],
-    "sonnet": ["Sinatra", "Santana", "Slash", "Spock", "Skynet",
-               "Striker", "Siren", "Sentinel", "Sting", "Synth"],
-    "opus":   ["Orion", "Oracle", "Omega", "Orwell", "Obiwan",
-               "Optimus", "Oblivion", "Onyx", "Odyssey", "Octane"],
-    "fable":  ["Fable", "Folklore", "Fiction", "Fairytale", "Fantasy",
-               "Fathom", "Fresco", "Fableton", "Figment", "Fablewood"],
+    "gemini": [
+        "Gamma",
+        "Galaxian",
+        "Grimaldi",
+        "Ganymede",
+        "Grogu",
+        "Grievous",
+        "Greedo",
+        "Glitch",
+        "Gauss",
+        "Glimmer",
+    ],
+    "haiku": [
+        "Homer",
+        "Helix",
+        "Helios",
+        "Horus",
+        "Halo",
+        "Hal",
+        "Hex",
+        "Hive",
+        "Heretic",
+        "Hydra",
+    ],
+    "sonnet": [
+        "Sinatra",
+        "Santana",
+        "Slash",
+        "Spock",
+        "Skynet",
+        "Striker",
+        "Siren",
+        "Sentinel",
+        "Sting",
+        "Synth",
+    ],
+    "opus": [
+        "Orion",
+        "Oracle",
+        "Omega",
+        "Orwell",
+        "Obiwan",
+        "Optimus",
+        "Oblivion",
+        "Onyx",
+        "Odyssey",
+        "Octane",
+    ],
+    "fable": [
+        "Fable",
+        "Folklore",
+        "Fiction",
+        "Fairytale",
+        "Fantasy",
+        "Fathom",
+        "Fresco",
+        "Fableton",
+        "Figment",
+        "Fablewood",
+    ],
+    # Codex model identities use the model alias initial and a sci-fi/cyberpunk
+    # vocabulary. The deprecated `codex` alias is normalized to `terra` below.
+    "sol": [
+        "Smith",
+        "Switch",
+        "Spoon",
+        "Saito",
+        "Sark",
+        "Seraph",
+        "Sombra",
+        "Synth",
+        "Specter",
+        "Sentinel",
+    ],
+    "terra": [
+        "Trinity",
+        "Tank",
+        "Turing",
+        "Tyrell",
+        "Tessier",
+        "Talon",
+        "Tracer",
+        "Titan",
+        "Terminal",
+        "Turin",
+    ],
+    "luna": [
+        "Lamb",
+        "Link",
+        "Lucy",
+        "Lyra",
+        "Lambda",
+        "Lazarus",
+        "Lumen",
+        "Lotus",
+        "Lucid",
+        "Legion",
+    ],
 }
 
+_IDENTITY_ALIASES = {"codex": "terra"}
+
 _FALLBACK_NAMES: list[str] = [
-    "Amber", "Bold", "Calm", "Deft", "Eager",
-    "Fleet", "Gold", "Hale", "Iron", "Jade",
+    "Amber",
+    "Bold",
+    "Calm",
+    "Deft",
+    "Eager",
+    "Fleet",
+    "Gold",
+    "Hale",
+    "Iron",
+    "Jade",
 ]
 
 
 def generate_identity(tool: str | None = None) -> str:
-    pool = _IDENTITY_NAMES.get(tool or "", _FALLBACK_NAMES)
+    pool_key = _IDENTITY_ALIASES.get(tool or "", tool or "")
+    pool = _IDENTITY_NAMES.get(pool_key, _FALLBACK_NAMES)
     name = secrets.choice(pool)
     suffix = secrets.token_hex(2)
     return f"{name}-{suffix}"
@@ -106,11 +202,15 @@ def ulid_timestamp(launch_id: str) -> datetime:
 
 def session_filename_from_launch_id(launch_id: str) -> str:
     timestamp = ulid_timestamp(launch_id)
-    prefix = timestamp.strftime("%Y%m%d%H%M%S") + f"{int(timestamp.microsecond / 1000):03d}"
+    prefix = (
+        timestamp.strftime("%Y%m%d%H%M%S") + f"{int(timestamp.microsecond / 1000):03d}"
+    )
     return f"{prefix}-{launch_id}.json"
 
 
-def build_session_record_path(project_dir: str | Path, tool: str, launch_id: str) -> Path:
+def build_session_record_path(
+    project_dir: str | Path, tool: str, launch_id: str
+) -> Path:
     root = Path(project_dir).expanduser().resolve()
     return root / ".sc" / "sessions" / tool / session_filename_from_launch_id(launch_id)
 

@@ -7,6 +7,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Added
 - Added the `/sc:fable` Claude model command.
 - Added cmux terminal/workspace-tab launching.
+- Added shared `/sc:sol`, `/sc:terra`, and `/sc:luna` Codex model launchers.
+- Deprecated `/sc:codex` now routes to the Terra model and identity pool.
+- Added sci-fi/cyberpunk identity pools for the Sol, Terra, and Luna aliases.
 
 ## [0.10.0] - 2026-04-25
 ### Added
