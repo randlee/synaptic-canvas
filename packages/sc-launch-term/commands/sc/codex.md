@@ -17,5 +17,5 @@ For this compatibility alias, resolve the optional directory and arguments using
 The deprecated `codex` model alias is normalized by the launcher to:
 
 ```text
-codex --model gpt-5.6-terra --dangerously-bypass-approvals-and-sandbox -c features.codex_hooks=true
+codex --model gpt-5.6-terra --yolo --enable hooks
 ```

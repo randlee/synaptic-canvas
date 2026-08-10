@@ -262,7 +262,7 @@ def build_command(payload: LaunchpadInput, normalized_model: str | None) -> list
         command.append(payload.prompt)
         return command
     if payload.tool == "codex":
-        command = ["codex", "exec", "--full-auto"]
+        command = ["codex", "exec", "--yolo"]
         if normalized_model:
             command.extend(["--model", normalized_model])
         command.extend(extra)

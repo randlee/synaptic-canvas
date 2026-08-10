@@ -113,7 +113,7 @@ def test_build_command_for_codex():
     assert command == [
         "codex",
         "exec",
-        "--full-auto",
+        "--yolo",
         "--model",
         "gpt-5.1-codex-max",
         "--skip-git-repo-check",
@@ -153,7 +153,7 @@ def test_build_command_for_terra_codex():
     assert command == [
         "codex",
         "exec",
-        "--full-auto",
+        "--yolo",
         "--model",
         "gpt-5.6-terra",
         "Implement the fix",

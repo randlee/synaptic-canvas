@@ -11,6 +11,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Deprecated `/sc:codex` now routes to the Terra model and identity pool.
 - Added sci-fi/cyberpunk identity pools for the Sol, Terra, and Luna aliases.
 
+### Fixed
+- Use Codex's supported `--yolo` automation flag and `--enable hooks` feature flag for model launches.
+
 ## [0.10.0] - 2026-04-25
 ### Added
 - Initial `sc-launch-term` release with `/sc:sonnet`, `/sc:haiku`, `/sc:opus`, `/sc:codex`, and `/sc:gemini`.

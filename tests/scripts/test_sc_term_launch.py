@@ -74,9 +74,9 @@ def test_build_codex_argv_routes_models(model, model_id):
         "codex",
         "--model",
         model_id,
-        "--dangerously-bypass-approvals-and-sandbox",
-        "-c",
-        "features.codex_hooks=true",
+        "--yolo",
+        "--enable",
+        "hooks",
         "--search",
     ]
 

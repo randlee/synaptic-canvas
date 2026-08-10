@@ -17,7 +17,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from launch_term_shared import (
-    _IDENTITY_NAMES,
+    _IDENTITY_NAMES,  # noqa: F401 - retained as a module-level identity-pool view
     build_claude_session_record_path,
     build_codex_session_record_path,
     generate_ulid,
@@ -481,9 +481,9 @@ def build_codex_argv(model: str, extra_args: list[str]) -> list[str]:
         "codex",
         "--model",
         codex_model_id(model),
-        "--dangerously-bypass-approvals-and-sandbox",
-        "-c",
-        "features.codex_hooks=true",
+        "--yolo",
+        "--enable",
+        "hooks",
     ]
     command.extend(extra_args)
     return command
