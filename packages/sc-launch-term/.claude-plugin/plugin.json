@@ -1,6 +1,6 @@
 {
   "name": "sc-launch-term",
-  "description": "Launch Claude, Codex, and Gemini sessions in supported terminals with platform-aware terminal autodetect and optional tmux session management.",
+  "description": "Launch Claude (including Fable), Codex (including Sol, Terra, and Luna), and Gemini sessions in supported terminals with platform-aware autodetect, cmux workspace tabs, and optional tmux session management.",
   "version": "0.12.0",
   "author": {
     "name": "randlee"
@@ -12,8 +12,13 @@
     "macos",
     "windows",
     "tmux",
+    "cmux",
     "claude",
+    "fable",
     "codex",
+    "sol",
+    "terra",
+    "luna",
     "gemini"
   ],
   "scripts": [
@@ -25,6 +30,10 @@
     "./commands/sc/sonnet.md",
     "./commands/sc/haiku.md",
     "./commands/sc/opus.md",
+    "./commands/sc/fable.md",
+    "./commands/sc/sol.md",
+    "./commands/sc/terra.md",
+    "./commands/sc/luna.md",
     "./commands/sc/codex.md",
     "./commands/sc/gemini.md"
   ]

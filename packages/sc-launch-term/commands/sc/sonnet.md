@@ -17,11 +17,12 @@ Parse from `$ARGUMENTS`:
 - `-- <claude args...>` optional passthrough Claude CLI arguments. Everything after `--` is forwarded to `claude`.
 
 Supported backends:
-- macOS: `iterm2`, `ghostty`, `wezterm`, `warp`, `terminal`
+- macOS: `iterm2`, `ghostty`, `wezterm`, `warp`, `cmux`, `terminal`
 - Windows: `wt`, `warp`
 
 Backend notes:
 - Warp opens a new window only; reject `--tab` if `warp` is selected.
+- cmux creates and focuses a new workspace, which is cmux's tab primitive.
 - `--tmux` requires `tmux` on `PATH`. On Windows, only use it if your shell already supports `tmux`.
 - When `--tmux` is used, the launcher also adds `--teammate-mode tmux` to match the current local `sonnet` wrapper behavior.
 - If `ATM_TEAM` is set and `--identity` is supplied, the launcher registers the member first with `atm teams add-member <team> <identity> --model sonnet --cwd <dir>`.

@@ -19,7 +19,9 @@ spec.loader.exec_module(sc_term_launch)
 
 
 def test_build_claude_argv_without_tmux():
-    command = sc_term_launch.build_claude_argv("sonnet", ["--continue"], teammate_mode=False)
+    command = sc_term_launch.build_claude_argv(
+        "sonnet", ["--continue"], teammate_mode=False
+    )
     assert command == [
         "claude",
         "--model",
@@ -44,6 +46,38 @@ def test_build_claude_argv_with_tmux():
         "tmux",
         "--resume",
         "abc123",
+    ]
+
+
+def test_build_claude_argv_for_fable():
+    command = sc_term_launch.build_claude_argv("fable", [], teammate_mode=False)
+    assert command == [
+        "claude",
+        "--model",
+        "fable",
+        "--dangerously-skip-permissions",
+    ]
+
+
+@pytest.mark.parametrize(
+    ("model", "model_id"),
+    [
+        ("sol", "gpt-5.6-sol"),
+        ("terra", "gpt-5.6-terra"),
+        ("luna", "gpt-5.6-luna"),
+        ("codex", "gpt-5.6-terra"),
+    ],
+)
+def test_build_codex_argv_routes_models(model, model_id):
+    command = sc_term_launch.build_codex_argv(model, ["--search"])
+    assert command == [
+        "codex",
+        "--model",
+        model_id,
+        "--yolo",
+        "--enable",
+        "hooks",
+        "--search",
     ]
 
 
@@ -84,6 +118,27 @@ def test_parser_collects_passthrough_claude_args():
     assert args.dir == "/tmp/project"
     assert args.terminal == "wezterm"
     assert passthrough == ["--continue", "--resume", "abc123"]
+
+
+def test_parser_collects_passthrough_codex_args():
+    argv, passthrough = sc_term_launch.split_passthrough_argv(
+        [
+            "launch-codex-model",
+            "sol",
+            "/tmp/project",
+            "--terminal",
+            "cmux",
+            "--",
+            "--search",
+        ]
+    )
+    parser = sc_term_launch.build_parser()
+    args = parser.parse_args(argv)
+    assert args.subcommand == "launch-codex-model"
+    assert args.model == "sol"
+    assert args.dir == "/tmp/project"
+    assert args.terminal == "cmux"
+    assert passthrough == ["--search"]
 
 
 def test_apply_atm_env_prefix_posix():
@@ -132,6 +187,16 @@ def test_resolve_identity_uses_tool_pool(monkeypatch):
     assert len(suffix) == 4
 
 
+@pytest.mark.parametrize("model", ["sol", "terra", "luna", "codex"])
+def test_resolve_identity_uses_codex_model_pool(monkeypatch, model):
+    monkeypatch.setenv("ATM_TEAM", "atm-core")
+    identity = sc_term_launch.resolve_identity(None, model)
+    name, suffix = identity.rsplit("-", 1)
+    pool_model = "terra" if model == "codex" else model
+    assert name in sc_term_launch._IDENTITY_NAMES[pool_model]
+    assert len(suffix) == 4
+
+
 def test_generate_ulid_and_session_path():
     launch_id = sc_term_launch.generate_ulid()
     path = sc_term_launch.build_claude_session_record_path("/tmp/project", launch_id)
@@ -148,17 +213,36 @@ def test_generate_codex_session_path():
 
 
 def test_session_tracking_for_codex_member_model():
-    launch_id, session_record = sc_term_launch.session_tracking_for_member_model("codex", "/tmp/project")
+    launch_id, session_record = sc_term_launch.session_tracking_for_member_model(
+        "codex", "/tmp/project"
+    )
     assert launch_id is not None
     assert session_record is not None
-    assert session_record.parent == Path("/tmp/project").resolve() / ".sc" / "sessions" / "codex"
+    assert (
+        session_record.parent
+        == Path("/tmp/project").resolve() / ".sc" / "sessions" / "codex"
+    )
     assert session_record.stem.endswith(launch_id)
 
 
 def test_session_tracking_for_non_codex_member_model():
-    launch_id, session_record = sc_term_launch.session_tracking_for_member_model("gemini", "/tmp/project")
+    launch_id, session_record = sc_term_launch.session_tracking_for_member_model(
+        "gemini", "/tmp/project"
+    )
     assert launch_id is None
     assert session_record is None
+
+
+def test_session_tracking_for_codex_model_alias():
+    launch_id, session_record = sc_term_launch.session_tracking_for_member_model(
+        "sol", "/tmp/project"
+    )
+    assert launch_id is not None
+    assert session_record is not None
+    assert (
+        session_record.parent
+        == Path("/tmp/project").resolve() / ".sc" / "sessions" / "codex"
+    )
 
 
 def test_apply_env_prefix_with_session_tracking_posix():
@@ -174,3 +258,31 @@ def test_apply_env_prefix_with_session_tracking_posix():
         command
         == "export SC_LAUNCH_ID=01JVY7YVYH57FHE2S2P0S8F3XW && export SC_SESSION_RECORD=/tmp/project/.sc/sessions/claude/session.json && claude --model haiku"
     )
+
+
+def test_launch_cmux_creates_focused_workspace(monkeypatch):
+    calls = []
+
+    def fake_run(command, *, check):
+        calls.append((command, check))
+
+    monkeypatch.setattr(sc_term_launch.subprocess, "run", fake_run)
+    sc_term_launch.launch_cmux("claude --model fable", "/tmp/project", True, "fable")
+
+    assert calls == [
+        (
+            [
+                "cmux",
+                "new-workspace",
+                "--cwd",
+                "/tmp/project",
+                "--name",
+                "fable",
+                "--command",
+                "claude --model fable",
+                "--focus",
+                "true",
+            ],
+            True,
+        )
+    ]
