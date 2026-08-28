@@ -8,8 +8,10 @@ Initial package (skill-only, no agents).
   verification (Step 1), preflight gate, and situation → playbook table
 - `references/playbook-convert.md`: worked example converting N parallel PRs
   into one stack via `git rebase --onto`, `gh stack init`, `gh stack submit --auto`
-- `scripts/preflight.sh` (read-only environment gate) and `scripts/convert.sh`
-  (deterministic, idempotent chaining; exit 3 on first conflict)
+- `scripts/gh_stack_preflight.py` (read-only environment gate) and
+  `scripts/gh_stack_convert.py` (deterministic, idempotent chaining; exit 3 on
+  first conflict); stdlib-only, fenced JSON envelopes
+- `tests/`: 32 pytest cases — mocked unit tests plus a real-git integration test
 - upstream `github/gh-stack` references (`commands.md`, `troubleshooting.md`,
   `stack-design.md`) carried verbatim for on-demand loading
 - `references/installation-and-troubleshooting.md` per guidelines v0.7

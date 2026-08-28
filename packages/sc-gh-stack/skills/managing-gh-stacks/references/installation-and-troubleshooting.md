@@ -3,7 +3,8 @@
 This skill depends on:
 - `gh` (GitHub CLI), authenticated
 - the `gh-stack` extension (`github/gh-stack`)
-- `git >= 2.23` (for `git switch`/`--onto` behaviors used by the scripts)
+- `git >= 2.23`
+- `python3 >= 3.9` (scripts are stdlib-only)
 - stacked pull requests enabled on the target GitHub repository
 
 ## Check First
@@ -58,10 +59,10 @@ shell. Use the probe loop above and export the directory for the session.
 ## Validation
 
 ```bash
-bash scripts/preflight.sh
+python3 .claude/scripts/gh_stack_preflight.py
 ```
 
-All lines `OK`; the single `WARN` about stacked-PR enablement is expected (there is no direct probe).
+`success: true`; the single `warn` entry about stacked-PR enablement is expected (there is no direct probe).
 
 ## Known Issues
 
@@ -83,7 +84,7 @@ More than one git remote and `remote.pushDefault` is unset:
 
 ### Conflicts repeat on every rebase
 
-`rerere` is disabled. `git config rerere.enabled true`; `scripts/convert.sh` sets this
+`rerere` is disabled. `git config rerere.enabled true`; `gh_stack_convert.py` sets this
 automatically, but a stack created some other way may not have it.
 
 ### `gh stack add` exits 5

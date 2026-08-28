@@ -26,10 +26,11 @@ artifacts:
     - skills/managing-gh-stacks/references/troubleshooting.md
     - skills/managing-gh-stacks/references/stack-design.md
     - skills/managing-gh-stacks/references/installation-and-troubleshooting.md
-    # Skill-bundled bash helpers (not Python; no sc_shared.py dependency), so they
-    # ship under skills rather than as package-level scripts.
-    - skills/managing-gh-stacks/scripts/preflight.sh
-    - skills/managing-gh-stacks/scripts/convert.sh
+  scripts:
+    - scripts/sc_shared.py
+    - scripts/gh_stack_shared.py
+    - scripts/gh_stack_preflight.py
+    - scripts/gh_stack_convert.py
 
 install:
   scope: both
@@ -38,4 +39,5 @@ requires:
   cli:
     - gh
     - git >= 2.23
+    - python3 >= 3.9
   # gh-stack is a gh extension (`gh extension install github/gh-stack`), verified in SKILL.md Step 1.

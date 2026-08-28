@@ -18,33 +18,49 @@ after each merge. As a stack they cost n CI runs and land atomically.
 ## Steps
 
 ```bash
-bash scripts/preflight.sh                       # all OK
-bash scripts/convert.sh main 101 102 103 104    # PR numbers or branch names, bottom → top
+python3 .claude/scripts/gh_stack_preflight.py                    # success: true
+python3 .claude/scripts/gh_stack_convert.py main 101 102 103 104  # PR numbers or branch names, bottom → top
 ```
 
-`convert.sh` fetches, resolves PR numbers to branches, then for each layer runs
+`gh_stack_convert.py` fetches, resolves PR numbers to branches, then for each layer runs
 `git rebase --onto <layer-below> origin/main <layer>` so only that layer's own commits move.
-It stops at the **first** conflict and prints the layer and files.
+It stops at the **first** conflict. Every run emits one fenced JSON envelope; read `success`,
+`error.code`, and `data`.
 
-### On exit 3 (conflict)
+### On exit 3 — `error.code: "CONVERT.CONFLICT"`
+
+```json
+{
+  "success": false,
+  "data": {
+    "shape": "(main) <- feat/schema <- feat/api <- feat/ui",
+    "chained": [{ "branch": "feat/schema", "onto": "origin/main", "action": "skip" }],
+    "conflict": { "layer": "feat/api", "onto": "feat/schema", "files": ["src/api/routes.rs"] },
+    "next_step": "resolve the listed files, `git add` them, `git rebase --continue`, then re-run this command; finished layers are skipped"
+  },
+  "error": { "code": "CONVERT.CONFLICT", "message": "conflict rebasing feat/api onto feat/schema", "recoverable": true, "suggested_action": "..." }
+}
+```
 
 ```bash
-# output shows:  CONFLICT in layer: feat/api (rebasing onto feat/schema)
-#                  src/api/routes.rs
 # resolve src/api/routes.rs — keep the lower layer's version of anything the lower layer owns
 git add src/api/routes.rs
 git rebase --continue
-bash scripts/convert.sh main 101 102 103 104   # re-run: finished layers print "skip"
+python3 .claude/scripts/gh_stack_convert.py main 101 102 103 104   # re-run: finished layers report "skip"
 ```
 
-Every conflict is attributed to a specific layer. Resolve, continue, re-run, until exit 0.
+Every conflict is attributed to a specific layer. Resolve, continue, re-run, until `success: true`.
 rerere records each resolution, so the same conflict never needs a second manual resolution
 when the stack is rebased again later.
 
-### On exit 0
+### On exit 0 — `success: true`
 
-The script has run `gh stack init --base main <branches...>` (adopting the existing branches —
-nothing pushed yet) and printed `gh stack view --json`. Check it before pushing:
+`data.stack_init.action` is `"initialised"` (or `"existing_stack_kept"` if a local stack was
+already present — check its composition). Nothing has been pushed yet. Now inspect the stack:
+
+```bash
+gh stack view --json
+```
 
 ```json
 {
@@ -77,7 +93,7 @@ Existing PR titles/bodies are kept. New PRs get auto titles; edit with `gh pr ed
 ## Result
 
 CI runs once per layer on the corrected bases. When green, land everything at once with
-`playbook-landing.md` (`gh stack merge <stack#> --yes`).
+`gh stack merge <stack#> --yes` (see `commands.md`, "merge").
 
 ## Why rebase, not merge, to chain
 

@@ -732,12 +732,13 @@
         "commands": 0,
         "skills": 1,
         "agents": 0,
-        "scripts": 0,
+        "scripts": 4,
         "schemas": 0
       },
       "dependencies": [
         "gh",
-        "git >= 2.23"
+        "git >= 2.23",
+        "python3 >= 3.9"
       ],
       "lastUpdated": "2026-08-28"
     }
@@ -749,7 +750,7 @@
     "totalCommands": 13,
     "totalSkills": 11,
     "totalAgents": 34,
-    "totalScripts": 19,
+    "totalScripts": 23,
     "categories": {
       "automation": [
         "sc-delay-tasks",

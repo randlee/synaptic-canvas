@@ -59,10 +59,11 @@ If found off-PATH, `export PATH="<dir>:$PATH"` for this session. If `gh`, the ex
 `git >= 2.23` is missing, **read `references/installation-and-troubleshooting.md` and stop**;
 do not proceed with degraded behavior.
 
-Then run the environment gate. It is read-only and prints the exact fix for every failure:
+Then run the environment gate. It is read-only and returns fenced JSON with a `fix` for every
+failed check:
 
 ```bash
-bash scripts/preflight.sh          # exit 0 = go
+python3 .claude/scripts/gh_stack_preflight.py    # exit 0 = go; data.failed lists what to fix
 ```
 
 ## Hard rules
@@ -83,7 +84,7 @@ bash scripts/preflight.sh          # exit 0 = go
 
 | Situation | Read | Then |
 |---|---|---|
-| N existing PRs/branches against trunk → one stack | `references/playbook-convert.md` | `bash scripts/convert.sh main b1 … bN` |
+| N existing PRs/branches against trunk → one stack | `references/playbook-convert.md` | `python3 .claude/scripts/gh_stack_convert.py main b1 … bN` |
 | Starting new multi-part work | `references/stack-design.md`, then `references/commands.md` ("init", "add", "submit") | `gh stack init` before writing code |
 | Lower layer needs a fix / review changes | `references/commands.md` ("rebase", "push") | checkout owner → commit → `rebase --upstack` → `push` |
 | Trunk moved, a layer merged, stack is stale | `references/commands.md` ("sync"); `references/troubleshooting.md` on conflict | `gh stack sync` → `view --json` |
@@ -126,14 +127,16 @@ When using this skill, report:
 - `references/troubleshooting.md` — conflicts, squash merges, divergence, restructuring, exit codes (upstream, verbatim)
 - `references/stack-design.md` — choosing layers and names for new work (upstream, verbatim)
 - `references/installation-and-troubleshooting.md` — CLI install, PATH, version floors
+- `.claude/scripts/gh_stack_preflight.py`, `.claude/scripts/gh_stack_convert.py` — `--help` for usage and exit codes
 
 `gh stack <command> --help` is authoritative for flags. `gh stack help <command>` does not work.
 
 ## Storage
 
 This skill runs `git` and `gh stack` in the current repository only. It writes no state under
-`.claude/`. `scripts/convert.sh` sets `rerere.enabled=true` in the local git config so conflict
-resolutions replay on later rebases.
+`.claude/`. `gh_stack_convert.py` sets `rerere.enabled=true` in the local git config so conflict
+resolutions replay on later rebases. Both scripts are stdlib-only Python 3 and emit fenced JSON
+(`success`/`data`/`error`); parse that, never their stderr.
 
 ## Agent Delegation
 
