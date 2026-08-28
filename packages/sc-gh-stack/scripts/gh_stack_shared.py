@@ -81,7 +81,9 @@ def is_ancestor(ancestor: str, descendant: str, cwd: Optional[Path] = None) -> b
 
 
 def working_tree_clean(cwd: Optional[Path] = None) -> bool:
-    return git_out(["status", "--porcelain"], cwd=cwd) == ""
+    """Tracked changes only: untracked files do not block rebases (a colliding
+    one makes the rebase itself fail, which is reported with its stderr)."""
+    return git_out(["status", "--porcelain", "--untracked-files=no"], cwd=cwd) == ""
 
 
 def rebase_in_progress(cwd: Optional[Path] = None) -> bool:

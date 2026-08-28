@@ -14,13 +14,17 @@ Before each layer is first rebased, its pre-rebase tip is recorded under
 `refs/sc-gh-stack/orig/<branch>`. These refs let a layer that was branched off
 the layer below (rather than off trunk) rebase with an exact upstream bound —
 even across conflict-resume re-runs — so the lower layer's commits are never
-replayed twice. All such refs are deleted when the whole chain succeeds.
+replayed twice. The conversion's identity (trunk + layer list) is stored in the
+local git config key `sc-gh-stack.conversion`; the orig refs are kept until a
+conversion with a DIFFERENT identity starts, at which point all of them are
+deleted. Keeping them after success is what makes re-runs idempotent while the
+branches still await `gh stack submit`.
 
 Exit codes:
   0  all layers chained and stack initialised; next step is `gh stack submit --auto`
   3  rebase conflict; data.conflict names the layer and files
-  5  invalid input (arguments, missing branch, missing remote trunk, dirty tree,
-     rebase already in progress, diverged branch)
+  5  invalid input (arguments, missing branch, missing remote trunk, not a repo,
+     dirty tree, rebase already in progress, diverged branch)
   1  git fetch, a non-conflict rebase failure, or gh stack init failed
 """
 from __future__ import annotations
@@ -76,18 +80,27 @@ def stack_shape(trunk: str, layers: List[str]) -> str:
     return f"({trunk}) <- " + " <- ".join(layers)
 
 
+def _head(branch: str) -> str:
+    """Unambiguous ref for a local branch (a same-named tag must never win)."""
+    return f"refs/heads/{branch}"
+
+
 def _orig_ref(branch: str) -> str:
     return f"{ORIG_REF_PREFIX}{branch}"
 
 
-def _orig_tip(branch: str, cwd: Optional[Path] = None) -> Optional[str]:
-    r = gs.git(["rev-parse", "--verify", "--quiet", _orig_ref(branch)], cwd=cwd)
+def _rev(ref: str, cwd: Optional[Path] = None) -> Optional[str]:
+    r = gs.git(["rev-parse", "--verify", "--quiet", ref], cwd=cwd)
     tip = r.stdout.strip()
     return tip if r.returncode == 0 and tip else None
 
 
-def _has_merges(upstream: str, layer: str, cwd: Optional[Path] = None) -> bool:
-    return gs.git_out(["rev-list", "--merges", f"{upstream}..{layer}"], cwd=cwd) != ""
+def _orig_tip(branch: str, cwd: Optional[Path] = None) -> Optional[str]:
+    return _rev(_orig_ref(branch), cwd=cwd)
+
+
+def _has_merges(upstream: str, layer_ref: str, cwd: Optional[Path] = None) -> bool:
+    return gs.git_out(["rev-list", "--merges", f"{upstream}..{layer_ref}"], cwd=cwd) != ""
 
 
 def _fast_forward(branch: str, target: str, cwd: Optional[Path] = None) -> bool:
@@ -96,17 +109,61 @@ def _fast_forward(branch: str, target: str, cwd: Optional[Path] = None) -> bool:
     return gs.git(["branch", "-f", branch, target], cwd=cwd).returncode == 0
 
 
-def clear_orig_refs(layers: List[str], cwd: Optional[Path] = None) -> None:
-    for b in layers:
-        if _orig_tip(b, cwd=cwd):
-            gs.git(["update-ref", "-d", _orig_ref(b)], cwd=cwd)
+def begin_conversion(trunk: str, layers: List[str], cwd: Optional[Path] = None) -> None:
+    """Clear ALL orig refs left by a conversion with a different identity.
+
+    Stale refs from an abandoned conversion must never suppress the divergence
+    guard or serve as upstream bounds for a different layer set.
+    """
+    conv_id = " ".join([trunk, *layers])
+    if gs.config_get("sc-gh-stack.conversion", cwd=cwd) != conv_id:
+        out = gs.git_out(["for-each-ref", "--format=%(refname)", ORIG_REF_PREFIX.rstrip("/")], cwd=cwd)
+        for ref in out.splitlines():
+            if ref.strip():
+                gs.git(["update-ref", "-d", ref.strip()], cwd=cwd)
+        gs.git(["config", "sc-gh-stack.conversion", conv_id], cwd=cwd)
+
+
+def _check_remote_freshness(layer: str, remote: str, cwd: Optional[Path]) -> Optional[Dict[str, Any]]:
+    """Refuse to chain a local branch missing remote commits; ff if merely behind.
+
+    A layer already adopted by this conversion (orig ref recorded and the branch
+    tip has moved off it) is judged against its recorded pre-rebase tip instead:
+    the rebase rewrote local history, so plain ancestry against the remote no
+    longer means anything — but any commit the remote gained AFTER adoption
+    shows up as the remote tip no longer being an ancestor of the recorded tip.
+    Returns a failure dict, or None when the layer is safe to chain.
+    """
+    if not gs.remote_branch_exists(remote, layer, cwd=cwd):
+        return None
+    remote_ref = f"{remote}/{layer}"
+    orig = _orig_tip(layer, cwd=cwd)
+    adopted = orig is not None and orig != _rev(_head(layer), cwd=cwd)
+    if adopted:
+        if gs.is_ancestor(remote_ref, orig, cwd=cwd):
+            return None
+    elif gs.is_ancestor(remote_ref, _head(layer), cwd=cwd):
+        return None
+    elif gs.is_ancestor(_head(layer), remote_ref, cwd=cwd):
+        if _fast_forward(layer, remote_ref, cwd=cwd):
+            return None
+        return {"code": "CONVERT.REBASE_FAILED", "exit": EXIT_ERR, "layer": layer,
+                "message": f"could not fast-forward {layer} to {remote_ref}",
+                "action": "inspect the branch state and re-run"}
+    return {"code": "GIT.BRANCH_DIVERGED", "exit": EXIT_INPUT, "layer": layer,
+            "message": f"{layer} and {remote_ref} have diverged; converting the "
+                       f"local branch would drop the remote's commits on submit",
+            "action": f"reconcile first (e.g. `git checkout {layer} && git rebase "
+                      f"{remote_ref}`) — do not push afterwards — then re-run"}
 
 
 def chain(layers: List[str], trunk_ref: str, remote: str, cwd: Optional[Path] = None) -> ChainResult:
     """Rebase each layer onto the one below, bottom-up. Stops at the first conflict.
 
-    Skip rule: a layer is already chained only if the layer below is its ancestor
-    AND no merge commits sit between them (a merge from trunk — GitHub's "Update
+    Every layer passes the remote-freshness guard BEFORE the skip test, so a
+    branch the remote has advanced can never be silently skipped. Skip rule: a
+    layer is already chained only if the layer below is its ancestor AND no
+    merge commits sit between them (a merge from trunk — GitHub's "Update
     branch" — must be linearised, not kept).
 
     Upstream bound per rebase, most exact first: the below layer's recorded
@@ -115,57 +172,49 @@ def chain(layers: List[str], trunk_ref: str, remote: str, cwd: Optional[Path] = 
     be used: trunk_ref is always the remote trunk tip.
     """
     result = ChainResult()
-    below = trunk_ref
+    below = trunk_ref            # commit-ish the current layer must sit on
     below_name: Optional[str] = None
     for layer in layers:
-        if gs.is_ancestor(below, layer, cwd=cwd) and not _has_merges(below, layer, cwd=cwd):
-            result.chained.append({"branch": layer, "onto": below, "action": "skip"})
-            below, below_name = layer, layer
-            continue
+        result.failure = _check_remote_freshness(layer, remote, cwd)
+        if result.failure:
+            return result
 
-        # First touch of this layer: refuse to chain a local branch that is
-        # missing remote commits (PR updated elsewhere) — submit would
-        # force-with-lease them away. Fast-forward if strictly behind.
-        remote_ref = f"{remote}/{layer}"
-        if _orig_tip(layer, cwd=cwd) is None and gs.remote_branch_exists(remote, layer, cwd=cwd) \
-                and not gs.is_ancestor(remote_ref, layer, cwd=cwd):
-            if gs.is_ancestor(layer, remote_ref, cwd=cwd):
-                if not _fast_forward(layer, remote_ref, cwd=cwd):
-                    result.failure = {"code": "CONVERT.REBASE_FAILED", "exit": EXIT_ERR, "layer": layer,
-                                      "message": f"could not fast-forward {layer} to {remote_ref}",
-                                      "action": "inspect the branch state and re-run"}
-                    return result
-            else:
-                result.failure = {"code": "GIT.BRANCH_DIVERGED", "exit": EXIT_INPUT, "layer": layer,
-                                  "message": f"{layer} and {remote_ref} have diverged; converting the "
-                                             f"local branch would drop the remote's commits on submit",
-                                  "action": f"reconcile first (e.g. `git checkout {layer} && git rebase "
-                                            f"{remote_ref}`), then re-run"}
-                return result
+        layer_ref = _head(layer)
+        if gs.is_ancestor(below, layer_ref, cwd=cwd) and not _has_merges(below, layer_ref, cwd=cwd):
+            result.chained.append({"branch": layer, "onto": below if below_name is None else below_name,
+                                   "action": "skip"})
+            below, below_name = layer_ref, layer
+            continue
 
         upstream = trunk_ref
         if below_name is not None:
             orig_below = _orig_tip(below_name, cwd=cwd)
-            if orig_below and gs.is_ancestor(orig_below, layer, cwd=cwd):
+            if orig_below and gs.is_ancestor(orig_below, layer_ref, cwd=cwd):
                 upstream = orig_below
-            elif gs.is_ancestor(below, layer, cwd=cwd):
+            elif gs.is_ancestor(below, layer_ref, cwd=cwd):
                 upstream = below
         if _orig_tip(layer, cwd=cwd) is None:
-            gs.git(["update-ref", _orig_ref(layer), layer], cwd=cwd)
+            gs.git(["update-ref", _orig_ref(layer), layer_ref], cwd=cwd)
 
         rebase = gs.git(["rebase", "--onto", below, upstream, layer], cwd=cwd)
+        onto_label = below if below_name is None else below_name
         if rebase.returncode != 0:
-            files = gs.conflicted_files(cwd=cwd)
-            if files and gs.rebase_in_progress(cwd=cwd):
-                result.conflict = {"layer": layer, "onto": below, "files": files}
+            if gs.rebase_in_progress(cwd=cwd):
+                # Unmerged paths may be empty when rerere.autoUpdate already
+                # staged every resolution; the rebase still awaits --continue.
+                result.conflict = {"layer": layer, "onto": onto_label,
+                                   "files": gs.conflicted_files(cwd=cwd)}
             else:
                 result.failure = {"code": "CONVERT.REBASE_FAILED", "exit": EXIT_ERR, "layer": layer,
                                   "message": f"rebase of {layer} failed without a conflict: "
                                              f"{rebase.stderr.strip()}",
                                   "action": "fix the reported problem and re-run; finished layers are skipped"}
             return result
-        result.chained.append({"branch": layer, "onto": below, "action": "rebased"})
-        below, below_name = layer, layer
+        action = "rebased"
+        if gs.git_out(["rev-list", f"{below}..{layer_ref}"], cwd=cwd) == "":
+            action = "rebased_empty"   # only merge commits were flattened away — verify no content was lost
+        result.chained.append({"branch": layer, "onto": onto_label, "action": action})
+        below, below_name = layer_ref, layer
     return result
 
 
@@ -187,12 +236,16 @@ def init_stack(trunk: str, layers: List[str], cwd: Optional[Path] = None) -> Dic
 def convert(trunk: str, raw_layers: List[str], cwd: Optional[Path] = None) -> tuple[int, Dict[str, Any]]:
     """Full workflow. Returns (exit_code, envelope). Testable without argparse."""
     def fail(code: int, err_code: str, msg: str, action: str, data: Optional[Dict[str, Any]] = None):
-        return code, gs.envelope(False, data, gs.error_obj(err_code, msg, code != EXIT_ERR, action))
+        # Every failure this script reports is fix-and-re-run; finished layers are skipped.
+        return code, gs.envelope(False, data, gs.error_obj(err_code, msg, True, action))
 
     if len(raw_layers) < 2:
         return fail(EXIT_INPUT, "VALIDATION.INPUT", "a stack needs at least two layers",
                     "pass <trunk> <bottom> ... <top>, bottom to top")
 
+    if not gs.in_git_repo(cwd=cwd):
+        return fail(EXIT_INPUT, "GIT.NOT_A_REPO", "not inside a git repository",
+                    "cd into the repository (or pass --cwd)")
     if gs.rebase_in_progress(cwd=cwd):
         return fail(EXIT_INPUT, "GIT.REBASE_IN_PROGRESS", "a rebase is already in progress",
                     "finish it (`git rebase --continue` after resolving, or `git rebase --abort`), then re-run")
@@ -229,6 +282,7 @@ def convert(trunk: str, raw_layers: List[str], cwd: Optional[Path] = None) -> tu
         return fail(EXIT_INPUT, "VALIDATION.INPUT", str(exc), "fix the layer list and re-run")
 
     base = {"trunk": trunk, "remote": remote, "layers": layers, "shape": stack_shape(trunk, layers)}
+    begin_conversion(trunk, layers, cwd=cwd)
     result = chain(layers, trunk_ref, remote, cwd=cwd)
     if result.conflict:
         data = {**base, "chained": result.chained, "conflict": result.conflict,
@@ -243,13 +297,14 @@ def convert(trunk: str, raw_layers: List[str], cwd: Optional[Path] = None) -> tu
         data = {**base, "chained": result.chained, "conflict": None, "failure": f}
         return fail(f["exit"], f["code"], f["message"], f["action"], data)
 
-    clear_orig_refs(layers, cwd=cwd)
     init = init_stack(trunk, layers, cwd=cwd)
-    data = {**base, "chained": result.chained, "conflict": None, "stack_init": init,
-            "next_step": "review `gh stack view --json` (all layers, given order, needsRebase=false), "
-                         "then `gh stack submit --auto`"}
+    data = {**base, "chained": result.chained, "conflict": None, "stack_init": init}
     if init["action"] == "init_failed":
-        return fail(EXIT_ERR, "STACK.INIT_FAILED", "gh stack init failed", "see stack_init.stderr", data)
+        data["next_step"] = "read data.stack_init.stderr, fix the reported problem, and re-run; " \
+                            "chained layers are skipped — do NOT run `gh stack submit`"
+        return fail(EXIT_ERR, "STACK.INIT_FAILED", "gh stack init failed", data["next_step"], data)
+    data["next_step"] = "review `gh stack view --json` (all layers, given order, needsRebase=false), " \
+                        "then `gh stack submit --auto`"
     return EXIT_OK, gs.envelope(True, data)
 
 

@@ -66,5 +66,6 @@ atomically with `gh stack merge`.
 ## Storage
 
 Installs into `.claude/` only. No runtime state under `.claude/`. `gh_stack_convert.py` sets
-`rerere.enabled=true` in the target repo's local git config and keeps transient
-`refs/sc-gh-stack/orig/*` refs while a conversion is in flight (deleted on success).
+`rerere.enabled=true` in the target repo's local git config and keeps per-conversion
+bookkeeping in the target repo (`refs/sc-gh-stack/orig/*` pre-rebase tips and the
+`sc-gh-stack.conversion` config key), cleared when a different conversion starts.

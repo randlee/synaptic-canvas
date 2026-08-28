@@ -54,7 +54,8 @@ def run_checks(cwd: Optional[Path] = None) -> List[Dict[str, Any]]:
     checks.append(_check("working_tree_clean", gs.working_tree_clean(cwd=cwd),
                          "commit or stash before stack operations"))
     checks.append(_check("no_rebase_in_progress", not gs.rebase_in_progress(cwd=cwd),
-                         "gh stack rebase --continue  (or --abort)"))
+                         "git rebase --continue after resolving (or git rebase --abort); "
+                         "use gh stack rebase --continue if the rebase was started by gh stack"))
 
     checks.append(_warn("stacked_prs_enabled",
                         "no direct probe exists; `gh stack submit` exits 9 if the repository "

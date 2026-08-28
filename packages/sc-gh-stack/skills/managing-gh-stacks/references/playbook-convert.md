@@ -28,12 +28,20 @@ python3 .claude/scripts/gh_stack_convert.py main 101 102 103 104  # PR numbers o
 `gh_stack_convert.py` refuses to run over a dirty tree or an in-progress rebase
 (`GIT.DIRTY_TREE` / `GIT.REBASE_IN_PROGRESS`), fetches, resolves PR numbers to branches,
 fast-forwards any local branch strictly behind its remote, and refuses a branch that has
-diverged from its remote (`GIT.BRANCH_DIVERGED` — reconcile it first; converting it would
-drop the remote's commits at submit). Then each layer is rebased `--onto` the layer below so
+diverged from its remote (`GIT.BRANCH_DIVERGED` — converting it would drop the remote's
+commits at submit). On `GIT.BRANCH_DIVERGED`, reconcile exactly as the envelope's
+`suggested_action` says (`git checkout <layer> && git rebase <remote>/<layer>`) — that single
+rebase is expected and allowed here, and **do not push afterwards**: `gh stack submit` owns
+all pushing — then re-run the script. Then each layer is rebased `--onto` the layer below so
 only that layer's own commits move (a layer that merged trunk in — GitHub's "Update branch" —
-is linearised, not kept). It stops at the **first** conflict. Every run emits one fenced JSON
-envelope; read `success`, `error.code`, and `data`. The sample payloads below show the fields
-to act on; `data` also always carries `trunk`, `remote`, and `layers`.
+is linearised, not kept; if a layer reports `"action": "rebased_empty"` it contained only
+merge commits — verify no conflict-resolution content from an "evil merge" was lost before
+continuing). It stops at the **first** conflict. Every run emits one fenced JSON envelope;
+read `success`, `error.code`, and `data`. The sample payloads below show the fields to act
+on; `data` also always carries `trunk`, `remote`, and `layers`. Exit 1 with
+`CONVERT.REBASE_FAILED` means a rebase or fast-forward failed without leaving a resumable
+rebase — read `error.message`, fix that (never re-chain by hand), and re-run; finished layers
+are skipped.
 
 ### On exit 3 — `error.code: "CONVERT.CONFLICT"`
 
@@ -98,9 +106,19 @@ gh stack view --json        # each branches[].pr now present; state "OPEN"
 ```
 
 `submit` is not atomic. If one push is rejected (someone pushed to that branch meanwhile),
-earlier pushes stand; the rejected branch has diverged from its remote — follow
-`troubleshooting.md`, "Local and remote stacks have diverged", then re-run
-`gh stack submit --auto`. Never resolve a rejected push with `git push --force`.
+earlier pushes stand. Integrate the remote's new commits into that layer, then let the stack
+push again:
+
+```bash
+git fetch
+git checkout <rejected-layer>
+git rebase <remote>/<rejected-layer>    # bring the collaborator's commits into the layer
+gh stack rebase --upstack               # propagate through the layers above
+gh stack submit --auto
+```
+
+Never resolve a rejected push with `git push --force`, and never pick "keep the local
+version" from a divergence prompt — the remote-only commits are someone's work.
 Exit **9** means stacked PRs are not enabled on the repository — stop and tell the user,
 reporting which layers (if any) were already pushed per the submit output; the local branches
 remain chained and the stack tracked — do not attempt to undo that without the user.

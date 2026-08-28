@@ -96,7 +96,24 @@ class TestConvertValidation:
         with patch.object(gs, "remotes", return_value=["origin"]), patch.object(gs, "git", fake_git):
             code, env = cv.convert("main", ["a", "b"])
         assert code == cv.EXIT_ERR and env["error"]["code"] == "GIT.FETCH"
-        assert env["error"]["recoverable"] is False
+        assert env["error"]["recoverable"] is True
+
+    def test_non_conflict_rebase_failure(self, clean_repo_guards, monkeypatch):
+        def fake_git(args, cwd=None):
+            return cp(1, "", "boom") if args[0] == "rebase" else cp(0)
+
+        monkeypatch.setattr(gs, "remotes", lambda cwd=None: ["origin"])
+        monkeypatch.setattr(gs, "git", fake_git)
+        monkeypatch.setattr(gs, "git_out", lambda args, cwd=None: "")
+        monkeypatch.setattr(gs, "local_branch_exists", lambda b, cwd=None: True)
+        monkeypatch.setattr(gs, "remote_branch_exists",
+                            lambda remote, branch, cwd=None: branch == "main")
+        monkeypatch.setattr(gs, "is_ancestor", lambda a, b, cwd=None: False)
+        code, env = cv.convert("main", ["a", "b"])
+        assert code == cv.EXIT_ERR
+        assert env["error"]["code"] == "CONVERT.REBASE_FAILED"
+        assert env["data"]["failure"]["layer"] == "a"
+        assert "boom" in env["data"]["failure"]["message"]
 
     def test_init_stack_keeps_existing_stack(self):
         with patch.object(gs, "git", return_value=cp(0)), patch.object(gs, "gh", return_value=cp(0, "{}")):
@@ -230,13 +247,16 @@ class TestConvertIntegration:
         assert env["data"]["stack_init"]["action"] == "initialised"
         assert env["data"]["shape"] == "(main) <- pr1 <- pr2 <- pr3"
 
-        # Ancestry is a single linear chain, rerere was enabled, orig refs cleaned up.
+        # Ancestry is a single linear chain and rerere was enabled. The orig
+        # refs are kept until a DIFFERENT conversion starts — they are what
+        # keeps re-runs idempotent while the branches await submit.
         assert gs.is_ancestor("origin/main", "pr1", cwd=repo)
         assert gs.is_ancestor("pr1", "pr2", cwd=repo)
         assert gs.is_ancestor("pr2", "pr3", cwd=repo)
         assert gs.config_get("rerere.enabled", cwd=repo) == "true"
+        assert gs.config_get("sc-gh-stack.conversion", cwd=repo) == "main pr1 pr2 pr3"
         assert _sh(repo, "git", "rev-parse", "--abbrev-ref", "HEAD").strip() == "pr3"
-        assert _orig_refs(repo) == ""
+        assert "refs/sc-gh-stack/orig/pr2" in _orig_refs(repo)
 
         # Third run: everything skipped, stack already present.
         code, env = cv.convert("main", ["pr1", "pr2", "pr3"], cwd=repo)
@@ -277,35 +297,81 @@ class TestConvertIntegration:
             ("pr1", "skip"), ("dep", "rebased")]
         assert _sh(repo, "git", "rev-list", "--count", "pr1..dep").strip() == "1"
         assert (repo / "shared.txt").read_text() == "resolved\n"
-        assert _orig_refs(repo) == ""
 
     def test_layer_with_trunk_merge_is_linearised(self, repo):
-        # Trunk advances, then simulate GitHub's "Update branch": merge main into pr3.
+        # Trunk advances, then simulate GitHub's "Update branch": merge main into
+        # pr3 and put pr3 at the BOTTOM of the stack, so origin/main IS an
+        # ancestor of pr3 (via the merge) and only the no-merges half of the
+        # skip rule forces the linearising rebase.
         _sh(repo, "git", "checkout", "-q", "main")
         _commit(repo, "trunk.txt", "trunk\n", "trunk moves")
         _sh(repo, "git", "push", "-q", "origin", "main")
         _sh(repo, "git", "checkout", "-q", "pr3")
         _sh(repo, "git", "merge", "-q", "--no-edit", "main")
-        assert _sh(repo, "git", "rev-list", "--merges", "main..pr3").strip() != ""
+        assert _sh(repo, "git", "rev-list", "--merges", "origin/main..pr3").strip() != ""
+        assert gs.is_ancestor("origin/main", "pr3", cwd=repo)   # skip-eligible but for the merge
         _sh(repo, "git", "checkout", "-q", "main")
-        code, env = cv.convert("main", ["pr1", "pr3"], cwd=repo)
+        code, env = cv.convert("main", ["pr3", "pr1"], cwd=repo)
         assert code == cv.EXIT_OK, env
         actions = {c["branch"]: c["action"] for c in env["data"]["chained"]}
         assert actions["pr3"] == "rebased"   # not skipped despite ancestry via the merge
         assert _sh(repo, "git", "rev-list", "--merges", "origin/main..pr3").strip() == ""
-        assert gs.is_ancestor("pr1", "pr3", cwd=repo)
+        assert gs.is_ancestor("pr3", "pr1", cwd=repo)
 
     def test_stale_local_branch_fast_forwarded(self, repo):
-        # Remote pr3 gains a commit the local branch does not have.
+        # Remote pr3 gains a commit the local branch does not have; pr3 stays
+        # checked out, exercising the `merge --ff-only` half of _fast_forward.
         _sh(repo, "git", "checkout", "-q", "pr3")
         _commit(repo, "extra.txt", "extra\n", "remote-side extra")
         _sh(repo, "git", "push", "-q", "origin", "pr3")
         _sh(repo, "git", "reset", "-q", "--hard", "HEAD~1")   # local now strictly behind
-        _sh(repo, "git", "checkout", "-q", "main")
         code, env = cv.convert("main", ["pr1", "pr3"], cwd=repo)
         assert code == cv.EXIT_OK, env
         merged = _sh(repo, "git", "log", "--format=%s", "origin/main..pr3")
         assert "remote-side extra" in merged
+        assert (repo / "extra.txt").exists()   # working tree followed the fast-forward
+
+    def test_stale_local_branch_fast_forwarded_not_checked_out(self, repo):
+        # Same scenario with main checked out: the `branch -f` half.
+        _sh(repo, "git", "checkout", "-q", "pr3")
+        _commit(repo, "extra.txt", "extra\n", "remote-side extra")
+        _sh(repo, "git", "push", "-q", "origin", "pr3")
+        _sh(repo, "git", "reset", "-q", "--hard", "HEAD~1")
+        _sh(repo, "git", "checkout", "-q", "main")
+        code, env = cv.convert("main", ["pr1", "pr3"], cwd=repo)
+        assert code == cv.EXIT_OK, env
+        assert "remote-side extra" in _sh(repo, "git", "log", "--format=%s", "origin/main..pr3")
+
+    def test_untracked_files_do_not_block(self, repo):
+        (repo / "scratch.txt").write_text("untracked\n")
+        code, env = cv.convert("main", ["pr1", "pr3"], cwd=repo)
+        assert code == cv.EXIT_OK, env
+
+    def test_abort_then_rerun_converges(self, repo):
+        code, env = cv.convert("main", ["pr1", "pr2", "pr3"], cwd=repo)
+        assert code == cv.EXIT_CONFLICT
+        _sh(repo, "git", "rebase", "--abort")
+        # Re-run after the abort: same conflict, same attribution — the stale
+        # orig ref (pr2's tip is unchanged) must not suppress any guard.
+        code, env = cv.convert("main", ["pr1", "pr2", "pr3"], cwd=repo)
+        assert code == cv.EXIT_CONFLICT
+        assert env["data"]["conflict"]["layer"] == "pr2"
+        (repo / "shared.txt").write_text("merged\n")
+        _sh(repo, "git", "add", "shared.txt")
+        _sh(repo, "git", "rebase", "--continue")
+        code, env = cv.convert("main", ["pr1", "pr2", "pr3"], cwd=repo)
+        assert code == cv.EXIT_OK, env
+
+    def test_new_conversion_clears_stale_orig_refs(self, repo):
+        code, env = cv.convert("main", ["pr1", "pr3"], cwd=repo)
+        assert code == cv.EXIT_OK, env
+        assert "refs/sc-gh-stack/orig/pr3" in _orig_refs(repo)
+        # A conversion with a different identity discards the old bookkeeping.
+        code, env = cv.convert("main", ["pr1", "pr2"], cwd=repo)
+        assert code == cv.EXIT_CONFLICT   # pr1/pr2 conflict on shared.txt
+        assert "refs/sc-gh-stack/orig/pr3" not in _orig_refs(repo)
+        assert gs.config_get("sc-gh-stack.conversion", cwd=repo) == "main pr1 pr2"
+        _sh(repo, "git", "rebase", "--abort")
 
     def test_diverged_local_branch_refused(self, repo):
         # Remote pr3 and local pr3 each gain a different commit.

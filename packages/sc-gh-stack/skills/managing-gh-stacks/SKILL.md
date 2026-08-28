@@ -145,8 +145,10 @@ shape is the example in `references/playbook-convert.md` plus `gh stack view --h
 
 This skill runs `git` and `gh stack` in the current repository only. It writes no state under
 `.claude/`. `gh_stack_convert.py` sets `rerere.enabled=true` in the local git config so conflict
-resolutions replay on later rebases, and records each layer's pre-rebase tip under
-`refs/sc-gh-stack/orig/` while a conversion is in flight (deleted automatically on success). Both scripts are stdlib-only Python 3 and emit fenced JSON
+resolutions replay on later rebases, and keeps two pieces of bookkeeping in the target repo:
+each layer's pre-rebase tip under `refs/sc-gh-stack/orig/`, and the conversion's identity in
+the local git config key `sc-gh-stack.conversion`. Both persist until a conversion with a
+different trunk/layer list starts, which clears them; they are what makes re-runs idempotent. Both scripts are stdlib-only Python 3 and emit fenced JSON
 (`success`/`data`/`error`); parse that, never their stderr.
 
 ## Agent Delegation
