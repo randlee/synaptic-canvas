@@ -39,9 +39,10 @@ merge commits — verify no conflict-resolution content from an "evil merge" was
 continuing). It stops at the **first** conflict. Every run emits one fenced JSON envelope;
 read `success`, `error.code`, and `data`. The sample payloads below show the fields to act
 on; `data` also always carries `trunk`, `remote`, and `layers`. Exit 1 with
-`CONVERT.REBASE_FAILED` means a rebase or fast-forward failed without leaving a resumable
-rebase — read `error.message`, fix that (never re-chain by hand), and re-run; finished layers
-are skipped.
+`CONVERT.REBASE_FAILED` (a rebase failed without leaving a resumable rebase) or
+`CONVERT.FF_FAILED` (a fast-forward failed — often the branch is checked out in another
+worktree) — read `error.message`, fix that (never re-chain by hand), and re-run; finished
+layers are skipped.
 
 ### On exit 3 — `error.code: "CONVERT.CONFLICT"`
 
@@ -65,7 +66,9 @@ git rebase --continue
 python3 .claude/scripts/gh_stack_convert.py main 101 102 103 104   # re-run: finished layers report "skip"
 ```
 
-Every conflict is attributed to a specific layer. If `git rebase --continue` conflicts again
+Every conflict is attributed to a specific layer. If `conflict.files` is empty, rerere has
+already staged every resolution — run `git rebase --continue` directly, then re-run the
+script. If `git rebase --continue` conflicts again
 (a layer with several conflicting commits), repeat resolve + `git add` + `--continue` until
 the rebase itself finishes; only then re-run the script — run mid-rebase it refuses with
 `GIT.REBASE_IN_PROGRESS`. Loop until `success: true`. rerere records each resolution, so the
@@ -75,9 +78,13 @@ same conflict never needs a second manual resolution when the stack is rebased a
 
 `data.stack_init.action` is `"initialised"` (or `"existing_stack_kept"` if a local stack was
 already present — if the reported branches differ from your list, run `gh stack unstack --local`
-and re-run the script). On exit 1 with `error.code: "STACK.INIT_FAILED"`, read
-`data.stack_init.stderr`, fix the reported problem, and re-run — chained layers are skipped.
-Nothing has been pushed yet. Now inspect the stack:
+and re-run the script).
+
+On exit 1 with `error.code: "STACK.INIT_FAILED"`, read `data.stack_init.stderr`, fix the
+reported problem, and re-run — chained layers are skipped; do not run `view` or `submit`
+until the re-run succeeds.
+
+On success: nothing has been pushed yet. Now inspect the stack:
 
 ```bash
 gh stack view --json
@@ -117,8 +124,15 @@ gh stack rebase --upstack               # propagate through the layers above
 gh stack submit --auto
 ```
 
+If that `git rebase <remote>/<rejected-layer>` itself conflicts, resolve + `git add` +
+`git rebase --continue` exactly as in the conversion loop (rerere replays earlier
+resolutions); never `--abort` into a force-push. Duplicated lower-layer commits are dropped
+by the following `gh stack rebase --upstack`.
+
 Never resolve a rejected push with `git push --force`, and never pick "keep the local
-version" from a divergence prompt — the remote-only commits are someone's work.
+version" when branch **content** has diverged (a rejected push) — the remote-only commits
+are someone's work. The keep-local path in `troubleshooting.md` applies only to
+stack-**grouping** divergence, where no commits differ.
 Exit **9** means stacked PRs are not enabled on the repository — stop and tell the user,
 reporting which layers (if any) were already pushed per the submit output; the local branches
 remain chained and the stack tracked — do not attempt to undo that without the user.

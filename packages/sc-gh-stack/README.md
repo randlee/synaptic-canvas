@@ -48,8 +48,9 @@ Stdlib-only Python 3; every run emits one fenced JSON envelope (`success`/`data`
 python3 -m pytest packages/sc-gh-stack/tests
 ```
 
-Unit tests mock `git`/`gh`; one integration test drives real `git` in a temp repo
-(conflict → resume → linear chain) with a stubbed `gh` on PATH.
+Unit tests mock `git`/`gh`; the integration tests drive real `git` in temp repos
+(conflict → resume, abort → re-run, dependent layers, divergence guards) with a
+stubbed `gh` on PATH.
 
 ## Why stacks
 

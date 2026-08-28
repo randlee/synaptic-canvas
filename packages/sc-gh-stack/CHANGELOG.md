@@ -17,9 +17,11 @@ Initial package (skill-only, no agents).
   a different conversion starts, so dependent branches never replay a lower
   layer's commits and stale bookkeeping never leaks between conversions);
   stdlib-only, fenced JSON envelopes
-- `tests/`: 45 pytest cases — mocked unit tests plus real-git integration tests
-  (conflict → resume, abort → re-run, dependent layers, trunk-merge
-  linearisation, stale and diverged remotes, stale-bookkeeping clearing)
+- `tests/`: 49 pytest cases — mocked unit tests plus real-git integration tests
+  (conflict → resume, abort → re-run, dependent layers, fork-point bounds,
+  trunk-merge linearisation, stale and diverged remotes, adopted-layer
+  divergence and reconcile, post-submit idempotency, rerere-staged conflict
+  resumability, stale-bookkeeping clearing)
 - upstream `github/gh-stack` references (`commands.md`, `troubleshooting.md`,
   `stack-design.md`) carried verbatim for on-demand loading
 - `references/installation-and-troubleshooting.md` per guidelines v0.7

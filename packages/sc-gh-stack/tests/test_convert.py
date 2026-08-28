@@ -115,6 +115,33 @@ class TestConvertValidation:
         assert env["data"]["failure"]["layer"] == "a"
         assert "boom" in env["data"]["failure"]["message"]
 
+    def test_rerere_staged_conflict_still_resumable(self, monkeypatch):
+        """rebase stops nonzero, rebase-in-progress, but rerere.autoUpdate staged
+        every resolution (zero unmerged paths): must classify as a resumable
+        conflict, never CONVERT.REBASE_FAILED."""
+        state = {"rebasing": False}
+
+        def fake_git(args, cwd=None):
+            if args[0] == "rebase":
+                state["rebasing"] = True
+                return cp(1, "", "stopped; resolutions staged by rerere")
+            return cp(0)
+
+        monkeypatch.setattr(gs, "rebase_in_progress", lambda cwd=None: state["rebasing"])
+        monkeypatch.setattr(gs, "working_tree_clean", lambda cwd=None: True)
+        monkeypatch.setattr(gs, "remotes", lambda cwd=None: ["origin"])
+        monkeypatch.setattr(gs, "git", fake_git)
+        monkeypatch.setattr(gs, "git_out", lambda args, cwd=None: "")
+        monkeypatch.setattr(gs, "local_branch_exists", lambda b, cwd=None: True)
+        monkeypatch.setattr(gs, "remote_branch_exists",
+                            lambda remote, branch, cwd=None: branch == "main")
+        monkeypatch.setattr(gs, "is_ancestor", lambda a, b, cwd=None: False)
+        monkeypatch.setattr(gs, "conflicted_files", lambda cwd=None: [])
+        code, env = cv.convert("main", ["a", "b"])
+        assert code == cv.EXIT_CONFLICT
+        assert env["error"]["code"] == "CONVERT.CONFLICT"
+        assert env["data"]["conflict"] == {"layer": "a", "onto": "origin/main", "files": []}
+
     def test_init_stack_keeps_existing_stack(self):
         with patch.object(gs, "git", return_value=cp(0)), patch.object(gs, "gh", return_value=cp(0, "{}")):
             assert cv.init_stack("main", ["a", "b"])["action"] == "existing_stack_kept"
@@ -361,6 +388,72 @@ class TestConvertIntegration:
         _sh(repo, "git", "rebase", "--continue")
         code, env = cv.convert("main", ["pr1", "pr2", "pr3"], cwd=repo)
         assert code == cv.EXIT_OK, env
+
+    def test_adopted_layer_remote_advance_refused(self, repo):
+        """After a layer was rebased by this conversion, a commit someone pushes
+        to its remote must still be detected (via the recorded pre-rebase tip),
+        even though plain ancestry against the rewritten branch means nothing."""
+        old_tip = _sh(repo, "git", "rev-parse", "pr3").strip()
+        code, env = cv.convert("main", ["pr1", "pr3"], cwd=repo)
+        assert code == cv.EXIT_OK, env
+        # Collaborator pushes to origin/pr3, building on the pre-conversion tip.
+        _sh(repo, "git", "checkout", "-qb", "collab", old_tip)
+        _commit(repo, "collab.txt", "c\n", "collab work")
+        _sh(repo, "git", "push", "-q", "origin", "collab:pr3")
+        _sh(repo, "git", "checkout", "-q", "main")
+        code, env = cv.convert("main", ["pr1", "pr3"], cwd=repo)
+        assert code == cv.EXIT_INPUT
+        assert env["error"]["code"] == "GIT.BRANCH_DIVERGED"
+        assert "pr3" in env["error"]["message"]
+
+        # The error's own reconcile recipe must clear the guard on re-run.
+        _sh(repo, "git", "checkout", "-q", "pr3")
+        _sh(repo, "git", "rebase", "-q", "origin/pr3")
+        _sh(repo, "git", "checkout", "-q", "main")
+        code, env = cv.convert("main", ["pr1", "pr3"], cwd=repo)
+        assert code == cv.EXIT_OK, env
+        assert "collab work" in _sh(repo, "git", "log", "--format=%s", "origin/main..pr3")
+
+    def test_rerun_after_submit_push_is_idempotent(self, repo):
+        code, env = cv.convert("main", ["pr1", "pr3"], cwd=repo)
+        assert code == cv.EXIT_OK, env
+        # Simulate `gh stack submit` pushing the rebased branches.
+        _sh(repo, "git", "push", "-q", "-f", "origin", "pr1", "pr3")
+        code, env = cv.convert("main", ["pr1", "pr3"], cwd=repo)
+        assert code == cv.EXIT_OK, env
+        assert all(c["action"] == "skip" for c in env["data"]["chained"])
+
+    def test_layer_cut_from_older_tip_of_below_not_duplicated(self, repo):
+        # dep is branched from pr1's current tip (contains the shared.txt
+        # commit), then pr1 gains one MORE commit — the everyday "lower layer
+        # kept moving after the upper layer was cut" shape.
+        _sh(repo, "git", "checkout", "-qb", "dep", "pr1")
+        _commit(repo, "dep.txt", "dep\n", "dep work")
+        _sh(repo, "git", "push", "-q", "origin", "dep")
+        _sh(repo, "git", "checkout", "-q", "pr1")
+        _commit(repo, "l1b.txt", "more\n", "pr1 more work")
+        _sh(repo, "git", "push", "-q", "-f", "origin", "pr1")
+        # Trunk moves, conflicting with pr1's shared-file edit.
+        _sh(repo, "git", "checkout", "-q", "main")
+        _commit(repo, "shared.txt", "trunk\n", "trunk shared")
+        _sh(repo, "git", "push", "-q", "origin", "main")
+
+        code, env = cv.convert("main", ["pr1", "dep"], cwd=repo)
+        assert code == cv.EXIT_CONFLICT
+        assert env["data"]["conflict"]["layer"] == "pr1"
+        (repo / "shared.txt").write_text("resolved\n")
+        _sh(repo, "git", "add", "shared.txt")
+        _sh(repo, "git", "rebase", "--continue")
+
+        # Re-run: dep descends from NEITHER pr1's recorded pre-rebase tip
+        # (which includes the later commit) NOR its current tip, so the
+        # upstream bound must fall back to the fork point. Only dep's own
+        # commit replays — pr1's conflict-resolved shared commit (whose patch
+        # changed) is never re-replayed, so no spurious conflict, no duplicate.
+        code, env = cv.convert("main", ["pr1", "dep"], cwd=repo)
+        assert code == cv.EXIT_OK, env
+        assert _sh(repo, "git", "rev-list", "--count", "pr1..dep").strip() == "1"
+        assert (repo / "shared.txt").read_text() == "resolved\n"
 
     def test_new_conversion_clears_stale_orig_refs(self, repo):
         code, env = cv.convert("main", ["pr1", "pr3"], cwd=repo)

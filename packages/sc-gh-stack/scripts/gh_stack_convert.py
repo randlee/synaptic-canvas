@@ -103,10 +103,11 @@ def _has_merges(upstream: str, layer_ref: str, cwd: Optional[Path] = None) -> bo
     return gs.git_out(["rev-list", "--merges", f"{upstream}..{layer_ref}"], cwd=cwd) != ""
 
 
-def _fast_forward(branch: str, target: str, cwd: Optional[Path] = None) -> bool:
+def _fast_forward(branch: str, target: str, cwd: Optional[Path] = None):
+    """Returns the CompletedProcess of the attempted update (caller checks rc/stderr)."""
     if gs.git_out(["rev-parse", "--abbrev-ref", "HEAD"], cwd=cwd) == branch:
-        return gs.git(["merge", "--ff-only", target], cwd=cwd).returncode == 0
-    return gs.git(["branch", "-f", branch, target], cwd=cwd).returncode == 0
+        return gs.git(["merge", "--ff-only", target], cwd=cwd)
+    return gs.git(["branch", "-f", branch, target], cwd=cwd)
 
 
 def begin_conversion(trunk: str, layers: List[str], cwd: Optional[Path] = None) -> None:
@@ -140,16 +141,22 @@ def _check_remote_freshness(layer: str, remote: str, cwd: Optional[Path]) -> Opt
     orig = _orig_tip(layer, cwd=cwd)
     adopted = orig is not None and orig != _rev(_head(layer), cwd=cwd)
     if adopted:
-        if gs.is_ancestor(remote_ref, orig, cwd=cwd):
+        # Safe when the remote gained nothing since adoption (ancestor of the
+        # recorded tip) OR the local tip already contains every remote commit —
+        # the post-submit state, and the state after the documented reconcile
+        # (`git rebase <remote>/<layer>`), both of which must pass.
+        if gs.is_ancestor(remote_ref, orig, cwd=cwd) \
+                or gs.is_ancestor(remote_ref, _head(layer), cwd=cwd):
             return None
     elif gs.is_ancestor(remote_ref, _head(layer), cwd=cwd):
         return None
     elif gs.is_ancestor(_head(layer), remote_ref, cwd=cwd):
-        if _fast_forward(layer, remote_ref, cwd=cwd):
+        ff = _fast_forward(layer, remote_ref, cwd=cwd)
+        if ff.returncode == 0:
             return None
-        return {"code": "CONVERT.REBASE_FAILED", "exit": EXIT_ERR, "layer": layer,
-                "message": f"could not fast-forward {layer} to {remote_ref}",
-                "action": "inspect the branch state and re-run"}
+        return {"code": "CONVERT.FF_FAILED", "exit": EXIT_ERR, "layer": layer,
+                "message": f"could not fast-forward {layer} to {remote_ref}: {ff.stderr.strip()}",
+                "action": "inspect the branch state (is it checked out in another worktree?) and re-run"}
     return {"code": "GIT.BRANCH_DIVERGED", "exit": EXIT_INPUT, "layer": layer,
             "message": f"{layer} and {remote_ref} have diverged; converting the "
                        f"local branch would drop the remote's commits on submit",
@@ -193,6 +200,14 @@ def chain(layers: List[str], trunk_ref: str, remote: str, cwd: Optional[Path] = 
                 upstream = orig_below
             elif gs.is_ancestor(below, layer_ref, cwd=cwd):
                 upstream = below
+            else:
+                # Layer cut from an OLDER tip of the layer below: bound the
+                # rebase at the fork point so the below layer's shared commits
+                # are never re-replayed. Degenerates to the trunk fork point
+                # (same replay set as trunk_ref) for layers cut from trunk.
+                fork = gs.git_out(["merge-base", orig_below or below, layer_ref], cwd=cwd)
+                if fork:
+                    upstream = fork
         if _orig_tip(layer, cwd=cwd) is None:
             gs.git(["update-ref", _orig_ref(layer), layer_ref], cwd=cwd)
 
