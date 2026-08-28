@@ -1,0 +1,41 @@
+name: sc-gh-stack
+version: 0.1.0
+description: >
+  Use-case playbooks and deterministic scripts for stacked branches and PRs
+  with the `gh stack` CLI extension: convert parallel PRs into a stack, run the
+  daily edit/sync loop, land a stack in one CI cycle, and map sprint dependency
+  graphs onto stacks.
+author: randlee
+license: MIT
+category: git
+tags:
+  - git
+  - github
+  - gh-stack
+  - stacked-prs
+  - workflow
+  - skills
+
+# Installation source of truth: files copied from this package are declared
+# under artifacts below. `.claude-plugin/plugin.json` is marketplace metadata.
+artifacts:
+  skills:
+    - skills/managing-gh-stacks/SKILL.md
+    - skills/managing-gh-stacks/references/playbook-convert.md
+    - skills/managing-gh-stacks/references/commands.md
+    - skills/managing-gh-stacks/references/troubleshooting.md
+    - skills/managing-gh-stacks/references/stack-design.md
+    - skills/managing-gh-stacks/references/installation-and-troubleshooting.md
+    # Skill-bundled bash helpers (not Python; no sc_shared.py dependency), so they
+    # ship under skills rather than as package-level scripts.
+    - skills/managing-gh-stacks/scripts/preflight.sh
+    - skills/managing-gh-stacks/scripts/convert.sh
+
+install:
+  scope: both
+
+requires:
+  cli:
+    - gh
+    - git >= 2.23
+  # gh-stack is a gh extension (`gh extension install github/gh-stack`), verified in SKILL.md Step 1.

@@ -15,7 +15,7 @@
       "version": "0.12.0",
       "status": "beta",
       "tier": 2,
-      "description": "Run CI quality gates (pull \u2192 build \u2192 test) with optional auto-fix and PR creation. Coordinates pull from upstream, builds projects, runs tests, applies straightforward fixes, and creates PRs when all quality gates pass. Supports version bumping with --patch flag.\n",
+      "description": "Run CI quality gates (pull → build → test) with optional auto-fix and PR creation. Coordinates pull from upstream, builds projects, runs tests, applies straightforward fixes, and creates PRs when all quality gates pass. Supports version bumping with --patch flag.\n",
       "github": "randlee/synaptic-canvas",
       "repo": "https://github.com/randlee/synaptic-canvas",
       "path": "packages/sc-ci-automation",
@@ -287,7 +287,7 @@
       "version": "0.12.0",
       "status": "beta",
       "tier": 2,
-      "description": "Kanban state machine for Synaptic Canvas: backlog \u2192 board \u2192 done with gate validation, scrubbing, and shared board config (v0.7).\n",
+      "description": "Kanban state machine for Synaptic Canvas: backlog → board → done with gate validation, scrubbing, and shared board config (v0.7).\n",
       "github": "randlee/synaptic-canvas",
       "repo": "https://github.com/randlee/synaptic-canvas",
       "path": "packages/sc-kanban",
@@ -703,12 +703,49 @@
         "python3 >= 3.11"
       ],
       "lastUpdated": "2026-05-15"
+    },
+    "sc-gh-stack": {
+      "name": "sc-gh-stack",
+      "status": "beta",
+      "tier": 2,
+      "github": "randlee/synaptic-canvas",
+      "repo": "https://github.com/randlee/synaptic-canvas",
+      "path": "packages/sc-gh-stack",
+      "readme": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-gh-stack/README.md",
+      "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-gh-stack/CHANGELOG.md",
+      "dependents": [],
+      "version": "0.1.0",
+      "description": "Use-case playbooks and deterministic scripts for stacked branches and PRs with the gh stack CLI extension: convert parallel PRs into a stack, run the daily edit/sync loop, land a stack in one CI cycle, and map sprint dependency graphs onto stacks.\n",
+      "license": "MIT",
+      "author": {
+        "name": "randlee"
+      },
+      "tags": [
+        "git",
+        "github",
+        "gh-stack",
+        "stacked-prs",
+        "workflow",
+        "skills"
+      ],
+      "artifacts": {
+        "commands": 0,
+        "skills": 1,
+        "agents": 0,
+        "scripts": 0,
+        "schemas": 0
+      },
+      "dependencies": [
+        "gh",
+        "git >= 2.23"
+      ],
+      "lastUpdated": "2026-08-28"
     }
   },
   "metadata": {
     "registryVersion": "2.0.0",
     "schemaVersion": "1.0.0",
-    "totalPackages": 12,
+    "totalPackages": 19,
     "totalCommands": 13,
     "totalSkills": 11,
     "totalAgents": 34,
