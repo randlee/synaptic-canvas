@@ -67,10 +67,17 @@ def _healthy_env(monkeypatch, **overrides):
     cfg = {"rerere.enabled": "true", "remote.pushDefault": ""}
     cfg.update(overrides.pop("config", {}))
     monkeypatch.setattr(gs, "config_get", lambda key, cwd=None: cfg.get(key, ""))
-    monkeypatch.setattr(gs, "remotes", lambda cwd=None: overrides.pop("remotes", ["origin"]))
-    monkeypatch.setattr(gs, "working_tree_clean", lambda cwd=None: overrides.pop("clean", True))
-    monkeypatch.setattr(gs, "rebase_in_progress", lambda cwd=None: overrides.pop("rebasing", False))
+    # Bind override values once at setup: popping inside the lambdas would hand
+    # back the override on the first probe call only, then silently revert to
+    # the healthy default on every later call.
+    remotes_val = overrides.pop("remotes", ["origin"])
+    clean_val = overrides.pop("clean", True)
+    rebasing_val = overrides.pop("rebasing", False)
+    monkeypatch.setattr(gs, "remotes", lambda cwd=None: remotes_val)
+    monkeypatch.setattr(gs, "working_tree_clean", lambda cwd=None: clean_val)
+    monkeypatch.setattr(gs, "rebase_in_progress", lambda cwd=None: rebasing_val)
     monkeypatch.setattr(gs, "in_git_repo", lambda cwd=None: True)
+    assert not overrides, f"unknown overrides: {sorted(overrides)}"
 
 
 def _status(checks, name):

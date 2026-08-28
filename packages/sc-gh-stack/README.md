@@ -17,7 +17,7 @@ playbook:
 | N existing PRs against trunk → one stack | `references/playbook-convert.md` (worked example) + `scripts/gh_stack_convert.py` |
 | New multi-part work | upstream `stack-design.md` + `commands.md` |
 | Fix a lower layer / sync after trunk moves | upstream `commands.md` + `troubleshooting.md` |
-| Land the stack in one CI cycle | `gh stack merge <stack#> --yes` (upstream `commands.md`) |
+| Land the stack in one CI cycle | `gh stack merge --yes` on the current stack (upstream `commands.md`) |
 | Sprint dependency graph → stacks | mapping rules in SKILL.md |
 
 Only the convert case has a dedicated worked-example playbook in 0.1.0; further playbooks are
@@ -36,7 +36,10 @@ Stdlib-only Python 3; every run emits one fenced JSON envelope (`success`/`data`
 - `scripts/gh_stack_convert.py <trunk> <b1> … <bN>` — chains existing branches
   bottom-up with `git rebase --onto`, stops at the first conflict (exit 3,
   `data.conflict` names layer and files), is idempotent on re-run, then adopts
-  the chain with `gh stack init`. Exit 5 on bad input.
+  the chain with `gh stack init`. Refuses dirty trees, in-progress rebases, and
+  local branches that diverged from their remote; fast-forwards branches that
+  are merely behind; linearises layers carrying trunk-merge commits. Exit 5 on
+  bad input or refused state.
 - `scripts/gh_stack_shared.py` — git/gh wrappers and the envelope.
 
 ## Tests
@@ -62,5 +65,6 @@ atomically with `gh stack merge`.
 
 ## Storage
 
-Installs into `.claude/` only. No runtime state. `gh_stack_convert.py` sets
-`rerere.enabled=true` in the target repo's local git config.
+Installs into `.claude/` only. No runtime state under `.claude/`. `gh_stack_convert.py` sets
+`rerere.enabled=true` in the target repo's local git config and keeps transient
+`refs/sc-gh-stack/orig/*` refs while a conversion is in flight (deleted on success).

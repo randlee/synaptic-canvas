@@ -44,6 +44,7 @@ Before any stack operation:
 which gh && gh --version
 gh extension list | grep gh-stack
 which git && git --version
+which python3 && python3 --version   # scripts need >= 3.9
 ```
 
 If `gh` is not on PATH, probe common install locations before assuming it is absent —
@@ -55,9 +56,10 @@ for p in "/opt/homebrew/bin/gh" "/usr/local/bin/gh" "$HOME/.local/bin/gh"; do
 done
 ```
 
-If found off-PATH, `export PATH="<dir>:$PATH"` for this session. If `gh`, the extension, or
-`git >= 2.23` is missing, **read `references/installation-and-troubleshooting.md` and stop**;
-do not proceed with degraded behavior.
+If found off-PATH, `export PATH="<dir>:$PATH"` for this session. If `gh`, the extension,
+`git >= 2.23`, or `python3 >= 3.9` is missing, **read
+`references/installation-and-troubleshooting.md` and stop**; do not proceed with degraded
+behavior.
 
 Then run the environment gate. It is read-only and returns fenced JSON with a `fix` for every
 failed check:
@@ -65,6 +67,12 @@ failed check:
 ```bash
 python3 .claude/scripts/gh_stack_preflight.py    # exit 0 = go; data.failed lists what to fix
 ```
+
+Run scripts from the root of the repository being converted. If
+`.claude/scripts/gh_stack_preflight.py` is not there, locate the installed copy
+(`find .claude ~/.claude -name 'gh_stack_*.py' 2>/dev/null`) and use its path with the same
+arguments. If it cannot be found, stop and tell the user the sc-gh-stack scripts are not
+installed — **do not reproduce the rebase chain or preflight checks by hand.**
 
 ## Hard rules
 
@@ -88,9 +96,9 @@ python3 .claude/scripts/gh_stack_preflight.py    # exit 0 = go; data.failed list
 | Starting new multi-part work | `references/stack-design.md`, then `references/commands.md` ("init", "add", "submit") | `gh stack init` before writing code |
 | Lower layer needs a fix / review changes | `references/commands.md` ("rebase", "push") | checkout owner → commit → `rebase --upstack` → `push` |
 | Trunk moved, a layer merged, stack is stale | `references/commands.md` ("sync"); `references/troubleshooting.md` on conflict | `gh stack sync` → `view --json` |
-| Land the whole stack in one CI cycle | `references/commands.md` ("merge") | `gh stack merge <stack#> --yes` |
+| Land the whole stack in one CI cycle | `references/commands.md` ("merge") | `gh stack merge --yes` on the current stack (or pass a PR/stack number) |
 | Sprint plan has a dependency graph | Graph mapping rules below | emit ordered branch lists per stack |
-| Command returned non-zero | `references/troubleshooting.md` (exit codes) | recover, re-run the same command |
+| Command returned non-zero | `references/troubleshooting.md` (per-code sections) and the failing command's section in `references/commands.md` | recover, re-run the same command |
 
 Dedicated worked-example playbooks exist only for the convert case in this version; the other rows
 route to the upstream references until their playbooks ship (see CHANGELOG).
@@ -130,12 +138,15 @@ When using this skill, report:
 - `.claude/scripts/gh_stack_preflight.py`, `.claude/scripts/gh_stack_convert.py` — `--help` for usage and exit codes
 
 `gh stack <command> --help` is authoritative for flags. `gh stack help <command>` does not work.
+Where an upstream reference says the `view --json` schema "is in SKILL.md", the authoritative
+shape is the example in `references/playbook-convert.md` plus `gh stack view --help`.
 
 ## Storage
 
 This skill runs `git` and `gh stack` in the current repository only. It writes no state under
 `.claude/`. `gh_stack_convert.py` sets `rerere.enabled=true` in the local git config so conflict
-resolutions replay on later rebases. Both scripts are stdlib-only Python 3 and emit fenced JSON
+resolutions replay on later rebases, and records each layer's pre-rebase tip under
+`refs/sc-gh-stack/orig/` while a conversion is in flight (deleted automatically on success). Both scripts are stdlib-only Python 3 and emit fenced JSON
 (`success`/`data`/`error`); parse that, never their stderr.
 
 ## Agent Delegation

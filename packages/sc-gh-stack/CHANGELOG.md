@@ -10,8 +10,13 @@ Initial package (skill-only, no agents).
   into one stack via `git rebase --onto`, `gh stack init`, `gh stack submit --auto`
 - `scripts/gh_stack_preflight.py` (read-only environment gate) and
   `scripts/gh_stack_convert.py` (deterministic, idempotent chaining; exit 3 on
-  first conflict); stdlib-only, fenced JSON envelopes
-- `tests/`: 32 pytest cases — mocked unit tests plus a real-git integration test
+  first conflict; refuses dirty trees, in-progress rebases, and diverged
+  branches; exact per-layer rebase bounds via transient `refs/sc-gh-stack/orig/*`
+  so dependent branches never replay a lower layer's commits); stdlib-only,
+  fenced JSON envelopes
+- `tests/`: 40 pytest cases — mocked unit tests plus real-git integration tests
+  (conflict → resume, dependent layers, trunk-merge linearisation, stale and
+  diverged remotes)
 - upstream `github/gh-stack` references (`commands.md`, `troubleshooting.md`,
   `stack-design.md`) carried verbatim for on-demand loading
 - `references/installation-and-troubleshooting.md` per guidelines v0.7

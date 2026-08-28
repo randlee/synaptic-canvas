@@ -14,6 +14,7 @@ which gh && gh --version
 gh extension list | grep gh-stack
 gh auth status
 git --version
+python3 --version
 ```
 
 Skip installation for anything already present.
@@ -48,6 +49,7 @@ gh stack version
 ## Minimum Version
 
 - `git >= 2.23`. Upgrade via the platform package manager.
+- `python3 >= 3.9`. macOS: `brew install python3`; Linux: distribution package.
 - `gh-stack`: use the latest; `gh extension upgrade gh-stack`.
 
 ## PATH Troubleshooting
