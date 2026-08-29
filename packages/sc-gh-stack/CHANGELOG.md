@@ -39,7 +39,7 @@ Orchestration release: background agents over the deterministic scripts.
 - Scripts survive missing binaries (synthetic rc-127 results — always a fenced
   envelope, never a traceback; `PREFLIGHT.GIT_MISSING` distinct from
   `PREFLIGHT.NOT_A_REPO`).
-- 60 pytest cases.
+- 61 pytest cases.
 
 ## 0.1.0 — 2026-08-28
 

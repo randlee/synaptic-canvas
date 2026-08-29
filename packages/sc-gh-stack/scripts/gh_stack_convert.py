@@ -351,12 +351,15 @@ def convert(trunk: str, raw_layers: List[str], cwd: Optional[Path] = None,
     if not gs.in_git_repo(cwd=cwd):
         return fail(EXIT_INPUT, "GIT.NOT_A_REPO", "not inside a git repository",
                     "cd into the repository (or pass --cwd)", recoverable=False)
-    if gs.rebase_in_progress(cwd=cwd):
-        return fail(EXIT_INPUT, "GIT.REBASE_IN_PROGRESS", "a rebase is already in progress",
-                    "finish it (`git rebase --continue` after resolving, or `git rebase --abort`), then re-run")
-    if not gs.working_tree_clean(cwd=cwd):
-        return fail(EXIT_INPUT, "GIT.DIRTY_TREE", "the working tree has uncommitted changes",
-                    "commit or stash them, then re-run")
+    if not dry_run:
+        # A preview mutates nothing, so a dirty tree or paused rebase must not
+        # block it — that would defeat the look-before-you-leap purpose.
+        if gs.rebase_in_progress(cwd=cwd):
+            return fail(EXIT_INPUT, "GIT.REBASE_IN_PROGRESS", "a rebase is already in progress",
+                        "finish it (`git rebase --continue` after resolving, or `git rebase --abort`), then re-run")
+        if not gs.working_tree_clean(cwd=cwd):
+            return fail(EXIT_INPUT, "GIT.DIRTY_TREE", "the working tree has uncommitted changes",
+                        "commit or stash them, then re-run")
 
     remote_names = gs.remotes(cwd=cwd)
     if not remote_names:

@@ -32,9 +32,10 @@ Complete the task quickly; report only decisions and discrepancies.
   where `<bottom-slug>` is the resolved bottom branch name with `/` replaced by `-`
 - **push** (optional, default `true`): run `gh stack submit --auto` when fully clean
 - **dry_run** (optional, default `false`): preview only — skip the worktree steps (2–3) and
-  the execution steps (6–7), and run the convert script with `--dry-run` directly against
-  `--cwd <repo_root>`; nothing is created or mutated (the fetch updates remote-tracking refs
-  only). Return the script's per-layer plan.
+  the execution steps (6–7); run steps 4 and 5 with `--cwd <repo_root>` instead of the
+  worktree, adding `--dry-run` to the convert script. Nothing is created or mutated (the
+  fetch updates remote-tracking refs only; the script skips its dirty-tree/rebase guards in
+  this mode, so a dirty checkout can still be previewed). Return the script's per-layer plan.
 
 ## Execution
 

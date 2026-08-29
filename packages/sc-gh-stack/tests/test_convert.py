@@ -498,6 +498,16 @@ class TestConvertIntegration:
         assert gs.config_get("rerere.enabled", cwd=repo) == ""
         assert _orig_refs(repo) == ""
 
+    def test_dry_run_allowed_over_dirty_tree(self, repo):
+        (repo / "base.txt").write_text("dirty\n")
+        tips_before = _sh(repo, "git", "for-each-ref", "--format=%(refname) %(objectname)",
+                          "refs/heads/")
+        code, env = cv.convert("main", ["pr1", "pr3"], cwd=repo, dry_run=True)
+        assert code == cv.EXIT_OK, env
+        assert _sh(repo, "git", "for-each-ref", "--format=%(refname) %(objectname)",
+                   "refs/heads/") == tips_before
+        _sh(repo, "git", "checkout", "-q", "--", "base.txt")
+
     def test_dry_run_agrees_with_execution_on_rerun(self, repo):
         """The preview must make the SAME decision the executor makes: after a
         successful conversion, --dry-run reports skip (never refuse_diverged)
