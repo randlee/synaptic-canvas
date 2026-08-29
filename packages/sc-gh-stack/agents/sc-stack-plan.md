@@ -51,9 +51,9 @@ Apply the mapping rules (a stack is strictly linear; its only external dependenc
 Ambiguous dependencies (order both unknown and consequential): do not guess — list them in
 `questions` and mark the affected stack `blocked: true`.
 
-## Output
+## Output Format
 
-Return ONE fenced JSON block:
+Return ONE fenced JSON block (Basic envelope — this agent is single-step and read-only):
 
 ```json
 {

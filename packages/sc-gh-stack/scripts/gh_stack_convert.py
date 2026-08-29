@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """Convert N existing branches (each based on trunk) into one linear gh stack.
 
-Usage: python3 gh_stack_convert.py <trunk> <bottom> ... <top> [--cwd PATH]
+Usage: python3 gh_stack_convert.py <trunk> <bottom> ... <top> [--cwd PATH] [--dry-run]
+
+--dry-run (alias --validate) previews the per-layer plan (skip / rebase /
+fast_forward_then_rebase / refuse_diverged) after a fetch, mutating nothing.
 
 Arguments after trunk are branch names or PR numbers (resolved via `gh pr view`),
 bottom to top. Each layer is rebased `--onto` the layer below, replaying only
@@ -270,8 +273,55 @@ def init_stack(trunk: str, layers: List[str], cwd: Optional[Path] = None) -> Dic
     return {"action": "initialised"}
 
 
-def convert(trunk: str, raw_layers: List[str], cwd: Optional[Path] = None) -> tuple[int, Dict[str, Any]]:
-    """Full workflow. Returns (exit_code, envelope). Testable without argparse."""
+def plan_chain(layers: List[str], trunk_ref: str, remote: str,
+               cwd: Optional[Path] = None) -> List[Dict[str, Any]]:
+    """Read-only preview of what chain() would do per layer. Mutates nothing:
+    no fast-forwards, no orig refs, no rebases."""
+    planned: List[Dict[str, Any]] = []
+    below = trunk_ref
+    below_name: Optional[str] = None
+    for layer in layers:
+        layer_ref = _head(layer) if gs.local_branch_exists(layer, cwd=cwd) \
+            else f"refs/remotes/{remote}/{layer}"
+        entry: Dict[str, Any] = {"branch": layer,
+                                 "onto": below if below_name is None else below_name}
+        remote_ref = f"{remote}/{layer}"
+        if gs.remote_branch_exists(remote, layer, cwd=cwd) \
+                and not gs.is_ancestor(remote_ref, layer_ref, cwd=cwd):
+            if gs.is_ancestor(layer_ref, remote_ref, cwd=cwd):
+                entry["action"] = "fast_forward_then_rebase"
+            else:
+                entry["action"] = "refuse_diverged"
+            planned.append(entry)
+            below, below_name = layer_ref, layer
+            continue
+        if gs.is_ancestor(below, layer_ref, cwd=cwd) and not _has_merges(below, layer_ref, cwd=cwd):
+            entry["action"] = "skip"
+        else:
+            upstream = trunk_ref
+            if below_name is not None:
+                orig_below = _orig_tip(below_name, cwd=cwd)
+                if orig_below and gs.is_ancestor(orig_below, layer_ref, cwd=cwd):
+                    upstream = orig_below
+                elif gs.is_ancestor(below, layer_ref, cwd=cwd):
+                    upstream = below
+                else:
+                    fork = gs.git_out(["merge-base", orig_below or below, layer_ref], cwd=cwd)
+                    if fork:
+                        upstream = fork
+            entry["action"] = "rebase"
+            entry["upstream"] = upstream
+        planned.append(entry)
+        below, below_name = layer_ref, layer
+    return planned
+
+
+def convert(trunk: str, raw_layers: List[str], cwd: Optional[Path] = None,
+            dry_run: bool = False) -> tuple[int, Dict[str, Any]]:
+    """Full workflow. Returns (exit_code, envelope). Testable without argparse.
+
+    dry_run=True previews the per-layer plan (skip/rebase/fast-forward/refuse)
+    after a fetch, mutating nothing beyond remote-tracking refs."""
     def fail(code: int, err_code: str, msg: str, action: str,
              data: Optional[Dict[str, Any]] = None, recoverable: bool = True):
         # recoverable means: apply suggested_action, re-run, and it succeeds by
@@ -302,14 +352,15 @@ def convert(trunk: str, raw_layers: List[str], cwd: Optional[Path] = None) -> tu
                     "git config remote.pushDefault origin")
     remote = gs.resolve_remote(cwd=cwd)
 
-    gs.git(["config", "rerere.enabled", "true"], cwd=cwd)
-    # autoUpdate stages rerere's replayed resolutions, so a fully-rerere-resolved
-    # stop reports conflict.files == [] and needs only `git rebase --continue`.
-    gs.git(["config", "rerere.autoUpdate", "true"], cwd=cwd)
+    if not dry_run:
+        gs.git(["config", "rerere.enabled", "true"], cwd=cwd)
+        # autoUpdate stages rerere's replayed resolutions, so a fully-rerere-resolved
+        # stop reports conflict.files == [] and needs only `git rebase --continue`.
+        gs.git(["config", "rerere.autoUpdate", "true"], cwd=cwd)
     fetch = gs.git(["fetch", remote, "--prune"], cwd=cwd)
     if fetch.returncode != 0:
         return fail(EXIT_ERR, "GIT.FETCH", f"git fetch {remote} failed: {fetch.stderr.strip()}",
-                    "check network/auth and re-run")
+                    "check network/auth and re-run", recoverable=False)
 
     trunk_ref = f"{remote}/{trunk}"
     if not gs.remote_branch_exists(remote, trunk, cwd=cwd):
@@ -320,10 +371,24 @@ def convert(trunk: str, raw_layers: List[str], cwd: Optional[Path] = None) -> tu
         layers = resolve_layers(raw_layers, cwd=cwd)
         if trunk in layers:
             raise ValueError(f"layer equals trunk: {trunk}")
-        ensure_local_branches(layers, remote, cwd=cwd)
+        if dry_run:
+            for b in layers:
+                if not gs.local_branch_exists(b, cwd=cwd) \
+                        and not gs.remote_branch_exists(remote, b, cwd=cwd):
+                    raise ValueError(f"branch not found locally or on {remote}: {b}")
+        else:
+            ensure_local_branches(layers, remote, cwd=cwd)
     except ValueError as exc:
         return fail(EXIT_INPUT, "VALIDATION.INPUT", str(exc), "fix the layer list and re-run",
                     recoverable=False)
+
+    if dry_run:
+        data = {"mode": "dry_run", "trunk": trunk, "remote": remote, "layers": layers,
+                "shape": stack_shape(trunk, layers),
+                "planned": plan_chain(layers, trunk_ref, remote, cwd=cwd),
+                "next_step": "review the plan (any refuse_diverged layer must be reconciled "
+                             "first), then re-run without --dry-run to execute"}
+        return EXIT_OK, gs.envelope(True, data)
 
     before = {b: _rev(_head(b), cwd=cwd) for b in layers}
     base = {"trunk": trunk, "remote": remote, "layers": layers, "shape": stack_shape(trunk, layers)}
@@ -360,8 +425,10 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser.add_argument("trunk")
     parser.add_argument("layers", nargs="+", help="branch names or PR numbers, bottom to top")
     parser.add_argument("--cwd", type=Path, default=None)
+    parser.add_argument("--dry-run", "--validate", action="store_true", dest="dry_run",
+                        help="preview the per-layer plan; mutate nothing")
     args = parser.parse_args(argv)
-    code, payload = convert(args.trunk, args.layers, cwd=args.cwd)
+    code, payload = convert(args.trunk, args.layers, cwd=args.cwd, dry_run=args.dry_run)
     gs.emit(payload)
     return code
 

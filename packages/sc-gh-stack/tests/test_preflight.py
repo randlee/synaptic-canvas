@@ -50,6 +50,20 @@ class TestShared:
         assert out[0] == "```json" and out[-1] == "```"
         assert json.loads("\n".join(out[1:-1])) == {"success": True, "data": {"x": 1}, "error": None}
 
+    def test_run_missing_binary_returns_127_not_raises(self):
+        r = gs.run(["definitely-not-a-real-binary-sc-gh-stack"])
+        assert r.returncode == 127
+        assert "cannot execute" in r.stderr
+
+    def test_preflight_emits_envelope_when_no_binaries_on_path(self, monkeypatch, capsys, tmp_path):
+        # With an empty PATH every git/gh call yields rc 127; the script must
+        # still emit a fenced JSON envelope, never a traceback.
+        monkeypatch.setenv("PATH", str(tmp_path))
+        assert pf.main([]) == 1
+        out = capsys.readouterr().out
+        payload = json.loads(out.split("```json")[1].split("```")[0])
+        assert payload["success"] is False
+
     def test_envelope_error_shape(self):
         env = gs.envelope(False, None, gs.error_obj("X.Y", "m", True, "do it"))
         assert env["error"] == {"code": "X.Y", "message": "m", "recoverable": True, "suggested_action": "do it"}

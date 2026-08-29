@@ -21,15 +21,19 @@ Skip installation for anything already present.
 
 ## Find Existing Install
 
-If `which gh` fails, probe common locations before concluding it is absent:
+If `which` fails for any dependency, probe common locations before concluding it is absent
+(pyenv shims matter for `python3`):
 
 ```bash
-for p in "/opt/homebrew/bin/gh" "/usr/local/bin/gh" "$HOME/.local/bin/gh"; do
-  [ -x "$p" ] && "$p" --version
+for cli in gh git python3; do
+  command -v "$cli" >/dev/null && continue
+  for d in /opt/homebrew/bin /usr/local/bin "$HOME/.local/bin" "$HOME/.pyenv/shims"; do
+    [ -x "$d/$cli" ] && "$d/$cli" --version && break
+  done
 done
 ```
 
-If the binary exists off-PATH, `export PATH="<dir>:$PATH"` for the session or call it by
+If a binary exists off-PATH, `export PATH="<dir>:$PATH"` for the session or call it by
 absolute path.
 
 ## Install
@@ -64,7 +68,8 @@ shell. Use the probe loop above and export the directory for the session.
 python3 .claude/scripts/gh_stack_preflight.py
 ```
 
-`success: true`; the single `warn` entry about stacked-PR enablement is expected (there is no direct probe).
+Expect `success: true`; two `warn` entries are normal — `stacked_prs_enabled` (no direct
+probe exists) and `rerere_enabled` (`gh_stack_convert.py` enables it on first run).
 
 ## Known Issues
 

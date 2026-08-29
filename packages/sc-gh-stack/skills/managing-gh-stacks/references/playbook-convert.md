@@ -30,8 +30,11 @@ agent — finished layers are skipped, recorded resolutions replay via rerere.
 
 Every report — success or failure — carries per-branch `before`/`after` SHAs and a `pushed`
 flag; on failure it forwards the script's forensic fields (exact failing command, stderr,
-recovery action). Relay resolutions, surfaced conflicts, and per-branch pushed state to the
-user per SKILL.md Output Expectations.
+recovery action). A risky-conflict stop is reported as `canceled: true, aborted_by:
+"policy"` with error code `CONVERT.CONFLICT_RISKY` — a deliberate hold for review, not a
+failed conversion. Pass `"dry_run": true` to preview the per-layer plan (skip / rebase /
+fast-forward / refuse) with nothing mutated. Relay resolutions, surfaced conflicts, and
+per-branch pushed state to the user per SKILL.md Output Expectations.
 
 ## Route B — manual (fallback; also what the agent does under the hood)
 

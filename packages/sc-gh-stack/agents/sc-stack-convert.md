@@ -31,6 +31,8 @@ Complete the task quickly; report only decisions and discrepancies.
 - **worktree** (optional): worktree path; default `<repo_root>-worktrees/stack/<bottom-slug>`
   where `<bottom-slug>` is the resolved bottom branch name with `/` replaced by `-`
 - **push** (optional, default `true`): run `gh stack submit --auto` when fully clean
+- **dry_run** (optional, default `false`): pass `--dry-run` to the convert script and return
+  its per-layer plan without executing anything (skip steps 6–7)
 
 ## Execution
 
@@ -63,15 +65,18 @@ Complete the task quickly; report only decisions and discrepancies.
 8. Never resolve a risky conflict, never `git push` directly, never force-push, never
    `git reset --hard`, never run bare interactive `gh stack` commands.
 
-## Output
+## Output Format
 
-Return ONE fenced JSON block. Success is a minimal decision log; failure must let the caller
-recover without investigating (the scripts' envelopes already carry the failing command,
-stderr, and recovery action — forward those fields, do not paraphrase them away).
+Return ONE fenced JSON block using the Standard envelope (this agent is multi-step). Success
+is a minimal decision log; failure must let the caller recover without investigating (the
+scripts' envelopes already carry the failing command, stderr, and recovery action — forward
+those fields, do not paraphrase them away).
 
 ```json
 {
   "success": true,
+  "canceled": false,
+  "aborted_by": null,
   "data": {
     "shape": "(main) <- feat/schema <- feat/api",
     "worktree": "/path/to/repo-worktrees/stack/feat-schema",
@@ -85,16 +90,26 @@ stderr, and recovery action — forward those fields, do not paraphrase them awa
     "surfaced": [],
     "next_step": null
   },
-  "error": null
+  "error": null,
+  "metadata": { "duration_ms": 48000, "tool_calls": 14, "retry_count": 0 }
 }
 ```
 
-On risky conflicts: `success: false`, `error` = the script's error object, `surfaced` lists
-each unresolved conflict as `{ "file", "layer", "worktree", "why_risky", "suggested_resolution" }`,
-and `next_step` says exactly where the rebase is paused. Every output produced after the
-convert script has run must include `branches` (with `pushed` per branch — the script's
-`data.branches` supplies it); outputs that stop earlier (PR resolution, worktree check,
-preflight) return that step's envelope alone.
+Field sourcing: `branches[].before`/`after` come from the script's `data.branches`;
+`pushed` MUST be re-derived after `gh stack submit --auto` per step 7 (the script never
+pushes, so its `pushed` values are pre-submit). When submit did not run (`push: false`,
+`dry_run: true`, or an early stop), report `pushed: false` for every rebased layer.
+
+Stopping on a risky conflict is a deliberate policy abort, not a failure of the operation:
+set `success: false, canceled: true, aborted_by: "policy"`, re-code the script's error as
+`CONVERT.CONFLICT_RISKY` with `recoverable: false` (a bare retry must not be attempted —
+a human resolves first), keep its forensic fields (`cmd`, files, `next_step`) intact, and
+list each conflict in `surfaced` as
+`{ "file", "layer", "worktree", "why_risky", "suggested_resolution" }`. Genuine failures
+(fetch, init, non-conflict rebase errors) keep `canceled: false` and the script's error
+object unchanged. Every output produced after the convert script has run must include
+`branches`; outputs that stop earlier (PR resolution, worktree check, preflight) return that
+step's envelope alone, wrapped with the `canceled`/`metadata` fields.
 
 ## Error Handling
 
@@ -104,8 +119,11 @@ preflight) return that step's envelope alone.
   recipe; earlier pushes stand.
 
 ### Propagated to caller (stop and report):
-- Preflight failures, `GIT.BRANCH_DIVERGED`, `CONVERT.REBASE_FAILED`, `STACK.INIT_FAILED`,
-  submit exit 9, and every risky conflict.
+- Every non-zero exit from the preflight or convert script not explicitly handled above —
+  forward the envelope unchanged. Illustrations: preflight failures, `GIT.BRANCH_DIVERGED`,
+  `GIT.DIRTY_TREE`, `GIT.REBASE_IN_PROGRESS`, `GIT.FETCH`, `CONVERT.REBASE_FAILED`,
+  `CONVERT.FF_FAILED`, `STACK.INIT_FAILED`, `VALIDATION.INPUT`, submit exit 9, and every
+  risky conflict.
 
 ## Constraints
 

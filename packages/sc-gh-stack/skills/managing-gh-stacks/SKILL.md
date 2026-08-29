@@ -50,12 +50,16 @@ which git && git --version
 which python3 && python3 --version   # scripts need >= 3.9
 ```
 
-If `gh` is not on PATH, probe common install locations before assuming it is absent —
-Claude Code's bash may not share PATH with the interactive shell:
+If any of them is not on PATH, probe common install locations before assuming it is absent —
+Claude Code's bash may not share PATH with the interactive shell (Homebrew dirs and pyenv
+shims are the usual omissions):
 
 ```bash
-for p in "/opt/homebrew/bin/gh" "/usr/local/bin/gh" "$HOME/.local/bin/gh"; do
-  [ -x "$p" ] && echo "Found at: $p" && break
+for cli in gh git python3; do
+  command -v "$cli" >/dev/null && continue
+  for d in /opt/homebrew/bin /usr/local/bin "$HOME/.local/bin" "$HOME/.pyenv/shims"; do
+    [ -x "$d/$cli" ] && echo "$cli found at: $d/$cli" && break
+  done
 done
 ```
 
@@ -104,9 +108,15 @@ All stack execution happens in dedicated worktrees, never in the user's checkout
 
 Delegate convert and sync via the Task tool with `run_in_background: true`; the plan agent is
 read-only and fast, so it may run in the foreground. Background agents complete
-asynchronously — wait for the completion notification rather than assuming a timeout, and
-never start a second agent on the same worktree while one is running. Cap 3–4 concurrent;
-one agent per stack:
+asynchronously — wait for the completion notification rather than assuming a timeout (a
+deliberate departure from the spec's per-task timeouts: background Task agents signal
+completion themselves). Never start a second agent on the same worktree while one is
+running. Cap 3–4 concurrent; one agent per stack, each invocation tagged with a
+`correlation_id` (use the stack's bottom-branch slug). When running agents over several
+stacks, aggregate per the spec: `{ "parallel": true, "concurrency": N, "results": [...],
+"summary": { "all_successful", "failed", "succeeded" } }`, results ordered by
+`correlation_id`, and surface `summary.failed` to the user — never silently drop a failed
+stack:
 
 | Situation | Agent | Input (as `<input_json>`) | Returns |
 |---|---|---|---|
@@ -148,6 +158,15 @@ the expected report. Simple one-command situations (land a green stack:
 - **Failure = forensic**: the exact command that failed, its stderr, per-branch state, and
   one concrete recovery action — replaying the tool calls must show what happened without
   further investigation.
+- **Envelope levels**: convert and sync agents use the Standard envelope (`canceled`,
+  `aborted_by`, `metadata.duration_ms`/`tool_calls`/`retry_count` added); a risky-conflict
+  stop is `canceled: true, aborted_by: "policy"` with error code `*_RISKY` and
+  `recoverable: false` — a deliberate hold for human review, not an operation failure. The
+  plan agent and the scripts use the Basic envelope.
+- **Validation surface**: `gh_stack_preflight.py` (environment) plus
+  `gh_stack_convert.py --dry-run` (per-layer plan preview, nothing mutated) are this
+  package's `--validate` mode; `--auto-fix` is deliberately absent — its bounded-fix role is
+  filled by the trivial-conflict rubric above.
 - **State guarantees**: scripts never push, never force, never delete refs; conversion stops
   at the first conflict with finished layers skipped on re-run; `gh stack sync` restores
   every branch on conflict (all-or-nothing); agents push only via `gh stack submit --auto` /

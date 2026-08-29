@@ -96,7 +96,8 @@ class TestConvertValidation:
         with patch.object(gs, "remotes", return_value=["origin"]), patch.object(gs, "git", fake_git):
             code, env = cv.convert("main", ["a", "b"])
         assert code == cv.EXIT_ERR and env["error"]["code"] == "GIT.FETCH"
-        assert env["error"]["recoverable"] is True
+        # A fetch failure needs an out-of-band fix; a bare retry cannot succeed.
+        assert env["error"]["recoverable"] is False
 
     def test_non_conflict_rebase_failure(self, clean_repo_guards, monkeypatch):
         def fake_git(args, cwd=None):
@@ -482,6 +483,20 @@ class TestConvertIntegration:
         assert code == cv.EXIT_INPUT
         assert env["error"]["code"] == "GIT.BRANCH_DIVERGED"
         assert "pr3" in env["error"]["message"]
+
+    def test_dry_run_previews_without_mutating(self, repo):
+        tips_before = _sh(repo, "git", "for-each-ref", "--format=%(refname) %(objectname)",
+                          "refs/heads/")
+        code, env = cv.convert("main", ["pr1", "pr3"], cwd=repo, dry_run=True)
+        assert code == cv.EXIT_OK, env
+        assert env["data"]["mode"] == "dry_run"
+        actions = {p["branch"]: p["action"] for p in env["data"]["planned"]}
+        assert actions == {"pr1": "skip", "pr3": "rebase"}
+        # Nothing moved, nothing configured, no bookkeeping written.
+        assert _sh(repo, "git", "for-each-ref", "--format=%(refname) %(objectname)",
+                   "refs/heads/") == tips_before
+        assert gs.config_get("rerere.enabled", cwd=repo) == ""
+        assert _orig_refs(repo) == ""
 
     def test_pr_number_resolution_uses_gh_stub(self, repo):
         # No patching: the PATH gh stub answers `gh pr view <n> --json headRefName -q .headRefName`.

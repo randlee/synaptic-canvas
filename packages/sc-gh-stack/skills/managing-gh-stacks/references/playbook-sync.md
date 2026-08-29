@@ -11,8 +11,10 @@ concern — check out L2 in the stack's worktree, commit there, never on L4. The
 ## Route A — delegate to `sc-stack-sync` (default)
 
 ```json
-{ "worktree": "/path/repo-worktrees/stack/l1", "fix_branch": "L2" }
+{ "worktree": "/path/repo-worktrees/stack/L1", "fix_branch": "L2" }
 ```
+
+(The worktree path uses the SKILL.md slug rule — `/` becomes `-`, no case folding.)
 
 The agent runs `gh_stack_sync.py` (which wraps `gh stack sync`: fetch → reconcile with GitHub
 → fast-forward trunk → cascade rebase → atomic push). Merged and squash-merged layers are
@@ -24,6 +26,8 @@ Expected report on success — a minimal decision log:
 ```json
 {
   "success": true,
+  "canceled": false,
+  "aborted_by": null,
   "data": {
     "branches": [
       { "name": "L2", "before": "abc1", "after": "def2", "pushed": true },
@@ -34,9 +38,13 @@ Expected report on success — a minimal decision log:
     "surfaced": [],
     "next_step": null
   },
-  "error": null
+  "error": null,
+  "metadata": { "duration_ms": 32000, "tool_calls": 9, "retry_count": 0 }
 }
 ```
+
+A risky-conflict stop comes back as `canceled: true, aborted_by: "policy"` with error code
+`SYNC.CONFLICT_RISKY` — a deliberate hold for review, not a failed sync.
 
 On conflict, `gh stack sync` restores **every branch** to its pre-sync state (all-or-nothing;
 exit 3), so a failed sync never leaves the stack half-rebased. The agent then drives

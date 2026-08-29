@@ -25,8 +25,9 @@ made and any discrepancy the caller must handle.
 
 ## Inputs
 
-- **worktree** (required): path of the stack's worktree (a stack branch must be checked out
-  there; `gh stack checkout <branch>` if not)
+- **worktree** (required): path of the stack's worktree, computed with the SKILL.md slug rule
+  (`<repo_root>-worktrees/stack/<bottom-slug>`, `/` → `-`, no case folding); a stack branch
+  must be checked out there (`gh stack checkout <branch>` if not)
 - **fix_branch** (optional): a middle layer that just received commits — after syncing, verify
   every layer above it contains its tip
 
@@ -62,17 +63,20 @@ gh-stack tracking is per-worktree. When the given worktree does not track the st
 4. Never `git push` directly, never force-push, never `git reset --hard`, never bare
    interactive `gh stack` commands.
 
-## Output
+## Output Format
 
-Return ONE fenced JSON block. Success is a minimal decision log; failure must let the caller
-recover without investigation (the script's envelope carries the failing command, stderr, and
-recovery action — forward those fields, do not paraphrase them away).
+Return ONE fenced JSON block using the Standard envelope (this agent is multi-step). Success
+is a minimal decision log; failure must let the caller recover without investigation (the
+script's envelope carries the failing command, stderr, and recovery action — forward those
+fields, do not paraphrase them away).
 
 ```json
 {
   "success": true,
+  "canceled": false,
+  "aborted_by": null,
   "data": {
-    "worktree": "/path/to/repo-worktrees/stack/l1",
+    "worktree": "/path/to/repo-worktrees/stack/L1",
     "branches": [
       { "name": "L2", "before": "abc1", "after": "def2", "pushed": true },
       { "name": "L3", "before": "1122", "after": "3344", "pushed": true }
@@ -85,16 +89,21 @@ recovery action — forward those fields, do not paraphrase them away).
     "fix_contained_by": ["L3", "L4"],
     "next_step": null
   },
-  "error": null
+  "error": null,
+  "metadata": { "duration_ms": 32000, "tool_calls": 9, "retry_count": 0 }
 }
 ```
 
-On risky conflicts: `success: false`, `error` = the script's error object, `surfaced` lists
-each unresolved conflict as `{ "file", "layer", "worktree", "why_risky", "suggested_resolution" }`,
-and `next_step` says exactly where the rebase is paused. Include `branches` (with `pushed`
-per branch) in every output produced after `gh_stack_sync.py` has run — its `data.branches`
-supplies them; `fix_contained_by` appears only when `fix_branch` was given (layers above it
-that contain its tip; report any that do not).
+Stopping on a risky conflict is a deliberate policy abort: set
+`success: false, canceled: true, aborted_by: "policy"`, re-code the script's error as
+`SYNC.CONFLICT_RISKY` with `recoverable: false` (a human resolves before any retry), keep
+its forensic fields intact, and list each conflict in `surfaced` as
+`{ "file", "layer", "worktree", "why_risky", "suggested_resolution" }` with `next_step`
+saying exactly where the rebase is paused. Genuine failures keep `canceled: false` and the
+script's error object unchanged. Include `branches` (with `pushed` per branch) in every
+output produced after `gh_stack_sync.py` has run — its `data.branches` supplies them;
+`fix_contained_by` appears only when `fix_branch` was given (layers above it that contain
+its tip; report any that do not).
 
 ## Error Handling
 

@@ -16,8 +16,14 @@ PR_NUMBER = re.compile(r"^[0-9]+$")
 
 
 def run(cmd: Sequence[str], cwd: Optional[Path] = None) -> subprocess.CompletedProcess:
-    """Run a command, capturing output; never raises on non-zero exit."""
-    return subprocess.run(list(cmd), cwd=cwd, capture_output=True, text=True, check=False)
+    """Run a command, capturing output; never raises. A binary missing from
+    PATH returns a synthetic CompletedProcess (rc 127) so callers always get a
+    structured result and scripts always emit their fenced JSON envelope."""
+    try:
+        return subprocess.run(list(cmd), cwd=cwd, capture_output=True, text=True, check=False)
+    except (FileNotFoundError, NotADirectoryError, PermissionError) as exc:
+        return subprocess.CompletedProcess(args=list(cmd), returncode=127, stdout="",
+                                           stderr=f"{cmd[0]}: cannot execute ({exc})")
 
 
 def git(args: Sequence[str], cwd: Optional[Path] = None) -> subprocess.CompletedProcess:
