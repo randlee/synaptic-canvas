@@ -115,6 +115,16 @@ one agent per stack:
 | Trunk moved / mid-stack fix merged | `sc-stack-sync` | worktree, fix_branch? | decision log: same contract |
 | `gh pr merge` refused: PR is "part of a stack" | none — run `gh stack merge <pr#> --yes` | — | merges that PR and every unmerged PR below it, atomically; PRs above retarget automatically. Never hand-roll REST calls. (GitHub's web UI stack merge is the same native flow — fine for humans, not agent-drivable.) |
 
+Inputs travel as a tagged JSON block inside the Task prompt — the agent's `## Inputs`
+section is the field contract:
+
+```
+Follow your agent instructions with these inputs:
+<input_json>
+{ "trunk": "main", "layers": ["101", "102"], "repo_root": "/path/repo" }
+</input_json>
+```
+
 Read `references/playbook-graph-to-stacks.md`, `references/playbook-convert.md`, or
 `references/playbook-sync.md` first — each is a worked example including the agent prompt and
 the expected report. Simple one-command situations (land a green stack:

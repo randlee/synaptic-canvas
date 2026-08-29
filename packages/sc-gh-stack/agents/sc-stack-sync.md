@@ -64,11 +64,37 @@ gh-stack tracking is per-worktree. When the given worktree does not track the st
 
 ## Output
 
-Return ONE fenced JSON block; same contract as `sc-stack-convert` (minimal decision log on
-success; forward the script's forensic error fields on failure; `branches` with per-branch
-`before`/`after`/`pushed` in every output; `resolutions` for trivial fixes made;
-`surfaced` for risky conflicts left in the worktree with `why_risky` and
-`suggested_resolution`).
+Return ONE fenced JSON block. Success is a minimal decision log; failure must let the caller
+recover without investigation (the script's envelope carries the failing command, stderr, and
+recovery action — forward those fields, do not paraphrase them away).
+
+```json
+{
+  "success": true,
+  "data": {
+    "worktree": "/path/to/repo-worktrees/stack/l1",
+    "branches": [
+      { "name": "L2", "before": "abc1", "after": "def2", "pushed": true },
+      { "name": "L3", "before": "1122", "after": "3344", "pushed": true }
+    ],
+    "resolutions": [
+      { "file": "src/mod.rs", "layer": "L3", "kind": "rerere",
+        "risk": "low", "summary": "rerere replayed the recorded resolution" }
+    ],
+    "surfaced": [],
+    "fix_contained_by": ["L3", "L4"],
+    "next_step": null
+  },
+  "error": null
+}
+```
+
+On risky conflicts: `success: false`, `error` = the script's error object, `surfaced` lists
+each unresolved conflict as `{ "file", "layer", "worktree", "why_risky", "suggested_resolution" }`,
+and `next_step` says exactly where the rebase is paused. Include `branches` (with `pushed`
+per branch) in every output produced after `gh_stack_sync.py` has run — its `data.branches`
+supplies them; `fix_contained_by` appears only when `fix_branch` was given (layers above it
+that contain its tip; report any that do not).
 
 ## Error Handling
 
