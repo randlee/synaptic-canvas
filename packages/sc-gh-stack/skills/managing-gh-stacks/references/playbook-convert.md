@@ -4,8 +4,10 @@
 Merging them one at a time costs n(n+1)/2 CI runs and forces every remaining branch to rebase
 after each merge. As a stack they cost n CI runs and land atomically.
 
-**Do not:** force-push, merge branches into each other by hand, `gh pr merge`, use `gh stack add`
-(it only appends to a stack's top), or try to "fix" order with metadata. Ancestry first.
+**Do not:** force-push, `git reset --hard` (to abandon a conflicted rebase use
+`git rebase --abort`; to move a branch to its remote let the script fast-forward it), merge
+branches into each other by hand, `gh pr merge`, use `gh stack add` (it only appends to a
+stack's top), or try to "fix" order with metadata. Ancestry first.
 
 ## Inputs
 
