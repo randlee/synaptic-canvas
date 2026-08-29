@@ -1014,6 +1014,12 @@ def _parse_skill_metadata(skill_md_path: Path) -> Dict[str, Any]:
     return metadata
 
 
+def _major_constraint(version: str) -> str:
+    """`1.4.2` -> `1.x`; anything unparseable -> `0.x` (house convention)."""
+    major = (version or "").split(".", 1)[0]
+    return f"{major}.x" if major.isdigit() else "0.x"
+
+
 def _update_registry(
     dest_path: Path,
     artifact_rel_paths: List[str],
@@ -1053,10 +1059,23 @@ def _update_registry(
     # Ensure both sections exist
     registry.setdefault("agents", {})
     registry.setdefault("skills", {})
+    if registry["skills"] is None:
+        registry["skills"] = {}
+
+    # Sanitize legacy skills entries: the schema forbids anything beyond
+    # depends_on/entry_point (older installers wrote a bare version there).
+    for skill_name, entry in list(registry["skills"].items()):
+        if not isinstance(entry, dict):
+            registry["skills"][skill_name] = {"depends_on": {}}
+            continue
+        cleaned = {k: v for k, v in entry.items() if k in ("depends_on", "entry_point")}
+        cleaned.setdefault("depends_on", {})
+        registry["skills"][skill_name] = cleaned
 
     expected_version = package_version or _read_repo_version()
 
     # Process agents
+    installed_agents: Dict[str, str] = {}  # name -> registered version (this run)
     for rel in artifact_rel_paths:
         if not rel.startswith("agents/"):
             continue
@@ -1069,12 +1088,18 @@ def _update_registry(
                 f"version mismatch for agent {name}: frontmatter={ver} package={expected_version}"
             )
             return 1
+        registered = ver or (expected_version or "")
         registry["agents"][name] = {
-            "version": ver or (expected_version or ""),
+            "version": registered,
             "path": f".claude/{rel}",
         }
+        installed_agents[name] = registered
 
-    # Process skills
+    # Process skills. Registry schema for a skills entry allows ONLY
+    # depends_on and entry_point (extras such as version are forbidden and
+    # fail validate-agents.py). depends_on comes from SKILL.md frontmatter
+    # when declared, else is synthesized as <major>.x constraints on the
+    # agents installed in this same run.
     for rel in artifact_rel_paths:
         if not rel.startswith("skills/"):
             continue
@@ -1085,18 +1110,13 @@ def _update_registry(
             skill_md = dest_path / rel
             if skill_md.exists():
                 metadata = _parse_skill_metadata(skill_md)
-                skill_entry = {
-                    "version": metadata.get("version") or (expected_version or ""),
+                depends_on = metadata.get("depends_on") or {
+                    agent: _major_constraint(agent_ver)
+                    for agent, agent_ver in sorted(installed_agents.items())
                 }
-
-                # Add entry_point if present
+                skill_entry: Dict[str, any] = {"depends_on": depends_on}
                 if metadata.get("entry_point"):
                     skill_entry["entry_point"] = metadata["entry_point"]
-
-                # Add depends_on if present
-                if metadata.get("depends_on"):
-                    skill_entry["depends_on"] = metadata["depends_on"]
-
                 registry["skills"][skill_name] = skill_entry
 
     # Write registry
@@ -1115,22 +1135,20 @@ def _update_registry(
                     lines.append(f"    version: {v.get('version','')}")
                     lines.append(f"    path: {v.get('path','')}")
 
-            # Skills section
+            # Skills section (schema: depends_on + optional entry_point only)
             if registry.get("skills"):
-                if lines:
-                    lines.append("skills:")
-                else:
-                    lines.append("skills:")
+                lines.append("skills:")
                 for k, v in sorted(registry["skills"].items()):
                     lines.append(f"  {k}:")
-                    if v.get("version"):
-                        lines.append(f"    version: {v.get('version')}")
+                    deps = v.get("depends_on") or {}
+                    if deps:
+                        lines.append("    depends_on:")
+                        for dep_k, dep_v in sorted(deps.items()):
+                            lines.append(f"      {dep_k}: {dep_v}")
+                    else:
+                        lines.append("    depends_on: {}")
                     if v.get("entry_point"):
                         lines.append(f"    entry_point: {v.get('entry_point')}")
-                    if v.get("depends_on"):
-                        lines.append(f"    depends_on:")
-                        for dep_k, dep_v in sorted(v["depends_on"].items()):
-                            lines.append(f"      {dep_k}: {dep_v}")
 
             content = "\n".join(lines) + "\n" if lines else ""
 
