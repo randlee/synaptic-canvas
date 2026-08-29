@@ -36,7 +36,8 @@ must serialize onto one of them — the agent states which rule it applied):
         "branches": ["feat/schema", "feat/api", "feat/ui", "feat/audit-log"],
         "tasks": ["T1", "T3", "T4", "T6"],
         "worktree": "/path/repo-worktrees/stack/feat-schema",
-        "create": ["git worktree add /path/repo-worktrees/stack/feat-schema -b feat/schema main"],
+        "create": ["git fetch origin",
+                   "git worktree add /path/repo-worktrees/stack/feat-schema -b feat/schema origin/main"],
         "rationale": "chain T1->T3->T4; T6 fan-in (needs T1+T2) serialized on top — see questions",
         "blocked": false },
       { "name": "auth-ratelimit",
@@ -44,7 +45,7 @@ must serialize onto one of them — the agent states which rule it applied):
         "branches": ["feat/auth", "feat/rate-limit"],
         "tasks": ["T2", "T5"],
         "worktree": "/path/repo-worktrees/stack/feat-auth",
-        "create": ["git worktree add /path/repo-worktrees/stack/feat-auth -b feat/auth main"],
+        "create": ["git worktree add /path/repo-worktrees/stack/feat-auth -b feat/auth origin/main"],
         "rationale": "independent subgraph",
         "blocked": false }
     ],
@@ -61,9 +62,18 @@ must serialize onto one of them — the agent states which rule it applied):
    real scheduling decision, not a default.
 2. Run each stack's `create` commands. One worktree per stack; layers are created inside it
    as work reaches them: `git -C <worktree> checkout -b <layer> <layer-below>`.
-3. In each worktree, adopt the stack before writing code: `gh stack init` on the bottom
-   branch, `gh stack add <layer>` as each new layer starts (`references/stack-design.md` for
-   layer sizing/naming; `references/commands.md` "init"/"add"/"submit").
+3. In each worktree, adopt the stack before writing code — non-interactive forms only (bare
+   `gh stack init` prompts and blocks):
+
+   ```bash
+   git -C <worktree> config rerere.enabled true
+   git -C <worktree> config rerere.autoUpdate true
+   gh stack init --base <trunk> <bottom>       # init checks out the LAST branch listed
+   gh stack add <layer>                        # per new layer, from the current top
+   ```
+
+   (`references/stack-design.md` for layer sizing/naming; `references/commands.md`
+   "init"/"add"/"submit" for preconditions.)
 4. gh-stack tracking is per-worktree, so the stacks never interfere; development, CI, and
    review proceed in parallel per stack.
 

@@ -56,8 +56,11 @@ python3 .claude/scripts/gh_stack_sync.py --cwd <worktree>    # exit 0 = synced a
 - Exit 3, `SYNC.CONFLICT`: all branches restored. `gh stack rebase` in the worktree, resolve +
   `git add` + `gh stack rebase --continue` until it finishes (rerere replays every previously
   recorded resolution — the same conflict is never resolved twice), re-run the script.
-- Exit 5, `SYNC.NO_STACK`: run in the stack's worktree with a stack branch checked out
-  (`gh stack checkout <branch>`).
+- Exit 5, `SYNC.NO_STACK`: gh-stack tracking is per-worktree. For a stack that exists on
+  GitHub, create a worktree on the bottom branch and run `gh stack checkout <bottom>` there —
+  it pulls the stack down and sets up local tracking. For a local-only stack (never
+  submitted), tracking lives in the checkout that created it: run there, or re-adopt with
+  `gh stack init --base <trunk> <layers...>` in the new worktree.
 - Any other failure: the envelope carries the failing command, stderr, per-branch state, and
   the recovery action — act on `error.suggested_action`, then re-run.
 

@@ -89,7 +89,10 @@ installed — **do not reproduce the rebase chain or preflight checks by hand.**
 
 All stack execution happens in dedicated worktrees, never in the user's checkout:
 
-- One worktree per stack at `<repo_root>-worktrees/stack/<bottom-branch>`.
+- One worktree per stack at `<repo_root>-worktrees/stack/<bottom-slug>`, where
+  `<bottom-slug>` is the bottom branch name with every `/` replaced by `-`
+  (`feat/schema` → `stack/feat-schema`). Both agents and callers must compute the path with
+  this rule so re-invocations land in the same worktree.
 - gh-stack tracking state (`.git/worktrees/<wt>/gh-stack`) is **per-worktree**, so parallel
   stacks never interfere with each other or with the main checkout.
 - Worktrees are kept after agent runs — they are the review surface: any conflict an agent
@@ -97,8 +100,11 @@ All stack execution happens in dedicated worktrees, never in the user's checkout
 
 ## Agent Delegation
 
-Delegate via the Task tool with `run_in_background: true` (120s default timeout; cap 3–4
-concurrent; one agent per stack — never two agents on the same worktree):
+Delegate convert and sync via the Task tool with `run_in_background: true`; the plan agent is
+read-only and fast, so it may run in the foreground. Background agents complete
+asynchronously — wait for the completion notification rather than assuming a timeout, and
+never start a second agent on the same worktree while one is running. Cap 3–4 concurrent;
+one agent per stack:
 
 | Situation | Agent | Input (as `<input_json>`) | Returns |
 |---|---|---|---|
@@ -166,8 +172,9 @@ shape is the example in `references/playbook-convert.md` plus `gh stack view --h
 ## Storage
 
 This skill runs `git` and `gh stack` in the target repository and its stack worktrees only.
-It writes no state under `.claude/`. `gh_stack_convert.py` sets `rerere.enabled=true` in the
-local git config so conflict resolutions replay on later rebases, and keeps two pieces of
+It writes no state under `.claude/`. `gh_stack_convert.py` sets `rerere.enabled=true` and
+`rerere.autoUpdate=true` in the local git config so conflict resolutions replay — and are
+staged — on later rebases, and keeps two pieces of
 bookkeeping in the target repo: each layer's pre-rebase tip under `refs/sc-gh-stack/orig/`,
 and the conversion's identity in the local git config key `sc-gh-stack.conversion`. Both
 persist until a conversion with a different trunk/layer list starts, which clears them; they

@@ -242,7 +242,8 @@ def chain(layers: List[str], trunk_ref: str, remote: str, cwd: Optional[Path] = 
                                   "cmd": cmd_str,
                                   "message": f"rebase of {layer} failed without a conflict: "
                                              f"{rebase.stderr.strip()}",
-                                  "action": "fix the reported problem and re-run; finished layers are skipped"}
+                                  "action": "fix the reported problem (is the branch checked out in "
+                                            "another worktree?) and re-run; finished layers are skipped"}
             return result
         action = "rebased"
         if gs.git_out(["rev-list", f"{below}..{layer_ref}"], cwd=cwd) == "":
@@ -271,17 +272,20 @@ def init_stack(trunk: str, layers: List[str], cwd: Optional[Path] = None) -> Dic
 
 def convert(trunk: str, raw_layers: List[str], cwd: Optional[Path] = None) -> tuple[int, Dict[str, Any]]:
     """Full workflow. Returns (exit_code, envelope). Testable without argparse."""
-    def fail(code: int, err_code: str, msg: str, action: str, data: Optional[Dict[str, Any]] = None):
-        # Every failure this script reports is fix-and-re-run; finished layers are skipped.
-        return code, gs.envelope(False, data, gs.error_obj(err_code, msg, True, action))
+    def fail(code: int, err_code: str, msg: str, action: str,
+             data: Optional[Dict[str, Any]] = None, recoverable: bool = True):
+        # recoverable means: apply suggested_action, re-run, and it succeeds by
+        # design (finished layers are skipped). Input/repo errors are not — a
+        # bare retry with unchanged inputs cannot fix them.
+        return code, gs.envelope(False, data, gs.error_obj(err_code, msg, recoverable, action))
 
     if len(raw_layers) < 2:
         return fail(EXIT_INPUT, "VALIDATION.INPUT", "a stack needs at least two layers",
-                    "pass <trunk> <bottom> ... <top>, bottom to top")
+                    "pass <trunk> <bottom> ... <top>, bottom to top", recoverable=False)
 
     if not gs.in_git_repo(cwd=cwd):
         return fail(EXIT_INPUT, "GIT.NOT_A_REPO", "not inside a git repository",
-                    "cd into the repository (or pass --cwd)")
+                    "cd into the repository (or pass --cwd)", recoverable=False)
     if gs.rebase_in_progress(cwd=cwd):
         return fail(EXIT_INPUT, "GIT.REBASE_IN_PROGRESS", "a rebase is already in progress",
                     "finish it (`git rebase --continue` after resolving, or `git rebase --abort`), then re-run")
@@ -299,6 +303,9 @@ def convert(trunk: str, raw_layers: List[str], cwd: Optional[Path] = None) -> tu
     remote = gs.resolve_remote(cwd=cwd)
 
     gs.git(["config", "rerere.enabled", "true"], cwd=cwd)
+    # autoUpdate stages rerere's replayed resolutions, so a fully-rerere-resolved
+    # stop reports conflict.files == [] and needs only `git rebase --continue`.
+    gs.git(["config", "rerere.autoUpdate", "true"], cwd=cwd)
     fetch = gs.git(["fetch", remote, "--prune"], cwd=cwd)
     if fetch.returncode != 0:
         return fail(EXIT_ERR, "GIT.FETCH", f"git fetch {remote} failed: {fetch.stderr.strip()}",
@@ -315,7 +322,8 @@ def convert(trunk: str, raw_layers: List[str], cwd: Optional[Path] = None) -> tu
             raise ValueError(f"layer equals trunk: {trunk}")
         ensure_local_branches(layers, remote, cwd=cwd)
     except ValueError as exc:
-        return fail(EXIT_INPUT, "VALIDATION.INPUT", str(exc), "fix the layer list and re-run")
+        return fail(EXIT_INPUT, "VALIDATION.INPUT", str(exc), "fix the layer list and re-run",
+                    recoverable=False)
 
     before = {b: _rev(_head(b), cwd=cwd) for b in layers}
     base = {"trunk": trunk, "remote": remote, "layers": layers, "shape": stack_shape(trunk, layers)}
@@ -338,7 +346,8 @@ def convert(trunk: str, raw_layers: List[str], cwd: Optional[Path] = None) -> tu
     init = init_stack(trunk, layers, cwd=cwd)
     data = {**base, "chained": result.chained, "conflict": None, "stack_init": init}
     if init["action"] == "init_failed":
-        data["next_step"] = "read data.stack_init.stderr, fix the reported problem, and re-run; " \
+        data["next_step"] = "read data.stack_init.stderr, fix the reported problem (is the top " \
+                            "branch checked out in another worktree?), and re-run; " \
                             "chained layers are skipped — do NOT run `gh stack submit`"
         return fail(EXIT_ERR, "STACK.INIT_FAILED", "gh stack init failed", data["next_step"], data)
     data["next_step"] = "review `gh stack view --json` (all layers, given order, needsRebase=false), " \

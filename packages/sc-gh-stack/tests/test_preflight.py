@@ -98,9 +98,13 @@ class TestPreflight:
         c = next(c for c in checks if c["name"] == "gh_stack_extension")
         assert c["status"] == "fail" and "gh extension install github/gh-stack" == c["fix"]
 
-    def test_rerere_disabled_fails(self, monkeypatch):
+    def test_rerere_disabled_warns_not_fails(self, monkeypatch):
+        # Warn only: gh_stack_convert.py enables rerere itself, so a first run
+        # in a fresh repo must not be blocked on this check.
         _healthy_env(monkeypatch, config={"rerere.enabled": ""})
-        assert _status(pf.run_checks(), "rerere_enabled") == "fail"
+        checks = pf.run_checks()
+        assert _status(checks, "rerere_enabled") == "warn"
+        assert [c["name"] for c in checks if c["status"] == "fail"] == []
 
     def test_two_remotes_without_push_default_fails(self, monkeypatch):
         _healthy_env(monkeypatch, remotes=["origin", "upstream"])
@@ -119,13 +123,13 @@ class TestPreflight:
         assert _status(checks, "no_rebase_in_progress") == "fail"
 
     def test_main_reports_failed_names_and_exit_1(self, monkeypatch, capsys):
-        _healthy_env(monkeypatch, config={"rerere.enabled": ""})
+        _healthy_env(monkeypatch, clean=False)
         assert pf.main([]) == 1
         out = capsys.readouterr().out
         payload = json.loads(out.split("```json")[1].split("```")[0])
         assert payload["success"] is False
         assert payload["error"]["code"] == "PREFLIGHT.FAILED"
-        assert payload["data"]["failed"] == ["rerere_enabled"]
+        assert payload["data"]["failed"] == ["working_tree_clean"]
 
     def test_main_outside_repo(self, monkeypatch, capsys):
         monkeypatch.setattr(gs, "in_git_repo", lambda cwd=None: False)

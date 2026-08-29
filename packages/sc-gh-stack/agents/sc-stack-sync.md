@@ -30,6 +30,18 @@ made and any discrepancy the caller must handle.
 - **fix_branch** (optional): a middle layer that just received commits — after syncing, verify
   every layer above it contains its tip
 
+### If no worktree tracks the stack
+
+gh-stack tracking is per-worktree. When the given worktree does not track the stack
+(`SYNC.NO_STACK`) and no other worktree does either:
+
+- **Stack exists on GitHub** (it was submitted/linked): create the worktree on the bottom
+  branch and run `gh stack checkout <bottom-branch>` there — checkout pulls the stack down
+  from GitHub and sets up local tracking.
+- **Local-only stack** (never submitted): tracking lives only in the checkout that created
+  it — report that back; sync must run there, or the caller re-adopts with
+  `gh stack init --base <trunk> <layers...>` in the new worktree.
+
 ## Execution
 
 1. `python3 .claude/scripts/gh_stack_sync.py --cwd <worktree>`.

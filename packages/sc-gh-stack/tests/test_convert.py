@@ -284,6 +284,7 @@ class TestConvertIntegration:
         assert gs.is_ancestor("pr1", "pr2", cwd=repo)
         assert gs.is_ancestor("pr2", "pr3", cwd=repo)
         assert gs.config_get("rerere.enabled", cwd=repo) == "true"
+        assert gs.config_get("rerere.autoUpdate", cwd=repo) == "true"
         assert gs.config_get("sc-gh-stack.conversion", cwd=repo) == "main pr1 pr2 pr3"
         assert _sh(repo, "git", "rev-parse", "--abbrev-ref", "HEAD").strip() == "pr3"
         assert "refs/sc-gh-stack/orig/pr2" in _orig_refs(repo)

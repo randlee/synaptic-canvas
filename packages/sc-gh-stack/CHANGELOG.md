@@ -24,6 +24,10 @@ Orchestration release: background agents over the deterministic scripts.
 - SKILL.md rewritten orchestration-first (plan / convert / sync + agent
   delegation); new `playbook-graph-to-stacks.md` and `playbook-sync.md`;
   `playbook-convert.md` reworked agent-first with the manual path as fallback.
+- Descope note: the 0.1.0-planned `playbook-new-stack.md`, `playbook-daily-loop.md`,
+  and `playbook-landing.md` were folded into existing routes instead of shipping
+  separately (new stack = `playbook-graph-to-stacks.md` step 3; daily loop =
+  `playbook-sync.md`; landing = `gh stack merge --yes` via SKILL.md).
 - 55 pytest cases.
 
 ## 0.1.0 — 2026-08-28

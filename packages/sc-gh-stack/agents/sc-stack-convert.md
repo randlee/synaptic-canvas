@@ -28,17 +28,25 @@ Complete the task quickly; report only decisions and discrepancies.
 - **trunk** (required): trunk branch name (e.g. `main`)
 - **layers** (required): branch names or PR numbers, bottom to top
 - **repo_root** (required): repository root path
-- **worktree** (optional): worktree path; default `<repo_root>-worktrees/stack/<bottom-layer>`
+- **worktree** (optional): worktree path; default `<repo_root>-worktrees/stack/<bottom-slug>`
+  where `<bottom-slug>` is the resolved bottom branch name with `/` replaced by `-`
 - **push** (optional, default `true`): run `gh stack submit --auto` when fully clean
 
 ## Execution
 
-1. Create the worktree if absent: `git -C <repo_root> worktree add <worktree> <bottom-layer>`.
+1. Resolve any PR-number layers to branch names FIRST (worktree creation needs a real ref):
+   `gh pr view <n> --json headRefName -q .headRefName` per number. Use resolved names below.
+2. Check no layer is checked out in another worktree: `git -C <repo_root> worktree list
+   --porcelain`. If one is (other than in this stack's own worktree), STOP and surface it —
+   never detach or move someone else's checkout; report the worktree path and ask the caller
+   to move that checkout off the branch (e.g. onto trunk) and re-invoke.
+3. Create the worktree if absent: `git -C <repo_root> worktree add <worktree> <bottom-branch>`.
    gh-stack tracking state is per-worktree, so nothing here touches other checkouts.
-2. `python3 .claude/scripts/gh_stack_preflight.py --cwd <worktree>` — on failure, STOP and
-   return its envelope (each failed check carries its fix).
-3. `python3 .claude/scripts/gh_stack_convert.py <trunk> <layers...> --cwd <worktree>`.
-4. On exit 3 (`CONVERT.CONFLICT`), classify each conflicted file **in the worktree**:
+4. `python3 .claude/scripts/gh_stack_preflight.py --cwd <worktree>` — on failure, STOP and
+   return its envelope (each failed check carries its fix). The `rerere_enabled` check is a
+   warn only; the convert script enables it itself.
+5. `python3 .claude/scripts/gh_stack_convert.py <trunk> <layers...> --cwd <worktree>`.
+6. On exit 3 (`CONVERT.CONFLICT`), classify each conflicted file **in the worktree**:
    - **Trivial** (resolve now, record as a low-risk decision): rerere already staged it
      (`conflict.files` empty); pure additions from both sides that interleave without
      interacting (imports, list/registry entries, changelog lines); identical change on both
@@ -46,12 +54,13 @@ Complete the task quickly; report only decisions and discrepancies.
    - **Risky** (do NOT resolve): overlapping semantic edits to the same logic, delete-vs-modify,
      binary files, anything you cannot explain in one sentence.
    Trivial: resolve, `git add`, `git rebase --continue` (repeat while it re-conflicts
-   trivially), re-run step 3. Risky: leave the rebase in progress in the worktree and go to
+   trivially), re-run step 5. Risky: leave the rebase in progress in the worktree and go to
    Output — the conflict stays checked out there for the caller to review.
-5. On exit 0 with `push: true`: run `gh stack submit --auto` in the worktree. Exit 9 means
-   stacked PRs are disabled on the repo — report it, do not retry. Then `gh stack view --json`
-   and confirm each branch's local SHA equals its remote SHA.
-6. Never resolve a risky conflict, never `git push` directly, never force-push, never
+7. On exit 0 with `push: true`: run `gh stack submit --auto` in the worktree. Exit 9 means
+   stacked PRs are disabled on the repo — report it, do not retry. Confirm pushed-ness per
+   branch by comparing `git rev-parse refs/heads/<b>` with `refs/remotes/<remote>/<b>`
+   (`gh stack view --json` carries no SHAs — use it only for order/needsRebase/PR state).
+8. Never resolve a risky conflict, never `git push` directly, never force-push, never
    `git reset --hard`, never run bare interactive `gh stack` commands.
 
 ## Output
@@ -82,8 +91,10 @@ stderr, and recovery action — forward those fields, do not paraphrase them awa
 
 On risky conflicts: `success: false`, `error` = the script's error object, `surfaced` lists
 each unresolved conflict as `{ "file", "layer", "worktree", "why_risky", "suggested_resolution" }`,
-and `next_step` says exactly where the rebase is paused. Include `branches` (with `pushed`
-per branch) in EVERY output, success or not.
+and `next_step` says exactly where the rebase is paused. Every output produced after the
+convert script has run must include `branches` (with `pushed` per branch — the script's
+`data.branches` supplies it); outputs that stop earlier (PR resolution, worktree check,
+preflight) return that step's envelope alone.
 
 ## Error Handling
 

@@ -95,8 +95,8 @@ python3 .claude/scripts/gh_stack_convert.py main 101 102 103 104   # re-run: fin
 ```
 
 Every conflict is attributed to a specific layer. If `conflict.files` is empty, rerere has
-already staged every resolution — run `git rebase --continue` directly, then re-run the
-script. If `git rebase --continue` conflicts again
+already replayed and staged every resolution (the script sets `rerere.autoUpdate=true`) —
+run `git rebase --continue` directly, then re-run the script. If `git rebase --continue` conflicts again
 (a layer with several conflicting commits), repeat resolve + `git add` + `--continue` until
 the rebase itself finishes; only then re-run the script — run mid-rebase it refuses with
 `GIT.REBASE_IN_PROGRESS`. Loop until `success: true`. rerere records each resolution, so the

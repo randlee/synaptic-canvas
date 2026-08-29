@@ -39,8 +39,14 @@ def run_checks(cwd: Optional[Path] = None) -> List[Dict[str, Any]]:
                          "gh extension install github/gh-stack"))
     checks.append(_check("gh_auth", gs.gh(["auth", "status"], cwd=cwd).returncode == 0, "gh auth login"))
 
-    checks.append(_check("rerere_enabled", gs.config_get("rerere.enabled", cwd=cwd) == "true",
-                         "git config rerere.enabled true"))
+    if gs.config_get("rerere.enabled", cwd=cwd) == "true":
+        checks.append({"name": "rerere_enabled", "status": "ok", "fix": None})
+    else:
+        # Warn, not fail: gh_stack_convert.py enables rerere itself, so a
+        # first-ever run must not be blocked on a check the next script fixes.
+        checks.append(_warn("rerere_enabled",
+                            "rerere is off; gh_stack_convert.py enables it automatically — "
+                            "for manual rebases run: git config rerere.enabled true"))
 
     names = gs.remotes(cwd=cwd)
     if not names:
@@ -70,7 +76,7 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     if not gs.in_git_repo(cwd=args.cwd):
         gs.emit(gs.envelope(False, None, gs.error_obj(
-            "PREFLIGHT.NOT_A_REPO", "not inside a git repository", True, "cd into the repository")))
+            "PREFLIGHT.NOT_A_REPO", "not inside a git repository", False, "cd into the repository")))
         return 1
 
     checks = run_checks(cwd=args.cwd)

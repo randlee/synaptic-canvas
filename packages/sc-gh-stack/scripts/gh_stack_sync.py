@@ -59,12 +59,13 @@ def branch_states(branches: List[str], remote: str, before: Dict[str, Optional[s
 
 
 def sync(cwd: Optional[Path] = None) -> Tuple[int, Dict[str, Any]]:
-    def fail(code: int, err_code: str, msg: str, action: str, data: Optional[Dict[str, Any]] = None):
-        return code, gs.envelope(False, data, gs.error_obj(err_code, msg, True, action))
+    def fail(code: int, err_code: str, msg: str, action: str,
+             data: Optional[Dict[str, Any]] = None, recoverable: bool = True):
+        return code, gs.envelope(False, data, gs.error_obj(err_code, msg, recoverable, action))
 
     if not gs.in_git_repo(cwd=cwd):
         return fail(EXIT_INPUT, "GIT.NOT_A_REPO", "not inside a git repository",
-                    "cd into the stack's worktree (or pass --cwd)")
+                    "cd into the stack's worktree (or pass --cwd)", recoverable=False)
     if gs.rebase_in_progress(cwd=cwd):
         return fail(EXIT_INPUT, "GIT.REBASE_IN_PROGRESS", "a rebase is already in progress",
                     "finish it (`gh stack rebase --continue` after resolving, or `--abort`), then re-run")
@@ -95,7 +96,8 @@ def sync(cwd: Optional[Path] = None) -> Tuple[int, Dict[str, Any]]:
     if run.returncode != 0:
         return fail(EXIT_ERR, "SYNC.FAILED",
                     f"`gh stack sync` exited {run.returncode}: {run.stderr.strip()}",
-                    "read the message, fix the reported problem, and re-run", data)
+                    "read the message, fix the reported problem, and re-run", data,
+                    recoverable=False)
 
     data["next_step"] = None
     return EXIT_OK, gs.envelope(True, data)
