@@ -92,15 +92,6 @@ agents:
   rust-service-hardening-agent:
     path: packages/sc-rust/agents/rust-service-hardening-agent.md
     version: 0.12.0
-  sc-stack-plan:
-    version: 0.2.0
-    path: .claude/agents/sc-stack-plan.md
-  sc-stack-convert:
-    version: 0.2.0
-    path: .claude/agents/sc-stack-convert.md
-  sc-stack-sync:
-    version: 0.2.0
-    path: .claude/agents/sc-stack-sync.md
 skills:
   ci-automation:
     depends_on:
@@ -172,8 +163,3 @@ skills:
       rust-code-reviewer: 0.x
       rust-code-explorer: 0.x
       rust-qa-agent: 0.x
-  managing-gh-stacks:
-    depends_on:
-      sc-stack-plan: 0.x
-      sc-stack-convert: 0.x
-      sc-stack-sync: 0.x
