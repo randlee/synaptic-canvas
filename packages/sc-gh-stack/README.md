@@ -1,45 +1,56 @@
 # sc-gh-stack
 
-Stacked-PR workflow skill for Synaptic Canvas, built on GitHub's `gh stack`
-extension. Replaces the upstream `github/gh-stack` skill (a command inventory)
-with a use-case router: SKILL.md holds the model, hard rules, and a
-situation → playbook table; each playbook is a worked example with the expected
-`gh stack view --json` state after every step.
+Stacked-PR **orchestration** for Synaptic Canvas, built on GitHub's `gh stack`
+extension. Three background agents do the work in isolated worktrees and return
+compact decision logs; deterministic stdlib-Python scripts underneath guarantee
+the unhappy path is forensic (exact failing command, stderr, per-branch state,
+one recovery action) and the happy path is minimal.
 
 ## Skill
 
 ### managing-gh-stacks
-Verify `gh` + `gh-stack` + `git`, run the read-only preflight, then follow one
-playbook:
+Verify `gh` + `gh-stack` + `git` + `python3`, then orchestrate:
 
 | Situation | Route |
 |---|---|
-| N existing PRs against trunk → one stack | `references/playbook-convert.md` (worked example) + `scripts/gh_stack_convert.py` |
-| New multi-part work | upstream `stack-design.md` + `commands.md` |
-| Fix a lower layer / sync after trunk moves | upstream `commands.md` + `troubleshooting.md` |
+| Task dependency graph → parallel dev plan | `sc-stack-plan` agent → stacks + worktree plan (`references/playbook-graph-to-stacks.md`) |
+| N flat PRs against trunk → one stack | `sc-stack-convert` agent in a dedicated worktree (`references/playbook-convert.md`) |
+| Trunk moved / fix merged mid-stack | `sc-stack-sync` agent (`references/playbook-sync.md`) |
 | Land the stack in one CI cycle | `gh stack merge --yes` on the current stack (upstream `commands.md`) |
-| Sprint dependency graph → stacks | mapping rules in SKILL.md |
-
-Only the convert case has a dedicated worked-example playbook in 0.1.0; further playbooks are
-tracked in the CHANGELOG.
 
 Upstream `commands.md`, `troubleshooting.md`, and `stack-design.md` ship verbatim
 as deep references and are loaded only when a playbook points to them.
+
+## Agents
+
+Invoked by the skill via the Task tool (`run_in_background: true`), one per stack:
+
+- `sc-stack-plan` — read-only: dependency graph → stacks optimized for
+  parallelism + exact worktree creation commands; ambiguous order comes back as
+  questions, never guesses.
+- `sc-stack-convert` — chains flat PRs bottom-up in `<repo>-worktrees/stack/<bottom>`,
+  resolves **trivial** conflicts (reported as low-risk decisions), surfaces
+  **risky** ones paused in the worktree for review, pushes via
+  `gh stack submit --auto` only when fully clean.
+- `sc-stack-sync` — post-merge/mid-stack-fix rebase via `gh stack sync`
+  (all-or-nothing: conflicts restore every branch), same conflict rubric,
+  verifies layers above a fix contain it.
+
+Every report carries per-branch `before`/`after` SHAs and a `pushed` flag.
 
 ## Scripts
 
 Stdlib-only Python 3; every run emits one fenced JSON envelope (`success`/`data`/`error`).
 
-- `scripts/gh_stack_preflight.py` — read-only environment gate (gh, extension,
-  auth, rerere, remotes, clean tree, no rebase in progress); each failed check
-  carries its fix. Exit 0/1.
+- `scripts/gh_stack_preflight.py` — read-only environment gate; each failed
+  check carries its fix. Exit 0/1.
 - `scripts/gh_stack_convert.py <trunk> <b1> … <bN>` — chains existing branches
-  bottom-up with `git rebase --onto`, stops at the first conflict (exit 3,
-  `data.conflict` names layer and files), is idempotent on re-run, then adopts
-  the chain with `gh stack init`. Refuses dirty trees, in-progress rebases, and
-  local branches that diverged from their remote; fast-forwards branches that
-  are merely behind; linearises layers carrying trunk-merge commits. Exit 5 on
-  bad input or refused state.
+  bottom-up with `git rebase --onto`, stops at the first conflict (exit 3),
+  idempotent on re-run; refuses dirty trees, in-progress rebases, and diverged
+  branches; fast-forwards branches merely behind; linearises trunk-merge
+  layers; then `gh stack init`. Exit 5 on bad input or refused state.
+- `scripts/gh_stack_sync.py` — wraps `gh stack sync` with the same guards and
+  envelope; exit 3 on conflict (all branches restored).
 - `scripts/gh_stack_shared.py` — git/gh wrappers and the envelope.
 
 ## Tests
@@ -66,7 +77,10 @@ atomically with `gh stack merge`.
 
 ## Storage
 
-Installs into `.claude/` only. No runtime state under `.claude/`. `gh_stack_convert.py` sets
-`rerere.enabled=true` in the target repo's local git config and keeps per-conversion
-bookkeeping in the target repo (`refs/sc-gh-stack/orig/*` pre-rebase tips and the
-`sc-gh-stack.conversion` config key), cleared when a different conversion starts.
+Installs into `.claude/` only. No runtime state under `.claude/`. Stack work
+runs in per-stack worktrees (`<repo>-worktrees/stack/<bottom>`); gh-stack
+tracking state is per-worktree, so parallel stacks never interfere.
+`gh_stack_convert.py` sets `rerere.enabled=true` in the target repo's local git
+config and keeps per-conversion bookkeeping in the target repo
+(`refs/sc-gh-stack/orig/*` pre-rebase tips and the `sc-gh-stack.conversion`
+config key), cleared when a different conversion starts.

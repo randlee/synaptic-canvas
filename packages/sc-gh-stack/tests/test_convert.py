@@ -140,7 +140,8 @@ class TestConvertValidation:
         code, env = cv.convert("main", ["a", "b"])
         assert code == cv.EXIT_CONFLICT
         assert env["error"]["code"] == "CONVERT.CONFLICT"
-        assert env["data"]["conflict"] == {"layer": "a", "onto": "origin/main", "files": []}
+        conflict = env["data"]["conflict"]
+        assert (conflict["layer"], conflict["onto"], conflict["files"]) == ("a", "origin/main", [])
 
     def test_init_stack_keeps_existing_stack(self):
         with patch.object(gs, "git", return_value=cp(0)), patch.object(gs, "gh", return_value=cp(0, "{}")):
@@ -252,7 +253,9 @@ class TestConvertIntegration:
         code, env = cv.convert("main", ["pr1", "pr2", "pr3"], cwd=repo)
         assert code == cv.EXIT_CONFLICT
         assert env["error"]["code"] == "CONVERT.CONFLICT"
-        assert env["data"]["conflict"] == {"layer": "pr2", "onto": "pr1", "files": ["shared.txt"]}
+        conflict = env["data"]["conflict"]
+        assert (conflict["layer"], conflict["onto"], conflict["files"]) == ("pr2", "pr1", ["shared.txt"])
+        assert conflict["cmd"].startswith("git rebase --onto")   # forensic: replay shows the exact command
         assert [c["action"] for c in env["data"]["chained"]] == ["skip"]
         assert gs.rebase_in_progress(cwd=repo)
 
