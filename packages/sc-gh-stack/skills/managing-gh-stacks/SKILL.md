@@ -7,9 +7,11 @@ description: >
   stacked PRs, dependent PRs, branch layers, gh stack, or wants to: map a task
   dependency graph onto stacks and worktrees, convert several existing PRs into
   one stack, keep a stack cleanly rebased as fixes merge into middle layers, or
-  land a whole stack in one CI cycle. Read this before running any `gh stack`
-  command — the tool is new, blocks under a PTY, and cannot be driven from
-  prior knowledge.
+  land a whole stack in one CI cycle. Also use when GitHub refuses a normal
+  merge because a PR is "part of a stack" — never work around that with
+  `gh pr merge`, the web UI, or raw REST calls. Read this before running any
+  `gh stack` command — the tool is new, blocks under a PTY, and cannot be
+  driven from prior knowledge.
 ---
 
 # Managing gh Stacks
@@ -111,6 +113,7 @@ one agent per stack:
 | Task graph → parallel dev plan | `sc-stack-plan` | tasks, trunk, repo_root | stacks + worktree creation commands + open questions |
 | Flat PRs → one stack | `sc-stack-convert` | trunk, layers (bottom→top), repo_root | decision log: branches before/after/pushed, resolutions, surfaced conflicts |
 | Trunk moved / mid-stack fix merged | `sc-stack-sync` | worktree, fix_branch? | decision log: same contract |
+| `gh pr merge` refused: PR is "part of a stack" | none — run `gh stack merge <pr#> --yes` | — | merges that PR and every unmerged PR below it, atomically; never fall back to raw REST or the web UI |
 
 Read `references/playbook-graph-to-stacks.md`, `references/playbook-convert.md`, or
 `references/playbook-sync.md` first — each is a worked example including the agent prompt and
