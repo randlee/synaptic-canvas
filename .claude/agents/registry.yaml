@@ -173,4 +173,7 @@ skills:
       rust-code-explorer: 0.x
       rust-qa-agent: 0.x
   managing-gh-stacks:
-    version: 0.2.0
+    depends_on:
+      sc-stack-plan: 0.x
+      sc-stack-convert: 0.x
+      sc-stack-sync: 0.x
