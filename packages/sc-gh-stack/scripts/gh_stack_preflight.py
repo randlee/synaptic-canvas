@@ -32,6 +32,7 @@ def run_checks(cwd: Optional[Path] = None) -> List[Dict[str, Any]]:
     """All checks, in order. Pure function of the environment; no side effects."""
     checks: List[Dict[str, Any]] = []
 
+    checks.append(_check("git_cli", gs.git(["--version"], cwd=cwd).returncode == 0, INSTALL_DOC))
     checks.append(_check("gh_cli", gs.gh(["--version"], cwd=cwd).returncode == 0, INSTALL_DOC))
     ext = gs.gh(["extension", "list"], cwd=cwd)
     checks.append(_check("gh_stack_extension",
@@ -74,7 +75,13 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser.add_argument("--cwd", type=Path, default=None, help="repository path (default: current dir)")
     args = parser.parse_args(argv)
 
-    if not gs.in_git_repo(cwd=args.cwd):
+    probe = gs.git(["rev-parse", "--is-inside-work-tree"], cwd=args.cwd)
+    if probe.returncode == 127:
+        gs.emit(gs.envelope(False, None, gs.error_obj(
+            "PREFLIGHT.GIT_MISSING", "git is not on PATH", False,
+            f"install git or fix PATH (probe loop in SKILL.md Step 1); {INSTALL_DOC}")))
+        return 1
+    if probe.returncode != 0:
         gs.emit(gs.envelope(False, None, gs.error_obj(
             "PREFLIGHT.NOT_A_REPO", "not inside a git repository", False, "cd into the repository")))
         return 1

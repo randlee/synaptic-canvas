@@ -28,7 +28,18 @@ Orchestration release: background agents over the deterministic scripts.
   and `playbook-landing.md` were folded into existing routes instead of shipping
   separately (new stack = `playbook-graph-to-stacks.md` step 3; daily loop =
   `playbook-sync.md`; landing = `gh stack merge --yes` via SKILL.md).
-- 55 pytest cases.
+- `gh_stack_convert.py --dry-run` (alias `--validate`): previews the per-layer
+  plan (skip / rebase / fast-forward / refuse) using the same freshness
+  classifier the executor uses, mutating nothing; with preflight this is the
+  package's `--validate` surface (`--auto-fix` is deliberately replaced by the
+  trivial-conflict rubric).
+- Convert and sync agents use the Standard envelope (`canceled`, `aborted_by`,
+  `metadata.*`); a risky-conflict stop is `canceled: true, aborted_by: "policy"`
+  with `CONVERT.CONFLICT_RISKY` / `SYNC.CONFLICT_RISKY`, `recoverable: false`.
+- Scripts survive missing binaries (synthetic rc-127 results — always a fenced
+  envelope, never a traceback; `PREFLIGHT.GIT_MISSING` distinct from
+  `PREFLIGHT.NOT_A_REPO`).
+- 60 pytest cases.
 
 ## 0.1.0 — 2026-08-28
 

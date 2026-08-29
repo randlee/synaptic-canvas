@@ -31,8 +31,10 @@ Complete the task quickly; report only decisions and discrepancies.
 - **worktree** (optional): worktree path; default `<repo_root>-worktrees/stack/<bottom-slug>`
   where `<bottom-slug>` is the resolved bottom branch name with `/` replaced by `-`
 - **push** (optional, default `true`): run `gh stack submit --auto` when fully clean
-- **dry_run** (optional, default `false`): pass `--dry-run` to the convert script and return
-  its per-layer plan without executing anything (skip steps 6–7)
+- **dry_run** (optional, default `false`): preview only — skip the worktree steps (2–3) and
+  the execution steps (6–7), and run the convert script with `--dry-run` directly against
+  `--cwd <repo_root>`; nothing is created or mutated (the fetch updates remote-tracking refs
+  only). Return the script's per-layer plan.
 
 ## Execution
 

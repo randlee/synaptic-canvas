@@ -498,6 +498,16 @@ class TestConvertIntegration:
         assert gs.config_get("rerere.enabled", cwd=repo) == ""
         assert _orig_refs(repo) == ""
 
+    def test_dry_run_agrees_with_execution_on_rerun(self, repo):
+        """The preview must make the SAME decision the executor makes: after a
+        successful conversion, --dry-run reports skip (never refuse_diverged)
+        for every already-chained layer."""
+        code, env = cv.convert("main", ["pr1", "pr3"], cwd=repo)
+        assert code == cv.EXIT_OK, env
+        code, env = cv.convert("main", ["pr1", "pr3"], cwd=repo, dry_run=True)
+        assert code == cv.EXIT_OK, env
+        assert [p["action"] for p in env["data"]["planned"]] == ["skip", "skip"]
+
     def test_pr_number_resolution_uses_gh_stub(self, repo):
         # No patching: the PATH gh stub answers `gh pr view <n> --json headRefName -q .headRefName`.
         code, env = cv.convert("main", ["1", "3"], cwd=repo)

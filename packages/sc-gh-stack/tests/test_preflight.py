@@ -63,6 +63,7 @@ class TestShared:
         out = capsys.readouterr().out
         payload = json.loads(out.split("```json")[1].split("```")[0])
         assert payload["success"] is False
+        assert payload["error"]["code"] == "PREFLIGHT.GIT_MISSING"
 
     def test_envelope_error_shape(self):
         env = gs.envelope(False, None, gs.error_obj("X.Y", "m", True, "do it"))
@@ -78,6 +79,7 @@ def _healthy_env(monkeypatch, **overrides):
     }
     gh_map.update(overrides.pop("gh", {}))
     monkeypatch.setattr(gs, "gh", lambda args, cwd=None: gh_map[tuple(args)])
+    monkeypatch.setattr(gs, "git", lambda args, cwd=None: cp(0, "git version 2.44.0"))
     cfg = {"rerere.enabled": "true", "remote.pushDefault": ""}
     cfg.update(overrides.pop("config", {}))
     monkeypatch.setattr(gs, "config_get", lambda key, cwd=None: cfg.get(key, ""))
@@ -146,6 +148,13 @@ class TestPreflight:
         assert payload["data"]["failed"] == ["working_tree_clean"]
 
     def test_main_outside_repo(self, monkeypatch, capsys):
-        monkeypatch.setattr(gs, "in_git_repo", lambda cwd=None: False)
+        monkeypatch.setattr(gs, "git", lambda args, cwd=None: cp(128, "", "not a git repository"))
         assert pf.main([]) == 1
         assert "PREFLIGHT.NOT_A_REPO" in capsys.readouterr().out
+
+    def test_main_git_missing_is_distinct_from_not_a_repo(self, monkeypatch, capsys):
+        monkeypatch.setattr(gs, "git", lambda args, cwd=None: cp(127, "", "git: cannot execute"))
+        assert pf.main([]) == 1
+        out = capsys.readouterr().out
+        assert "PREFLIGHT.GIT_MISSING" in out
+        assert "PREFLIGHT.NOT_A_REPO" not in out

@@ -36,7 +36,10 @@ Invoked by the skill via the Task tool (`run_in_background: true`), one per stac
   (all-or-nothing: conflicts restore every branch), same conflict rubric,
   verifies layers above a fix contain it.
 
-Every report carries per-branch `before`/`after` SHAs and a `pushed` flag.
+Convert and sync report with the Standard envelope (`canceled`/`aborted_by`/
+`metadata`): every report carries per-branch `before`/`after` SHAs and a
+`pushed` flag, and a risky-conflict stop comes back as `canceled: true,
+aborted_by: "policy"` (`*_RISKY` error codes) — a hold for review, not a failure.
 
 ## Scripts
 
@@ -49,6 +52,7 @@ Stdlib-only Python 3; every run emits one fenced JSON envelope (`success`/`data`
   idempotent on re-run; refuses dirty trees, in-progress rebases, and diverged
   branches; fast-forwards branches merely behind; linearises trunk-merge
   layers; then `gh stack init`. Exit 5 on bad input or refused state.
+  `--dry-run` (alias `--validate`) previews the per-layer plan, mutating nothing.
 - `scripts/gh_stack_sync.py` — wraps `gh stack sync` with the same guards and
   envelope; exit 3 on conflict (all branches restored).
 - `scripts/gh_stack_shared.py` — git/gh wrappers and the envelope.

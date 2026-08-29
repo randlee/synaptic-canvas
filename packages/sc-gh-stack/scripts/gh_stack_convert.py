@@ -144,18 +144,20 @@ def begin_conversion(trunk: str, layers: List[str], cwd: Optional[Path] = None) 
         gs.git(["config", "sc-gh-stack.conversion", conv_id], cwd=cwd)
 
 
-def _check_remote_freshness(layer: str, remote: str, cwd: Optional[Path]) -> Optional[Dict[str, Any]]:
-    """Refuse to chain a local branch missing remote commits; ff if merely behind.
+def _freshness_verdict(layer: str, remote: str, cwd: Optional[Path]) -> str:
+    """Pure classifier shared by execution (chain) and preview (plan_chain):
+    "ok" | "fast_forward" | "diverged".
 
     A layer already adopted by this conversion (orig ref recorded and the branch
     tip has moved off it) is judged against its recorded pre-rebase tip instead:
     the rebase rewrote local history, so plain ancestry against the remote no
     longer means anything — but any commit the remote gained AFTER adoption
     shows up as the remote tip no longer being an ancestor of the recorded tip.
-    Returns a failure dict, or None when the layer is safe to chain.
     """
+    if not gs.local_branch_exists(layer, cwd=cwd):
+        return "ok"    # will be created tracking the remote tip
     if not gs.remote_branch_exists(remote, layer, cwd=cwd):
-        return None
+        return "ok"
     remote_ref = f"{remote}/{layer}"
     orig = _orig_tip(layer, cwd=cwd)
     adopted = orig is not None and orig != _rev(_head(layer), cwd=cwd)
@@ -166,10 +168,23 @@ def _check_remote_freshness(layer: str, remote: str, cwd: Optional[Path]) -> Opt
         # (`git rebase <remote>/<layer>`), both of which must pass.
         if gs.is_ancestor(remote_ref, orig, cwd=cwd) \
                 or gs.is_ancestor(remote_ref, _head(layer), cwd=cwd):
-            return None
-    elif gs.is_ancestor(remote_ref, _head(layer), cwd=cwd):
+            return "ok"
+        return "diverged"
+    if gs.is_ancestor(remote_ref, _head(layer), cwd=cwd):
+        return "ok"
+    if gs.is_ancestor(_head(layer), remote_ref, cwd=cwd):
+        return "fast_forward"
+    return "diverged"
+
+
+def _check_remote_freshness(layer: str, remote: str, cwd: Optional[Path]) -> Optional[Dict[str, Any]]:
+    """Refuse to chain a local branch missing remote commits; ff if merely behind.
+    Returns a failure dict, or None when the layer is safe to chain."""
+    verdict = _freshness_verdict(layer, remote, cwd)
+    if verdict == "ok":
         return None
-    elif gs.is_ancestor(_head(layer), remote_ref, cwd=cwd):
+    remote_ref = f"{remote}/{layer}"
+    if verdict == "fast_forward":
         ff = _fast_forward(layer, remote_ref, cwd=cwd)
         if ff.returncode == 0:
             return None
@@ -285,13 +300,13 @@ def plan_chain(layers: List[str], trunk_ref: str, remote: str,
             else f"refs/remotes/{remote}/{layer}"
         entry: Dict[str, Any] = {"branch": layer,
                                  "onto": below if below_name is None else below_name}
-        remote_ref = f"{remote}/{layer}"
-        if gs.remote_branch_exists(remote, layer, cwd=cwd) \
-                and not gs.is_ancestor(remote_ref, layer_ref, cwd=cwd):
-            if gs.is_ancestor(layer_ref, remote_ref, cwd=cwd):
-                entry["action"] = "fast_forward_then_rebase"
-            else:
-                entry["action"] = "refuse_diverged"
+        verdict = _freshness_verdict(layer, remote, cwd)   # same classifier chain() uses
+        if verdict == "diverged":
+            entry["action"] = "refuse_diverged"
+            planned.append(entry)
+            break    # chain() stops here too; later entries would be speculative
+        if verdict == "fast_forward":
+            entry["action"] = "fast_forward_then_rebase"
             planned.append(entry)
             below, below_name = layer_ref, layer
             continue
