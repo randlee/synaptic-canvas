@@ -70,6 +70,21 @@ def test_unparseable_timestamp_and_missing_aggregate(tmp_path, monkeypatch):
     assert [p.name for p in copied] == ["latest-suite.html"]
 
 
+def test_harness_reports_collected_with_mtime_stamp(tmp_path, monkeypatch):
+    mod, pkg = _setup(tmp_path, monkeypatch)
+    harness_dir = tmp_path / "test-packages" / "reports"
+    harness_dir.mkdir(parents=True)
+    monkeypatch.setattr(mod, "HARNESS_REPORTS_DIR", harness_dir)
+    (harness_dir / "demo-pkg-evals.html").write_text("<h1>harness</h1>")
+    (harness_dir / "unrelated.html").write_text("x")  # no -evals suffix: ignored
+    copied = mod.collect()
+    assert len(copied) == 1
+    name = copied[0].name
+    assert name.endswith("-harness.html") and copied[0].parent.name == "demo-pkg"
+    assert copied[0].read_text() == "<h1>harness</h1>"
+    assert mod.collect() == []  # idempotent (same mtime)
+
+
 def test_package_filter(tmp_path, monkeypatch):
     mod, pkg = _setup(tmp_path, monkeypatch)
     other = tmp_path / "packages" / "other-pkg"

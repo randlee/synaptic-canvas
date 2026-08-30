@@ -25,7 +25,26 @@ unless `--include-evals` is passed).
 
 ## Running
 
-### Interim: local runner (until `claude plugin eval` is unlocked)
+### Primary: test-packages harness
+
+The repo's test harness (`test-packages/`, see its README) executes these cases with
+full isolation (HOME override), hook traces, artifact preservation, and its HTML
+report format. `scripts/generate-eval-fixtures.py` converts every case here into
+`test-packages/fixtures/sc-gh-stack-evals/` (files are marked GENERATED — edit the
+case, re-run the generator):
+
+```bash
+python3 scripts/generate-eval-fixtures.py --package sc-gh-stack
+pytest test-packages/fixtures/sc-gh-stack-evals/ -v --open-report
+```
+
+Grader types map onto harness expectations (tool_used → tool_call/tool_not_called,
+regex → output_contains/output_not_contains/file_contains/file_not_contains, plus
+tool_order and llm_judge added to the harness for these evals). A case's `env:` block
+is applied via the generated project `.claude/settings.json` (the harness runs Claude
+with `--setting-sources project`).
+
+### Fallback: standalone local runner (until `claude plugin eval` is unlocked)
 
 `claude plugin eval` is early access (org enablement pending). Until then,
 `scripts/run-evals-local.py` executes the same case files unchanged — scaffold, prompt

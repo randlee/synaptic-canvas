@@ -56,8 +56,36 @@ def _eval_name(run_dir: Path) -> str:
     return _slug(suite) if suite else "suite"
 
 
-def collect(package: str | None = None, force: bool = False) -> list[Path]:
+HARNESS_REPORTS_DIR = REPO_ROOT / "test-packages" / "reports"
+
+
+def _collect_harness_reports(package: str | None, force: bool) -> list[Path]:
+    """Publish test-packages harness reports for <pkg>-evals fixtures.
+
+    The harness writes test-packages/reports/<pkg>-evals.html per run; the
+    copy is stamped with the report file's mtime so successive runs archive
+    side by side.
+    """
     copied: list[Path] = []
+    if not HARNESS_REPORTS_DIR.is_dir():
+        return copied
+    import datetime as _dt
+    for report in sorted(HARNESS_REPORTS_DIR.glob("*-evals.html")):
+        pkg = report.stem[: -len("-evals")]
+        if package and pkg != package:
+            continue
+        stamp = _dt.datetime.fromtimestamp(report.stat().st_mtime).strftime("%Y%m%d-%H%M%S")
+        dst = SITE_EVALS_DIR / pkg / f"{stamp}-harness.html"
+        if dst.exists() and not force:
+            continue
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(report, dst)
+        copied.append(dst)
+    return copied
+
+
+def collect(package: str | None = None, force: bool = False) -> list[Path]:
+    copied: list[Path] = _collect_harness_reports(package, force)
     pkg_dirs = [PACKAGES_DIR / package] if package else sorted(PACKAGES_DIR.iterdir())
     for pkg_dir in pkg_dirs:
         results = pkg_dir / "evals" / "results"

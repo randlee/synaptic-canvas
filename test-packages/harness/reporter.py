@@ -415,6 +415,26 @@ class ExpectationEvaluator:
             return self._evaluate_execution_param(
                 expectation_id, description, expected
             )
+        elif expectation_type == ExpectationType.OUTPUT_NOT_CONTAINS:
+            return self._evaluate_output_not_contains(
+                expectation_id, description, expected
+            )
+        elif expectation_type == ExpectationType.FILE_CONTAINS:
+            return self._evaluate_file_contains(
+                expectation_id, description, expected
+            )
+        elif expectation_type == ExpectationType.FILE_NOT_CONTAINS:
+            return self._evaluate_file_not_contains(
+                expectation_id, description, expected
+            )
+        elif expectation_type == ExpectationType.TOOL_ORDER:
+            return self._evaluate_tool_order(
+                expectation_id, description, expected
+            )
+        elif expectation_type == ExpectationType.LLM_JUDGE:
+            return self._evaluate_llm_judge(
+                expectation_id, description, expected
+            )
         else:
             return Expectation(
                 id=expectation_id,
@@ -746,6 +766,248 @@ class ExpectationEvaluator:
             expected=expected,
             actual=None,
             failure_reason=f"Pattern not found in output: {pattern}",
+        )
+
+    def _evaluate_output_not_contains(
+        self,
+        expectation_id: str,
+        description: str,
+        expected: dict[str, Any],
+    ) -> Expectation:
+        """Evaluate an output_not_contains expectation (inverted output_contains)."""
+        matched = self._evaluate_output_contains(expectation_id, description, expected)
+        if matched.status == TestStatus.FAIL:
+            return Expectation(
+                id=expectation_id,
+                description=description,
+                type=ExpectationType.OUTPUT_NOT_CONTAINS,
+                status=TestStatus.PASS,
+                expected=expected,
+                actual=None,
+            )
+        return Expectation(
+            id=expectation_id,
+            description=description,
+            type=ExpectationType.OUTPUT_NOT_CONTAINS,
+            status=TestStatus.FAIL,
+            expected=expected,
+            actual=matched.actual,
+            failure_reason=(
+                f"Found forbidden pattern in output: {expected.get('pattern', '')}"
+            ),
+        )
+
+    def _read_project_file(self, rel_path: str) -> str | None:
+        """Read a file relative to the test project (data.cwd); None if unreadable."""
+        base = Path(self.data.cwd) if self.data.cwd else Path.cwd()
+        target = base / rel_path
+        try:
+            return target.read_text(encoding="utf-8", errors="ignore")
+        except OSError:
+            return None
+
+    def _evaluate_file_contains(
+        self,
+        expectation_id: str,
+        description: str,
+        expected: dict[str, Any],
+    ) -> Expectation:
+        """Evaluate a file_contains expectation: regex against a project file."""
+        rel_path = expected.get("path", "")
+        pattern = expected.get("pattern", "")
+        flags = self._regex_flags(expected.get("flags", ""))
+        text = self._read_project_file(rel_path)
+        if text is None:
+            return Expectation(
+                id=expectation_id,
+                description=description,
+                type=ExpectationType.FILE_CONTAINS,
+                status=TestStatus.FAIL,
+                expected=expected,
+                actual=None,
+                failure_reason=f"File not readable: {rel_path}",
+            )
+        match = re.search(pattern, text, flags)
+        if match:
+            start = max(0, match.start() - 50)
+            end = min(len(text), match.end() + 50)
+            return Expectation(
+                id=expectation_id,
+                description=description,
+                type=ExpectationType.FILE_CONTAINS,
+                status=TestStatus.PASS,
+                expected=expected,
+                actual={"matched_text": match.group(), "context": text[start:end]},
+            )
+        return Expectation(
+            id=expectation_id,
+            description=description,
+            type=ExpectationType.FILE_CONTAINS,
+            status=TestStatus.FAIL,
+            expected=expected,
+            actual=None,
+            failure_reason=f"Pattern not found in {rel_path}: {pattern}",
+        )
+
+    def _evaluate_file_not_contains(
+        self,
+        expectation_id: str,
+        description: str,
+        expected: dict[str, Any],
+    ) -> Expectation:
+        """Evaluate a file_not_contains expectation (inverted file_contains).
+
+        A missing file passes: the forbidden content is absent either way.
+        """
+        rel_path = expected.get("path", "")
+        if self._read_project_file(rel_path) is None:
+            return Expectation(
+                id=expectation_id,
+                description=description,
+                type=ExpectationType.FILE_NOT_CONTAINS,
+                status=TestStatus.PASS,
+                expected=expected,
+                actual=None,
+            )
+        matched = self._evaluate_file_contains(expectation_id, description, expected)
+        if matched.status == TestStatus.FAIL:
+            return Expectation(
+                id=expectation_id,
+                description=description,
+                type=ExpectationType.FILE_NOT_CONTAINS,
+                status=TestStatus.PASS,
+                expected=expected,
+                actual=None,
+            )
+        return Expectation(
+            id=expectation_id,
+            description=description,
+            type=ExpectationType.FILE_NOT_CONTAINS,
+            status=TestStatus.FAIL,
+            expected=expected,
+            actual=matched.actual,
+            failure_reason=(
+                f"Found forbidden pattern in {rel_path}: {expected.get('pattern', '')}"
+            ),
+        )
+
+    def _evaluate_tool_order(
+        self,
+        expectation_id: str,
+        description: str,
+        expected: dict[str, Any],
+    ) -> Expectation:
+        """Evaluate a tool_order expectation.
+
+        expected: {before: <regex>, after: <regex>, tool?: <name>, flags?: "i"}
+        Passes when the first tool call matching `before` precedes the first
+        call matching `after` (both matched against the JSON tool input;
+        optionally restricted to one tool name).
+        """
+        tool_name = expected.get("tool", "")
+        flags = self._regex_flags(expected.get("flags", "i"))
+
+        def first_index(pattern: str) -> int | None:
+            compiled = re.compile(pattern, flags)
+            for i, tc in enumerate(self.data.tool_calls):
+                if tool_name and tc.tool_name != tool_name:
+                    continue
+                if compiled.search(json.dumps(tc.tool_input)):
+                    return i
+            return None
+
+        before_idx = first_index(expected.get("before", ""))
+        after_idx = first_index(expected.get("after", ""))
+        actual = {"before_index": before_idx, "after_index": after_idx}
+        if before_idx is not None and after_idx is not None and before_idx < after_idx:
+            return Expectation(
+                id=expectation_id,
+                description=description,
+                type=ExpectationType.TOOL_ORDER,
+                status=TestStatus.PASS,
+                expected=expected,
+                actual=actual,
+            )
+        if before_idx is None or after_idx is None:
+            missing = "before" if before_idx is None else "after"
+            reason = f"No tool call matched the '{missing}' pattern"
+        else:
+            reason = (
+                f"'after' pattern matched at index {after_idx}, before "
+                f"'before' pattern at index {before_idx}"
+            )
+        return Expectation(
+            id=expectation_id,
+            description=description,
+            type=ExpectationType.TOOL_ORDER,
+            status=TestStatus.FAIL,
+            expected=expected,
+            actual=actual,
+            failure_reason=reason,
+        )
+
+    def _evaluate_llm_judge(
+        self,
+        expectation_id: str,
+        description: str,
+        expected: dict[str, Any],
+    ) -> Expectation:
+        """Evaluate an llm_judge expectation: a model grades the final response.
+
+        expected: {criteria: <text>, judge_model?: <model id>}
+        Judged against the last Claude response via a headless `claude -p`
+        call; the judge must answer PASS/FAIL with a reason. Fails closed
+        (with the reason in failure_reason) when the judge is unavailable.
+        """
+        import shutil
+        import subprocess
+
+        criteria = expected.get("criteria", "")
+        judge_model = expected.get("judge_model", "claude-haiku-4-5-20251001")
+        last_message = self.data.claude_responses[-1].text if self.data.claude_responses else ""
+        claude_bin = shutil.which("claude")
+        if not claude_bin:
+            return Expectation(
+                id=expectation_id,
+                description=description,
+                type=ExpectationType.LLM_JUDGE,
+                status=TestStatus.FAIL,
+                expected={"criteria": criteria},
+                actual=None,
+                failure_reason="`claude` CLI not on PATH; llm_judge unavailable",
+            )
+        prompt = (
+            "You are grading an AI agent's final answer against pass criteria.\n\n"
+            f"CRITERIA:\n{criteria}\n\nAGENT'S FINAL ANSWER:\n{last_message[:8000]}\n\n"
+            "Reply with exactly one line: PASS: <one-sentence reason> "
+            "or FAIL: <one-sentence reason>."
+        )
+        try:
+            proc = subprocess.run(
+                [claude_bin, "-p", prompt, "--model", judge_model,
+                 "--output-format", "json"],
+                capture_output=True, text=True, timeout=120,
+            )
+            verdict = json.loads(proc.stdout).get("result", "").strip()
+        except Exception as exc:  # judge failures fail closed with the reason
+            return Expectation(
+                id=expectation_id,
+                description=description,
+                type=ExpectationType.LLM_JUDGE,
+                status=TestStatus.FAIL,
+                expected={"criteria": criteria},
+                actual=None,
+                failure_reason=f"judge error: {exc}",
+            )
+        passed = verdict.upper().startswith("PASS")
+        return Expectation(
+            id=expectation_id,
+            description=description,
+            type=ExpectationType.LLM_JUDGE,
+            status=TestStatus.PASS if passed else TestStatus.FAIL,
+            expected={"criteria": criteria, "judge_model": judge_model},
+            actual={"verdict": verdict[:300]},
+            failure_reason=None if passed else f"judge: {verdict[:300]}",
         )
 
     def _evaluate_execution_param(
