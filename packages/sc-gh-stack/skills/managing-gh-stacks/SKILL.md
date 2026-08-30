@@ -38,6 +38,11 @@ rewritten with git, never with `gh stack modify`.
 - Bottom merges first. `up` = away from trunk, `down` = toward it.
 - Strictly linear: one parent, at most one child. Parallel work is a *separate stack*.
 - Git ancestry is the truth; stack metadata only describes it. Fix ancestry first, always.
+- Two bases, two purposes: **develop-based stacks** for feature work (the common case —
+  integration-test on develop), **main-based carry stacks** for releases
+  (`main <- develop <- bump+preflight`; `references/playbook-merge.md`, "Release stacks
+  and the carry layer"). Features never stack toward main; releases never carry feature
+  layers.
 
 ## Step 1 — Verify `gh`, the `gh-stack` extension, and `git`
 

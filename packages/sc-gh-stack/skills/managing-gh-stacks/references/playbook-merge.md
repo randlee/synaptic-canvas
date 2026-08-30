@@ -69,11 +69,17 @@ invalidating its gated CI from inside the stack, and the tooling cannot rebase a
 head. Never build this shape. Fix: land the stack into the protected branch, then the
 onward PR separately.
 
-**Sound — the carry layer.** The same PR at the **bottom** of a main-based stack:
+**Sound — the carry layer.** The same PR at the **bottom** of a main-based stack.
+The canonical release shape is thin — the carry plus one release-prep layer:
 
 ```
-(main) <- develop <- feat/A <- feat/B <- feat/C
+(main) <- develop <- version-bump+preflight-fixes
 ```
+
+(Feature layers normally do NOT ride release stacks: day-to-day work lives in
+**develop-based stacks** — `(develop) <- L1 <- L2` — and integration-tests on develop
+first. The release stack carries *develop itself*, which already integrated them, plus
+the bump/preflight layer where `set-package-version.py` output lands.)
 
 Nothing below feeds `develop`, so nothing in the stack moves its head. On
 `gh stack merge --yes`, the carry layer merges first (main catches up to develop), then
