@@ -61,6 +61,35 @@ ls .claude/skills/managing-gh-stacks/SKILL.md 2>/dev/null \
    branch in a worktree that carries gh-stack tracking; when in doubt, keep it.
 4. **Never** `gh pr merge` a stacked PR, never force-push or `git reset --hard`
    stack branches from a worktree operation — `gh stack` owns pushing and merging.
+5. **A worktree is stacked iff it NEEDS to be — and the base branch decides.**
+   Work based on trunk (a protected/merged branch) is independent: a flat
+   worktree is correct, regardless of where the request came from. Work based on
+   an **unmerged branch** depends on unmerged work — that is the definition of a
+   stack layer — so it MUST be stacked; a flat worktree there fragments the
+   system (per-worktree tracking cannot see it, layers sprawl into separate
+   worktrees, branch ownership becomes ambiguous). The create script REFUSES a
+   flat create (error `CREATE.NEEDS_STACK`) when the base branch is neither
+   protected nor merged into trunk. Route by what the base is:
+   - **Base is a layer of an existing tracked stack** → NO new worktree. The new
+     branch is a layer in that stack's own worktree (`gh stack` manages layers
+     there; with sc-gh-stack installed, use its skill).
+   - **Base is an untracked unmerged branch** → you are creating a 2-layer
+     stack: one worktree at `<repo>-worktrees/stack/<base-slug>` on the new
+     branch, then `gh stack init --base <trunk-of-base> <base> <new-branch>`.
+   - **Base genuinely independent despite being unmerged** (rare — e.g. a
+     long-lived integration branch; explicit user intent only) → pass the
+     explicit `flat: true` override; never pass it to silence the error.
+   Fail direction: a squash-merged base can look unmerged to ancestry checks —
+   the refusal errs toward stacking, and the override exists for the human call.
+
+   The script enforces only this hard floor. **The activity decides the rest**:
+   when the work at hand is stack-oriented — executing a planned set of stacks,
+   operating from a stack worktree, or the user asked for stacked work — create
+   stacked even off trunk (the new branch becomes a new stack's bottom at
+   `<repo>-worktrees/stack/<branch-slug>` + `gh stack init`). Trunk-based
+   requests with no stack context remain plain flat creates, exactly as this
+   skill has always behaved — existing prompts that say "create a worktree off
+   develop" are unaffected.
 
 ## Minimal command reference (fallback when sc-gh-stack is absent)
 

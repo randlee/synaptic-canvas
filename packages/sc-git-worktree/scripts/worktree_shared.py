@@ -492,11 +492,17 @@ def check_gh_stack_tracked(path: Path) -> bool:
 
 
 def is_branch_merged(branch: str, base: str = "HEAD", cwd: Optional[Path] = None) -> bool:
-    """Check if branch is merged into base."""
+    """Check if branch is merged into base.
+
+    `git branch --merged` prefixes the current branch with `* ` and any
+    branch checked out in another worktree with `+ ` — strip both marker
+    characters (and the separating space) so a branch merged but checked
+    out elsewhere isn't misread as unmerged.
+    """
     result = run_git(["branch", "--merged", base], cwd=cwd, check=False)
     if result.returncode != 0:
         return False
-    merged_branches = [b.strip().lstrip("* ") for b in result.stdout.strip().split("\n")]
+    merged_branches = [b.strip().lstrip("*+ ") for b in result.stdout.strip().split("\n")]
     return branch in merged_branches
 
 

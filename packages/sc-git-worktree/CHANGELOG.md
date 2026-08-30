@@ -21,10 +21,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   single-branch cleanup and abort surface `gh_stack_tracked` without blocking
   (they already require explicit approval). 11 new tests (suite 132 -> 143).
 
+- Need-based stacking guard in create: a worktree must be stacked iff the base
+  branch requires it. Base protected-or-merged → flat create unchanged; base
+  unmerged → refused with `CREATE.NEEDS_STACK`, routing to the tracked stack's
+  worktree (when the base carries gh-stack tracking) or a new
+  `stack/<base-slug>` worktree + `gh stack init`; explicit `flat: true`
+  overrides. Fails OPEN when protected-branch config is absent, preserving the
+  historical config-free flat-create path. 7 new tests (suite 144 -> 151).
+
 ### Fixed
 - Abort agent doc contradicted the implementation on protected branches (claimed
   local deletion possible with approval; the script unconditionally preserves).
 - Scan agent example error code casing (`tracking.missing` -> `TRACKING.MISSING`).
+- `is_branch_merged` misread branches checked out in other worktrees as
+  unmerged (git's `+ ` prefix was not stripped) — single-branch cleanup of a
+  genuinely merged branch always refused with `WORKTREE.UNMERGED` unless the
+  caller overrode with `merged: true`. Batch cleanup behavior is unchanged
+  (verified equivalent pre/post).
 
 ## [0.10.0] - 2026-04-18
 

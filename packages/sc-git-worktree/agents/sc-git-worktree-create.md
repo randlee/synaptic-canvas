@@ -31,6 +31,13 @@ Collect these from the prompt and pass to the script:
 - **worktree_base** (optional): base directory for worktrees
 - **tracking_enabled** (optional): update tracking doc (default: true)
 - **tracking_path** (optional): path to tracking doc
+- **flat** (optional, default: false): bypass the need-based stacking guard and
+  force a flat create even when the base branch is neither protected nor
+  merged into trunk. Use only when the base is genuinely independent despite
+  being unmerged (e.g. a long-lived integration branch) — never to silence a
+  `CREATE.NEEDS_STACK` refusal without that judgment call.
+- **protected_branches** (optional): explicit protected-branch list (auto-detected if omitted)
+- **cache_protected_branches** (optional): cache detected protected branches to shared settings (default: true)
 
 ## Execution
 
@@ -83,6 +90,32 @@ The script returns fenced JSON. Forward it directly - do not modify or wrap.
 }
 ```
 
+**Error example (base needs stacking):**
+```json
+{
+  "success": false,
+  "error": {
+    "code": "CREATE.NEEDS_STACK",
+    "message": "Base branch 'feature/api' is neither protected nor merged into trunk - new work on it depends on unmerged work and must be a stack layer, not a flat worktree",
+    "recoverable": true,
+    "suggested_action": "base 'feature/api' is unmerged: create a stack worktree at /path/to/repo-worktrees/stack/feature-api and `gh stack init --base main feature/api feature/api-tests` (install sc-gh-stack for the full workflow)"
+  },
+  "data": {
+    "base": "feature/api",
+    "base_merged": false,
+    "base_protected": false,
+    "gh_stack_tracked": null,
+    "suggested_worktree_path": "/path/to/repo-worktrees/stack/feature-api"
+  },
+  "transcript": [...]
+}
+```
+When `gh_stack_tracked` is `true`, `suggested_worktree_path` and the
+`suggested_action` instead name the existing tracked stack's worktree — do not
+create a separate worktree in that case; add the new branch as a layer there.
+Pass `flat: true` only for a deliberate, explicit override (never to silence
+this refusal by default).
+
 ## Output Protocol
 
 Wrap the script output in `<output_json>` tags with a fenced JSON block. Do not add prose outside the tags.
@@ -97,6 +130,7 @@ Wrap the script output in `<output_json>` tags with a fenced JSON block. Do not 
 | `WORKTREE.BRANCH_IN_USE` | Branch checked out elsewhere | No |
 | `WORKTREE.DIRTY` | Worktree dirty after creation | No |
 | `GIT.ERROR` | Git command failed | No |
+| `CREATE.NEEDS_STACK` | Base branch is neither protected nor merged into trunk; flat create refused (pass `flat: true` to override, or follow `suggested_action` to create the base as a proper stack) | Yes |
 
 ## Constraints
 

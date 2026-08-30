@@ -77,6 +77,10 @@ git:
 
 Read `references/gh-stack-support.md` before proceeding when EITHER holds:
 
+- a CREATE targets a base branch that is neither protected nor merged into
+  trunk — the new work depends on unmerged work, so it must be a stack layer;
+  the create script refuses a flat create there (`CREATE.NEEDS_STACK`; route
+  per the reference's rule 5, explicit `flat: true` overrides); or
 - a worktree under scan/cleanup/abort carries gh-stack tracking
   (`test -e "$(git -C <wt> rev-parse --git-dir)/gh-stack"`; scan and cleanup
   report this as `gh_stack_tracked`, and batch cleanup skips such worktrees) —
