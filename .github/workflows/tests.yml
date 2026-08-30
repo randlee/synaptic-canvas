@@ -60,6 +60,11 @@ jobs:
       # Harness unit tests only. NEVER point CI at test-packages/fixtures/ —
       # fixture tests (including the generated *-evals ones) execute live
       # Claude agent sessions and are run manually/by PQA, not in CI.
+      # Skipped on Windows: the harness is POSIX-only by design (HOME-override
+      # isolation, bash setup commands in fixtures, POSIX transcript-path
+      # encoding) and can never execute fixtures on Windows, so Windows
+      # coverage of its unit tests guards nothing real.
       - name: Run test-harness unit tests
+        if: runner.os != 'Windows'
         run: pytest harness/tests -v
         working-directory: test-packages
