@@ -2,7 +2,9 @@
 from __future__ import annotations
 
 import importlib.util
+import shutil
 import subprocess
+import sys
 import textwrap
 from pathlib import Path
 
@@ -10,6 +12,13 @@ import pytest
 import yaml
 
 REPO_ROOT = Path(__file__).parent.parent
+
+_BASH = shutil.which("bash")
+requires_posix_bash = pytest.mark.skipif(
+    sys.platform == "win32" or not _BASH,
+    reason="executes the generated heredoc via POSIX bash + python3; the "
+           "env-merge command only ever runs in the POSIX-only eval harness",
+)
 
 
 def _load():
@@ -104,6 +113,7 @@ class TestEnvMergeCommand:
         assert "MERGE_ENV_EOF" in cmd
         assert "'PATH': './bin:/usr/bin'" in cmd or '"PATH"' in cmd or "PATH" in cmd
 
+    @requires_posix_bash
     def test_executed_command_absolutizes_relative_path_entries(self, tmp_path):
         cmd = MOD._env_merge_command({"PATH": "./bin:../bin:/usr/bin"})
         cwd = tmp_path / "project"
@@ -118,6 +128,7 @@ class TestEnvMergeCommand:
         assert parts[1] == str((cwd.parent / "bin").resolve())
         assert parts[2] == "/usr/bin"
 
+    @requires_posix_bash
     def test_merges_into_existing_settings_without_dropping_other_keys(self, tmp_path):
         cwd = tmp_path / "project"
         (cwd / ".claude").mkdir(parents=True)
@@ -131,6 +142,7 @@ class TestEnvMergeCommand:
         assert settings["hooks"] == {"x": 1}
         assert settings["env"]["PATH"] == "/usr/bin"
 
+    @requires_posix_bash
     def test_non_path_keys_kept_verbatim(self, tmp_path):
         cwd = tmp_path / "project"
         cwd.mkdir()
