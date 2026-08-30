@@ -931,7 +931,9 @@ class YAMLTestItem(pytest.Item):
             Tuple of (path, line, description)
         """
         source = self.test_config.source_path or Path(str(self.fspath))
-        return source, None, f"{self.fixture_config.name}::{self.test_config.test_id}"
+        # Line 0, not None: pytest's skip/xfail report path asserts a real
+        # line number when building the "skipped at <location>" longrepr.
+        return source, 0, f"{self.fixture_config.name}::{self.test_config.test_id}"
 
 
 # =============================================================================
@@ -1140,21 +1142,40 @@ def pytest_sessionstart(session: pytest.Session) -> None:
     _report_state._session_start = datetime.now()
 
 
+def _is_eval_fixture_path(path: Path) -> bool:
+    """True when a collected YAML test belongs to a *-evals fixture.
+
+    Eval fixtures are generated from packages/<pkg>/evals and execute live
+    Claude agent sessions — they must never run by accident (CI, or a broad
+    `pytest test-packages/fixtures/` sweep); running them requires --run-evals.
+    """
+    return any(part.endswith("-evals") for part in path.parts)
+
+
 def pytest_collection_modifyitems(
     config: Config,
     items: list[pytest.Item],
 ) -> None:
     """Pytest hook to modify collected items.
 
-    Adds the fixture_test marker to all YAML test items.
+    Adds the fixture_test marker to all YAML test items, and skips *-evals
+    fixture tests unless --run-evals was passed (they execute live agent
+    sessions and cost real model usage).
 
     Args:
         config: Pytest configuration
         items: List of collected test items
     """
+    run_evals = config.getoption("--run-evals", default=False)
+    skip_evals = pytest.mark.skip(
+        reason="eval fixture (executes live Claude agent sessions); "
+               "pass --run-evals to execute"
+    )
     for item in items:
         if isinstance(item, YAMLTestItem):
             item.add_marker(pytest.mark.fixture_test)
+            if not run_evals and _is_eval_fixture_path(Path(str(item.fspath))):
+                item.add_marker(skip_evals)
 
 
 def pytest_runtest_makereport(

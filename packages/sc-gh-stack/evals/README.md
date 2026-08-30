@@ -35,9 +35,13 @@ case, re-run the generator):
 
 ```bash
 python3 scripts/generate-eval-fixtures.py --package sc-gh-stack
-pytest test-packages/fixtures/sc-gh-stack-evals/ -v --open-report
-python3 scripts/collect-eval-reports.py     # rebuilds site/reports/evals/index.html
+pytest test-packages/fixtures/sc-gh-stack-evals/ -v --open-report --run-evals
+python3 scripts/collect-eval-reports.py     # rebuilds the site/reports/evals pages
 ```
+
+`--run-evals` is required: eval fixtures execute live Claude agent sessions, so the
+harness skips them by default — a broad `pytest test-packages/fixtures/` sweep, CI, or
+an accidental run can never start one.
 
 Eval-fixture reports publish **directly** to
 `site/reports/evals/<pkg>/<YYYYMMDD-HHMMSS>-<pkg>-evals.html` (plus the JSON sidecar and

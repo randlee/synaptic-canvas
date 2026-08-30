@@ -24,3 +24,15 @@ def test_non_eval_fixture_unrouted():
 
 def test_explicit_report_dir_overrides():
     assert _eval_report_destination("sc-gh-stack-evals", report_dir="/tmp/custom") is None
+
+
+def test_eval_fixture_path_predicate():
+    from harness.pytest_plugin import _is_eval_fixture_path
+
+    assert _is_eval_fixture_path(
+        Path("fixtures/sc-gh-stack-evals/tests/test_x.yaml"))
+    assert not _is_eval_fixture_path(
+        Path("fixtures/sc-startup/tests/test_basic.yaml"))
+    # "-evals" must match a whole path segment suffix, not test filenames
+    assert not _is_eval_fixture_path(
+        Path("fixtures/sc-startup/tests/test_evals.yaml"))
