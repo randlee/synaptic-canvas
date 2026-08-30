@@ -44,15 +44,18 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements-dev.txt
 
-      - name: Run repo tests
-        run: pytest tests/ -v
-
-      # Separate invocation: tests/ and packages/*/tests are both packages
-      # named "tests", so pytest cannot collect them together. Skipped on
-      # Windows: these tests drive real git with bash-based gh stubs.
-      - name: Run sc-gh-stack package tests
+      # pytest.ini sets --import-mode=importlib, so tests/ and
+      # packages/sc-gh-stack/tests (both named "tests") can be collected
+      # together in one invocation. sc-gh-stack's tests drive real git with
+      # bash-based gh stubs, so they're skipped on Windows; Windows runs the
+      # repo tests on their own instead.
+      - name: Run tests
         if: runner.os != 'Windows'
-        run: pytest packages/sc-gh-stack/tests -v
+        run: pytest tests/ packages/sc-gh-stack/tests -v
+
+      - name: Run repo tests (Windows)
+        if: runner.os == 'Windows'
+        run: pytest tests/ -v
 
       # Harness unit tests only. NEVER point CI at test-packages/fixtures/ —
       # fixture tests (including the generated *-evals ones) execute live
