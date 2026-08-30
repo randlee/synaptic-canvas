@@ -165,8 +165,18 @@ def sync_marketplace(
 
             # Update other fields
             for field_name in ["license", "keywords", "category"]:
-                if field_name in reg_pkg and mkt_pkg.get(field_name) != reg_pkg.get(field_name):
-                    mkt_pkg[field_name] = reg_pkg[field_name]
+                if field_name not in reg_pkg:
+                    continue
+                reg_value = reg_pkg.get(field_name)
+                # registry.json's "keywords" is frequently unpopulated (see
+                # update-registry.py, which does not yet read manifest.yaml's
+                # "tags" into it). Never let an empty/falsy registry value
+                # blank out keywords that already exist in marketplace.json —
+                # only sync when the registry actually has something to give.
+                if field_name == "keywords" and not reg_value:
+                    continue
+                if mkt_pkg.get(field_name) != reg_value:
+                    mkt_pkg[field_name] = reg_value
                     changes_made = True
 
             # author must always be an object
