@@ -41,12 +41,12 @@ Apply the mapping rules (a stack is strictly linear; its only external dependenc
    parallel QA against each other; otherwise hold C until A merges to trunk and start C as its
    own stack. State which rule you applied and why.
 5. **Tie order within a stack**: smaller/riskier-to-conflict first.
-6. **Worktrees**: one worktree per stack at `<repo_root>-worktrees/stack/<bottom-slug>`,
-   where `<bottom-slug>` is the bottom branch name with `/` replaced by `-` (gh-stack
-   tracking state is per-worktree, so parallel stacks never interfere). Layers within a
-   stack share the stack's worktree — they are sequential by construction. Base new bottom
-   branches on the REMOTE trunk tip, never the possibly stale local trunk: emit
-   `git fetch <remote>` first, then `git worktree add <path> -b <bottom> <remote>/<trunk>`.
+6. **Worktrees**: one worktree per stack, at the bottom branch's normal worktree location —
+   `<repo_root>-worktrees/<bottom-branch>` (gh-stack tracking state is per-worktree, so
+   parallel stacks never interfere). Layers within a stack share the stack's worktree — they
+   are sequential by construction. Base new bottom branches on the REMOTE trunk tip, never
+   the possibly stale local trunk: emit `git fetch <remote>` first, then `git worktree add
+   <path> -b <bottom> <remote>/<trunk>`.
 
 7. **Never plan a layer whose head is a protected/long-lived branch** (e.g. a
    `develop -> main` PR inside a release stack): its head moves when the layer below
@@ -72,10 +72,10 @@ Return ONE fenced JSON block (Basic envelope — this agent is single-step and r
         "shape": "(main) <- feat/schema <- feat/api <- feat/ui",
         "branches": ["feat/schema", "feat/api", "feat/ui"],
         "tasks": ["T1", "T3", "T4"],
-        "worktree": "/path/repo-worktrees/stack/feat-schema",
+        "worktree": "/path/repo-worktrees/feat/schema",
         "create": [
           "git fetch origin",
-          "git worktree add /path/repo-worktrees/stack/feat-schema -b feat/schema origin/main"
+          "git worktree add /path/repo-worktrees/feat/schema -b feat/schema origin/main"
         ],
         "rationale": "chain rule: T3 depends on T1, T4 on T3",
         "blocked": false

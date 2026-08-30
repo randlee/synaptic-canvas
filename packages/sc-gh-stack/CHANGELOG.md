@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- Layering fix: dropped the `stack/<bottom-slug>` worktree path scheme. Default stack
+  worktree location is now the bottom branch's normal worktree location,
+  `<repo_root>-worktrees/<bottom-branch>` — the same convention as any worktree (directory =
+  branch name), created with plain `git worktree add` when absent. Stack-ness was never a
+  path concern: it is repository state (`.git/worktrees/<wt>/gh-stack`). The one-worktree-per-
+  stack invariant is unchanged; only the path scheme is simpler. `correlation_id` continues
+  to use the bottom-branch slug as an identifier (unrelated to paths).
+
 ## 0.2.0 — 2026-08-28
 
 Orchestration release: background agents over the deterministic scripts.
@@ -18,9 +28,9 @@ Orchestration release: background agents over the deterministic scripts.
   (per-branch before/after SHAs, pushed flags, resolutions); failure envelopes
   are forensic (exact failing command, stderr, recovery action) so a caller
   recovers without investigation.
-- Worktree policy: one worktree per stack at `<repo>-worktrees/stack/<bottom>`;
-  gh-stack tracking verified per-worktree, so parallel stacks never interfere
-  and surfaced conflicts are reviewable in place.
+- Worktree policy: one worktree per stack at `<repo>-worktrees/<bottom>` (the bottom
+  branch's normal worktree location); gh-stack tracking verified per-worktree, so
+  parallel stacks never interfere and surfaced conflicts are reviewable in place.
 - SKILL.md rewritten orchestration-first (plan / convert / sync + agent
   delegation); new `playbook-graph-to-stacks.md` and `playbook-sync.md`;
   `playbook-convert.md` reworked agent-first with the manual path as fallback.

@@ -29,7 +29,7 @@ Invoked by the skill via the Task tool (`run_in_background: true`), one per stac
 - `sc-stack-plan` — read-only: dependency graph → stacks optimized for
   parallelism + exact worktree creation commands; ambiguous order comes back as
   questions, never guesses.
-- `sc-stack-convert` — chains flat PRs bottom-up in `<repo>-worktrees/stack/<bottom>`,
+- `sc-stack-convert` — chains flat PRs bottom-up in `<repo>-worktrees/<bottom>`,
   resolves **trivial** conflicts (reported as low-risk decisions), surfaces
   **risky** ones paused in the worktree for review, pushes via
   `gh stack submit --auto` only when fully clean.
@@ -83,7 +83,8 @@ atomically with `gh stack merge`.
 ## Storage
 
 Installs into `.claude/` only. No runtime state under `.claude/`. Stack work
-runs in per-stack worktrees (`<repo>-worktrees/stack/<bottom>`); gh-stack
+runs in per-stack worktrees (`<repo>-worktrees/<bottom>`, the bottom branch's
+normal worktree location); gh-stack
 tracking state is per-worktree, so parallel stacks never interfere.
 `gh_stack_convert.py` sets `rerere.enabled=true` in the target repo's local git
 config and keeps per-conversion bookkeeping in the target repo

@@ -19,7 +19,8 @@ Determine the layer order (Inputs below), then invoke the agent via the Task too
 { "trunk": "main", "layers": ["101", "102", "103", "104"], "repo_root": "/path/repo" }
 ```
 
-The agent works in a dedicated worktree (`<repo>-worktrees/stack/<bottom>`), runs preflight +
+The agent works in a dedicated worktree (`<repo>-worktrees/<bottom>`, the bottom branch's
+normal worktree location), runs preflight +
 the convert script, resolves **trivial** conflicts per the SKILL.md rubric (each reported as a
 low-risk decision: file, layer, kind, one-sentence summary — you should never need to
 investigate them), and pushes via `gh stack submit --auto` only when the whole chain completed

@@ -28,8 +28,8 @@ Complete the task quickly; report only decisions and discrepancies.
 - **trunk** (required): trunk branch name (e.g. `main`)
 - **layers** (required): branch names or PR numbers, bottom to top
 - **repo_root** (required): repository root path
-- **worktree** (optional): worktree path; default `<repo_root>-worktrees/stack/<bottom-slug>`
-  where `<bottom-slug>` is the resolved bottom branch name with `/` replaced by `-`
+- **worktree** (optional): worktree path; default `<repo_root>-worktrees/<bottom-branch>` —
+  the resolved bottom branch's normal worktree location
 - **push** (optional, default `true`): run `gh stack submit --auto` when fully clean
 - **dry_run** (optional, default `false`): preview only — skip the worktree steps (2–3) and
   the execution steps (6–7); run steps 4 and 5 with `--cwd <repo_root>` instead of the
@@ -90,7 +90,7 @@ those fields, do not paraphrase them away).
   "aborted_by": null,
   "data": {
     "shape": "(main) <- feat/schema <- feat/api",
-    "worktree": "/path/to/repo-worktrees/stack/feat-schema",
+    "worktree": "/path/to/repo-worktrees/feat/schema",
     "branches": [
       { "name": "feat/schema", "before": "abc1", "after": "def2", "pushed": true }
     ],

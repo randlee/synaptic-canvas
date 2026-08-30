@@ -11,10 +11,10 @@ concern — check out L2 in the stack's worktree, commit there, never on L4. The
 ## Route A — delegate to `sc-stack-sync` (default)
 
 ```json
-{ "worktree": "/path/repo-worktrees/stack/L1", "fix_branch": "L2" }
+{ "worktree": "/path/repo-worktrees/L1", "fix_branch": "L2" }
 ```
 
-(The worktree path uses the SKILL.md slug rule — `/` becomes `-`, no case folding.)
+(The worktree path is L1's normal worktree location per SKILL.md.)
 
 The agent runs `gh_stack_sync.py` (which wraps `gh stack sync`: fetch → reconcile with GitHub
 → fast-forward trunk → cascade rebase → atomic push). Merged and squash-merged layers are

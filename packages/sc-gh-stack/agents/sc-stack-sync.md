@@ -25,9 +25,10 @@ made and any discrepancy the caller must handle.
 
 ## Inputs
 
-- **worktree** (required): path of the stack's worktree, computed with the SKILL.md slug rule
-  (`<repo_root>-worktrees/stack/<bottom-slug>`, `/` → `-`, no case folding); a stack branch
-  must be checked out there (`gh stack checkout <branch>` if not)
+- **worktree** (required): path of the stack's worktree — the bottom branch's normal worktree
+  location per SKILL.md (`<repo_root>-worktrees/<bottom-branch>`; create with
+  `git worktree add <path> <bottom-branch>` if absent); a stack branch must be checked out
+  there (`gh stack checkout <branch>` if not)
 - **fix_branch** (optional): a middle layer that just received commits — after syncing, verify
   every layer above it contains its tip
 
@@ -85,7 +86,7 @@ fields, do not paraphrase them away).
   "canceled": false,
   "aborted_by": null,
   "data": {
-    "worktree": "/path/to/repo-worktrees/stack/L1",
+    "worktree": "/path/to/repo-worktrees/L1",
     "branches": [
       { "name": "L2", "before": "abc1", "after": "def2", "pushed": true },
       { "name": "L3", "before": "1122", "after": "3344", "pushed": true }

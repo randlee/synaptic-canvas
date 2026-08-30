@@ -102,10 +102,12 @@ installed — **do not reproduce the rebase chain or preflight checks by hand.**
 
 All stack execution happens in dedicated worktrees, never in the user's checkout:
 
-- One worktree per stack at `<repo_root>-worktrees/stack/<bottom-slug>`, where
-  `<bottom-slug>` is the bottom branch name with every `/` replaced by `-`
-  (`feat/schema` → `stack/feat-schema`). Both agents and callers must compute the path with
-  this rule so re-invocations land in the same worktree.
+- One worktree per stack, at the bottom branch's normal worktree location:
+  `<repo_root>-worktrees/<bottom-branch>` — same convention as any worktree (directory =
+  branch name). Stack-ness is repository state (`.git/worktrees/<wt>/gh-stack`), not a path
+  scheme. Create with `git worktree add <repo_root>-worktrees/<bottom-branch> <bottom-branch>`
+  if it does not already exist. Both agents and callers must compute the path with this rule
+  so re-invocations land in the same worktree.
 - gh-stack tracking state (`.git/worktrees/<wt>/gh-stack`) is **per-worktree**, so parallel
   stacks never interfere with each other or with the main checkout.
 - Worktrees are kept after agent runs — they are the review surface: any conflict an agent
