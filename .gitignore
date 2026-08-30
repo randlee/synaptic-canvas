@@ -32,3 +32,6 @@ __pycache__/
 *.pyc
 *.pyo
 .env
+
+# claude plugin eval raw run outputs (published copies live in site/reports/evals/)
+packages/*/evals/results/

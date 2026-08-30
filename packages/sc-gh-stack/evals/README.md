@@ -39,6 +39,18 @@ claude plugin eval . --case rebase-believe-the-report --model claude-haiku-4-5-2
 ```
 
 Results land in `evals/results/<timestamp>/aggregate-result.json` (+ `report.html`).
+
+## Publishing reports to the site
+
+Raw run outputs under `evals/results/` are gitignored. The committed record is
+`site/reports/evals/<plugin>/<date-time>-<eval-name>.html`, populated after a run with:
+
+```bash
+python3 scripts/collect-eval-reports.py --package sc-gh-stack
+```
+
+(`--report <path>` on the eval invocation can also write the HTML straight to that
+naming if you prefer skipping the sweep.)
 Each case pins `model:` to haiku in its frontmatter as well, so a bare invocation grades
 the small-model behavior the skill must survive.
 
