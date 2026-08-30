@@ -9,7 +9,7 @@ hooks:
     - matcher: "Bash"
       hooks:
         - type: command
-          command: "python3 scripts/validate_sc_manage_hook.py"
+          command: "python3 ${CLAUDE_PLUGIN_ROOT}/scripts/validate_sc_manage_hook.py"
 ---
 
 # sc-package-install

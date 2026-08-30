@@ -21,6 +21,8 @@ import re
 import sys
 from pathlib import Path
 
+REPO_ROOT = Path(__file__).parent.parent
+
 
 def scan_json_file(filepath: Path) -> list[dict]:
     """Scan .json file for hook commands with relative paths."""
@@ -146,7 +148,7 @@ def has_relative_path(command: str) -> bool:
 
 
 def main():
-    repo_root = Path(__file__).parent.parent
+    repo_root = REPO_ROOT
     issues = []
 
     # Scan JSON files
