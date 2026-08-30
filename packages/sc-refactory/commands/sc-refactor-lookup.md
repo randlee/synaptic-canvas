@@ -1,6 +1,6 @@
 ---
 name: sc-refactor-lookup
-version: 0.1.0
+version: 0.2.0
 description: Look up whether a trigger maps to an approved refactor rule before editing.
 options:
   - name: --signal

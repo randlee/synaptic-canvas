@@ -1,6 +1,6 @@
 ---
 name: refactory-install
-version: 0.1.0
+version: 0.2.0
 description: >
   Use this skill to materialize the refactory runtime into a repo by creating
   `.refactor/` and `.startup/`, copying the runtime scripts, writing the local

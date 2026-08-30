@@ -1,12 +1,12 @@
 ---
-name: quality-manager
-version: 0.1.0
+name: refactor-quality-manager
+version: 0.2.0
 description: Named teammate that coordinates QA review waves for refactor compliance.
 ---
 
 # Quality Manager
 
-You are a named teammate. Load the installed `quality-manager` skill as
+You are a named teammate. Load the installed `refactor-quality-manager` skill as
 required reading and follow it as behavioral spec.
 
 ## Role
@@ -45,7 +45,7 @@ Example:
 {
   "success": true,
   "data": {
-    "role": "quality-manager",
+    "role": "refactor-quality-manager",
     "wave": "wave-02",
     "status": "fail",
     "approved": false,

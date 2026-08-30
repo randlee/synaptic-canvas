@@ -1,6 +1,6 @@
 ---
 name: refactor-write
-version: 0.1.0
+version: 0.2.0
 description: >
   Use this skill to author or update approved refactor rules. The workflow is:
   write the authoritative markdown doc, capture a minimal trigger set, add a

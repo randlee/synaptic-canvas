@@ -35,8 +35,8 @@ skills:
     depends_on:
       refactor-dev-agent: "0.1.x"
       refactor-qa-agent: "0.1.x"
-  quality-manager:
+  refactor-quality-manager:
     version: 0.1.0
-    path: .claude/skills/quality-manager/SKILL.md
+    path: .claude/skills/refactor-quality-manager/SKILL.md
     depends_on:
       refactor-qa-agent: "0.1.x"
