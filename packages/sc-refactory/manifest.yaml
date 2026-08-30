@@ -1,5 +1,5 @@
 name: sc-refactory
-version: 0.1.0
+version: 0.2.0
 description: >
   Design and install a rule-driven refactoring toolkit with startup policy
   injection, approved-fix lookup, curated rule authoring, and named-teammate
@@ -29,7 +29,7 @@ artifacts:
     - skills/refactor-write/SKILL.md
     - skills/refactor-write/workflows.md
     - skills/refactor-orchestrate/SKILL.md
-    - skills/quality-manager/SKILL.md
+    - skills/refactor-quality-manager/SKILL.md
   agents:
     - agents/registry.yaml
     - agents/refactor-lookup-agent.md
@@ -37,7 +37,7 @@ artifacts:
     - agents/refactor-dev-agent.md
     - agents/refactor-qa-agent.md
     - agents/refactor-orchestrator.md
-    - agents/quality-manager.md
+    - agents/refactor-quality-manager.md
   scripts:
     - scripts/install_refactory.py
     - scripts/runtime.py

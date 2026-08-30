@@ -1,6 +1,6 @@
 ---
 name: sc-refactory-install
-version: 0.1.0
+version: 0.2.0
 description: Install the refactory runtime into the current repository.
 options:
   - name: --force

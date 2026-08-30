@@ -1,6 +1,6 @@
 ---
 name: refactor-lookup-agent
-version: 0.1.0
+version: 0.2.0
 description: Query the local refactor graph for matching rules and return the governing markdown doc plus bounded example references.
 ---
 

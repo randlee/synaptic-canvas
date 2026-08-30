@@ -1,7 +1,7 @@
 {
   "name": "sc-refactory",
   "description": "Design and install a constrained refactoring toolkit with rule-backed lookup, QA gating, and named-teammate orchestration.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "author": {
     "name": "synaptic-canvas"
   },
@@ -27,7 +27,7 @@
     "./agents/refactor-dev-agent.md",
     "./agents/refactor-qa-agent.md",
     "./agents/refactor-orchestrator.md",
-    "./agents/quality-manager.md"
+    "./agents/refactor-quality-manager.md"
   ],
   "skills": [
     "./skills/refactory-design/SKILL.md",
@@ -35,6 +35,6 @@
     "./skills/refactor-lookup/SKILL.md",
     "./skills/refactor-write/SKILL.md",
     "./skills/refactor-orchestrate/SKILL.md",
-    "./skills/quality-manager/SKILL.md"
+    "./skills/refactor-quality-manager/SKILL.md"
   ]
 }

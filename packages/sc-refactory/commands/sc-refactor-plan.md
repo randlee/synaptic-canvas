@@ -1,6 +1,6 @@
 ---
 name: sc-refactor-plan
-version: 0.1.0
+version: 0.2.0
 description: Prepare or execute a rule-backed refactor plan using the named teammates.
 ---
 
@@ -11,7 +11,7 @@ User-facing entrypoint for plan-driven execution.
 This command is backed by the named teammates:
 
 - `refactor-orchestrator`
-- `quality-manager`
+- `refactor-quality-manager`
 
 Policy:
 

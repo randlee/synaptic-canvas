@@ -1,6 +1,6 @@
 ---
 name: refactor-write-agent
-version: 0.1.0
+version: 0.2.0
 description: Write refactor rules or fix pointers to Turtle files and verify or load them with precise Oxigraph CLI calls.
 ---
 

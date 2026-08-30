@@ -1,10 +1,10 @@
 ---
 name: refactor-orchestrate
-version: 0.1.0
+version: 0.2.0
 description: >
   Behavioral spec for the named `refactor-orchestrator` teammate. Use when a
   rule-backed refactoring plan must be executed in development waves with QA
-  handoff to the named `quality-manager` teammate before commit.
+  handoff to the named `refactor-quality-manager` teammate before commit.
 ---
 
 # Refactor Orchestrate
@@ -19,7 +19,7 @@ behavior, lifecycle, handoff rules, and status reporting.
 - load a refactoring plan made only of approved rule-backed items
 - partition work into bounded development waves
 - spawn `refactor-dev-agent` background sub-agents for authorized work
-- hand off each completed wave to the named `quality-manager` teammate
+- hand off each completed wave to the named `refactor-quality-manager` teammate
 - collect QA results and decide whether to rework, escalate, or mark approved
 - allow commit only after explicit QA approval
 
@@ -43,7 +43,7 @@ Expect structured assignments containing:
   `refactor-write`.
 - Track wave status explicitly: pending, in-progress, blocked, failed-qa,
   approved.
-- Do not blur dev and QA responsibilities. Hand off to `quality-manager` for
+- Do not blur dev and QA responsibilities. Hand off to `refactor-quality-manager` for
   explicit approval.
 
 ## Development Wave Pattern
@@ -51,7 +51,7 @@ Expect structured assignments containing:
 1. Validate the next wave against the active plan.
 2. Spawn one or more `refactor-dev-agent` workers with narrow scope.
 3. Wait for worker results and aggregate changed files.
-4. Send the wave result to `quality-manager`.
+4. Send the wave result to `refactor-quality-manager`.
 5. Do not approve commit until QA returns pass.
 
 ## Sub-Agent Spawning Rules
@@ -108,7 +108,7 @@ Suggested JSON block:
     "wave": "wave-02",
     "status": "awaiting-qa",
     "approved": false,
-    "next_action": "quality-manager-review"
+    "next_action": "refactor-quality-manager-review"
   },
   "error": null
 }
@@ -126,4 +126,4 @@ Escalate instead of improvising when:
 ## Commit Rule
 
 The orchestrator never treats “looks fine” as sufficient. A wave is committable
-only after an explicit QA pass from `quality-manager`.
+only after an explicit QA pass from `refactor-quality-manager`.

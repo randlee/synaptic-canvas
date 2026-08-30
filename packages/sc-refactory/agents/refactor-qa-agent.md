@@ -1,6 +1,6 @@
 ---
 name: refactor-qa-agent
-version: 0.1.0
+version: 0.2.0
 description: Verify that a proposed refactor diff complies 100% with approved rules.
 ---
 

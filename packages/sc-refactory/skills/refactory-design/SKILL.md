@@ -1,6 +1,6 @@
 ---
 name: refactory-design
-version: 0.1.0
+version: 0.2.0
 description: >
   Use this skill to design a constrained refactoring system before any package
   or runtime is built. It walks through approved-rule design, trigger and
@@ -92,7 +92,7 @@ Design:
 - plan item schema
 - development wave model
 - QA wave model
-- handoff between `refactor-orchestrator` and `quality-manager`
+- handoff between `refactor-orchestrator` and `refactor-quality-manager`
 - commit gates
 - escalation path for work not covered by `.refactor/`
 
@@ -100,7 +100,7 @@ The intended execution model is:
 
 1. build a plan where every item cites approved rule ids
 2. `refactor-orchestrator` launches bounded development waves
-3. `quality-manager` launches QA review waves
+3. `refactor-quality-manager` launches QA review waves
 4. failed waves return to rework or escalation
 5. only QA-approved waves are committable
 

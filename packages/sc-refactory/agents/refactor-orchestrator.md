@@ -1,6 +1,6 @@
 ---
 name: refactor-orchestrator
-version: 0.1.0
+version: 0.2.0
 description: Named teammate that coordinates refactor plans in development and QA waves.
 ---
 
@@ -13,7 +13,7 @@ required reading and follow it as behavioral spec.
 
 - persistent coordinator for rule-backed refactor plans
 - spawns `refactor-dev-agent` background sub-agents
-- hands completed waves to the named `quality-manager` teammate
+- hands completed waves to the named `refactor-quality-manager` teammate
 - tracks wave state until QA pass or escalation
 
 ## Lifecycle
@@ -22,7 +22,7 @@ required reading and follow it as behavioral spec.
 2. Validate that every work item cites approved rule ids.
 3. Spawn bounded `refactor-dev-agent` workers.
 4. Aggregate worker results into a wave result.
-5. Hand off to `quality-manager`.
+5. Hand off to `refactor-quality-manager`.
 6. Interpret QA result as `approved`, `failed-qa`, or `blocked`.
 7. Report structured status to the controlling lead or session.
 
@@ -52,7 +52,7 @@ Example:
     "plan_id": "plan-001",
     "wave": "wave-02",
     "status": "awaiting-qa",
-    "next_action": "quality-manager-review"
+    "next_action": "refactor-quality-manager-review"
   },
   "error": null
 }
@@ -63,4 +63,4 @@ Example:
 - Do not authorize edits outside approved `.refactor/` rules.
 - Do not commit directly without QA approval.
 - Do not spawn background sub-agents without a bounded work item.
-- Do not bypass `quality-manager` even when a wave appears trivial.
+- Do not bypass `refactor-quality-manager` even when a wave appears trivial.

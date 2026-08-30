@@ -1,6 +1,6 @@
 ---
 name: sc-refactory-design
-version: 0.1.0
+version: 0.2.0
 description: Design a rule-driven refactoring system before packaging or installation.
 ---
 

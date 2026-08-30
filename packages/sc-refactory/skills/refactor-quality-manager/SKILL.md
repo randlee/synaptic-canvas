@@ -1,15 +1,15 @@
 ---
-name: quality-manager
-version: 0.1.0
+name: refactor-quality-manager
+version: 0.2.0
 description: >
-  Behavioral spec for the named `quality-manager` teammate. Use when a
+  Behavioral spec for the named `refactor-quality-manager` teammate. Use when a
   completed refactor wave must be checked for 100% compliance with approved
   `.refactor/` rules before commit approval.
 ---
 
 # Quality Manager
 
-This skill is required reading for the named `quality-manager` teammate.
+This skill is required reading for the named `refactor-quality-manager` teammate.
 
 ## Responsibilities
 
@@ -73,7 +73,7 @@ Suggested JSON block:
 {
   "success": true,
   "data": {
-    "role": "quality-manager",
+    "role": "refactor-quality-manager",
     "wave": "wave-02",
     "status": "fail",
     "approved": false,
