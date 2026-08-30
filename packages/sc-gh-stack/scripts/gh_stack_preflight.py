@@ -10,14 +10,24 @@ check failed, 1 otherwise. Nothing here modifies the repository.
 from __future__ import annotations
 
 import argparse
+import re
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import gh_stack_shared as gs  # noqa: E402
 
 INSTALL_DOC = "see references/installation-and-troubleshooting.md"
+# Runtime floors from manifest.yaml: git >= 2.23 (worktree + rebase behavior
+# the playbooks rely on), python >= 3.9 (these scripts).
+MIN_GIT = (2, 23)
+MIN_PYTHON = (3, 9)
+
+
+def _parse_version(text: str) -> Optional[Tuple[int, int]]:
+    m = re.search(r"(\d+)\.(\d+)", text)
+    return (int(m.group(1)), int(m.group(2))) if m else None
 
 
 def _check(name: str, ok: bool, fix: str) -> Dict[str, Any]:
@@ -32,7 +42,22 @@ def run_checks(cwd: Optional[Path] = None) -> List[Dict[str, Any]]:
     """All checks, in order. Pure function of the environment; no side effects."""
     checks: List[Dict[str, Any]] = []
 
-    checks.append(_check("git_cli", gs.git(["--version"], cwd=cwd).returncode == 0, INSTALL_DOC))
+    git_probe = gs.git(["--version"], cwd=cwd)
+    checks.append(_check("git_cli", git_probe.returncode == 0, INSTALL_DOC))
+    if git_probe.returncode == 0:
+        git_ver = _parse_version(git_probe.stdout)
+        if git_ver is None:
+            checks.append(_warn("git_version",
+                                f"could not parse {git_probe.stdout.strip()!r}; "
+                                f"git >= {'.'.join(map(str, MIN_GIT))} is required"))
+        else:
+            checks.append(_check("git_version", git_ver >= MIN_GIT,
+                                 f"git {'.'.join(map(str, git_ver))} is below the required "
+                                 f"{'.'.join(map(str, MIN_GIT))}; upgrade git — {INSTALL_DOC}"))
+    checks.append(_check("python_version", sys.version_info[:2] >= MIN_PYTHON,
+                         f"python {sys.version_info.major}.{sys.version_info.minor} is below the "
+                         f"required {'.'.join(map(str, MIN_PYTHON))}; run these scripts with "
+                         f"python3 >= {'.'.join(map(str, MIN_PYTHON))} — {INSTALL_DOC}"))
     checks.append(_check("gh_cli", gs.gh(["--version"], cwd=cwd).returncode == 0, INSTALL_DOC))
     ext = gs.gh(["extension", "list"], cwd=cwd)
     checks.append(_check("gh_stack_extension",

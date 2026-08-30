@@ -17,7 +17,9 @@ happened without further investigation.
 Exit codes:
   0  synced and pushed; data.branches shows per-branch before/after/pushed
   3  rebase conflict; all branches were restored; resolve via `gh stack rebase`
-  5  guard refused (not a repo, no stack here, dirty tree, rebase in progress)
+  5  guard refused (not a repo, no stack here, dirty tree, rebase in progress),
+     or sync deliberately did nothing (SYNC.ABORTED: local/remote stacks
+     diverged — `gh stack sync` exits 0 with "Sync aborted" in that case)
   1  sync failed for another reason (stderr included)
 """
 from __future__ import annotations
@@ -98,6 +100,18 @@ def sync(cwd: Optional[Path] = None) -> Tuple[int, Dict[str, Any]]:
                     f"`gh stack sync` exited {run.returncode}: {run.stderr.strip()}",
                     "read the message, fix the reported problem, and re-run", data,
                     recoverable=False)
+    # Non-interactive `gh stack sync` exits 0 WITHOUT syncing when the local and
+    # remote stacks diverged: it prints both chains plus "Sync aborted" and
+    # changes nothing (references/troubleshooting.md, "Local and remote stacks
+    # have diverged"). Exit 0 alone is therefore not proof the sync happened.
+    if "sync aborted" in (run.stdout + run.stderr).lower():
+        data["next_step"] = ("local and remote stacks diverged; nothing was fetched, rebased, or "
+                             "pushed — choose one: keep remote (`gh stack unstack --local`, then "
+                             "`gh stack checkout <stack-or-pr-number>`) or keep local (see "
+                             "references/troubleshooting.md, 'Local and remote stacks have diverged')")
+        return fail(EXIT_INPUT, "SYNC.ABORTED",
+                    "`gh stack sync` aborted without syncing: local and remote stacks diverged",
+                    data["next_step"], data, recoverable=False)
 
     data["next_step"] = None
     return EXIT_OK, gs.envelope(True, data)

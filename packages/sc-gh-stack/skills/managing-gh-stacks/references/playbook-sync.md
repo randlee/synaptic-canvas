@@ -64,6 +64,11 @@ python3 .claude/scripts/gh_stack_sync.py --cwd <worktree>    # exit 0 = synced a
 - Exit 3, `SYNC.CONFLICT`: all branches restored. `gh stack rebase` in the worktree, resolve +
   `git add` + `gh stack rebase --continue` until it finishes (rerere replays every previously
   recorded resolution — the same conflict is never resolved twice), re-run the script.
+- Exit 5, `SYNC.ABORTED`: local and remote stacks diverged, so `gh stack sync` deliberately
+  did nothing (upstream prints "Sync aborted" but exits 0 — the script converts that to a
+  real failure so exit 0 always means synced). Nothing was fetched, rebased, or pushed. The
+  caller chooses keep-remote (`gh stack unstack --local`, then `gh stack checkout <n>`) or
+  keep-local — see `references/troubleshooting.md`, "Local and remote stacks have diverged".
 - Exit 5, `SYNC.NO_STACK`: gh-stack tracking is per-worktree. For a stack that exists on
   GitHub, create a worktree on the bottom branch and run `gh stack checkout <bottom>` there —
   it pulls the stack down and sets up local tracking. For a local-only stack (never

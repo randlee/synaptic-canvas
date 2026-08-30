@@ -45,7 +45,16 @@ gh-stack tracking is per-worktree. When the given worktree does not track the st
 
 ## Execution
 
-1. `python3 .claude/scripts/gh_stack_sync.py --cwd <worktree>`.
+First resolve `<scripts>`, the directory holding the sc-gh-stack scripts (the package
+installs at project scope or user scope). Search in order: `<worktree>/.claude/scripts`, the
+main checkout's `.claude/scripts` (main checkout = first entry of
+`git -C <worktree> worktree list --porcelain`), then user scope via
+`find "$HOME/.claude" -name 'gh_stack_sync.py' 2>/dev/null` — first hit wins. If none is
+found, STOP and return an error envelope with code `PREFLIGHT.SCRIPTS_MISSING`
+(`recoverable: false`, suggested_action: install the sc-gh-stack package) — never reproduce
+the script's logic by hand.
+
+1. `python3 <scripts>/gh_stack_sync.py --cwd <worktree>`.
    `gh stack sync` fetches, cascade-rebases (merged PRs handled automatically, so a
    squash-merged middle layer does not produce spurious conflicts), and pushes atomically.
 2. On exit 3 (`SYNC.CONFLICT`): every branch was restored — the stack is in its pre-sync
@@ -113,6 +122,10 @@ its tip; report any that do not).
 ### Propagated to caller (stop and report):
 - `SYNC.NO_STACK`, dirty tree / rebase in progress, risky conflicts, sync exit codes other
   than 0/3, layers missing the fix after sync.
+- `SYNC.ABORTED`: local and remote stacks diverged, so `gh stack sync` deliberately did
+  nothing (the script detects the upstream "Sync aborted" exit-0 result). Do NOT report the
+  stack as synced and do NOT choose a resolution — forward the envelope; the caller decides
+  keep-remote vs keep-local (`references/troubleshooting.md`).
 
 ## Constraints
 

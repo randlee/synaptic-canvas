@@ -123,7 +123,15 @@ stack:
 | Task graph → parallel dev plan | `sc-stack-plan` | tasks, trunk, repo_root | stacks + worktree creation commands + open questions |
 | Flat PRs → one stack | `sc-stack-convert` | trunk, layers (bottom→top), repo_root | decision log: branches before/after/pushed, resolutions, surfaced conflicts |
 | Trunk moved / mid-stack fix merged | `sc-stack-sync` | worktree, fix_branch? | decision log: same contract |
-| `gh pr merge` refused: PR is "part of a stack" | none — run `gh stack merge <pr#> --yes` | — | merges that PR and every unmerged PR below it, atomically; PRs above retarget automatically. Never hand-roll REST calls. (GitHub's web UI stack merge is the same native flow — fine for humans, not agent-drivable.) |
+| `gh pr merge` refused: PR is "part of a stack" | none — run `gh stack merge <pr#> --yes` | — | merges that PR and every unmerged PR below it **that is tracked in the stack**, atomically; PRs above retarget automatically. Never hand-roll REST calls. (GitHub's web UI stack merge is the same native flow — fine for humans, not agent-drivable.) |
+
+**Before ANY `gh stack merge`**: run `gh stack view --json` and confirm every PR you intend
+to land is listed in the stack. Merge lands only tracked members — a PR that merely targets
+the same trunk (or another layer's branch) but was never linked into the stack will NOT
+merge, and landing the tracked subset alone can land layers out of order, costing an extra
+PR + CI + approval cycle to repair. If an expected PR is missing from `view --json`, STOP
+and surface it; link it into the stack first (`gh stack link`, or restructure per
+`references/troubleshooting.md`) — never merge the subset and patch up afterwards.
 
 Inputs travel as a tagged JSON block inside the Task prompt — the agent's `## Inputs`
 section is the field contract:
@@ -138,7 +146,8 @@ Follow your agent instructions with these inputs:
 Read `references/playbook-graph-to-stacks.md`, `references/playbook-convert.md`, or
 `references/playbook-sync.md` first — each is a worked example including the agent prompt and
 the expected report. Simple one-command situations (land a green stack:
-`gh stack merge --yes`; inspect: `gh stack view --json`) need no agent.
+`gh stack merge --yes` after the membership check above; inspect: `gh stack view --json`)
+need no agent.
 
 ### Conflict rubric (used by convert and sync agents)
 

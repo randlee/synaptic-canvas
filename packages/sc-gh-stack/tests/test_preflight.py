@@ -108,6 +108,37 @@ class TestPreflight:
         assert _status(checks, "stacked_prs_enabled") == "warn"
         assert pf.main([]) == 0
 
+    def test_git_version_floor_enforced(self, monkeypatch):
+        _healthy_env(monkeypatch)
+        monkeypatch.setattr(gs, "git", lambda args, cwd=None: cp(0, "git version 2.20.1"))
+        checks = pf.run_checks()
+        c = next(c for c in checks if c["name"] == "git_version")
+        assert c["status"] == "fail" and "2.23" in c["fix"]
+
+    def test_git_version_at_floor_ok(self, monkeypatch):
+        _healthy_env(monkeypatch)
+        monkeypatch.setattr(gs, "git", lambda args, cwd=None: cp(0, "git version 2.23.0"))
+        assert _status(pf.run_checks(), "git_version") == "ok"
+
+    def test_git_version_unparseable_warns_not_fails(self, monkeypatch):
+        _healthy_env(monkeypatch)
+        monkeypatch.setattr(gs, "git", lambda args, cwd=None: cp(0, "git version mystery"))
+        assert _status(pf.run_checks(), "git_version") == "warn"
+
+    def test_git_version_skipped_when_git_cli_fails(self, monkeypatch):
+        _healthy_env(monkeypatch)
+        monkeypatch.setattr(gs, "git", lambda args, cwd=None: cp(127, "", "cannot execute"))
+        checks = pf.run_checks()
+        assert _status(checks, "git_cli") == "fail"
+        assert not any(c["name"] == "git_version" for c in checks)
+
+    def test_python_version_floor(self, monkeypatch):
+        _healthy_env(monkeypatch)
+        assert _status(pf.run_checks(), "python_version") == "ok"  # suite runs on >= 3.9
+        monkeypatch.setattr(pf, "MIN_PYTHON", (99, 0))
+        c = next(c for c in pf.run_checks() if c["name"] == "python_version")
+        assert c["status"] == "fail" and "99.0" in c["fix"]
+
     def test_missing_extension_fails_with_fix(self, monkeypatch):
         _healthy_env(monkeypatch, gh={("extension", "list"): cp(0, "gh copilot github/gh-copilot")})
         checks = pf.run_checks()

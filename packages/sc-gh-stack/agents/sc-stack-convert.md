@@ -39,6 +39,14 @@ Complete the task quickly; report only decisions and discrepancies.
 
 ## Execution
 
+First resolve `<scripts>`, the directory holding the sc-gh-stack scripts (the package
+installs at project scope or user scope): use `<repo_root>/.claude/scripts` if
+`gh_stack_preflight.py` exists there, otherwise the directory found by
+`find <repo_root>/.claude "$HOME/.claude" -name 'gh_stack_preflight.py' 2>/dev/null`
+(project copy wins if both exist). If none is found, STOP and return an error envelope with
+code `PREFLIGHT.SCRIPTS_MISSING` (`recoverable: false`, suggested_action: install the
+sc-gh-stack package) — never reproduce the scripts' logic by hand.
+
 1. Resolve any PR-number layers to branch names FIRST (worktree creation needs a real ref):
    `gh pr view <n> --json headRefName -q .headRefName` per number. Use resolved names below.
 2. Check no layer is checked out in another worktree: `git -C <repo_root> worktree list
@@ -47,10 +55,10 @@ Complete the task quickly; report only decisions and discrepancies.
    to move that checkout off the branch (e.g. onto trunk) and re-invoke.
 3. Create the worktree if absent: `git -C <repo_root> worktree add <worktree> <bottom-branch>`.
    gh-stack tracking state is per-worktree, so nothing here touches other checkouts.
-4. `python3 .claude/scripts/gh_stack_preflight.py --cwd <worktree>` — on failure, STOP and
+4. `python3 <scripts>/gh_stack_preflight.py --cwd <worktree>` — on failure, STOP and
    return its envelope (each failed check carries its fix). The `rerere_enabled` check is a
    warn only; the convert script enables it itself.
-5. `python3 .claude/scripts/gh_stack_convert.py <trunk> <layers...> --cwd <worktree>`.
+5. `python3 <scripts>/gh_stack_convert.py <trunk> <layers...> --cwd <worktree>`.
 6. On exit 3 (`CONVERT.CONFLICT`), classify each conflicted file **in the worktree**:
    - **Trivial** (resolve now, record as a low-risk decision): rerere already staged it
      (`conflict.files` empty); pure additions from both sides that interleave without

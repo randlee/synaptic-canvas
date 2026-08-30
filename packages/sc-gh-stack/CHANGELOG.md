@@ -39,7 +39,19 @@ Orchestration release: background agents over the deterministic scripts.
 - Scripts survive missing binaries (synthetic rc-127 results — always a fenced
   envelope, never a traceback; `PREFLIGHT.GIT_MISSING` distinct from
   `PREFLIGHT.NOT_A_REPO`).
-- 61 pytest cases.
+- `SYNC.ABORTED` (exit 5): non-interactive `gh stack sync` on a diverged local/remote stack
+  prints "Sync aborted" but exits 0 without syncing — the script detects it, so exit 0
+  always means synced and pushed.
+- Preflight enforces the manifest's runtime floors (`git_version` >= 2.23,
+  `python_version` >= 3.9) instead of deferring unsupported-runtime failures into later
+  workflow steps.
+- Agents resolve the installed script directory (project `.claude/scripts` first, then
+  user-scope `~/.claude`) instead of hard-coding a project-local path, matching the skill's
+  `scope: both`; `PREFLIGHT.SCRIPTS_MISSING` when neither exists.
+- Pre-merge membership check in SKILL.md: `gh stack merge` lands only PRs tracked in the
+  stack — verify every intended PR appears in `gh stack view --json` before merging, never
+  land a subset.
+- 68 pytest cases.
 
 ## 0.1.0 — 2026-08-28
 
