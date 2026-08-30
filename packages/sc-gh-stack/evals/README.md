@@ -25,6 +25,26 @@ unless `--include-evals` is passed).
 
 ## Running
 
+### Interim: local runner (until `claude plugin eval` is unlocked)
+
+`claude plugin eval` is early access (org enablement pending). Until then,
+`scripts/run-evals-local.py` executes the same case files unchanged — scaffold, prompt
+frontmatter (model/max_turns/env/allowed_tools), and all grader types (regex, tool_used,
+tool_order, file_exists, llm-judged) — via headless `claude -p`, installs the package
+into the throwaway workspace's `.claude/` so the skill is live, and writes
+`aggregate-result.json` + `report.html` into `evals/results/<timestamp>/` in the same
+layout the official harness uses:
+
+```bash
+python3 scripts/run-evals-local.py --package sc-gh-stack            # all cases
+python3 scripts/run-evals-local.py --package sc-gh-stack --case merge-verify-outcome
+```
+
+The publish step below is identical for both harnesses; retire the local runner once
+the official one is enabled.
+
+### Official harness
+
 Requires `claude plugin eval` early access (enabled per organization).
 
 ```bash

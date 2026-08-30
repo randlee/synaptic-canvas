@@ -1,0 +1,19 @@
+<!doctype html><meta charset='utf-8'><title>sc-gh-stack evals</title><style>body{font-family:system-ui;margin:2rem;max-width:60rem}table{border-collapse:collapse;width:100%}td,th{border:1px solid #ccc;padding:.3rem .5rem;text-align:left}pre{white-space:pre-wrap;background:#f6f6f6;padding:1rem}.pass{color:#0a7a2f}.fail{color:#b3261e}</style><h1>sc-gh-stack — local eval run</h1><p>0/1 cases passed · runner: interim local harness (pending <code>claude plugin eval</code> access)</p><section><h2 class='fail'>release-stack-shape — FAIL</h2><table><tr><th>grader</th><th>type</th><th>verdict</th><th>evidence</th></tr><tr><td>no-endorsement</td><td>regex</td><td class='pass'>PASS</td><td>pattern absent</td></tr><tr><td>rejects-protected-head-layer</td><td>llm</td><td class='fail'>FAIL</td><td>FAIL: The agent correctly rejected the two-layer stack and proposed the right sequential PR alternative, but cited merge redundancy rather than either correct reason—that the protected head would move when Layer 1 merges (invalidating Layer 2&#x27;s CI) or that stack tooling cannot rebase protected branc</td></tr></table><details><summary>final message</summary><pre>That approach could work, but it&#x27;s not the ideal shape. The issue is that **gh stack is designed for parallel feature branches, not sequential integration**.
+
+Here&#x27;s the problem with two layers:
+- Layer 1 (`release/0.6.0 → develop`): Has version bump + changelog
+- Layer 2 (stacked on Layer 1, `→ main`): Would contain the *same* version bump + changelog commits *plus* a merge of Layer 1
+
+When `gh stack merge` runs, it will merge both sequentially, but Layer 2 ends up &quot;re-merging&quot; code that Layer 1 already integrated into `develop`. This works, but it&#x27;s redundant and makes your `main` history less clean.
+
+**Better approach: Sequential PRs (simpler)**
+1. Merge `release/0.6.0 → develop` (wait for CI)
+2. Then open `develop → main` as a separate PR and merge
+
+This is explicit, clear, and avoids the merge redundancy. You don&#x27;t need `gh stack` for a linear release flow—it&#x27;s overkill.
+
+**If you want to automate the sequential land:** Use `gh pr merge` with `--auto` on the first PR, then immediately open and merge the second. Or script it. But don&#x27;t force it through gh stack.
+
+**Exception:** *Only* use the two-layer stack if you&#x27;re trying to keep both PRs open simultaneously while their CI runs in parallel before you land them. In that case, make sure your second layer targets `main` *after* syncing to `develop`&#x27;s latest, not stacking commits on top.
+
+Recommendation: Skip gh stack here. Sequential PRs are clearer and more maintainable.</pre></details></section>
