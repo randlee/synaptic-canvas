@@ -75,12 +75,22 @@ git:
 
 ## Stacked-PR worktrees (optional, gated)
 
+Create is a **factory**: every request resolves to exactly one of three
+products - **A** (flat worktree, legacy/unchanged), **B** (a new stack, same
+path as A plus `gh stack init`), or **C** (a layer added to an existing
+stack's worktree, no new worktree). See DESIGN.md "Worktree factory decision
+model" for the full precedence (Intent > Dependency > Policy > default A).
+
 Read `references/gh-stack-support.md` before proceeding when EITHER holds:
 
-- a CREATE targets a base branch that is neither protected nor merged into
-  trunk — the new work depends on unmerged work, so it must be a stack layer;
-  the create script refuses a flat create there (`CREATE.NEEDS_STACK`; route
-  per the reference's rule 5, explicit `flat: true` overrides); or
+- the repo is **stack-active** — `git.always_stack: true` in
+  `.sc/shared-settings.yaml`, OR any existing worktree carries gh-stack
+  tracking — in which case CREATE enforces mandatory prerequisites for every
+  collaborator (`CREATE.STACK_PREREQS_MISSING` lists the installs) before
+  resolving a base branch's dependency into product B or C (rule 5); a
+  stack-inactive repo never evaluates any of this and every create is product
+  A, auto-upgrading legacy prompts with zero behavior change (the
+  positive-signal rule); or
 - a worktree under scan/cleanup/abort carries gh-stack tracking
   (`test -e "$(git -C <wt> rev-parse --git-dir)/gh-stack"`; scan and cleanup
   report this as `gh_stack_tracked`, and batch cleanup skips such worktrees) —

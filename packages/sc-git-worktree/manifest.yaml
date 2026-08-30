@@ -55,4 +55,5 @@ options:
 requires:
   - python3
   - pydantic
+  - pyyaml
   - git >= 2.20

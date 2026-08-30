@@ -43,10 +43,13 @@ ls .claude/skills/managing-gh-stacks/SKILL.md 2>/dev/null \
 ## Interop rules (unconditional — what THIS skill must respect around stacks)
 
 1. **Stack worktrees follow sc-gh-stack's convention, not this skill's.** A stack
-   lives in ONE worktree at `<repo>-worktrees/stack/<bottom-slug>` (bottom branch
-   name, `/` → `-`) — not one worktree per layer. Layers within a stack are
-   sequential by construction and share the stack's worktree. Record such
-   worktrees in tracking with the stack shape in the purpose field.
+   lives in ONE worktree — for a stack CREATE started here, at the SAME path a
+   flat worktree would use (`<repo>-worktrees/<branch>`, no `stack/` prefix) —
+   not one worktree per layer. Layers within a stack are sequential by
+   construction and share the stack's worktree: creating a new layer never
+   creates a new worktree, it checks out the new branch inside the existing
+   one. Record such worktrees in tracking with the stack shape in the purpose
+   field.
 2. **gh-stack tracking state is per-worktree** (`.git/worktrees/<wt>/gh-stack`).
    Deleting a worktree deletes its stack tracking. Therefore:
    - The scan and cleanup scripts report `gh_stack_tracked` per worktree, and
@@ -61,35 +64,71 @@ ls .claude/skills/managing-gh-stacks/SKILL.md 2>/dev/null \
    branch in a worktree that carries gh-stack tracking; when in doubt, keep it.
 4. **Never** `gh pr merge` a stacked PR, never force-push or `git reset --hard`
    stack branches from a worktree operation — `gh stack` owns pushing and merging.
-5. **A worktree is stacked iff it NEEDS to be — and the base branch decides.**
-   Work based on trunk (a protected/merged branch) is independent: a flat
-   worktree is correct, regardless of where the request came from. Work based on
-   an **unmerged branch** depends on unmerged work — that is the definition of a
-   stack layer — so it MUST be stacked; a flat worktree there fragments the
-   system (per-worktree tracking cannot see it, layers sprawl into separate
-   worktrees, branch ownership becomes ambiguous). The create script REFUSES a
-   flat create (error `CREATE.NEEDS_STACK`) when the base branch is neither
-   protected nor merged into trunk. Route by what the base is:
-   - **Base is a layer of an existing tracked stack** → NO new worktree. The new
-     branch is a layer in that stack's own worktree (`gh stack` manages layers
-     there; with sc-gh-stack installed, use its skill).
-   - **Base is an untracked unmerged branch** → you are creating a 2-layer
-     stack: one worktree at `<repo>-worktrees/stack/<base-slug>` on the new
-     branch, then `gh stack init --base <trunk-of-base> <base> <new-branch>`.
-   - **Base genuinely independent despite being unmerged** (rare — e.g. a
-     long-lived integration branch; explicit user intent only) → pass the
-     explicit `flat: true` override; never pass it to silence the error.
-   Fail direction: a squash-merged base can look unmerged to ancestry checks —
-   the refusal errs toward stacking, and the override exists for the human call.
+5. **Create is a factory: every request resolves to exactly one product** - A
+   (flat worktree), B (a new stack), or C (a layer added to an existing
+   stack). Precedence is **Intent > Dependency > Policy > default A**,
+   evaluated lazily (see DESIGN.md "Worktree factory decision model" in the
+   sc-git-worktree package for the full decision function):
+   - **Intent**: explicit `flat: true` always wins → product A, nothing else
+     is evaluated. Never pass it merely to silence a refusal without that
+     judgment call.
+   - **Stack-activity gate**: a repo that is not stack-active (no
+     `git.always_stack`, and no worktree anywhere carries gh-stack tracking)
+     never evaluates dependency or policy at all - every create is product A.
+     This is the **positive-signal rule** and the **auto-upgrade for legacy
+     prompts**: existing "create a worktree off develop"-style prompts are
+     completely unaffected until the repo actually starts using stacks.
+   - **Dependency** (stack-active repos only): work based on trunk (a
+     protected/merged branch) is independent - a flat worktree (or, under
+     `always_stack`, product B) is correct regardless of where the request
+     came from. Work based on an **unmerged branch** depends on unmerged
+     work - that is the definition of a stack layer:
+     - **Base is a layer of an existing tracked stack** → product **C**: NO
+       new worktree. The new branch is checked out in that stack's own
+       worktree and adopted with `gh stack add` (with sc-gh-stack installed,
+       use its skill for anything beyond the checkout itself).
+     - **Base is an untracked unmerged branch** (no gh-stack tracking
+       anywhere for it) → refused with `CREATE.NEEDS_STACK`: creating one is
+       a strictly bigger operation (a new 2-layer stack) than `create`
+       performs. The refusal names the exact `gh stack init --base
+       <trunk-of-base> <base> <new-branch>` command and points at the
+       managing-gh-stacks skill for the full workflow.
+     - **Base's stack worktree has a rebase in progress** → also refused with
+       `CREATE.NEEDS_STACK`; resolve the rebase first.
+     - **Base genuinely independent despite being unmerged** (rare — e.g. a
+       long-lived integration branch; explicit user intent only) → pass the
+       explicit `flat: true` override.
+     Fail direction: a squash-merged base can look unmerged to ancestry
+     checks - the refusal errs toward stacking, and the override exists for
+     the human call.
 
-   The script enforces only this hard floor. **The activity decides the rest**:
-   when the work at hand is stack-oriented — executing a planned set of stacks,
-   operating from a stack worktree, or the user asked for stacked work — create
-   stacked even off trunk (the new branch becomes a new stack's bottom at
-   `<repo>-worktrees/stack/<branch-slug>` + `gh stack init`). Trunk-based
-   requests with no stack context remain plain flat creates, exactly as this
-   skill has always behaved — existing prompts that say "create a worktree off
-   develop" are unaffected.
+6. **Repo policy: `always_stack`** (one of the two stack-activity signals).
+   A repo can declare stacking the norm in its checked-in
+   `.sc/shared-settings.yaml`:
+
+   ```yaml
+   git:
+     always_stack: true
+     stack_root: develop   # optional; default: develop if it exists, else the default branch
+   ```
+
+   When set (or when any worktree already carries gh-stack tracking - either
+   signal makes the repo stack-active), **the create script enforces
+   prerequisites for every collaborator** before resolving dependency at all:
+   missing `gh`, the `gh-stack` extension, or the sc-gh-stack skill refuses
+   with `CREATE.STACK_PREREQS_MISSING` listing the exact installs - this is
+   the mandatory collaborator gate and the only refusal that fires before
+   product resolution, and it runs before any mutation (including `git
+   fetch`). Scan surfaces `always_stack` / `stack_prereqs_ok` in its summary.
+
+   With prerequisites satisfied, an independent base (protected or merged
+   into trunk) resolves to product **B**: identical to a flat worktree - same
+   path, no `stack/` prefix anywhere - plus `git config rerere.enabled true`
+   and `gh stack init --base <stack_root> <branch>` in that same worktree. A
+   stack-from-birth is nearly free (local tracking only until submit) while
+   retrofitting flat branches into a stack is a full conversion - that
+   asymmetry is why the default errs stacked when the policy is on.
+   `flat: true` remains the explicit escape (Intent still wins over Policy).
 
 ## Minimal command reference (fallback when sc-gh-stack is absent)
 

@@ -72,12 +72,23 @@ Return fenced JSON with minimal envelope:
     ],
     "tracking_missing_rows": [],
     "tracking_extra_rows": [],
-    "recommendations": ["run cleanup on merged branches"]
+    "recommendations": ["run cleanup on merged branches"],
+    "summary": {
+      "total_worktrees": 1,
+      "always_stack": true,
+      "stack_prereqs_ok": true
+    }
   },
   "error": null
 }
 ```
 ````
+
+`summary.always_stack` reflects `.sc/shared-settings.yaml`'s `git.always_stack` setting
+(false when absent). `summary.stack_prereqs_ok` is only present when `always_stack` is
+`true`, and reports whether `gh`, the `gh-stack` extension, and the `managing-gh-stacks`
+skill are all available (see the create agent's `CREATE.STACK_PREREQS_MISSING` for what
+each check covers). This is a single repo-wide check, not per-worktree.
 
 On error (e.g., tracking file missing):
 
