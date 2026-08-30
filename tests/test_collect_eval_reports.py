@@ -85,17 +85,15 @@ def test_harness_reports_collected_with_mtime_stamp(tmp_path, monkeypatch):
     assert mod.collect() == []  # idempotent (same mtime)
 
 
-def test_index_lists_reports_newest_first(tmp_path, monkeypatch):
+def test_pages_regenerated_with_index_redirect(tmp_path, monkeypatch):
+    # Thorough page-content assertions live in tests/test_eval_pages.py; this
+    # covers the collector wiring: pages exist and index redirects to evals.html.
     mod, pkg = _setup(tmp_path, monkeypatch)
     _fake_run(pkg, "20260830143000", ["a"])
-    _fake_run(pkg, "20260831090000", ["b"])
     mod.collect()
-    index = mod.write_index()
-    text = index.read_text()
-    assert index.parent == mod.SITE_EVALS_DIR
-    assert "demo-pkg" in text
-    assert text.index("20260831-090000-b.html") < text.index("20260830-143000-a.html")
-    assert 'href="demo-pkg/20260831-090000-b.html"' in text
+    written = {p.name for p in mod.write_evals_pages()}
+    assert {"evals.html", "history.html", "index.html"} <= written
+    assert "url=evals.html" in (mod.SITE_EVALS_DIR / "index.html").read_text()
 
 
 def test_package_filter(tmp_path, monkeypatch):

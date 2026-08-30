@@ -1,6 +1,8 @@
 name: Python Tests
 
 on:
+  push:
+    branches: [develop, main]
   pull_request:
     branches: [develop, main]
 
@@ -42,5 +44,19 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements-dev.txt
 
-      - name: Run tests
+      - name: Run repo tests
         run: pytest tests/ -v
+
+      # Separate invocation: tests/ and packages/*/tests are both packages
+      # named "tests", so pytest cannot collect them together. Skipped on
+      # Windows: these tests drive real git with bash-based gh stubs.
+      - name: Run sc-gh-stack package tests
+        if: runner.os != 'Windows'
+        run: pytest packages/sc-gh-stack/tests -v
+
+      # Harness unit tests only. NEVER point CI at test-packages/fixtures/ —
+      # fixture tests (including the generated *-evals ones) execute live
+      # Claude agent sessions and are run manually/by PQA, not in CI.
+      - name: Run test-harness unit tests
+        run: pytest harness/tests -v
+        working-directory: test-packages

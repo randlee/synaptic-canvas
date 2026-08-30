@@ -98,6 +98,19 @@ jobs:
       - name: Validate script references
         run: python3 scripts/validate-script-references.py
 
+  validate-shared-scripts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+      - name: Install dependencies
+        run: pip install pyyaml pydantic
+      - name: Validate shared scripts
+        run: python3 scripts/validate-shared-scripts.py
+
   security-scan:
     runs-on: ubuntu-latest
     steps:
