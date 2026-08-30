@@ -26,6 +26,26 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+
+      # The eval landing pages (evals.html, per-plugin history.html, the
+      # index.html redirect) are build artifacts, regenerated here from the
+      # committed report files in site/reports/evals/ — never committed, so
+      # the deployed site can never be stale relative to the reports.
+      - name: Generate eval report pages
+        run: python3 scripts/collect-eval-reports.py
+
+      - name: Generate announcements index
+        run: python3 scripts/generate-announcements-index.py
+
+      # Deploy gate: structural HTML validity + every internal link/anchor
+      # across the whole site (generated pages included).
+      - name: Validate site HTML and links
+        run: python3 scripts/validate-site-html.py
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
 

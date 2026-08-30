@@ -111,6 +111,24 @@ jobs:
       - name: Validate shared scripts
         run: python3 scripts/validate-shared-scripts.py
 
+  validate-site:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+      # Generate the build-artifact pages first (eval landing pages and the
+      # announcements index are gitignored; pages.yml builds them the same way
+      # at deploy time), then validate structure + internal links site-wide.
+      - name: Generate site pages
+        run: |
+          python3 scripts/collect-eval-reports.py
+          python3 scripts/generate-announcements-index.py
+      - name: Validate site HTML and links
+        run: python3 scripts/validate-site-html.py
+
   security-scan:
     runs-on: ubuntu-latest
     steps:
