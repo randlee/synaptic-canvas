@@ -1171,6 +1171,7 @@ def cmd_install(
     user_flag: bool = False,
     project_flag: bool = False,
     registry: Optional[str] = None,
+    include_evals: bool = False,
 ) -> int:
     """Install a package to a .claude directory.
     
@@ -1281,6 +1282,24 @@ def cmd_install(
     for rel in _iter_artifacts(manifest):
         install_one(rel)
 
+    # Evals are dev/QA content, never part of the runtime install; copied only on
+    # explicit opt-in, namespaced per package so suites don't collide.
+    evals_src = pkg_dir / "evals"
+    if include_evals and evals_src.is_dir():
+        for src in sorted(evals_src.rglob("*")):
+            if not src.is_file() or "results" in src.relative_to(evals_src).parts:
+                continue
+            rel = src.relative_to(evals_src)
+            dst = dest_path / "evals" / pkg / rel
+            if dst.exists() and not force:
+                warn(f"Skip (exists): {dst}")
+                continue
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(src, dst)
+            if src.suffix == ".sh":
+                _ensure_executable(dst)
+            info(f"Installed: evals/{pkg}/{rel}")
+
     # Update registry.yaml (agents and skills)
     rc = _update_registry(
         dest_path,
@@ -1314,6 +1333,13 @@ def cmd_uninstall(pkg: str, dest: str) -> int:
                 info(f"Removed: {rel}")
             except Exception:
                 warn(f"Could not remove: {rel}")
+    evals_dst = dest_path / "evals" / pkg
+    if evals_dst.is_dir():
+        try:
+            shutil.rmtree(evals_dst)
+            info(f"Removed: evals/{pkg}/")
+        except Exception:
+            warn(f"Could not remove: evals/{pkg}/")
     info(f"Done uninstalling {pkg}")
     return 0
 
@@ -1351,6 +1377,8 @@ def build_parser() -> argparse.ArgumentParser:
     p_install.add_argument("--force", action="store_true")
     p_install.add_argument("--no-expand", action="store_true")
     p_install.add_argument("--registry", help="Install from remote registry")
+    p_install.add_argument("--include-evals", action="store_true",
+                           help="Also copy the package's evals/ suite (skipped by default)")
 
     p_uninstall = sub.add_parser("uninstall")
     p_uninstall.add_argument("package")
@@ -1404,6 +1432,7 @@ def main(argv: Optional[list[str]] = None) -> int:
             user_flag=getattr(args, 'user_flag', False),
             project_flag=getattr(args, 'project_flag', False),
             registry=getattr(args, 'registry', None),
+            include_evals=getattr(args, 'include_evals', False),
         )
     
     if args.cmd == "uninstall":

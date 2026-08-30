@@ -56,8 +56,16 @@ Orchestration release: background agents over the deterministic scripts.
   ("believe the report": `needsRebase` is computed against remote/parent state — never
   deny a reported rebase after local inspection; conflict-free cascade procedure).
 - `evals/`: `claude plugin eval` suite (haiku-pinned) reproducing the field incidents in
-  local fixture repos with a scripted `gh` stub — denied-rebase, subset-merge, and
-  exit-0 "Sync aborted" cases; no GitHub repo or network needed.
+  local fixture repos with a scripted `gh` stub — denied-rebase, subset-merge, exit-0
+  "Sync aborted", merge-forward-vs-rebase, release-stack-shape, and post-merge
+  verification cases; no GitHub repo or network needed.
+- Field-incident hardening from a second report: merge scope is the GitHub stack
+  object, not branch topology (silent non-touch of unlinked PRs); pre-merge branch
+  protection check for stale required contexts (`--admin` is never a fallback —
+  hard rule 2); no protected-branch heads as stack layers (hard rule 7, plan agent
+  rule 7, playbook-merge "Release stacks"); merge-forward-only drift check before any
+  rebase recommendation (hard rule 8, playbook-rebase "Merge-forward repositories");
+  single-watcher CI polling guidance; atomic post-merge verification.
 - 68 pytest cases.
 
 ## 0.1.0 — 2026-08-28

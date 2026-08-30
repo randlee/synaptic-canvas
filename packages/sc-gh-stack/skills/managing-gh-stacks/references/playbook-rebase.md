@@ -32,6 +32,27 @@ If `view --json` says a layer needs a rebase, it does — proceed below. Only af
 | A **lower layer is ahead** of the layers above it (commits landed on the bottom/middle branch; upper layers don't contain its tip) | fix committed to a lower layer; or bottom advanced by a merge/ff | check out that layer, then `gh stack rebase --upstack` |
 | A layer's PR merged | landed mid-stack | `gh stack sync` — merged PRs are replayed with `--onto` automatically, no spurious conflicts |
 | Local and remote of one branch diverged | history rewritten somewhere | STOP — do not rebase over it; see `troubleshooting.md` |
+| A branch ABOVE the stack's base (e.g. `main` above a `develop`-based stack) has commits the base lacks | release landed on the upper branch only | **not a rebase problem** — see "Merge-forward repositories" below |
+
+## Merge-forward repositories
+
+Before recommending any `gh stack rebase`/`sync`, check whether the drift is actually
+*above* the stack's base:
+
+```bash
+git fetch
+git rev-list --count <base>..<upper>    # e.g. develop..main — nonzero means the upper
+                                        # branch has commits the base lacks
+```
+
+In a merge-forward-only repository (upper branches merge down via PRs, never rebases),
+that situation is fixed by **opening a merge-forward PR** (`<upper> -> <base>`) — never by
+`gh stack rebase` or `gh stack sync`, which will conflict against history the base was
+never meant to replay. Field incident: "the stack is out of date" was diagnosed as a
+rebase, `gh stack rebase` conflicted, and the real cause (`main` carried a PR `develop`
+lacked) was reachable with one `rev-list` before any rebase was suggested. Run the
+`rev-list` check first; only when the drift is at or below the stack's own trunk is a
+rebase the answer.
 
 ## The conflict-free case (most common)
 

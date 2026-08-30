@@ -16,9 +16,15 @@ CI cycle, and approval gate.
 gh stack view --json   # every PR you intend to land MUST appear here
 ```
 
-If an expected PR is missing: STOP. Link it (`gh stack link`) or restructure
-(`troubleshooting.md`, "Restructuring a stack"), re-verify with `view --json`, then merge.
-Never merge the subset and patch up afterwards.
+Assert the expected PR **set and order** against `view --json` — not just presence. If it
+differs: STOP. Link the missing PR (`gh stack link`) or restructure (`troubleshooting.md`,
+"Restructuring a stack"), re-verify with `view --json`, then merge. Never merge the subset
+and patch up afterwards.
+
+**Merge scope is defined by the GitHub stack object — not by branch topology or PR base
+relationships.** `gh stack merge <pr#>` means "merge the stack up to PR N", never "merge
+these PRs I have in mind". A PR based on a stack branch, targeting the same trunk, with
+every appearance of being a layer, is simply not touched if it was never linked — silently.
 
 ## Scope and semantics
 
@@ -36,19 +42,60 @@ Never merge the subset and patch up afterwards.
   never hand-roll REST calls. GitHub's web UI stack merge is the same native flow — fine
   for humans, not agent-drivable.
 
-## After the merge
+## Pre-merge protection check
+
+Branch protection can refuse a merge that looks green. **Stale required contexts** are the
+usual cause: protection requires status-check names that no current workflow produces
+(e.g. protection still lists `Clippy` / `Format check` after CI was renamed to
+`Just lint`). Compare before merging:
 
 ```bash
-gh stack view --json        # merged layers: "isMerged": true; remaining PRs retargeted
-gh stack sync --prune       # rebase what remains and delete local branches of merged PRs
+gh api repos/{owner}/{repo}/branches/<base>/protection --jq '.required_status_checks.contexts'
+gh api repos/{owner}/{repo}/commits/<head-sha>/check-runs --jq '[.check_runs[].name]'
 ```
 
-If only part of the stack landed, the remaining stack is still a stack — continue with
-`playbook-sync.md` for the daily loop.
+Any required context absent from the head's check-run names will block the merge no matter
+how green CI is. Surface it — the fix is updating the protection rule, a human decision.
+Never route around it with `gh pr merge --admin`.
+
+## Release stacks: no protected-branch heads
+
+A PR whose **head is a protected/long-lived branch** (e.g. `develop -> main`) is a bad
+stack layer: its head moves when the layer below merges, invalidating the CI the merge was
+gated on, and stack tooling cannot rebase a protected head. Shape a bump-then-release flow
+as a stack landing INTO the protected branch (`release/0.6.0 -> develop`), then open the
+`develop -> main` PR separately after the stack lands — or one PR straight to the final
+target (`release/0.6.0 -> main`) plus a merge-forward.
+
+## Waiting on CI
+
+One watcher per head, not ad-hoc polling: `gh pr checks <pr#> --watch`, or a single loop
+with a >= 30s interval and a `--jq` filter to non-success runs only. Per-tick `gh api
+.../check-runs` calls (especially from cron) burn the 5,000/hr REST limit fast; if you are
+rate-limited, stop polling entirely until the limit window resets — polling through it
+just extends the outage.
+
+## After the merge — verify atomically, then report
+
+Verification is part of the merge step, not an afterthought. Before reporting success,
+assert in the same step:
+
+```bash
+gh pr view <each-expected-pr#> --json state,mergedAt   # every one: "MERGED"
+gh stack view --json                                   # remaining PRs retargeted correctly
+git fetch && git show <remote>/<target>:<version-file> # target really carries the change
+gh stack sync --prune                                  # then clean up local branches
+```
+
+Any expected PR still `OPEN` means the membership check was skipped or wrong — say so
+explicitly rather than reporting the merge as done. The ideal transcript for a two-layer
+landing is about four calls: `gh stack view --json` → assert both layers present in order
+→ `gh stack merge --yes` → verify both `MERGED` + the target branch's content.
 
 ## Failure modes
 
 - Refusal names a specific PR: fix that PR (draft, closed, failing required check) and
   re-run — nothing merged, nothing to unwind.
 - `gh pr merge` said "part of a stack": that is not an error to work around — the answer
-  is `gh stack merge` after the membership check, never REST experiments.
+  is `gh stack merge` after the membership check, never REST experiments and never
+  `gh pr merge --admin`.

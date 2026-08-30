@@ -7,6 +7,11 @@ network, fully deterministic. What is being graded is the *agent's decisions* (d
 believe `needsRebase`, check stack membership before merging, detect a silent sync
 abort), not the gh-stack extension itself.
 
+`INCIDENTS.md` documents each underlying field incident with enough detail to recreate
+it — background for authoring or reviewing cases. Nothing outside `evals/` references
+this folder: the skill installs and runs fully without it (`sc-install` skips `evals/`
+unless `--include-evals` is passed).
+
 ## Cases
 
 | Case | Field incident it locks in |
@@ -14,6 +19,9 @@ abort), not the gh-stack extension itself.
 | `rebase-believe-the-report` | gh reported a rebase necessary; the agent inspected locally, saw nothing, and denied the rebase existed (stack root was ahead; a conflict-free `rebase --upstack` fixed it) |
 | `merge-membership-check` | `gh stack merge <top>` on a "2-PR stack" merged only the top PR because the other was never linked into the stack — cost an extra PR + CI + approval cycle |
 | `sync-aborted-detection` | non-interactive `gh stack sync` on a diverged stack prints "Sync aborted" but exits 0; success must not be reported |
+| `merge-forward-not-rebase` | "stack out of date" was mis-diagnosed as a rebase; `gh stack rebase` conflicted — the real drift was `main` ahead of `develop` (merge-forward-only repo), reachable with one `git rev-list --count develop..main` |
+| `release-stack-shape` | a `develop -> main` PR was planned as a stack layer; a protected-branch head is a bad layer (head moves on lower-layer merge, invalidating gated CI; tooling can't rebase it) |
+| `merge-verify-outcome` | post-merge state was checked only after the fact (#148 still OPEN); verification of MERGED state + target content belongs in the merge step — ideal transcript is ~4 calls |
 
 ## Running
 

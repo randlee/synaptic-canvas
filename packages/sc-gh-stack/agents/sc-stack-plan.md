@@ -48,6 +48,13 @@ Apply the mapping rules (a stack is strictly linear; its only external dependenc
    branches on the REMOTE trunk tip, never the possibly stale local trunk: emit
    `git fetch <remote>` first, then `git worktree add <path> -b <bottom> <remote>/<trunk>`.
 
+7. **Never plan a layer whose head is a protected/long-lived branch** (e.g. a
+   `develop -> main` PR inside a release stack): its head moves when the layer below
+   merges, invalidating the CI the merge was gated on, and stack tooling cannot rebase a
+   protected head. Shape releases as a stack landing INTO the protected branch, with the
+   protected-branch-to-trunk PR opened separately after the stack lands (or one PR to the
+   final target plus a merge-forward).
+
 Ambiguous dependencies (order both unknown and consequential): do not guess — list them in
 `questions` and mark the affected stack `blocked: true`.
 

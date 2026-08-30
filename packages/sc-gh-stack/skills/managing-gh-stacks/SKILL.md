@@ -79,7 +79,8 @@ installed — **do not reproduce the rebase chain or preflight checks by hand.**
 1. Never run bare `view`, `submit`, `init`, `add`, `checkout`, `switch`, or `modify` — they
    prompt or open a TUI and block forever. Use `view --json`, `submit --auto`, `init <b>...`,
    `add <b>`, `checkout <target>`, `up/down/top/bottom`. `modify` has no non-interactive form.
-2. Never `gh pr merge` a stacked PR; never `git push --force`; never `git reset --hard` as
+2. Never `gh pr merge` a stacked PR — with any flags: `--admin` (bypassing branch
+   protection) is never an acceptable fallback; never `git push --force`; never `git reset --hard` as
    part of a workflow (it discards commits and rerere state — recover with `git rebase
    --abort`, `git rebase --continue`, or a fast-forward instead); never merge layers into
    each other by hand. `gh stack` owns pushing (`push`, `submit`, `sync`) and merging
@@ -90,6 +91,12 @@ installed — **do not reproduce the rebase chain or preflight checks by hand.**
    `gh stack rebase --upstack`. Never commit a lower layer's fix on the top branch.
 5. Parse only `view --json` on stdout and exit codes. Never parse stderr.
 6. If you have not been given layer order and it is not obvious from the diffs, ask. Do not guess.
+7. Never make a PR whose head is a protected/long-lived branch (e.g. `develop -> main`) a
+   stack layer — its head moves when the layer below merges, invalidating gated CI, and
+   stack tooling cannot rebase it (`references/playbook-merge.md`, "Release stacks").
+8. Before recommending a rebase, check the drift is not ABOVE the stack's base:
+   `git rev-list --count <base>..<upper>` nonzero in a merge-forward-only repo means a
+   merge-forward PR, never `gh stack rebase`/`sync` (`references/playbook-rebase.md`).
 
 ## Worktree policy
 
