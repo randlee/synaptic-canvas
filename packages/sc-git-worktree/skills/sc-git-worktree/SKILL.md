@@ -5,7 +5,7 @@ description:
   Use when working on multiple branches simultaneously, isolating experiments, updating protected branches (main/develop),
   or when user mentions "worktree", "parallel branches", "feature isolation", "branch cleanup", "worktree status", or "update main/develop".
   Optional gh-stack interop (stacked-PR worktrees defer to the sc-gh-stack skill; stack-tracking worktrees are guarded unconditionally).
-version: 0.12.0
+version: 0.13.0
 entry_point: /sc-git-worktree
 ---
 

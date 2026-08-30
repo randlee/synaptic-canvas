@@ -1,7 +1,7 @@
 {
   "$schema": "https://yourcompany.github.io/schemas/package-registry.schema.json",
   "version": "2.0.0",
-  "generated": "2026-08-30T22:31:50Z",
+  "generated": "2026-08-30T22:32:48Z",
   "repo": "randlee/synaptic-canvas",
   "marketplace": {
     "name": "Synaptic Canvas",
@@ -167,7 +167,7 @@
     },
     "sc-git-worktree": {
       "name": "sc-git-worktree",
-      "version": "0.12.0",
+      "version": "0.13.0",
       "status": "beta",
       "tier": 1,
       "description": "Manage git worktrees with optional tracking and protected branch safeguards: create, scan, cleanup, abort, and update worktrees using a standard sibling folder layout with tracking documents. Prevents accidental deletion of protected branches.\n",
@@ -202,6 +202,7 @@
       "dependencies": [
         "python3",
         "pydantic",
+        "pyyaml",
         "git >= 2.20"
       ],
       "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-git-worktree/CHANGELOG.md",
@@ -534,7 +535,7 @@
     },
     "sc-commit-push-pr": {
       "name": "sc-commit-push-pr",
-      "version": "0.12.0",
+      "version": "0.13.0",
       "status": "beta",
       "tier": 2,
       "description": "Commit, push, and create PRs for GitHub and Azure DevOps",
@@ -557,7 +558,7 @@
         "commands": 0,
         "skills": 1,
         "agents": 2,
-        "scripts": 9,
+        "scripts": 10,
         "schemas": 0
       },
       "dependencies": [
@@ -565,7 +566,9 @@
         "pydantic",
         "pyyaml",
         "git",
-        "gh"
+        "gh",
+        "gh-stack extension",
+        "managing-gh-stacks skill"
       ],
       "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-commit-push-pr/CHANGELOG.md",
       "lastUpdated": "2026-08-30",
