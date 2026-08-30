@@ -4,6 +4,7 @@ description:
   Create, manage, scan, update, and clean up git worktrees for parallel development with protected branch safeguards.
   Use when working on multiple branches simultaneously, isolating experiments, updating protected branches (main/develop),
   or when user mentions "worktree", "parallel branches", "feature isolation", "branch cleanup", "worktree status", or "update main/develop".
+  Optional gh-stack interop (stacked-PR worktrees defer to the sc-gh-stack skill; stack-tracking worktrees are guarded unconditionally).
 version: 0.12.0
 entry_point: /sc-git-worktree
 ---
@@ -71,6 +72,22 @@ git:
 - **Cleanup/abort agents NEVER delete protected branches** (local or remote)
 - Protected branches can only be removed from worktrees, never deleted
 - Use `--update` to safely pull changes for protected branches in worktrees
+
+## Stacked-PR worktrees (optional, gated)
+
+Read `references/gh-stack-support.md` before proceeding when EITHER holds:
+
+- a worktree under scan/cleanup/abort carries gh-stack tracking
+  (`test -e "$(git -C <wt> rev-parse --git-dir)/gh-stack"`; scan and cleanup
+  report this as `gh_stack_tracked`, and batch cleanup skips such worktrees) —
+  this destructive-safety gate applies **regardless of whether the gh-stack
+  extension is installed locally**, since tracking is repository state; or
+- the task involves stacked PRs and the `gh-stack` extension is installed
+  (`gh extension list | grep -q gh-stack`).
+
+The reference defers all stack authority to the `managing-gh-stacks` skill
+(package `sc-gh-stack`) when installed, and otherwise strongly recommends
+installing it. Neither condition → skip this entirely.
 
 ## Safety and reminders
 - **NEVER delete protected branches** (main, develop, master) under any circumstances.

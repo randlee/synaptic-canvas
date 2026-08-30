@@ -67,6 +67,7 @@ Wrap the script output in `<output_json>` tags with a fenced JSON block. Do not 
 - **Merged + clean**: Auto-cleaned in batch mode
 - **Dirty**: Reported back, requires explicit `require_clean: false` to force
 - **Unmerged**: Never auto-deleted. User must merge first or use `--abort` to discard.
+- **gh-stack tracked**: Batch mode never touches a worktree carrying gh-stack tracking state (per-worktree `gh-stack` marker in its git-dir); it is skipped and reported in `gh_stack_skipped`. Single-branch mode does not block on this but reports `gh_stack_tracked: true/false` in its output — confirm with the user before cleaning a tracked worktree.
 
 ## Constraints
 

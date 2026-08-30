@@ -5,6 +5,27 @@ All notable changes to the **sc-git-worktree** package will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- Optional gh-stack interop. New `references/gh-stack-support.md` defers all
+  stacked-PR authority to the `managing-gh-stacks` skill (sc-gh-stack) when
+  installed and strongly recommends installing it otherwise (minimal
+  non-interactive survival-kit command table as fallback). SKILL.md changes are
+  surgical: one description clause and one gated pointer section.
+- Destructive-safety guard (unconditional — applies even without the gh-stack
+  extension, since tracking is repository state): `check_gh_stack_tracked()` in
+  `worktree_shared.py`; **batch cleanup skips any worktree carrying gh-stack
+  tracking** (`.git/worktrees/<wt>/gh-stack`), surfacing them in a
+  `gh_stack_skipped` bucket; scan reports `gh_stack_tracked` per worktree;
+  single-branch cleanup and abort surface `gh_stack_tracked` without blocking
+  (they already require explicit approval). 11 new tests (suite 132 -> 143).
+
+### Fixed
+- Abort agent doc contradicted the implementation on protected branches (claimed
+  local deletion possible with approval; the script unconditionally preserves).
+- Scan agent example error code casing (`tracking.missing` -> `TRACKING.MISSING`).
+
 ## [0.10.0] - 2026-04-18
 
 ### Added

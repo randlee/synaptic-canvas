@@ -28,6 +28,7 @@ try:
     from .envelope import Envelope, ErrorCodes, Transcript
     from .worktree_shared import (
         TrackingEntry,
+        check_gh_stack_tracked,
         get_default_tracking_path,
         get_protected_branches,
         get_repo_name,
@@ -40,6 +41,7 @@ except ImportError:
     from envelope import Envelope, ErrorCodes, Transcript
     from worktree_shared import (
         TrackingEntry,
+        check_gh_stack_tracked,
         get_default_tracking_path,
         get_protected_branches,
         get_repo_name,
@@ -484,6 +486,7 @@ def scan_worktrees(
             "is_locked": wt.is_locked,
             "prunable": wt.prunable,
             "remote_ahead": remote_ahead if remote_ahead > 0 else None,
+            "gh_stack_tracked": check_gh_stack_tracked(Path(wt.path)),
         })
 
     # Generate recommendations
@@ -529,6 +532,8 @@ def scan_worktrees(
                 "untracked": len(untracked_worktrees),
                 "orphaned_remotes": len(orphaned_remotes),
                 "remote_ahead": remote_ahead_count,
+                "gh_stack_tracked": sum(
+                    1 for wt in worktree_results if wt.get("gh_stack_tracked")),
             },
         },
         transcript=transcript,

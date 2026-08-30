@@ -18,6 +18,7 @@ artifacts:
     - commands/sc-git-worktree.md
   skills:
     - skills/sc-git-worktree/SKILL.md
+    - skills/sc-git-worktree/references/gh-stack-support.md
   agents:
     - agents/sc-git-worktree-create.md
     - agents/sc-git-worktree-scan.md

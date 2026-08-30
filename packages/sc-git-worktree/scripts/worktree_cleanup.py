@@ -25,6 +25,7 @@ from pydantic import BaseModel, Field, field_validator
 try:
     from .envelope import Envelope, ErrorCodes, Transcript
     from .worktree_shared import (
+        check_gh_stack_tracked,
         check_remote_branch_exists,
         cleanup_empty_directories,
         count_unique_commits,
@@ -49,6 +50,7 @@ try:
 except ImportError:
     from envelope import Envelope, ErrorCodes, Transcript
     from worktree_shared import (
+        check_gh_stack_tracked,
         check_remote_branch_exists,
         cleanup_empty_directories,
         count_unique_commits,
@@ -323,6 +325,7 @@ def cleanup_all_merged(input_data: CleanupInput) -> Envelope:
         dirty = []
         unmerged = []
         protected_skipped = []
+        gh_stack_skipped = []
         orphaned_remotes = []
 
         # Drive cleanup decisions from tracking entries (JSONL)
@@ -369,6 +372,23 @@ def cleanup_all_merged(input_data: CleanupInput) -> Envelope:
             # Skip protected branches
             if branch in protected_branches:
                 protected_skipped.append({"branch": branch, "reason": "protected"})
+                continue
+
+            # Skip worktrees carrying gh-stack tracking. Stack state is
+            # per-worktree, and batch cleanup has no checkpoint for explicit
+            # approval — removing the worktree or branch here could silently
+            # orphan stack metadata. Single-branch cleanup still allows this,
+            # but only with explicit approval.
+            if check_gh_stack_tracked(wt_path):
+                gh_stack_skipped.append({
+                    "branch": branch,
+                    "path": str(wt_path),
+                    "reason": "gh-stack tracking present (per-worktree stack state; use single-branch cleanup with explicit approval)",
+                })
+                transcript.step_ok(
+                    step=f"git -C {wt_path} rev-parse --git-dir",
+                    message="gh-stack tracking present - skipped",
+                )
                 continue
 
             # Check if worktree is clean
@@ -512,6 +532,7 @@ def cleanup_all_merged(input_data: CleanupInput) -> Envelope:
                 "unmerged": unmerged,
                 "orphaned_remotes": orphaned_remotes if orphaned_remotes else None,
                 "protected_skipped": protected_skipped if protected_skipped else None,
+                "gh_stack_skipped": gh_stack_skipped if gh_stack_skipped else None,
                 "removed_directories": removed_dirs if removed_dirs else None,
                 "summary": {
                     "cleaned": len(cleaned),
@@ -519,6 +540,7 @@ def cleanup_all_merged(input_data: CleanupInput) -> Envelope:
                     "unmerged": len(unmerged),
                     "orphaned_remotes": len(orphaned_remotes),
                     "protected_skipped": len(protected_skipped),
+                    "gh_stack_skipped": len(gh_stack_skipped),
                     "empty_dirs_removed": len(removed_dirs),
                 },
             },
@@ -644,6 +666,16 @@ def cleanup_single_branch(input_data: CleanupInput) -> Envelope:
         transcript.step_ok(
             step=f"test -d {worktree_path}",
             message="exists",
+        )
+
+        # Probe for gh-stack tracking (per-worktree stack state). Not a
+        # hard block here — single-branch cleanup requires explicit
+        # approval already — but surface it so the caller can confirm
+        # with the user before proceeding.
+        gh_stack_tracked = check_gh_stack_tracked(worktree_path)
+        transcript.step_ok(
+            step=f"git -C {worktree_path} rev-parse --git-dir",
+            message="gh-stack tracking present" if gh_stack_tracked else "no gh-stack tracking",
         )
 
         # Check if worktree is clean
@@ -806,6 +838,7 @@ def cleanup_single_branch(input_data: CleanupInput) -> Envelope:
             "path": str(worktree_path),
             "repo_name": repo_name,
             "is_protected": is_protected,
+            "gh_stack_tracked": gh_stack_tracked,
             "merged": is_merged,
             "unique_commits": unique_commits,
             "worktree_removed": True,

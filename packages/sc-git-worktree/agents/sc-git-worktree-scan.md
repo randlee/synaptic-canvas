@@ -55,6 +55,7 @@ Return fenced JSON with minimal envelope:
         "path": "../repo-worktrees/feature-x",
         "status": "clean",
         "tracked": true,
+        "gh_stack_tracked": false,
         "tracking_entry": {
           "branch": "feature-x",
           "path": "../repo-worktrees/feature-x",
@@ -86,7 +87,7 @@ On error (e.g., tracking file missing):
   "success": false,
   "data": null,
   "error": {
-    "code": "tracking.missing",
+    "code": "TRACKING.MISSING",
     "message": "tracking file not found at expected path",
     "recoverable": true,
     "suggested_action": "create tracking file or disable tracking"

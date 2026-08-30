@@ -460,6 +460,37 @@ def get_worktree_status(path: Path) -> tuple:
     return len(dirty_files) == 0, dirty_files
 
 
+def check_gh_stack_tracked(path: Path) -> bool:
+    """Check whether a worktree carries gh-stack tracking state.
+
+    gh-stack keeps per-worktree stack state in a `gh-stack` marker under the
+    worktree's git-dir (this is a linked worktree's private gitdir, not the
+    shared repo `.git`). Fail closed: any error probing git resolves to False
+    so callers must not assume tracking is present when unknown.
+
+    Args:
+        path: Worktree working directory to probe.
+
+    Returns:
+        True if a `gh-stack` marker exists under the worktree's git-dir.
+    """
+    # A prunable/hand-deleted worktree directory makes subprocess raise before
+    # git runs (cwd missing) — the fail-closed contract must cover that too.
+    try:
+        result = run_git(["rev-parse", "--git-dir"], cwd=path, check=False)
+    except OSError:
+        return False
+    if result.returncode != 0:
+        return False
+    git_dir_raw = result.stdout.strip()
+    if not git_dir_raw:
+        return False
+    git_dir = Path(git_dir_raw)
+    if not git_dir.is_absolute():
+        git_dir = (path / git_dir).resolve()
+    return (git_dir / "gh-stack").exists()
+
+
 def is_branch_merged(branch: str, base: str = "HEAD", cwd: Optional[Path] = None) -> bool:
     """Check if branch is merged into base."""
     result = run_git(["branch", "--merged", base], cwd=cwd, check=False)
