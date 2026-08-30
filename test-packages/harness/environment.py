@@ -52,6 +52,28 @@ PLUGINS_DIR = "plugins"
 MARKETPLACE_FILES = ["known_marketplaces.json"]
 MARKETPLACE_DIRS = ["marketplaces"]
 
+CODEX_DIR = ".codex"
+CODEX_ZDOT_DIRNAME = ".codex-zdot"
+CODEX_BIN_DIRNAME = "bin"
+
+# Codex fast-model aliases (matches sc-launchpad's table / scripts/run-evals-local.py).
+# A model resolving to a "gpt-*" id routes execution.model through `codex exec`
+# instead of `claude -p`; everything else keeps using the Claude path.
+MODEL_ALIASES = {"luna": "gpt-5.6-luna", "sol": "gpt-5.6-sol", "terra": "gpt-5.6-terra"}
+
+
+def resolve_model(model: str) -> str:
+    """Resolve a short Codex model alias (luna/sol/terra) to its full model id.
+
+    Unknown aliases (including all Claude model names) pass through unchanged.
+    """
+    return MODEL_ALIASES.get(model, model)
+
+
+def is_codex_model(model: str) -> bool:
+    """Return True if `model` should be routed through `codex exec` rather than `claude`."""
+    return resolve_model(model).startswith("gpt-")
+
 
 # =============================================================================
 # Helper Functions
@@ -178,6 +200,92 @@ def copy_codex_auth(isolated_home: Path, source_home: Path | None = None) -> boo
     return copied_any
 
 
+def setup_codex_home(isolated_home: Path, source_home: Path | None = None) -> Path:
+    """Provision CODEX_HOME inside the isolated HOME.
+
+    CODEX_HOME is Codex's analogue of HOME: it holds config and auth.json,
+    just as ~/.claude holds Claude's. Isolating it the same way HOME is
+    isolated keeps Codex runs from touching (or depending on) the real
+    ~/.codex, while still letting them authenticate via a copy of its
+    auth.json (see copy_codex_auth).
+
+    Args:
+        isolated_home: The isolated HOME directory
+        source_home: Source HOME to copy Codex auth from (default: actual HOME)
+
+    Returns:
+        Path to the CODEX_HOME directory (isolated_home/.codex), created
+        whether or not auth was available to copy.
+    """
+    codex_home = isolated_home / CODEX_DIR
+    codex_home.mkdir(parents=True, exist_ok=True)
+    copy_codex_auth(isolated_home, source_home)
+    return codex_home
+
+
+def provision_codex_zdot(zdot_dir: Path, bin_dir: Path) -> Path:
+    """Create a ZDOTDIR that forces Codex's login-shell PATH to include bin_dir.
+
+    Codex executes shell commands via `zsh -lc` (a login shell), which
+    re-sources the user's profile and rebuilds PATH -- silently defeating a
+    stub-PATH set only via the subprocess environment. Pointing ZDOTDIR at a
+    workspace-owned directory whose .zshenv unconditionally prepends bin_dir
+    (with empty .zprofile/.zshrc, so nothing else re-clobbers PATH afterward)
+    restores control over command resolution for isolated Codex runs.
+
+    Args:
+        zdot_dir: Directory to use as ZDOTDIR (created if missing)
+        bin_dir: Directory to prepend to PATH inside Codex's login shell
+
+    Returns:
+        The zdot_dir path, for convenience.
+    """
+    zdot_dir.mkdir(parents=True, exist_ok=True)
+    (zdot_dir / ".zshenv").write_text(
+        f'export PATH="{bin_dir}:$PATH"\n', encoding="utf-8"
+    )
+    (zdot_dir / ".zprofile").write_text("", encoding="utf-8")
+    (zdot_dir / ".zshrc").write_text("", encoding="utf-8")
+    return zdot_dir
+
+
+def write_codex_agents_md(project_path: Path) -> Path | None:
+    """Write an AGENTS.md pointing Codex at installed skills, if needed.
+
+    Codex has no Skill tool; its native instruction channel is AGENTS.md in
+    the working directory, which it reads automatically on `codex exec`.
+    This is the parity equivalent of Claude's Skill tool: the same skill
+    content (.claude/skills/*/SKILL.md), loaded through each model's own
+    idiomatic mechanism.
+
+    Args:
+        project_path: The test project directory (cwd for codex exec)
+
+    Returns:
+        Path to the written AGENTS.md, or None if it was skipped because the
+        fixture already ships its own AGENTS.md, or because there are no
+        installed skills to point at.
+    """
+    agents_path = project_path / "AGENTS.md"
+    if agents_path.exists():
+        logger.debug(f"AGENTS.md already present, leaving as-is: {agents_path}")
+        return None
+
+    skills = sorted((project_path / CLAUDE_DIR / "skills").glob("*/SKILL.md"))
+    if not skills:
+        logger.debug(f"No installed skills found under {project_path / CLAUDE_DIR / 'skills'}")
+        return None
+
+    lines = [
+        "# Project skills\n",
+        "Before acting, read the relevant skill and follow it:\n",
+    ]
+    lines += [f"- {p.relative_to(project_path)}\n" for p in skills]
+    agents_path.write_text("".join(lines), encoding="utf-8")
+    logger.debug(f"Wrote Codex AGENTS.md pointing at {len(skills)} skill(s): {agents_path}")
+    return agents_path
+
+
 def setup_test_environment(
     isolated_home: Path,
     project_path: Path,
@@ -215,8 +323,10 @@ def setup_test_environment(
     if copy_marketplace:
         copy_marketplace_data(isolated_home, source_home)
 
-    # Copy Codex auth/config into isolated HOME (if available)
-    copy_codex_auth(isolated_home, source_home)
+    # Provision CODEX_HOME inside the isolated HOME (copies auth if available).
+    # Setting CODEX_HOME is inert for the Claude path -- Claude never reads it.
+    codex_home = setup_codex_home(isolated_home, source_home)
+    env["CODEX_HOME"] = str(codex_home)
 
     logger.debug(f"Configured test environment with HOME={isolated_home}")
     return env
@@ -342,6 +452,7 @@ class IsolatedSession:
     trace_path: Path
     session_id: str | None = None
     transcript_path: Path | None = None
+    codex_events_path: Path | None = None
     _process_result: subprocess.CompletedProcess | None = field(
         default=None, repr=False
     )
@@ -461,6 +572,95 @@ class IsolatedSession:
 
         self._process_result = result
         logger.debug(f"Command completed with return code: {result.returncode}")
+
+        return result
+
+    def run_codex_command(
+        self,
+        prompt: str,
+        model: str = "gpt-5.6-luna",
+        timeout: int = 120,
+        codex_bin: str = "codex",
+        events_path: Path | None = None,
+    ) -> subprocess.CompletedProcess:
+        """Run `codex exec` with a prompt in the isolated environment.
+
+        Parity counterpart to run_command(): same isolation (HOME/CODEX_HOME),
+        same cwd/timeout contract, but drives the Codex CLI instead of Claude.
+        Codex has no hook system, so the JSONL it emits on stdout with --json
+        IS the trace -- it is written to `events_path` for the collector to
+        read, exactly as trace.jsonl is for Claude.
+
+        Also provisions ZDOTDIR (see provision_codex_zdot) so Codex's
+        `zsh -lc` login shell doesn't silently rebuild PATH out from under a
+        stub-PATH set via the subprocess environment, and writes AGENTS.md
+        pointing at any installed skills (see write_codex_agents_md) -- the
+        parity equivalent of Claude's Skill tool, since Codex has none.
+
+        Args:
+            prompt: The prompt to send to Codex
+            model: Model id or alias (see MODEL_ALIASES); resolved before use
+            timeout: Timeout in seconds (default: 120)
+            codex_bin: Name/path of the codex executable (default: "codex")
+            events_path: Where to write the raw --json event stream
+                (default: <trace_path-parent>/codex-events.jsonl)
+
+        Returns:
+            CompletedProcess with stdout (the JSONL event stream), stderr,
+            and returncode.
+        """
+        resolved_model = resolve_model(model)
+
+        zdot_dir = self.isolated_home / CODEX_ZDOT_DIRNAME
+        bin_dir = self.isolated_home / CODEX_BIN_DIRNAME
+        bin_dir.mkdir(parents=True, exist_ok=True)
+        provision_codex_zdot(zdot_dir, bin_dir)
+
+        env = dict(self.env)
+        env["ZDOTDIR"] = str(zdot_dir)
+
+        write_codex_agents_md(self.project_path)
+
+        if events_path is None:
+            events_path = self.trace_path.parent / "codex-events.jsonl"
+        events_path = Path(events_path)
+        last_message_path = self.isolated_home / "codex-last-message.txt"
+
+        cmd = [
+            codex_bin,
+            "exec",
+            "--yolo",
+            "--model",
+            resolved_model,
+            "--json",
+            "--output-last-message",
+            str(last_message_path),
+            "--skip-git-repo-check",
+            "-c",
+            'shell_environment_policy.inherit="all"',
+            prompt,
+        ]
+
+        logger.info(f"Running codex command: model={resolved_model}")
+        logger.debug(f"Full codex command: {cmd}")
+
+        result = subprocess.run(
+            cmd,
+            env=env,
+            cwd=self.project_path,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+        )
+
+        # Persist the JSONL trace -- this IS the codex trace artifact, since
+        # there are no Claude-style hooks for codex to emit events through.
+        events_path.parent.mkdir(parents=True, exist_ok=True)
+        events_path.write_text(result.stdout, encoding="utf-8")
+        self.codex_events_path = events_path
+
+        self._process_result = result
+        logger.debug(f"Codex command completed with return code: {result.returncode}")
 
         return result
 

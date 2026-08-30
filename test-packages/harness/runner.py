@@ -34,7 +34,12 @@ from typing import Any
 import yaml
 
 from .collector import CollectedData, DataCollector
-from .environment import get_git_state, isolated_claude_session
+from .environment import (
+    get_git_state,
+    is_codex_model,
+    isolated_claude_session,
+    resolve_model,
+)
 from .log_analyzer import analyze_logs, collect_log_content
 from .models import (
     ClaudeResponse,
@@ -467,46 +472,86 @@ class TestRunner:
                     session, fixture_config.setup_plugins
                 )
 
-                # Run the test
-                result = session.run_command(
-                    prompt=test_config.prompt,
-                    model=test_config.model,
-                    tools=test_config.tools if test_config.tools else None,
-                    timeout=test_config.timeout_ms // 1000,
-                )
+                if is_codex_model(test_config.model):
+                    # Codex path: `codex exec` in place of `claude -p`. There
+                    # are no hooks/transcript for codex, so the JSONL event
+                    # stream captured to `{test_id}-codex-events.jsonl` is
+                    # both the run's output and its trace artifact.
+                    codex_events_path = (
+                        self.reports_path / f"{test_config.test_id}-codex-events.jsonl"
+                    )
+                    result = session.run_codex_command(
+                        prompt=test_config.prompt,
+                        model=test_config.model,
+                        timeout=test_config.timeout_ms // 1000,
+                        events_path=codex_events_path,
+                    )
 
-                # Capture Claude CLI output immediately after run_command
-                claude_stdout = session.claude_stdout
-                claude_stderr = session.claude_stderr
+                    claude_stdout = session.claude_stdout
+                    claude_stderr = session.claude_stderr
 
-                # Find transcript
-                session.find_transcript()
+                    collector = DataCollector(project_path=self.project_path)
+                    collected_data = collector.collect_from_codex_events(
+                        codex_events_path, prompt=test_config.prompt
+                    )
 
-                # Collect data
-                collector = DataCollector(
-                    trace_path=session.trace_path,
-                    transcript_path=session.transcript_path,
-                )
-                collected_data = collector.collect()
+                    collected_data.claude_cli_stdout = claude_stdout
+                    collected_data.claude_cli_stderr = claude_stderr
 
-                # Propagate Claude CLI output to collected data
-                collected_data.claude_cli_stdout = claude_stdout
-                collected_data.claude_cli_stderr = claude_stderr
+                    log_dirs = [
+                        session.isolated_home / ".codex",
+                        self.project_path / ".claude" / "state" / "logs",
+                    ]
+                    log_content = collect_log_content(log_dirs)
+                    combined_output = ""
+                    if claude_stdout:
+                        combined_output += f"=== Codex CLI stdout ===\n{claude_stdout}\n"
+                    if claude_stderr:
+                        combined_output += f"=== Codex CLI stderr ===\n{claude_stderr}\n"
+                    if log_content:
+                        combined_output += f"=== Claude state logs ===\n{log_content}\n"
+                    collected_data.log_analysis = analyze_logs(combined_output)
+                else:
+                    # Run the test
+                    result = session.run_command(
+                        prompt=test_config.prompt,
+                        model=test_config.model,
+                        tools=test_config.tools if test_config.tools else None,
+                        timeout=test_config.timeout_ms // 1000,
+                    )
 
-                # Analyze CLI output plus Claude state logs for warnings/errors
-                log_dirs = [
-                    session.isolated_home / ".claude" / "state" / "logs",
-                    self.project_path / ".claude" / "state" / "logs",
-                ]
-                log_content = collect_log_content(log_dirs)
-                combined_output = ""
-                if claude_stdout:
-                    combined_output += f"=== Claude CLI stdout ===\n{claude_stdout}\n"
-                if claude_stderr:
-                    combined_output += f"=== Claude CLI stderr ===\n{claude_stderr}\n"
-                if log_content:
-                    combined_output += f"=== Claude state logs ===\n{log_content}\n"
-                collected_data.log_analysis = analyze_logs(combined_output)
+                    # Capture Claude CLI output immediately after run_command
+                    claude_stdout = session.claude_stdout
+                    claude_stderr = session.claude_stderr
+
+                    # Find transcript
+                    session.find_transcript()
+
+                    # Collect data
+                    collector = DataCollector(
+                        trace_path=session.trace_path,
+                        transcript_path=session.transcript_path,
+                    )
+                    collected_data = collector.collect()
+
+                    # Propagate Claude CLI output to collected data
+                    collected_data.claude_cli_stdout = claude_stdout
+                    collected_data.claude_cli_stderr = claude_stderr
+
+                    # Analyze CLI output plus Claude state logs for warnings/errors
+                    log_dirs = [
+                        session.isolated_home / ".claude" / "state" / "logs",
+                        self.project_path / ".claude" / "state" / "logs",
+                    ]
+                    log_content = collect_log_content(log_dirs)
+                    combined_output = ""
+                    if claude_stdout:
+                        combined_output += f"=== Claude CLI stdout ===\n{claude_stdout}\n"
+                    if claude_stderr:
+                        combined_output += f"=== Claude CLI stderr ===\n{claude_stderr}\n"
+                    if log_content:
+                        combined_output += f"=== Claude state logs ===\n{log_content}\n"
+                    collected_data.log_analysis = analyze_logs(combined_output)
 
                 # Fill in missing data
                 if not collected_data.start_timestamp:
@@ -575,7 +620,16 @@ class TestRunner:
             self._cleanup_plugins(installed_files, installed_dirs)
 
     def _build_test_command(self, test_config: TestConfig) -> str:
-        """Build the Claude CLI command string."""
+        """Build the CLI command string (Claude or Codex, per test_config.model)."""
+        if is_codex_model(test_config.model):
+            resolved_model = resolve_model(test_config.model)
+            return (
+                "codex exec --yolo --model "
+                f"{resolved_model} --json --output-last-message <file> "
+                "--skip-git-repo-check -c 'shell_environment_policy.inherit=\"all\"' "
+                f'"{test_config.prompt}"'
+            )
+
         cmd_parts = [
             "claude",
             "-p",
