@@ -80,7 +80,11 @@ Nothing below feeds `develop`, so nothing in the stack moves its head. On
 each feature layer **retargets to main** and merges with its head SHA — and therefore its
 green CI — unchanged. One atomic walk-away merge lands everything on main; the follow-up
 `main -> develop` merge-forward needs no approval and no waiting (and is required in
-either flow, so it never costs extra).
+either flow, so it never costs extra). The carry layer also makes that back-merge
+**conflict-free by construction**: it carried all of develop's content into main first,
+so after the cascade develop's tip is fully contained in main — develop holds nothing
+main lacks. A main-based stack WITHOUT the carry layer forfeits this: develop's unmerged
+accumulation diverges from the landed features and the back-merge can genuinely conflict.
 
 Walk-away preconditions for the carry-layer shape — all four, every time:
 1. **Membership**: every intended PR is in the stack object (Rule zero above) — the
