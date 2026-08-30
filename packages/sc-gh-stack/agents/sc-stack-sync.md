@@ -1,6 +1,6 @@
 ---
 name: sc-stack-sync
-version: 0.2.0
+version: 0.13.0
 description: Rebase and push a stack after trunk moved or a fix merged into a middle layer; resolve trivial conflicts, surface risky ones. Returns a compact decision log.
 model: sonnet
 color: green

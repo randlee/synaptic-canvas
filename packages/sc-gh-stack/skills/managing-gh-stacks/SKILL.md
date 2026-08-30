@@ -1,6 +1,6 @@
 ---
 name: managing-gh-stacks
-version: 0.2.0
+version: 0.13.0
 description: >
   Orchestrate parallel development with stacked PRs via the `gh stack` CLI
   extension and background agents. Use whenever the user mentions a stack,

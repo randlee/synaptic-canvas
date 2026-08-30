@@ -1,6 +1,6 @@
 ---
 name: sc-stack-convert
-version: 0.2.0
+version: 0.13.0
 description: Convert N flat PRs/branches into one gh stack inside an isolated worktree; resolve trivial conflicts, surface risky ones, push only when fully clean. Returns a compact decision log.
 model: sonnet
 color: blue

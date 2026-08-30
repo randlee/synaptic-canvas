@@ -1,7 +1,7 @@
 {
   "name": "sc-gh-stack",
   "description": "Stacked-PR orchestration for parallel development with the gh stack CLI extension: background agents plan task graphs onto stacks and worktrees, convert flat PRs into clean stacks, and keep stacks rebased as fixes merge - each returning a compact decision log; deterministic stdlib-Python scripts underneath.",
-  "version": "0.2.0",
+  "version": "0.13.0",
   "author": {
     "name": "randlee"
   },

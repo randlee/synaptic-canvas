@@ -1,5 +1,5 @@
 name: sc-gh-stack
-version: 0.2.0
+version: 0.13.0
 description: >
   Stacked-PR orchestration for parallel development with the `gh stack` CLI
   extension: background agents plan task graphs onto stacks and worktrees,

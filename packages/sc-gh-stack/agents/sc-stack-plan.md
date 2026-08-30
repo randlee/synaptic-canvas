@@ -1,6 +1,6 @@
 ---
 name: sc-stack-plan
-version: 0.2.0
+version: 0.13.0
 description: Map a task dependency graph onto stacks optimized for parallel development, with a concrete worktree plan. Read-only; returns the plan as fenced JSON.
 model: sonnet
 color: purple
