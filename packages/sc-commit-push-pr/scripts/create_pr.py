@@ -17,6 +17,7 @@ Output:
 
 import json
 import sys
+from pathlib import Path
 from typing import Optional
 
 from pydantic import BaseModel, ValidationError
@@ -26,10 +27,26 @@ try:
     from .envelope import Envelope, ErrorCodes
     from .provider_detect import ProviderInfo, detect_provider, get_remote_url
     from .pr_provider import PrProviderError, get_provider
+    from .stack_guard import (
+        check_gh_stack_marker,
+        check_stack_prerequisites,
+        get_repo_root,
+        missing_prereq_actions,
+        STACK_PREREQS_MISSING_MESSAGE,
+        STACK_USE_GH_STACK_SUGGESTED_ACTION,
+    )
 except ImportError:
     from envelope import Envelope, ErrorCodes
     from provider_detect import ProviderInfo, detect_provider, get_remote_url
     from pr_provider import PrProviderError, get_provider
+    from stack_guard import (
+        check_gh_stack_marker,
+        check_stack_prerequisites,
+        get_repo_root,
+        missing_prereq_actions,
+        STACK_PREREQS_MISSING_MESSAGE,
+        STACK_USE_GH_STACK_SUGGESTED_ACTION,
+    )
 
 
 # =============================================================================
@@ -76,6 +93,50 @@ def main(
     Returns:
         Envelope with PR info on success, or error details on failure.
     """
+    # 0. Mandatory gh-stack toolchain prerequisites (unconditional). This
+    # package is the critical junction where a stack-unaware PR creation
+    # can corrupt gh-stack linearity, so the full toolchain is required on
+    # every invocation, regardless of branch or provider.
+    repo_root = get_repo_root()
+    prereqs = check_stack_prerequisites(repo_root)
+    if not prereqs["ok"]:
+        return Envelope.error_response(
+            code=ErrorCodes.PREFLIGHT_STACK_PREREQS_MISSING,
+            message=STACK_PREREQS_MISSING_MESSAGE,
+            recoverable=True,
+            suggested_action="; ".join(missing_prereq_actions(prereqs)),
+            data=prereqs,
+        )
+
+    # 0b. gh-stack layer detection (state-based, current worktree). A
+    # stack layer's PR is owned by `gh stack submit --auto` (correct base
+    # = the layer below, with stack object linkage) -- refuse rather than
+    # opening a PR with an arbitrary base here.
+    if check_gh_stack_marker(Path.cwd()):
+        return Envelope.error_response(
+            code=ErrorCodes.STACK_USE_GH_STACK,
+            message=(
+                f"Branch '{source}' is a layer of a gh stack; PR "
+                "creation is owned by `gh stack submit --auto`, not "
+                "sc-commit-push-pr."
+            ),
+            recoverable=True,
+            suggested_action=STACK_USE_GH_STACK_SUGGESTED_ACTION,
+            data={
+                "pr_created": False,
+                "source_branch": source,
+                "destination_branch": destination,
+                "stack": {
+                    "detected": True,
+                    "reason": (
+                        "a gh-stack layer's PR base must be the layer "
+                        "below it with stack object linkage -- only "
+                        "`gh stack submit --auto` can create it correctly."
+                    ),
+                },
+            },
+        )
+
     # 1. Get remote URL (if not provided)
     if remote_url is None:
         remote_url = get_remote_url()

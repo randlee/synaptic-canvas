@@ -27,6 +27,35 @@ Commit, push, and create pull requests for GitHub and Azure DevOps repositories.
 - **Conflict handling** - Guides through merge conflict resolution
 - **Git-flow integration** - Auto-detects protected branches from git-flow config
 
+## Stacked Branches (Hard Dependency)
+
+sc-commit-push-pr is the critical junction where a stack-unaware
+commit/pull/merge/push or PR creation can corrupt a `gh stack`'s linearity.
+For that reason it now **requires the full gh-stack toolchain
+unconditionally** -- the `gh` CLI, the `gh-stack` extension
+(`gh extension install github/gh-stack`), and the **managing-gh-stacks
+skill** (package `sc-gh-stack`) must all be installed before this package
+will run *any* commit/pull/merge/push or PR-creation flow, on every branch
+and regardless of provider. This applies even in Azure DevOps-hosted repos:
+a mixed-provider org still gets one uniform prerequisite set. If any piece
+is missing, every script call (and the SubAgentStart preflight hook for
+both agents) refuses immediately with `PREFLIGHT.STACK_PREREQS_MISSING` and
+tells you exactly what to install.
+
+Once prerequisites are met, sc-commit-push-pr detects (state-based, no
+config needed) whether the *current* worktree is itself a gh-stack layer.
+Plain branches are unaffected -- same commit/push/PR flow as always. On a
+stack layer:
+- Commit still happens normally.
+- Pulling and merging the destination branch is skipped (that's
+  `gh stack sync`'s job).
+- Push and PR creation are refused with `STACK.USE_GH_STACK`, deferring to
+  `gh stack submit --auto` via the managing-gh-stacks skill.
+
+Never work around either refusal with a direct `git push` or
+`gh pr create` -- install what's missing, or run the stacked-branch
+operation through the managing-gh-stacks skill.
+
 ## Configuration
 
 ### Protected Branches (Required)
@@ -111,12 +140,16 @@ Example log entry:
 | `PR.CREATE_FAILED` | PR API error | Check permissions, branch names |
 | `PROVIDER.DETECT_FAILED` | Unknown provider | Check git remote URL |
 | `CONFIG.PROTECTED_BRANCH_NOT_SET` | Missing config | Create `.sc/shared-settings.yaml` |
+| `STACK.USE_GH_STACK` | Branch is a gh-stack layer | Use the managing-gh-stacks skill (`gh stack sync` / `gh stack submit --auto`) |
+| `PREFLIGHT.STACK_PREREQS_MISSING` | gh-stack toolchain not installed | Install what `suggested_action` lists |
 
 ## Requirements
 
 - Python 3.8+
 - git
-- `gh` CLI (for GitHub)
+- `gh` CLI -- **required unconditionally**, not just for GitHub PRs
+- `gh-stack` extension (`gh extension install github/gh-stack`) -- **required unconditionally**
+- managing-gh-stacks skill, from the `sc-gh-stack` package -- **required unconditionally**
 - `pydantic` and `pyyaml` Python packages
 
 ## Security

@@ -72,9 +72,32 @@ Returns fenced JSON with standard envelope.
 }
 ```
 
+## Stacked Branches
+
+This agent must never work around a `STACK.USE_GH_STACK` refusal with a
+direct `gh pr create` -- surface it to the user and defer to the
+**managing-gh-stacks skill (package `sc-gh-stack`)**. Two distinct gh-stack
+gates apply:
+
+1. **Unconditional toolchain prerequisite.** Before anything else, both the
+   SubAgentStart hook and the underlying script verify the `gh` CLI, the
+   `gh-stack` extension, and the managing-gh-stacks skill are all
+   installed -- on every branch, for every provider. Missing any of them
+   blocks the agent (`PREFLIGHT.STACK_PREREQS_MISSING`, hook exit code 2)
+   or refuses the script call with the same code, listing exact install
+   steps.
+2. **Stack-layer detection.** Once prerequisites pass, the script checks
+   whether the current worktree is a gh-stack layer (state-based: a
+   `gh-stack` marker under the worktree's git-dir). On a plain branch,
+   nothing changes. On a layer, PR creation is refused with
+   `STACK.USE_GH_STACK` -- a layer's correct PR base (the layer below it,
+   with stack object linkage) can only be set by `gh stack submit --auto`.
+
 ## Preflight Hook
 
 The SubAgentStart hook validates:
+- gh-stack toolchain prerequisites (gh CLI, gh-stack extension,
+  managing-gh-stacks skill) are all present -- unconditional, every run
 - Protected branches are configured in `.sc/shared-settings.yaml`
 - Git authentication and PR creation permissions are valid
 - Logs preflight status to `.claude/state/logs/sc-commit-push-pr/`
@@ -87,3 +110,5 @@ If preflight fails, the hook exits with code 2 to block execution.
 - `PR.ALREADY_EXISTS` - PR already exists for this branch combination
 - `PROVIDER.DETECT_FAILED` - Could not detect provider from git remote
 - `PROVIDER.UNSUPPORTED` - Provider not supported
+- `STACK.USE_GH_STACK` - Branch is a gh-stack layer; PR creation is owned by `gh stack submit --auto` (recoverable -- defer to managing-gh-stacks, never work around)
+- `PREFLIGHT.STACK_PREREQS_MISSING` - gh-stack toolchain not installed (recoverable -- install what `suggested_action` lists)

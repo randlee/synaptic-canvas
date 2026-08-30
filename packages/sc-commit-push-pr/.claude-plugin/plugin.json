@@ -27,6 +27,7 @@
     "./scripts/provider_detect.py",
     "./scripts/pr_provider.py",
     "./scripts/preflight_utils.py",
+    "./scripts/stack_guard.py",
     "./scripts/commit_push_agent_start_hook.py",
     "./scripts/create_pr_agent_start_hook.py",
     "./scripts/commit_pull_merge_commit_push.py",
