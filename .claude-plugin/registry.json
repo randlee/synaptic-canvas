@@ -205,24 +205,24 @@
     {
       "name": "sc-launch-term",
       "version": "0.12.0",
-      "description": "Launch Claude, Codex, and Gemini sessions in supported terminals with platform-aware terminal autodetect and optional tmux session management.\n",
+      "description": "Launch Claude (including Fable), Codex (including Sol, Terra, and Luna), and Gemini sessions in supported terminals with platform-aware autodetect, cmux workspace tabs, and optional tmux session management.\n",
       "author": "randlee",
       "license": "MIT",
       "keywords": [],
       "category": "tools",
       "artifacts": {
-        "commands": 0,
+        "commands": 9,
         "skills": 0,
         "agents": 0,
         "scripts": 3,
         "schemas": 0
       },
-      "lastUpdated": "2026-04-29T04:44:47.191851+00:00"
+      "lastUpdated": "2026-08-09T14:54:36.245664"
     },
     {
       "name": "sc-launchpad",
       "version": "0.12.0",
-      "description": "Launch Claude, Codex, or Gemini as a separate background sub-agent runtime, with explicit ATM teammate-mode normalization and roster registration.\n",
+      "description": "Launch Claude (including Fable), Codex (including Sol, Terra, and Luna), or Gemini as a separate background sub-agent runtime, with explicit ATM teammate-mode normalization and roster registration.\n",
       "author": "synaptic-canvas",
       "license": "MIT",
       "keywords": [],
@@ -234,7 +234,7 @@
         "scripts": 2,
         "schemas": 0
       },
-      "lastUpdated": "2026-04-29T04:44:47.192473+00:00"
+      "lastUpdated": "2026-08-09T14:54:36.395961"
     },
     {
       "name": "sc-manage",
@@ -323,13 +323,13 @@
     }
   ],
   "metadata": {
-    "totalPackages": 17,
-    "totalCommands": 10,
-    "totalSkills": 20,
+    "totalPackages": 18,
+    "totalCommands": 19,
+    "totalSkills": 21,
     "totalAgents": 45,
     "totalScripts": 50,
     "totalSchemas": 2
   },
-  "generated": "2026-05-15T21:50:55.867734+00:00",
-  "lastUpdated": "2026-05-15T21:50:55.867734+00:00"
+  "generated": "2026-08-09T14:54:36.395998",
+  "lastUpdated": "2026-08-09T14:54:36.396000"
 }

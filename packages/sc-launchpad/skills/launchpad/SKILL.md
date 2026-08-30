@@ -47,6 +47,8 @@ Optional fields:
 - `atm_identity`
 - `extra_args`
 
+For Claude launches, `model` accepts `sonnet`, `haiku`, `opus`, or `fable`.
+
 ## ATM Rules
 
 Teammate mode is enabled only when both conditions are true:
