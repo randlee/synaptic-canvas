@@ -91,9 +91,13 @@ installed — **do not reproduce the rebase chain or preflight checks by hand.**
    `gh stack rebase --upstack`. Never commit a lower layer's fix on the top branch.
 5. Parse only `view --json` on stdout and exit codes. Never parse stderr.
 6. If you have not been given layer order and it is not obvious from the diffs, ask. Do not guess.
-7. Never make a PR whose head is a protected/long-lived branch (e.g. `develop -> main`) a
-   stack layer — its head moves when the layer below merges, invalidating gated CI, and
-   stack tooling cannot rebase it (`references/playbook-merge.md`, "Release stacks").
+7. Never make a PR whose head is a protected/long-lived branch a stack layer **with layers
+   below it that merge into its head** (e.g. `release -> develop` beneath `develop -> main`):
+   each lower merge mutates the protected head mid-cascade, invalidating gated CI from
+   inside the stack, and stack tooling cannot rebase it. The same PR as the **bottom carry
+   layer** of a main-based stack (`main <- develop <- feat...`) is sound — nothing below
+   feeds it, and the retarget cascade lands every layer on main
+   (`references/playbook-merge.md`, "Release stacks and the carry layer").
 8. Before recommending a rebase, check the drift is not ABOVE the stack's base:
    `git rev-list --count <base>..<upper>` nonzero in a merge-forward-only repo means a
    merge-forward PR, never `gh stack rebase`/`sync` (`references/playbook-rebase.md`).

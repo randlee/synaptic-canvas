@@ -58,14 +58,39 @@ Any required context absent from the head's check-run names will block the merge
 how green CI is. Surface it — the fix is updating the protection rule, a human decision.
 Never route around it with `gh pr merge --admin`.
 
-## Release stacks: no protected-branch heads
+## Release stacks and the carry layer
 
-A PR whose **head is a protected/long-lived branch** (e.g. `develop -> main`) is a bad
-stack layer: its head moves when the layer below merges, invalidating the CI the merge was
-gated on, and stack tooling cannot rebase a protected head. Shape a bump-then-release flow
-as a stack landing INTO the protected branch (`release/0.6.0 -> develop`), then open the
-`develop -> main` PR separately after the stack lands — or one PR straight to the final
-target (`release/0.6.0 -> main`) plus a merge-forward.
+The position of a protected-head PR (e.g. `develop -> main`) in a stack decides whether
+it is sound or broken. The test: **is anything below it merging into its head?**
+
+**Broken — protected head fed from below.** `release/0.6.0 -> develop` beneath
+`develop -> main`: the bottom merge mutates `develop` — the top layer's head — mid-cascade,
+invalidating its gated CI from inside the stack, and the tooling cannot rebase a protected
+head. Never build this shape. Fix: land the stack into the protected branch, then the
+onward PR separately.
+
+**Sound — the carry layer.** The same PR at the **bottom** of a main-based stack:
+
+```
+(main) <- develop <- feat/A <- feat/B <- feat/C
+```
+
+Nothing below feeds `develop`, so nothing in the stack moves its head. On
+`gh stack merge --yes`, the carry layer merges first (main catches up to develop), then
+each feature layer **retargets to main** and merges with its head SHA — and therefore its
+green CI — unchanged. One atomic walk-away merge lands everything on main; the follow-up
+`main -> develop` merge-forward needs no approval and no waiting (and is required in
+either flow, so it never costs extra).
+
+Walk-away preconditions for the carry-layer shape — all four, every time:
+1. **Membership**: every intended PR is in the stack object (Rule zero above) — the
+   walk-away is only safe because nothing is unlinked.
+2. **Approval freshness**: with stale-approval dismissal on, the carry layer's approval is
+   given right before the merge (an act-gate on "release what develop contains now").
+3. **No external churn window**: anything merging into `develop` between the carry layer's
+   CI clearing and the landing invalidates it — land promptly after green.
+4. **Main's protection**: "require branches up to date" and merge queues on main break the
+   carried-greens property (forced re-runs mid-cascade) — this shape assumes neither.
 
 ## Waiting on CI
 

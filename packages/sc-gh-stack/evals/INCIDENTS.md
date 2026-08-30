@@ -63,21 +63,27 @@ missing from the stack: STOP and surface (link/restructure), never land the subs
 ## 3. Planned a protected-branch head as a stack layer
 
 **Eval:** `release-stack-shape` · **Skill fix:** SKILL.md hard rule 7,
-`sc-stack-plan` rule 7, `references/playbook-merge.md` ("Release stacks")
+`sc-stack-plan` rule 7, `references/playbook-merge.md` ("Release stacks and the carry layer")
 
 **What happened.** A release flow was shaped as a 2-layer stack:
 `release/0.6.0 -> develop` (bottom) and `develop -> main` (top).
 
-**Why it's wrong.** The top layer's *head* is `develop`, a protected long-lived branch.
-When the bottom layer merges, that head moves — invalidating the CI the gated merge
-relied on — and stack tooling cannot rebase a protected head.
+**Why it's wrong.** The bottom layer merges INTO `develop` — the top layer's protected
+head — mutating it mid-cascade and invalidating the gated CI from inside the stack; stack
+tooling cannot rebase a protected head. The refined rule (hard rule 7): a protected-head
+layer is broken only when **fed by layers below it**. The same PR as the BOTTOM carry
+layer of a main-based stack (`main <- develop <- feat...`) is sound — nothing below feeds
+it, and the retarget cascade lands everything on main (see playbook-merge, "Release
+stacks and the carry layer").
 
 **Recreate.** Any repo with protected `develop`/`main`: stack the two PRs above,
 merge the bottom, watch the top PR's head advance and its checks go stale.
 
-**Correct behavior.** Stack lands INTO the protected branch (`release/x -> develop`);
-the `develop -> main` PR is opened separately after it lands — or one
-`release/x -> main` PR plus a merge-forward.
+**Correct behavior.** Any of: stack lands INTO the protected branch
+(`release/x -> develop`), the `develop -> main` PR opened separately after; one
+`release/x -> main` PR plus a merge-forward; or the carry-layer shape
+(`main <- develop <- release/x`) — one atomic walk-away merge landing everything on main,
+`main -> develop` merge-forward after (see playbook-merge for its four preconditions).
 
 ---
 
