@@ -105,6 +105,35 @@ def collect(package: str | None = None, force: bool = False) -> list[Path]:
     return copied
 
 
+def write_index() -> Path:
+    """(Re)generate site/reports/evals/index.html listing every published report,
+    grouped by package, newest first — GitHub Pages has no directory listing."""
+    import html as _html
+    rows = []
+    for pkg_dir in sorted(p for p in SITE_EVALS_DIR.iterdir()
+                          if p.is_dir()) if SITE_EVALS_DIR.is_dir() else []:
+        reports = sorted(pkg_dir.glob("*.html"), reverse=True)
+        if not reports:
+            continue
+        items = "".join(
+            f'<li><a href="{pkg_dir.name}/{r.name}">{_html.escape(r.name)}</a></li>'
+            for r in reports)
+        rows.append(f"<section><h2>{_html.escape(pkg_dir.name)}</h2>"
+                    f"<ul>{items}</ul></section>")
+    SITE_EVALS_DIR.mkdir(parents=True, exist_ok=True)
+    index = SITE_EVALS_DIR / "index.html"
+    index.write_text(
+        "<!doctype html><meta charset='utf-8'><title>Eval reports</title>"
+        "<style>body{font-family:system-ui;margin:2rem;max-width:50rem}"
+        "h2{margin-bottom:.3rem}ul{margin-top:.3rem}</style>"
+        "<h1>Plugin eval reports</h1>"
+        "<p>Newest first per package. Naming: "
+        "<code>&lt;date-time&gt;-&lt;eval-name&gt;.html</code>; "
+        "<code>-harness</code> = test-packages harness run.</p>"
+        + "".join(rows), encoding="utf-8")
+    return index
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--package", help="collect only this package's reports")
@@ -116,7 +145,8 @@ def main(argv: list[str] | None = None) -> int:
     copied = collect(args.package, args.force)
     for path in copied:
         print(f"collected: {path.relative_to(REPO_ROOT)}")
-    print(f"{len(copied)} report(s) collected")
+    index = write_index()
+    print(f"{len(copied)} report(s) collected; index: {index.relative_to(REPO_ROOT)}")
     return 0
 
 

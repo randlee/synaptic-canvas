@@ -85,6 +85,19 @@ def test_harness_reports_collected_with_mtime_stamp(tmp_path, monkeypatch):
     assert mod.collect() == []  # idempotent (same mtime)
 
 
+def test_index_lists_reports_newest_first(tmp_path, monkeypatch):
+    mod, pkg = _setup(tmp_path, monkeypatch)
+    _fake_run(pkg, "20260830143000", ["a"])
+    _fake_run(pkg, "20260831090000", ["b"])
+    mod.collect()
+    index = mod.write_index()
+    text = index.read_text()
+    assert index.parent == mod.SITE_EVALS_DIR
+    assert "demo-pkg" in text
+    assert text.index("20260831-090000-b.html") < text.index("20260830-143000-a.html")
+    assert 'href="demo-pkg/20260831-090000-b.html"' in text
+
+
 def test_package_filter(tmp_path, monkeypatch):
     mod, pkg = _setup(tmp_path, monkeypatch)
     other = tmp_path / "packages" / "other-pkg"

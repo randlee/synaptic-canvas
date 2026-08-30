@@ -36,7 +36,14 @@ case, re-run the generator):
 ```bash
 python3 scripts/generate-eval-fixtures.py --package sc-gh-stack
 pytest test-packages/fixtures/sc-gh-stack-evals/ -v --open-report
+python3 scripts/collect-eval-reports.py     # rebuilds site/reports/evals/index.html
 ```
+
+Eval-fixture reports publish **directly** to
+`site/reports/evals/<pkg>/<YYYYMMDD-HHMMSS>-<pkg>-evals.html` (plus the JSON sidecar and
+artifacts folder) — the long-term, GitHub-Pages-viewable record with full history. An
+explicit `--report-dir` overrides. The collector run afterwards refreshes the Pages
+index.
 
 Grader types map onto harness expectations (tool_used → tool_call/tool_not_called,
 regex → output_contains/output_not_contains/file_contains/file_not_contains, plus
