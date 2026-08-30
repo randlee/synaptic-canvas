@@ -16,7 +16,8 @@ Verify `gh` + `gh-stack` + `git` + `python3`, then orchestrate:
 | Task dependency graph → parallel dev plan | `sc-stack-plan` agent → stacks + worktree plan (`references/playbook-graph-to-stacks.md`) |
 | N flat PRs against trunk → one stack | `sc-stack-convert` agent in a dedicated worktree (`references/playbook-convert.md`) |
 | Trunk moved / fix merged mid-stack | `sc-stack-sync` agent (`references/playbook-sync.md`) |
-| Land the stack in one CI cycle | `gh stack merge --yes` on the current stack (upstream `commands.md`) |
+| GitHub reports a rebase needed | believe it — `references/playbook-rebase.md` |
+| Land the stack in one CI cycle | `gh stack merge --yes` after the membership check (`references/playbook-merge.md`) |
 
 Upstream `commands.md`, `troubleshooting.md`, and `stack-design.md` ship verbatim
 as deep references and are loaded only when a playbook points to them.

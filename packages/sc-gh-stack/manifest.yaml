@@ -25,6 +25,8 @@ artifacts:
     - skills/managing-gh-stacks/references/playbook-convert.md
     - skills/managing-gh-stacks/references/playbook-sync.md
     - skills/managing-gh-stacks/references/playbook-graph-to-stacks.md
+    - skills/managing-gh-stacks/references/playbook-rebase.md
+    - skills/managing-gh-stacks/references/playbook-merge.md
     - skills/managing-gh-stacks/references/commands.md
     - skills/managing-gh-stacks/references/troubleshooting.md
     - skills/managing-gh-stacks/references/stack-design.md

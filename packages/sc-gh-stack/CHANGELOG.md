@@ -51,6 +51,13 @@ Orchestration release: background agents over the deterministic scripts.
 - Pre-merge membership check in SKILL.md: `gh stack merge` lands only PRs tracked in the
   stack — verify every intended PR appears in `gh stack view --json` before merging, never
   land a subset.
+- New references from field incidents: `playbook-merge.md` (membership check before any
+  merge, scope semantics, all-or-nothing, merge queue) and `playbook-rebase.md`
+  ("believe the report": `needsRebase` is computed against remote/parent state — never
+  deny a reported rebase after local inspection; conflict-free cascade procedure).
+- `evals/`: `claude plugin eval` suite (haiku-pinned) reproducing the field incidents in
+  local fixture repos with a scripted `gh` stub — denied-rebase, subset-merge, and
+  exit-0 "Sync aborted" cases; no GitHub repo or network needed.
 - 68 pytest cases.
 
 ## 0.1.0 — 2026-08-28

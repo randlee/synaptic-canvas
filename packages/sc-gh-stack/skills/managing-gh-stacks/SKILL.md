@@ -123,7 +123,8 @@ stack:
 | Task graph → parallel dev plan | `sc-stack-plan` | tasks, trunk, repo_root | stacks + worktree creation commands + open questions |
 | Flat PRs → one stack | `sc-stack-convert` | trunk, layers (bottom→top), repo_root | decision log: branches before/after/pushed, resolutions, surfaced conflicts |
 | Trunk moved / mid-stack fix merged | `sc-stack-sync` | worktree, fix_branch? | decision log: same contract |
-| `gh pr merge` refused: PR is "part of a stack" | none — run `gh stack merge <pr#> --yes` | — | merges that PR and every unmerged PR below it **that is tracked in the stack**, atomically; PRs above retarget automatically. Never hand-roll REST calls. (GitHub's web UI stack merge is the same native flow — fine for humans, not agent-drivable.) |
+| `gh pr merge` refused: PR is "part of a stack" | none — run `gh stack merge <pr#> --yes` per `references/playbook-merge.md` | — | merges that PR and every unmerged PR below it **that is tracked in the stack**, atomically; PRs above retarget automatically. Never hand-roll REST calls. (GitHub's web UI stack merge is the same native flow — fine for humans, not agent-drivable.) |
+| GitHub / `view --json` reports a rebase needed | none — `references/playbook-rebase.md` | — | `git fetch` + `gh stack view --json`, **believe the report** (local inspection can look clean while a parent moved); usually a conflict-free `gh stack rebase --upstack` |
 
 **Before ANY `gh stack merge`**: run `gh stack view --json` and confirm every PR you intend
 to land is listed in the stack. Merge lands only tracked members — a PR that merely targets
@@ -200,6 +201,8 @@ When using this skill, report to the user:
 - `references/playbook-graph-to-stacks.md` — plan a graph onto stacks + worktrees (worked example)
 - `references/playbook-convert.md` — flat PRs → stack (worked example, agent + manual path)
 - `references/playbook-sync.md` — rebase after trunk/middle-layer changes (worked example)
+- `references/playbook-rebase.md` — `needsRebase: true` / GitHub reports a rebase needed (believe the report; conflict-free cascade)
+- `references/playbook-merge.md` — landing a stack (membership check, scope, all-or-nothing, merge queue)
 - `references/commands.md` — preconditions, atomicity, side effects per command (upstream, verbatim)
 - `references/troubleshooting.md` — conflicts, squash merges, divergence, restructuring, exit codes (upstream, verbatim)
 - `references/stack-design.md` — choosing layers and names for new work (upstream, verbatim)
