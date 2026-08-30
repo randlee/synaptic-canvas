@@ -1,0 +1,40 @@
+<!doctype html><meta charset='utf-8'><title>sc-gh-stack-haiku evals</title><style>body{font-family:system-ui;margin:2rem;max-width:60rem}table{border-collapse:collapse;width:100%}td,th{border:1px solid #ccc;padding:.3rem .5rem;text-align:left}pre{white-space:pre-wrap;background:#f6f6f6;padding:1rem}.pass{color:#0a7a2f}.fail{color:#b3261e}</style><h1>sc-gh-stack-haiku — local eval run</h1><p>2/3 cases passed · runner: interim local harness (pending <code>claude plugin eval</code> access)</p><section><h2 class='pass'>merge-forward-not-rebase — PASS</h2><table><tr><th>grader</th><th>type</th><th>verdict</th><th>evidence</th></tr><tr><td>diagnosed-with-revlist</td><td>tool_used</td><td class='pass'>PASS</td><td>1 matching call(s)</td></tr><tr><td>no-rebase-attempt</td><td>regex</td><td class='pass'>PASS</td><td>pattern absent</td></tr><tr><td>recommended-merge-forward</td><td>llm</td><td class='pass'>PASS</td><td>PASS: Agent correctly identified the merge-forward-only policy, diagnosed drift above the base (main ahead of develop), declined to recommend rebase/sync as the fix, and explicitly recommended a merge-forward PR from main → develop.</td></tr></table><details><summary>final message</summary><pre>Perfect! I&#x27;ve diagnosed the issue. Here&#x27;s what&#x27;s happening:
+
+## The Situation
+
+Your gh stack is **correctly configured**:
+- Stack: `(develop) &lt;- feat/lint &lt;- feat/docs` ✓
+- No rebases needed, PRs are clean
+- Stack trunk is `develop` (correct per your branch policy)
+
+## The Real Issue
+
+Your **branch policy is &quot;merge-forward only&quot;** (from CONTRIBUTING.md):
+&gt; &quot;changes flow between main and develop exclusively through merge PRs (main → develop after a hotfix). Never rebase branch history to pick up main&#x27;s changes.&quot;
+
+The actual problem is that `develop` is **behind** `main`:
+- `main` has a hotfix commit (7470f67) that `develop` lacks
+- `develop` is at the base commit (72497a3)
+
+## What Needs to Happen
+
+**This is NOT a gh stack problem.** The fix is:
+1. Someone needs to create a **merge-forward PR** from `main` → `develop` to bring the hotfix into develop
+2. Once that PR merges, your stack can optionally merge forward (`gh stack sync`) to pick up those changes if they&#x27;re relevant
+
+Your stack itself doesn&#x27;t need updating—it&#x27;s already on the correct base (`develop`). The teammate was right that `develop` needs updating from `main`, but that&#x27;s done via a merge PR (not a rebase of your stack).
+
+**Action:** Either create a merge PR `main → develop` yourself, or ask the person who merged the hotfix to `main` to merge it forward to `develop` next.</pre></details></section><section><h2 class='pass'>merge-membership-check — PASS</h2><table><tr><th>grader</th><th>type</th><th>verdict</th><th>evidence</th></tr><tr><td>checked-membership</td><td>tool_used</td><td class='pass'>PASS</td><td>4 matching call(s)</td></tr><tr><td>no-blind-subset-merge</td><td>regex</td><td class='pass'>PASS</td><td>pattern absent</td></tr><tr><td>no-rest-experiments</td><td>tool_used</td><td class='pass'>PASS</td><td>0 matching call(s)</td></tr><tr><td>surfaced-missing-pr</td><td>llm</td><td class='pass'>PASS</td><td>PASS: The agent correctly identified that #148 is not linked in the stack, explicitly told the user this, and indicated it would use `gh stack link` to resolve it before merging.</td></tr></table><details><summary>final message</summary><pre>PR #148 exists but isn&#x27;t linked into the stack tracking. Let me link it first.</pre></details></section><section><h2 class='fail'>merge-verify-outcome — FAIL</h2><table><tr><th>grader</th><th>type</th><th>verdict</th><th>evidence</th></tr><tr><td>checked-membership-first</td><td>tool_order</td><td class='pass'>PASS</td><td>before@2 after@3</td></tr><tr><td>verified-merged-state</td><td>regex</td><td class='pass'>PASS</td><td>pattern found</td></tr><tr><td>verified-version-on-main</td><td>llm</td><td class='fail'>FAIL</td><td>FAIL: Agent claims VERSION verification but shows only git history; criteria requires explicit proof of VERSION file content on main (e.g., git show origin/main:VERSION output) and explicit pre-merge gh stack view --json confirmation, neither shown.</td></tr></table><details><summary>final message</summary><pre>**Release stack landed successfully!** ✓
+
+Stack landed: `(main) &lt;- release/bump #148 &lt;- release/notes #149`
+
+**Verification:**
+- **STATUS**: Both PRs merged atomically (Merged #148, #149)
+- **VERSION**: Confirmed `main` carries 0.6.0
+- **Git history**: 
+  - `de56f3f` Merge branch &#x27;release/notes&#x27; (PR #149)
+  - `cac34b8` Merge branch &#x27;release/bump&#x27; (PR #148)
+  - `9eb0ea0` bump to 0.6.0
+  - `242b055` notes
+
+You&#x27;re clear to tag the release — `main` is at 0.6.0.</pre></details></section>

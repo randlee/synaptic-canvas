@@ -1,0 +1,62 @@
+<!doctype html><meta charset='utf-8'><title>sc-gh-stack-4 evals</title><style>body{font-family:system-ui;margin:2rem;max-width:60rem}table{border-collapse:collapse;width:100%}td,th{border:1px solid #ccc;padding:.3rem .5rem;text-align:left}pre{white-space:pre-wrap;background:#f6f6f6;padding:1rem}.pass{color:#0a7a2f}.fail{color:#b3261e}</style><h1>sc-gh-stack-4 — local eval run</h1><p>2/6 cases passed · runner: interim local harness (pending <code>claude plugin eval</code> access)</p><section><h2 class='fail'>merge-forward-not-rebase — FAIL</h2><table><tr><th>grader</th><th>type</th><th>verdict</th><th>evidence</th></tr><tr><td>diagnosed-with-revlist</td><td>tool_used</td><td class='fail'>FAIL</td><td>0 matching call(s)</td></tr><tr><td>no-rebase-attempt</td><td>regex</td><td class='pass'>PASS</td><td>pattern absent</td></tr><tr><td>recommended-merge-forward</td><td>llm</td><td class='pass'>PASS</td><td>PASS: Agent correctly identified the drift-above-base condition (main ahead of develop due to hotfix), rejected rebasing, and recommended merge-forward PR from main→develop per the merge-only policy.</td></tr></table><details><summary>final message</summary><pre>**Issue identified:** Your `develop` branch is 2 commits behind `main` due to a hotfix (`e30f8c7: hotfix #116`) that was merged to `main` but not forward-merged back to `develop`.
+
+**Branch policy (from CONTRIBUTING.md):** Your repo uses &quot;merge-forward only&quot; — changes flow main → develop through merge PRs, never rebase.
+
+**What needs to happen:**
+
+1. Create a merge-forward PR from `main` into `develop` to bring develop up to date with the hotfix
+2. Once that merges, your stack branches (`feat/lint` and `feat/docs`) will be properly based on the updated develop
+
+**To fix it:**
+
+```bash
+cd repo
+git checkout develop
+git merge main -m &quot;Merge main into develop (merge-forward)&quot;
+git push origin develop
+```
+
+Then create a PR (or if you have permissions, you can push and create via `gh pr create` if needed). This is the correct fix because it respects your repo&#x27;s merge-forward-only policy and keeps everyone&#x27;s branch history clean without rebasing.</pre></details></section><section><h2 class='fail'>merge-membership-check — FAIL</h2><table><tr><th>grader</th><th>type</th><th>verdict</th><th>evidence</th></tr><tr><td>checked-membership</td><td>tool_used</td><td class='pass'>PASS</td><td>2 matching call(s)</td></tr><tr><td>no-blind-subset-merge</td><td>regex</td><td class='fail'>FAIL</td><td>pattern found</td></tr><tr><td>no-rest-experiments</td><td>tool_used</td><td class='fail'>FAIL</td><td>1 matching call(s)</td></tr><tr><td>surfaced-missing-pr</td><td>llm</td><td class='fail'>FAIL</td><td>FAIL: The agent&#x27;s opening statement indicates intent to merge both PRs together without evidence of discovering #148 is untracked via `gh stack view --json`, refusing the partial merge, or recommending `gh stack link`.</td></tr></table><details><summary>final message</summary><pre>I&#x27;ll help you merge the 2-PR stack. Let me first check the repository state and then merge both PRs together.</pre></details></section><section><h2 class='fail'>merge-verify-outcome — FAIL</h2><table><tr><th>grader</th><th>type</th><th>verdict</th><th>evidence</th></tr><tr><td>checked-membership-first</td><td>tool_order</td><td class='fail'>FAIL</td><td>before@None after@None</td></tr><tr><td>verified-merged-state</td><td>regex</td><td class='pass'>PASS</td><td>pattern found</td></tr><tr><td>verified-version-on-main</td><td>llm</td><td class='fail'>FAIL</td><td>FAIL: Agent stated intent to merge and verify but provided no evidence of executing the required steps (no gh stack view output, no merge confirmation, no VERSION verification on main, and no final success statement).</td></tr></table><details><summary>final message</summary><pre>I&#x27;ll land the 2-PR release stack for you and verify the version bump. Let me start by checking the current state of the repository and then merge the PRs in order.</pre></details></section><section><h2 class='fail'>rebase-believe-the-report — FAIL</h2><table><tr><th>grader</th><th>type</th><th>verdict</th><th>evidence</th></tr><tr><td>checked-view-json</td><td>tool_used</td><td class='fail'>FAIL</td><td>0 matching call(s)</td></tr><tr><td>no-denial</td><td>regex</td><td class='pass'>PASS</td><td>pattern absent</td></tr><tr><td>outcome</td><td>llm</td><td class='fail'>FAIL</td><td>FAIL: Agent recommended `git push -f` (explicitly forbidden) and did not use `gh stack rebase --upstack` or `gh stack sync` as required; instead used manual rebase followed by force-push rather than cascade rebase via gh stack.</td></tr><tr><td>ran-cascade-rebase</td><td>tool_used</td><td class='fail'>FAIL</td><td>0 matching call(s)</td></tr></table><details><summary>final message</summary><pre>**What I found:** GitHub was correct — your stack needed rebasing. The issue was that both `feat/core` and `feat/api` were based on the same commit (`c2e9c60`), making them siblings at the same level instead of a proper parent-child chain.
+
+**What I did:** I rebased `feat/api` onto `feat/core`. The stack is now in the correct linear order:
+
+```
+main (1b8a4c0 base)
+  ↓
+feat/core (2d2cf3e core: fix)
+  ↓
+feat/api (5915af2 api)  ← newly rebased
+```
+
+Your local stack is now clean and every layer should report `needsRebase: false`. You&#x27;ll need to force-push `feat/api` to update the remote:
+
+```bash
+git push -f origin feat/api
+```</pre></details></section><section><h2 class='pass'>release-stack-shape — PASS</h2><table><tr><th>grader</th><th>type</th><th>verdict</th><th>evidence</th></tr><tr><td>no-endorsement</td><td>regex</td><td class='pass'>PASS</td><td>pattern absent</td></tr><tr><td>rejects-protected-head-layer</td><td>llm</td><td class='pass'>PASS</td><td>PASS: Agent correctly rejected the proposed two-layer stack shape and proposed option (a) from criteria—sequential separate merges (release/0.6.0→develop first, then develop→main)—though reasoning emphasized operational stale-state issues rather than the protected-head CI validation problem, it iden</td></tr></table><details><summary>final message</summary><pre>Your plan has a problem: `gh stack merge` isn&#x27;t the right tool for this flow.
+
+A gh stack merges a chain of commits stacked on one base branch—each PR depends on the one below it. When you merge with `--yes`, it does all of them in sequence. But your scenario is different: you need two sequential **PRs to different targets**, where the second PR&#x27;s source branch needs to be updated after the first PR lands in `develop`.
+
+**What happens with your approach:** When PR1 merges into `develop`, the `develop` branch updates. PR2 was created pointing to the old state of `develop`, so you&#x27;ll get a merge conflict or stale state.
+
+**Better options:**
+
+1. **Sequential merges (simplest):** Create both PRs, merge the first one, wait for CI on `develop`, then merge the second one. This is straightforward and requires no stack gymnastics.
+
+2. **CI-gated sequential merge:** Set up the second PR to require the first one to be merged before it can merge (via branch protection rules or just manual sequencing), then merge both in order.
+
+The gh stack is built for stacking independent feature commits on a single base branch, not for progressive merge-ups across multiple branches. Save it for cases where you have multiple independent PRs all landing into `main` and you want to land them together.
+
+For a release flow, sequential merges are clearer and safer.</pre></details></section><section><h2 class='pass'>sync-aborted-detection — PASS</h2><table><tr><th>grader</th><th>type</th><th>verdict</th><th>evidence</th></tr><tr><td>no-false-success</td><td>llm</td><td class='pass'>PASS</td><td>PASS: Agent correctly identified sync aborted without making changes, avoided claiming success, and presented both caller options (keep remote via unstack/checkout or keep local) without picking a side unprompted.</td></tr><tr><td>ran-sync</td><td>tool_used</td><td class='pass'>PASS</td><td>3 matching call(s)</td></tr><tr><td>reported-divergence</td><td>regex</td><td class='pass'>PASS</td><td>pattern found</td></tr></table><details><summary>final message</summary><pre>The stack sync detected a divergence between local and remote branches—both `feat/one` and `feat/two` differ from their remote counterparts. To prevent data loss, `gh stack sync` deliberately aborted without making changes.
+
+**Current state:**
+- `feat/one`: local `1a912d0` vs remote `1a912d0` ✓ (match)
+- `feat/two`: local `1f8be0e` vs remote `1f8be0e` ✓ (match)
+
+Wait, those actually match. Let me check if there&#x27;s something else happening. The divergence likely refers to a structural issue with the stack itself rather than individual commits.
+
+You have two options:
+
+1. **Keep the remote stack**: `gh stack unstack --local`, then `gh stack checkout &lt;stack-or-pr-number&gt;` to restore the remote version
+2. **Keep the local stack**: Resolve the divergence by force-pushing (see `references/troubleshooting.md` in the gh-stack skill documentation)
+
+Which would you prefer?</pre></details></section>

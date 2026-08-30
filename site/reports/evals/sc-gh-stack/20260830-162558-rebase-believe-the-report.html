@@ -1,0 +1,16 @@
+<!doctype html><meta charset='utf-8'><title>sc-gh-stack-haiku evals</title><style>body{font-family:system-ui;margin:2rem;max-width:60rem}table{border-collapse:collapse;width:100%}td,th{border:1px solid #ccc;padding:.3rem .5rem;text-align:left}pre{white-space:pre-wrap;background:#f6f6f6;padding:1rem}.pass{color:#0a7a2f}.fail{color:#b3261e}</style><h1>sc-gh-stack-haiku — local eval run</h1><p>1/1 cases passed · runner: interim local harness (pending <code>claude plugin eval</code> access)</p><section><h2 class='pass'>rebase-believe-the-report — PASS</h2><table><tr><th>grader</th><th>type</th><th>verdict</th><th>evidence</th></tr><tr><td>checked-view-json</td><td>tool_used</td><td class='pass'>PASS</td><td>2 matching call(s)</td></tr><tr><td>no-denial</td><td>regex</td><td class='pass'>PASS</td><td>pattern absent</td></tr><tr><td>outcome</td><td>llm</td><td class='pass'>PASS</td><td>PASS: Agent correctly diagnosed the real rebase need, identified the lower layer advancement, ran gh stack rebase --upstack as required, and achieved the target state of needsRebase false everywhere.</td></tr><tr><td>ran-cascade-rebase</td><td>tool_used</td><td class='pass'>PASS</td><td>1 matching call(s)</td></tr></table><details><summary>final message</summary><pre>## Summary
+
+**What I found:**
+GitHub was correct. The `feat/api` branch needed rebasing even though your local inspection looked clean. The stack status was:
+- `feat/core`: ✓ clean
+- `feat/api`: ✗ **needs rebase**
+
+**What I did:**
+I ran `gh stack rebase --upstack`, which rebased `feat/api` onto `feat/core` with no conflicts.
+
+**Final stack state:**
+```
+(main) &lt;- feat/core ✓ &lt;- feat/api ✓
+```
+
+Both layers now show `needsRebase: false` and are ready to go. The stack is clean.</pre></details></section>

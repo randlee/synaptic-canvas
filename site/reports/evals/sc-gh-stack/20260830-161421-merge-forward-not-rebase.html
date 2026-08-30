@@ -1,0 +1,28 @@
+<!doctype html><meta charset='utf-8'><title>sc-gh-stack-4 evals</title><style>body{font-family:system-ui;margin:2rem;max-width:60rem}table{border-collapse:collapse;width:100%}td,th{border:1px solid #ccc;padding:.3rem .5rem;text-align:left}pre{white-space:pre-wrap;background:#f6f6f6;padding:1rem}.pass{color:#0a7a2f}.fail{color:#b3261e}</style><h1>sc-gh-stack-4 — local eval run</h1><p>1/1 cases passed · runner: interim local harness (pending <code>claude plugin eval</code> access)</p><section><h2 class='pass'>merge-forward-not-rebase — PASS</h2><table><tr><th>grader</th><th>type</th><th>verdict</th><th>evidence</th></tr><tr><td>diagnosed-with-revlist</td><td>tool_used</td><td class='pass'>PASS</td><td>1 matching call(s)</td></tr><tr><td>no-rebase-attempt</td><td>regex</td><td class='pass'>PASS</td><td>pattern absent</td></tr><tr><td>recommended-merge-forward</td><td>llm</td><td class='pass'>PASS</td><td>PASS: Agent correctly read the merge-forward-only policy, diagnosed drift above the stack base (main ahead of develop from a hotfix), explicitly rejected rebasing, and recommended the correct merge-forward solution (main → develop) without touching the stack branches.</td></tr></table><details><summary>final message</summary><pre>I found the issue. Here&#x27;s what&#x27;s happening:
+
+**Current state:**
+- `main` is at commit `c2df6e7` (a hotfix)
+- `develop` is at commit `7d9395d` (base) — hasn&#x27;t been updated
+- Your gh stack (`feat/lint` and `feat/docs`) is based on the old `develop`
+
+**The problem:** `main` moved forward with a hotfix, but `develop` hasn&#x27;t been merged forward from `main` yet.
+
+**The fix (per your branch policy):** Merge `main` into `develop` using a merge commit (not rebase). This follows the &quot;merge-forward only&quot; policy in CONTRIBUTING.md which forbids rebasing.
+
+Here&#x27;s exactly what to do:
+
+```bash
+# Checkout develop and merge main into it
+git checkout develop
+git merge main
+
+# Then push the updated develop
+git push origin develop
+```
+
+This will:
+1. Bring the hotfix from `main` into `develop`
+2. Your gh stack branches (`feat/lint`, `feat/docs`) stay as-is and will automatically be &quot;ahead of&quot; the updated `develop` with their commits
+3. No rebasing involved — just a forward merge as the policy requires
+
+**Why this approach:** Your stack is already set up correctly (feat/lint on develop, feat/docs on feat/lint). Once `develop` catches up with `main`, your stack is automatically current. No need to touch the stack branches themselves.</pre></details></section>
