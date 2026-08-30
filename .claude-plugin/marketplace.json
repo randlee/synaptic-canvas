@@ -302,6 +302,25 @@
       "category": "tools"
     },
     {
+      "name": "sc-refactory",
+      "source": "./packages/sc-refactory",
+      "category": "tools",
+      "description": "Design and install a rule-driven refactoring toolkit with startup policy injection, approved-fix lookup, curated rule authoring, and named-teammate orchestration for large migration campaigns.\n",
+      "version": "0.2.0",
+      "author": {
+        "name": "synaptic-canvas"
+      },
+      "license": "MIT",
+      "keywords": [
+        "refactoring",
+        "policy",
+        "graph",
+        "oxigraph",
+        "migration",
+        "teammates"
+      ]
+    },
+    {
       "name": "sc-repomix-nuget",
       "source": "./packages/sc-repomix-nuget",
       "description": "Generate AI-optimized NuGet package context using Repomix with NuGet metadata (dependencies, dependents, namespaces, frameworks). Produces a compressed API surface.\n",
