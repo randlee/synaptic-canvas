@@ -89,3 +89,10 @@ tracking state is per-worktree, so parallel stacks never interfere.
 config and keeps per-conversion bookkeeping in the target repo
 (`refs/sc-gh-stack/orig/*` pre-rebase tips and the `sc-gh-stack.conversion`
 config key), cleared when a different conversion starts.
+
+## Security
+
+This package invokes local `git` and authenticated `gh` commands that can
+rebase, push, and merge branches. Use it only in trusted repositories, review
+the stack plan and target branches before execution, use least-privilege GitHub
+credentials, and never include secrets in prompts, branch metadata, or reports.

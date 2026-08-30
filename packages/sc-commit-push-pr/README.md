@@ -119,6 +119,14 @@ Example log entry:
 - `gh` CLI (for GitHub)
 - `pydantic` and `pyyaml` Python packages
 
+## Security
+
+This package uses your existing GitHub or Azure DevOps credentials to create
+commits, push branches, and create pull requests. Review the staged changes,
+target branch, and generated commands before execution; grant the minimum token
+permissions needed and never place credentials or secrets in prompts,
+configuration, or generated artifacts.
+
 ## License
 
 MIT
