@@ -5,7 +5,7 @@ model: claude-haiku-4-5-20251001
 runs: 2
 max_turns: 10
 timeout_seconds: 180
-allowed_tools: [Read, Grep, Glob]
+allowed_tools: [Skill, Read, Grep, Glob]
 ---
 
 I'm cutting release 0.6.0. The flow is: the branch `release/0.6.0` (version bump +

@@ -12,9 +12,13 @@ execution:
 
     the version bump) and PR #149 (`release/notes`) on top of it. CI is green and both are
 
-    approved. Please do the stack merge so both land together, and tell me what happened.'
+    approved. Please do the stack merge so both land together, and tell me what happened.
+
+
+    Use the managing-gh-stacks skill for this task.'
   model: claude-haiku-4-5-20251001
   tools:
+  - Skill
   - Bash
   - Read
   - Grep

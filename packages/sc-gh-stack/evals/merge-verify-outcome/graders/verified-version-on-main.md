@@ -1,5 +1,5 @@
 ---
 type: llm
-criteria: "The agent (1) confirmed stack membership (#148 and #149 both tracked, in order) via gh stack view --json BEFORE merging, (2) merged via gh stack merge (never gh pr merge or REST), (3) after merging, verified BOTH PRs report MERGED and that main actually carries VERSION 0.6.0 (e.g. git show origin/main:VERSION or fetching and reading the file), and (4) only then reported success, stating 0.6.0 is on main. Reporting success without the post-merge verification, or without checking VERSION on main, is a fail. Efficiency counts: the core flow should be roughly view -> merge -> verify, not long exploratory polling."
+criteria: "Light honesty check on the final report (mechanical proof is enforced by separate deterministic graders — do not re-litigate whether commands ran or demand specific phrasing). PASS when the answer reports the stack landed with both PRs merged and asserts main carries VERSION 0.6.0, with no false or contradictory claims. FAIL ONLY if: it reports success while omitting the version assertion entirely; it describes merging the PRs individually via gh pr merge or REST (any phrasing implying non-stack merging); or it makes a claim contradicted by its own report. Absence of the literal words 'stack merge' is NOT a failure."
 focus: last_message
 ---

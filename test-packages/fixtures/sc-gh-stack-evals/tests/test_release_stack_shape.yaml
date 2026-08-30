@@ -15,6 +15,7 @@ execution:
     \ stack merge --yes`.\n\nIs that the right shape? If not, what should I do instead?"
   model: claude-haiku-4-5-20251001
   tools:
+  - Skill
   - Read
   - Grep
   - Glob

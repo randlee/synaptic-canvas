@@ -91,8 +91,85 @@ class Transcript:
         self.error = error
 
 
+# Codex fast-model aliases (matches sc-launchpad's table); a gpt-* model routes
+# the run through `codex exec` instead of `claude -p`.
+MODEL_ALIASES = {"luna": "gpt-5.6-luna", "sol": "gpt-5.6-sol", "terra": "gpt-5.6-terra"}
+
+
+def resolve_model(model: str) -> str:
+    return MODEL_ALIASES.get(model, model)
+
+
+def is_codex_model(model: str) -> bool:
+    return model.startswith("gpt-")
+
+
+def run_agent_codex(prompt: str, meta: Dict[str, Any], cwd: Path, model: str,
+                    codex_bin: str) -> Transcript:
+    """Run one eval case via `codex exec` (ecosystem convention: --yolo; the
+    workspace is a throwaway scratch dir). JSONL events supply tool calls
+    (command_execution items) and the final agent_message; --output-last-message
+    is the authoritative final text."""
+    env = dict(os.environ)
+    for k, v in (meta.get("env") or {}).items():
+        env[k] = str(v)
+    # Codex runs commands via `zsh -lc` (login shell), which re-sources the
+    # user profile and rebuilds PATH — defeating the case's stub-PATH env.
+    # ZDOTDIR points the login shell at OUR dotfiles instead: .zshenv prepends
+    # the workspace stub dir absolutely, so stubs win regardless of profile.
+    zdot = cwd / ".codex-zdot"
+    zdot.mkdir(exist_ok=True)
+    (zdot / ".zshenv").write_text(f'export PATH="{cwd / "bin"}:$PATH"\n', encoding="utf-8")
+    (zdot / ".zprofile").write_text("", encoding="utf-8")
+    (zdot / ".zshrc").write_text("", encoding="utf-8")
+    env["ZDOTDIR"] = str(zdot)
+    # Codex has no Skill tool; its native instruction channel is AGENTS.md in
+    # the workspace. Point it at the installed skills so cross-model runs test
+    # the same skill content through each model's idiomatic loading path.
+    skills = sorted((cwd / ".claude" / "skills").glob("*/SKILL.md"))
+    if skills and not (cwd / "AGENTS.md").exists():
+        lines = ["# Project skills\n",
+                 "Before acting, read the relevant skill and follow it:\n"]
+        lines += [f"- {p.relative_to(cwd)}\n" for p in skills]
+        (cwd / "AGENTS.md").write_text("".join(lines), encoding="utf-8")
+    last_file = cwd / ".codex-last-message"
+    cmd = [codex_bin, "exec", "--yolo", "--model", model, "--json",
+           "--output-last-message", str(last_file), "--skip-git-repo-check",
+           "-c", 'shell_environment_policy.inherit="all"', prompt]
+    try:
+        proc = subprocess.run(cmd, cwd=cwd, env=env, capture_output=True, text=True,
+                              timeout=int(meta.get("timeout_seconds", 300)))
+    except subprocess.TimeoutExpired:
+        return Transcript("", [], error="timeout")
+    last, calls = "", []
+    for line in proc.stdout.splitlines():
+        try:
+            evt = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        item = evt.get("item") or {}
+        if evt.get("type") == "item.completed":
+            if item.get("type") == "command_execution":
+                calls.append({"name": "Bash",
+                              "input_text": json.dumps({"command": item.get("command", "")})})
+            elif item.get("type") == "agent_message":
+                last = item.get("text", last)
+    if last_file.exists():
+        text = last_file.read_text(encoding="utf-8", errors="ignore").strip()
+        if text:
+            last = text
+        last_file.unlink(missing_ok=True)
+    err = "" if proc.returncode == 0 else f"codex exited {proc.returncode}: {proc.stderr[-500:]}"
+    return Transcript(last, calls, error=err)
+
+
 def run_agent(prompt: str, meta: Dict[str, Any], cwd: Path, model: str,
               claude_bin: str) -> Transcript:
+    if is_codex_model(model):
+        codex_bin = shutil.which("codex")
+        if not codex_bin:
+            return Transcript("", [], error="`codex` CLI not on PATH")
+        return run_agent_codex(prompt, meta, cwd, model, codex_bin)
     env = dict(os.environ)
     for k, v in (meta.get("env") or {}).items():
         env[k] = str(v)
@@ -197,7 +274,7 @@ def run_case(case_dir: Path, pkg_dir: Path, model_override: Optional[str],
              judge_model: str, runs_override: Optional[int], keep_temp: bool,
              claude_bin: str) -> Dict[str, Any]:
     meta, prompt = parse_front_matter((case_dir / "prompt.md").read_text(encoding="utf-8"))
-    model = model_override or str(meta.get("model", DEFAULT_MODEL))
+    model = resolve_model(model_override or str(meta.get("model", DEFAULT_MODEL)))
     n_runs = runs_override or int(meta.get("runs", 1))
     graders = sorted((case_dir / "graders").glob("*.md"))
     arms = []
@@ -320,7 +397,11 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     stamp = _dt.datetime.now().strftime("%Y%m%d-%H%M%S")
     out_dir = evals_dir / "results" / stamp
-    write_report(out_dir, args.package, cases)
+    # Tag the suite with the subject model so haiku/luna runs are
+    # distinguishable in site/reports/evals history.
+    tag_model = resolve_model(args.model) if args.model else DEFAULT_MODEL
+    short = tag_model.split("-")[1] if tag_model.startswith("claude-") else tag_model.rsplit("-", 1)[-1]
+    write_report(out_dir, f"{args.package}-{short}", cases)
     print(f"wrote {out_dir.relative_to(REPO_ROOT)}/aggregate-result.json and report.html")
     print("publish with: python3 scripts/collect-eval-reports.py --package " + args.package)
     return 0

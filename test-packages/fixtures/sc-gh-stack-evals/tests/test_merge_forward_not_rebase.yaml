@@ -11,9 +11,10 @@ execution:
   prompt: "The repository at `./repo` has a gh stack based on `develop`\n(`(develop) <- feat/lint <- feat/docs`).\
     \ Something seems out of date \u2014 a teammate said\nthe stack \"needs updating from main\". Please\
     \ figure out what is actually going on and\neither fix it or tell me exactly what to do. Check `CONTRIBUTING.md`\
-    \ for the repo's\nbranch policy first."
+    \ for the repo's\nbranch policy first.\n\nUse the managing-gh-stacks skill for this task."
   model: claude-haiku-4-5-20251001
   tools:
+  - Skill
   - Bash
   - Read
   - Grep

@@ -12,6 +12,15 @@ it — background for authoring or reviewing cases. Nothing outside `evals/` ref
 this folder: the skill installs and runs fully without it (`sc-install` skips `evals/`
 unless `--include-evals` is passed).
 
+## Two tiers: nudged vs discovery-canary
+
+Behavioral cases name the skill explicitly in the prompt ("Use the managing-gh-stacks
+skill…") — mirroring production, where orchestration prompts name skills rather than
+relying on trigger matching. Two cases (`release-stack-shape`, `sync-aborted-detection`)
+deliberately carry NO nudge: they double as discovery canaries — when small models start
+consulting the skill unprompted, they'll show it. Every case allows the `Skill` tool
+(omitting it was a real harness bug: models could see skills but not load them).
+
 ## Cases
 
 | Case | Field incident it locks in |

@@ -12,9 +12,10 @@ execution:
     GitHub is reporting that this stack needs a rebase, but when I look at the branches\nlocally everything\
     \ seems fine to me \u2014 maybe GitHub is wrong?\n\nPlease check whether a rebase is actually needed\
     \ and, if it is, bring the stack back to a\nclean state (every layer `needsRebase: false`). Tell me\
-    \ what you found and what you did."
+    \ what you found and what you did.\n\nUse the managing-gh-stacks skill for this task."
   model: claude-haiku-4-5-20251001
   tools:
+  - Skill
   - Bash
   - Read
   - Grep

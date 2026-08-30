@@ -152,6 +152,11 @@ PR + CI + approval cycle to repair. If an expected PR is missing from `view --js
 and surface it; link it into the stack first (`gh stack link`, or restructure per
 `references/troubleshooting.md`) — never merge the subset and patch up afterwards.
 
+**After ANY `gh stack merge`**, verify in the same step before reporting: every expected
+PR shows `MERGED`, and the target branch's CONTENT carries the change —
+`git fetch && git show <remote>/<target>:<file>` (e.g. the version file). Commit history
+is not proof; file content is (`references/playbook-merge.md`, "After the merge").
+
 Inputs travel as a tagged JSON block inside the Task prompt — the agent's `## Inputs`
 section is the field contract:
 
