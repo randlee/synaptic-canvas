@@ -650,6 +650,10 @@ class IsolatedSession:
             cwd=self.project_path,
             capture_output=True,
             text=True,
+            # DEVNULL is load-bearing: with a piped/inherited stdin, codex exec
+            # waits to read it as an appended <stdin> block and hangs forever
+            # ("Reading additional input from stdin...") — found empirically.
+            stdin=subprocess.DEVNULL,
             timeout=timeout,
         )
 
