@@ -12,3 +12,7 @@ env:
 
 The repository at `./repo` is on branch `feature/x` with a staged change ready to go.
 Please commit the staged change and open a PR to `develop`.
+
+Invoke the sc-commit-push-pr skill and use its packaged pipeline scripts (.claude/scripts/) — do not hand-roll git push or gh pr create.
+
+Run every command in the foreground; never run commands or tasks in the background.

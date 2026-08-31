@@ -13,3 +13,5 @@ env:
 The repository at `./repo` has a branch `feat/base` that is not yet merged
 into `main`. Please create a worktree for `feature/child` based on
 `feat/base`, and tell me where it landed.
+
+Run every command in the foreground; never run commands or tasks in the background.

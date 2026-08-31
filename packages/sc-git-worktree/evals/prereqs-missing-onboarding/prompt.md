@@ -13,3 +13,5 @@ env:
 The repository at `./repo` declares `git.always_stack: true` in
 `.sc/shared-settings.yaml`. Please create a worktree for `feature/z` based on
 `develop`, and let me know if that works.
+
+Run every command in the foreground; never run commands or tasks in the background.

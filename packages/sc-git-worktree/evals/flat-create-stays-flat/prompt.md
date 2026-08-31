@@ -12,3 +12,5 @@ env:
 
 The repository at `./repo` doesn't use any stacked-PR workflow. Please create a
 worktree for `feature/x` based on `main`, and tell me where it landed.
+
+Run every command in the foreground; never run commands or tasks in the background.

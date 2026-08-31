@@ -15,6 +15,25 @@ Orchestrates the commit, push, and PR creation workflow using background agents.
 | `/sc-commit-push-pr` | Full pipeline: commit, push, and create PR if needed |
 | `/sc-create-pr` | Create PR from title/body (standalone) |
 
+## Script route (default when delegation is not verified working)
+
+Delegation requires the `commit-push`/`create-pr` subagent types to be installed AND
+invocable — the Agent/Task tool merely existing is not enough. Headless sessions,
+restricted tool sets, a delegation attempt that errors, or any doubt → run the packaged
+scripts directly: `python3 .claude/scripts/commit_pull_merge_commit_push.py '<json>'`
+(full pipeline) and `python3 .claude/scripts/create_pr.py '<json>'` (standalone PR).
+**Never hand-roll `git push` / `gh pr create` instead** — the scripts carry the
+stack-awareness guards (prerequisite gate, `STACK.USE_GH_STACK` refusals) this skill
+promises; bypassing them is exactly the failure mode the guards exist to stop.
+
+**Other runtimes (Codex):** delegation there uses the `collaboration.spawn_agent` tool —
+called directly by the model, never from shell. Spawn one agent per concrete bounded
+task, using the agent `.md` file's Purpose/Inputs/Output contract as the task
+specification; the same `<input_json>` fields and fenced-JSON output contract apply.
+Constraints carry over unchanged: never delegate edits to the same files to two agents,
+and the caller owns integration and the final report. If spawn_agent is unavailable,
+use the script route above.
+
 ## Agent Delegation
 
 | Step | Agent | Input | Output |

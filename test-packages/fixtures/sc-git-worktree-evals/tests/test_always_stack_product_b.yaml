@@ -8,13 +8,11 @@ tags:
 - decision-model
 - generated-eval
 execution:
-  prompt: 'The repository at `./repo` uses gh-stack for everything (see
-
-    `.sc/shared-settings.yaml`). Please create a worktree for `feature/y` based on
-
-    `develop`, and tell me what happened, including whether it''s tracked as a
-
-    stack.'
+  prompt: "The repository at `./repo` uses gh-stack for everything (see\n`.sc/shared-settings.yaml`).\
+    \ Please create a worktree for `feature/y` based on\n`develop`, and tell me what happened, including\
+    \ whether it's tracked as a\nstack.\n\nInvoke the sc-git-worktree skill and use its packaged scripts\
+    \ (.claude/scripts/worktree_*.py) \u2014 do not improvise raw git worktree commands.\n\nRun every\
+    \ command in the foreground; never run commands or tasks in the background."
   model: claude-haiku-4-5-20251001
   tools:
   - Skill

@@ -14,3 +14,7 @@ The repository at `./repo` already has `feat/bottom` checked out in its own
 worktree (`./repo-worktrees/feat/bottom`), tracked as a gh-stack. Please
 create a worktree for `feature/next` based on `feat/bottom`, and tell me
 where the work ended up.
+
+Invoke the sc-git-worktree skill and use its packaged scripts (.claude/scripts/worktree_*.py) — do not improvise raw git worktree commands.
+
+Run every command in the foreground; never run commands or tasks in the background.

@@ -14,3 +14,7 @@ The repository at `./repo` uses gh-stack for everything (see
 `.sc/shared-settings.yaml`). Please create a worktree for `feature/y` based on
 `develop`, and tell me what happened, including whether it's tracked as a
 stack.
+
+Invoke the sc-git-worktree skill and use its packaged scripts (.claude/scripts/worktree_*.py) — do not improvise raw git worktree commands.
+
+Run every command in the foreground; never run commands or tasks in the background.

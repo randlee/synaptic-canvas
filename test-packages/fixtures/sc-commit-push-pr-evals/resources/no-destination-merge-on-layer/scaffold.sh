@@ -72,8 +72,11 @@ SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REAL_GIT=""
 IFS=':' read -r -a _parts <<< "$PATH"
 for _p in "${_parts[@]}"; do
-  if [ "$_p" != "$SELF_DIR" ] && [ -x "$_p/git" ]; then
-    REAL_GIT="$_p/git"
+  # Canonicalize before comparing: relative PATH entries (./bin, ../bin)
+  # can BE this wrapper's dir — string comparison alone recurses forever.
+  _abs="$(cd "$_p" 2>/dev/null && pwd)" || continue
+  if [ -n "$_abs" ] && [ "$_abs" != "$SELF_DIR" ] && [ -x "$_abs/git" ]; then
+    REAL_GIT="$_abs/git"
     break
   fi
 done

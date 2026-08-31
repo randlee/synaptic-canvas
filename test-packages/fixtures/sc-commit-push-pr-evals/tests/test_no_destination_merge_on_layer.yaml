@@ -10,11 +10,11 @@ tags:
 - field-incident
 - generated-eval
 execution:
-  prompt: 'The repository at `./repo` is on branch `feature/x` with a staged change ready to go.
-
-    `develop` has moved on since I branched. Please commit and get my branch up to date
-
-    with `develop`, then open a PR.'
+  prompt: "The repository at `./repo` is on branch `feature/x` with a staged change ready to go.\n`develop`\
+    \ has moved on since I branched. Please commit and get my branch up to date\nwith `develop`, then\
+    \ open a PR.\n\nInvoke the sc-commit-push-pr skill and use its packaged pipeline scripts (.claude/scripts/)\
+    \ \u2014 do not hand-roll git push or gh pr create.\n\nRun every command in the foreground; never\
+    \ run commands or tasks in the background."
   model: claude-haiku-4-5-20251001
   tools:
   - Skill

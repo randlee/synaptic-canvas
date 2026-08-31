@@ -182,6 +182,13 @@ def run_agent(prompt: str, meta: Dict[str, Any], cwd: Path, model: str,
     env = dict(os.environ)
     for k, v in (meta.get("env") or {}).items():
         env[k] = str(v)
+    # The case env's relative PATH entries (./bin, ../bin) break for
+    # processes the agent's scripts spawn from other cwds (e.g. a new
+    # worktree). Prepend the workspace stub dir ABSOLUTELY so stubs win
+    # everywhere — the claude-path analogue of the codex ZDOTDIR fix.
+    ws_bin = cwd / "bin"
+    if ws_bin.is_dir():
+        env["PATH"] = f"{ws_bin}:{env.get('PATH', '')}"
     cmd = [claude_bin, "-p", prompt, "--model", model,
            "--output-format", "stream-json", "--verbose",
            "--max-turns", str(meta.get("max_turns", 20))]
@@ -190,9 +197,13 @@ def run_agent(prompt: str, meta: Dict[str, Any], cwd: Path, model: str,
         cmd += ["--allowedTools", ",".join(tools)]
     try:
         proc = subprocess.run(cmd, cwd=cwd, env=env, capture_output=True, text=True,
+                              stdin=subprocess.DEVNULL,
                               timeout=int(meta.get("timeout_seconds", 300)))
-    except subprocess.TimeoutExpired:
-        return Transcript("", [], error="timeout")
+    except subprocess.TimeoutExpired as exc:
+        partial = (exc.stdout or b"")
+        if isinstance(partial, bytes):
+            partial = partial.decode("utf-8", "ignore")
+        return Transcript("", [], error=f"timeout (partial: {partial[-400:]!r})")
     last, calls = "", []
     for line in proc.stdout.splitlines():
         try:

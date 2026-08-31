@@ -8,13 +8,11 @@ tags:
 - decision-model
 - generated-eval
 execution:
-  prompt: 'The repository at `./repo` already has `feat/bottom` checked out in its own
-
-    worktree (`./repo-worktrees/feat/bottom`), tracked as a gh-stack. Please
-
-    create a worktree for `feature/next` based on `feat/bottom`, and tell me
-
-    where the work ended up.'
+  prompt: "The repository at `./repo` already has `feat/bottom` checked out in its own\nworktree (`./repo-worktrees/feat/bottom`),\
+    \ tracked as a gh-stack. Please\ncreate a worktree for `feature/next` based on `feat/bottom`, and\
+    \ tell me\nwhere the work ended up.\n\nInvoke the sc-git-worktree skill and use its packaged scripts\
+    \ (.claude/scripts/worktree_*.py) \u2014 do not improvise raw git worktree commands.\n\nRun every\
+    \ command in the foreground; never run commands or tasks in the background."
   model: claude-haiku-4-5-20251001
   tools:
   - Skill
@@ -25,13 +23,6 @@ execution:
   timeout_ms: 300000
 expectations:
 - id: exp-001
-  description: 'grader: checked-out-in-stack-worktree'
-  type: tool_call
-  expected:
-    tool: Bash
-    pattern: checkout -b feature/next
-    flags: i
-- id: exp-002
   description: 'grader: names-existing-worktree'
   type: llm_judge
   expected:
@@ -41,14 +32,14 @@ expectations:
       name the existing stack worktree as where the work now lives (e.g. that feature/next is checked
       out inside repo-worktrees/feat/bottom). It must NOT claim a new worktree directory was created for
       feature/next, and must NOT refuse the request.
-- id: exp-003
+- id: exp-002
   description: 'grader: no-new-worktree-dir'
   type: tool_not_called
   expected:
     tool: Bash
     pattern: worktree add[^\\n]*feature/next
     flags: i
-- id: exp-004
+- id: exp-003
   description: 'grader: stack-add-ran'
   type: file_contains
   expected:

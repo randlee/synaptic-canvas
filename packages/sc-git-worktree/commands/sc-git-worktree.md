@@ -35,7 +35,7 @@ options:
 
 # /sc-git-worktree command
 
-Use this command to manage worktrees following the repo's layout and tracking rules. You MUST invoke the appropriate subagent via the Task tool; do not run manual git commands in the primary session.
+Use this command to manage worktrees following the repo's layout and tracking rules. You MUST invoke the appropriate subagent via the Agent tool (formerly Task); do not run manual git commands in the primary session.
 
 Defaults:
 - Repo root: current directory.
@@ -68,12 +68,12 @@ If run with no options or `--help`: print a concise list of options (no git stat
 
 ## Task Tool Invocation (Required)
 
-Use the Task tool with `<input_json>` and consume `<output_json>` from the subagent response. No manual git commands in the primary session.
+Use the Agent tool (formerly Task) with `<input_json>` and consume `<output_json>` from the subagent response. No manual git commands in the primary session.
 
 ### Template
 
 ```xml
-<invoke name="Task">
+<invoke name="Agent">
 <parameter name="subagent_type">$SUBAGENT</parameter>
 <parameter name="description">$DESCRIPTION</parameter>
 <parameter name="prompt">Run $SUBAGENT with this input:

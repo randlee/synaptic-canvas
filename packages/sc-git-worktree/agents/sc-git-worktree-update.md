@@ -10,7 +10,7 @@ color: blue
 
 ## Invocation
 
-This agent is invoked via the Claude Task tool by a skill or command. Do not invoke directly.
+This agent is invoked via the Claude Agent tool (formerly Task) by a skill or command. Do not invoke directly.
 
 ## Input Protocol
 

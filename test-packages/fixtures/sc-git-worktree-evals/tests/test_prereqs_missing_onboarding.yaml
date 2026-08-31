@@ -13,7 +13,10 @@ execution:
 
     `.sc/shared-settings.yaml`. Please create a worktree for `feature/z` based on
 
-    `develop`, and let me know if that works.'
+    `develop`, and let me know if that works.
+
+
+    Run every command in the foreground; never run commands or tasks in the background.'
   model: claude-haiku-4-5-20251001
   tools:
   - Skill
