@@ -139,6 +139,109 @@ Before cleanup:
 - Check `git branch --merged` and unique commit count
 - If unmerged, preserve branch and report
 
+## Worktree factory decision model
+
+Create is a **factory**: every request produces exactly one of three products.
+This section replaces the three accreted stacking guards (`check_needs_stack_guard`,
+the `always_stack` gate, `create_stacked_worktree`) with one designed decision
+model, implemented in `scripts/worktree_create.py`.
+
+### Products
+
+- **A. Flat worktree** (legacy, unchanged):
+  `git worktree add <wt_base>/<branch> -b <branch> <base>`. No `stack/` prefix,
+  no extra config, no `gh` invocation.
+- **B. New stack**: identical to A - **same path**, no `stack/` prefix anywhere -
+  plus, inside the new worktree: `git config rerere.enabled true` and
+  `gh stack init --base <stack_root> <branch>` (`stdin=DEVNULL`; a failed init
+  does not roll the worktree back - it succeeds with
+  `data.stack_init = {"ok": false, "stderr": ..., "next_step": ...}`).
+- **C. Stack layer** (dependent work): **no new worktree**. In the base's
+  existing stack worktree: `git checkout -b <branch> <base>` then
+  `gh stack add <branch>` (non-interactive form). The envelope succeeds with
+  `data.path` set to the **stack worktree** (not a new directory) - legacy
+  callers that read `path` from output keep working unmodified - plus
+  `stacked: true`, `product: "layer"`, and the stack shape.
+
+### Decision function
+
+`resolve_product(input, repo) -> (product, reason)`, precedence
+**Intent > Dependency > Policy > default A**, evaluated **lazily**. In the
+implementation, stage 3 (a hard side-effecting verification, not a decision
+branch) is run by the caller between stages 2 and 4 rather than inside
+`resolve_product()` itself, so that its mandatory refusal can fire before any
+mutation - see "Implementation split" below.
+
+1. **Intent.** `input.flat` is `true` → product **A**, and NOTHING else is
+   evaluated: no settings are read, no prerequisite check runs, no transcript
+   entries about stacks appear. `data.flat_override` would record that the
+   override suppressed a positive dependency signal, but determining that
+   requires exactly the evaluation stage 1 must skip - so in practice this
+   field is never populated (see "Judgment calls" below).
+2. **Stack-activity probe** (cheap, unconditional, fail-closed-to-inactive).
+   The repo is stack-active iff `git.always_stack` is truthy in
+   `.sc/shared-settings.yaml`, OR any existing worktree carries gh-stack
+   tracking (`git worktree list --porcelain` + `check_gh_stack_tracked` per
+   worktree). Any error probing either signal resolves to **not** stack-active.
+   **Not stack-active → product A immediately** - the legacy path is
+   structurally untouched: no prerequisite check, no settings read beyond the
+   one `always_stack` lookup, no new transcript entries, and a data payload
+   byte-identical to the pre-guard package. This is the positive-signal rule:
+   every indeterminate input resolves to A.
+3. **Stack-active → mandatory prerequisite gate.** Runs `check_stack_prerequisites`
+   (gh CLI, the `gh-stack` extension, the `managing-gh-stacks` skill). Missing
+   → refuse `CREATE.STACK_PREREQS_MISSING` naming the three install commands.
+   This is the mandatory collaborator gate and the **only** refusal that fires
+   before product resolution, and it runs before any mutation, including
+   `git fetch`.
+4. **Dependency.** Base protected or merged into trunk → independent; else
+   dependent. A trunk/protected-branch resolution failure treats the base as
+   independent (positive-signal rule) - this must never surface
+   `CONFIG.PROTECTED_BRANCH_NOT_SET` from create.
+   - **Dependent** → product **C**, unless it is not mechanically executable:
+     - the base's stack worktree has a rebase in progress, or
+     - the base is unmerged but carries **no** gh-stack tracking anywhere -
+       there is no stack to join, and creating one is a strictly bigger
+       operation (a new 2-layer stack) than `create` performs.
+     Either case refuses `CREATE.NEEDS_STACK`, with `suggested_action` routing
+     to the fix (resolve the rebase; or, for the 2-layer case, the exact
+     `gh stack init` command plus a pointer to the `managing-gh-stacks` skill).
+5. **Policy.** Independent + `always_stack` truthy → product **B** (branch off
+   `stack_root`; `resolve_stack_root` chain unchanged; `data.requested_base`
+   is recorded, with a transcript step, when `input.base != stack_root`).
+   Independent + `always_stack` false → product **A**.
+
+### Implementation split
+
+`resolve_product()` in `worktree_create.py` implements stages 4-5 (Dependency
+and Policy) as a pure decision function returning a `ProductDecision`
+(`product`, `reason`, plus the context - `stack_worktree_path`, `base`,
+`trunk` - the caller needs to build B/C). `create_worktree_main()` drives
+stages 1-3 directly (intent short-circuit, the stack-activity probe, and the
+mandatory prerequisite gate) because stage 3's refusal must happen before the
+unconditional `git fetch`/base-existence steps that both remaining stages
+need as input; `resolve_product()` is only invoked once the repo is confirmed
+stack-active, intent hasn't already resolved to A, and prerequisites have
+already passed.
+
+### Settings parsing
+
+`get_shared_settings` / `get_always_stack_setting` / etc. are unchanged in
+shape, but the no-PyYAML fallback parser in `_load_yaml`:
+
+- strips inline comments (`raw.split("#", 1)[0]`) before coercing a scalar
+  value, so `always_stack: false  # why` parses as `False`, not the string
+  `"false  # why"`;
+- coerces an unrecognized scalar for a boolean key (currently `always_stack`)
+  to `False` rather than passing it through as a truthy string;
+- these only ever run on stack-active branches of the tree now (a
+  stack-inactive repo never calls into settings beyond the one `always_stack`
+  read in stage 2), but must still be correct since that one read decides
+  activity.
+
+`pyyaml` is now a declared runtime requirement in `manifest.yaml` (it was an
+implicit, gracefully-degraded dependency before).
+
 ## File Layout
 
 ```

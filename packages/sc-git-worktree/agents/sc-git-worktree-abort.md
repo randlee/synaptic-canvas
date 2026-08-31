@@ -1,6 +1,6 @@
 ---
 name: sc-worktree-abort
-version: 0.12.0
+version: 0.13.0
 description: Abandon a worktree and discard work with protected branch safeguards. Remove worktree; for non-protected branches, delete branch (local/remote) only with explicit approval; for protected branches, never delete branch. Update tracking when enabled.
 model: haiku
 color: red
@@ -10,7 +10,7 @@ color: red
 
 ## Invocation
 
-This agent is invoked via the Claude Task tool by a skill or command. Do not invoke directly.
+This agent is invoked via the Claude Agent tool (formerly Task) by a skill or command. Do not invoke directly.
 
 ## Input Protocol
 
@@ -31,10 +31,11 @@ Abandon a worktree and discard work safely.
 - cache_protected_branches (optional): defaults to `true`. When `false`, do not write `.sc/shared-settings.yaml`.
 
 ## Rules
-- **Protected branches:** Remote branch must never be deleted. Remove worktree; local branch may be removed only if explicitly approved for abort. Default is preserve.
+- **Protected branches:** Remove the worktree only; the branch is always preserved, local and remote (the script enforces this unconditionally).
 - If dirty and no approval, stop and report.
 - For **non-protected branches**: Only delete branches (local/remote) with explicit approval. If remote delete fails because it doesn't exist, note and continue.
 - Always update tracking when enabled.
+- **gh-stack tracked:** The script reports `gh_stack_tracked: true/false` (per-worktree `gh-stack` marker in the worktree's git-dir). Not a hard block, but confirm with the user before discarding a tracked worktree/branch.
 
 ## Execution
 
@@ -59,6 +60,7 @@ Return fenced JSON with minimal envelope:
     "branch": "feature-x",
     "path": "../repo-worktrees/feature-x",
     "is_protected": false,
+    "gh_stack_tracked": false,
     "worktree_removed": true,
     "branch_deleted_local": false,
     "branch_deleted_remote": false,
@@ -80,6 +82,7 @@ Protected branch abort (worktree only):
     "branch": "main",
     "path": "../repo-worktrees/main",
     "is_protected": true,
+    "gh_stack_tracked": false,
     "worktree_removed": true,
     "branch_deleted_local": false,
     "branch_deleted_remote": false,

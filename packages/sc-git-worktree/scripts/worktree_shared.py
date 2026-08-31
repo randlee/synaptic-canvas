@@ -253,6 +253,12 @@ def _dedupe_preserve(items: Iterable[str]) -> list[str]:
     return out
 
 
+# Boolean-valued keys under `git:` in the fallback (no-PyYAML) parser. An
+# unrecognized scalar for one of these coerces to False rather than being
+# passed through as a truthy string.
+_BOOLEAN_GIT_KEYS = {"always_stack"}
+
+
 def _load_yaml(path: Path) -> Dict[str, Any]:
     if not path.exists():
         return {}
@@ -296,7 +302,198 @@ def _load_yaml(path: Path) -> Dict[str, Any]:
                 data.setdefault("git", {})["protected_branches"] = branches
                 continue
 
+        if indent == 2 and current_section == "git" and ":" in stripped and not stripped.endswith(":"):
+            # Simple scalar key under git: (e.g. always_stack: true, stack_root: develop)
+            # Strip inline comments before coercion (e.g. "always_stack: false  # why").
+            key, _, raw_val = stripped.partition(":")
+            key = key.strip()
+            raw_val = raw_val.split("#", 1)[0].strip().strip("\"'")
+            if key and key != "protected_branches":
+                if raw_val.lower() == "true":
+                    coerced: Any = True
+                elif raw_val.lower() == "false":
+                    coerced = False
+                elif key in _BOOLEAN_GIT_KEYS:
+                    # Unrecognized scalar for a boolean key coerces to False.
+                    coerced = False
+                else:
+                    coerced = raw_val
+                data.setdefault("git", {})[key] = coerced
+            current_key = None
+            continue
+
     return data
+
+
+def get_shared_settings(repo_root: Path) -> Dict[str, Any]:
+    """Load the full parsed `.sc/shared-settings.yaml` (empty dict if absent)."""
+    shared_path = repo_root / ".sc" / "shared-settings.yaml"
+    return _load_yaml(shared_path)
+
+
+def get_always_stack_setting(repo_root: Path) -> bool:
+    """Return the `git.always_stack` shared setting (default: False).
+
+    Absent file/key = False = zero behavior change from historical flat-create.
+    """
+    settings = get_shared_settings(repo_root)
+    return bool((settings.get("git") or {}).get("always_stack", False))
+
+
+def get_stack_root_setting(repo_root: Path) -> Optional[str]:
+    """Return the explicit `git.stack_root` shared setting, if configured."""
+    settings = get_shared_settings(repo_root)
+    value = (settings.get("git") or {}).get("stack_root")
+    if isinstance(value, str) and value.strip():
+        return value.strip()
+    return None
+
+
+def _home_dir() -> Path:
+    """Indirection point so tests can monkeypatch the home-directory lookup."""
+    return Path.home()
+
+
+def get_repo_default_branch(repo_root: Optional[Path] = None) -> str:
+    """Best-effort resolution of the repo's default branch.
+
+    Order:
+    1. `origin/HEAD` symbolic ref (local remote-tracking ref; no network call).
+    2. `init.defaultBranch` git config, if that branch actually exists locally.
+    3. The branch currently checked out at `repo_root` (the main worktree).
+    4. Fall back to "main".
+    """
+    result = run_git(["symbolic-ref", "refs/remotes/origin/HEAD"], cwd=repo_root, check=False)
+    if result.returncode == 0 and result.stdout.strip():
+        ref = result.stdout.strip()
+        prefix = "refs/remotes/origin/"
+        if ref.startswith(prefix):
+            return ref[len(prefix):]
+
+    result = run_git(["config", "--get", "init.defaultBranch"], cwd=repo_root, check=False)
+    if result.returncode == 0 and result.stdout.strip():
+        candidate = result.stdout.strip()
+        if check_branch_exists_local(candidate, cwd=repo_root):
+            return candidate
+
+    result = run_git(["rev-parse", "--abbrev-ref", "HEAD"], cwd=repo_root, check=False)
+    if result.returncode == 0 and result.stdout.strip() and result.stdout.strip() != "HEAD":
+        return result.stdout.strip()
+
+    return "main"
+
+
+def resolve_stack_root(repo_root: Path, stack_root_setting: Optional[str] = None) -> str:
+    """Resolve the branch new stack layers are built from.
+
+    Priority: explicit `git.stack_root` setting > "develop" (if it exists,
+    locally or remotely) > the repo's default branch.
+    """
+    if stack_root_setting:
+        return stack_root_setting
+    if check_branch_exists_local("develop", cwd=repo_root) or check_branch_exists_remote(
+        "develop", cwd=repo_root
+    ):
+        return "develop"
+    return get_repo_default_branch(repo_root)
+
+
+# =============================================================================
+# gh-stack prerequisite checks (for the repo-level always_stack policy)
+# =============================================================================
+
+
+def _run_gh(args: list, cwd: Optional[Path] = None) -> Optional[subprocess.CompletedProcess]:
+    """Run a `gh` command, fail closed (return None) if gh is unavailable."""
+    try:
+        return subprocess.run(
+            ["gh", *args],
+            cwd=cwd,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except (OSError, FileNotFoundError):
+        return None
+
+
+def check_gh_cli_available() -> bool:
+    """True if the `gh` CLI is installed and runnable."""
+    result = _run_gh(["--version"])
+    return result is not None and result.returncode == 0
+
+
+def check_gh_stack_extension_installed() -> bool:
+    """True if the `gh-stack` extension is registered with `gh extension list`."""
+    result = _run_gh(["extension", "list"])
+    if result is None or result.returncode != 0:
+        return False
+    return "gh-stack" in (result.stdout or "")
+
+
+def check_sc_gh_stack_skill(repo_root: Optional[Path] = None) -> bool:
+    """True if the managing-gh-stacks skill is installed under the repo or user home.
+
+    Checks the canonical path first, then falls back to a bounded, pure-Python
+    walk (no shelling out to `find`) of `<root>/.claude` for any
+    `*/managing-gh-stacks/SKILL.md`.
+    """
+    home = _home_dir()
+
+    direct_candidates = []
+    if repo_root is not None:
+        direct_candidates.append(
+            Path(repo_root) / ".claude" / "skills" / "managing-gh-stacks" / "SKILL.md"
+        )
+    direct_candidates.append(home / ".claude" / "skills" / "managing-gh-stacks" / "SKILL.md")
+    for candidate in direct_candidates:
+        try:
+            if candidate.is_file():
+                return True
+        except OSError:
+            continue
+
+    search_roots = []
+    if repo_root is not None:
+        search_roots.append(Path(repo_root) / ".claude")
+    search_roots.append(home / ".claude")
+
+    max_depth = 6
+    for root in search_roots:
+        try:
+            if not root.exists():
+                continue
+            base_depth = len(root.resolve().parts)
+            for match in root.rglob("SKILL.md"):
+                try:
+                    if match.parent.name != "managing-gh-stacks":
+                        continue
+                    if len(match.resolve().parts) - base_depth > max_depth:
+                        continue
+                    return True
+                except OSError:
+                    continue
+        except (OSError, RecursionError):
+            continue
+
+    return False
+
+
+def check_stack_prerequisites(repo_root: Path) -> Dict[str, bool]:
+    """Check the mandatory prerequisites for the repo-level always-stack policy.
+
+    Fail closed on every sub-check (mirrors check_gh_stack_tracked): any error
+    probing gh or the filesystem resolves to False.
+    """
+    gh_cli = check_gh_cli_available()
+    gh_stack_extension = check_gh_stack_extension_installed()
+    sc_gh_stack_skill = check_sc_gh_stack_skill(repo_root)
+    return {
+        "gh_cli": gh_cli,
+        "gh_stack_extension": gh_stack_extension,
+        "sc_gh_stack_skill": sc_gh_stack_skill,
+        "ok": gh_cli and gh_stack_extension and sc_gh_stack_skill,
+    }
 
 
 def _write_shared_protected_branches(shared_path: Path, branches: list[str]) -> None:
@@ -460,12 +657,49 @@ def get_worktree_status(path: Path) -> tuple:
     return len(dirty_files) == 0, dirty_files
 
 
+def check_gh_stack_tracked(path: Path) -> bool:
+    """Check whether a worktree carries gh-stack tracking state.
+
+    gh-stack keeps per-worktree stack state in a `gh-stack` marker under the
+    worktree's git-dir (this is a linked worktree's private gitdir, not the
+    shared repo `.git`). Fail closed: any error probing git resolves to False
+    so callers must not assume tracking is present when unknown.
+
+    Args:
+        path: Worktree working directory to probe.
+
+    Returns:
+        True if a `gh-stack` marker exists under the worktree's git-dir.
+    """
+    # A prunable/hand-deleted worktree directory makes subprocess raise before
+    # git runs (cwd missing) — the fail-closed contract must cover that too.
+    try:
+        result = run_git(["rev-parse", "--git-dir"], cwd=path, check=False)
+    except OSError:
+        return False
+    if result.returncode != 0:
+        return False
+    git_dir_raw = result.stdout.strip()
+    if not git_dir_raw:
+        return False
+    git_dir = Path(git_dir_raw)
+    if not git_dir.is_absolute():
+        git_dir = (path / git_dir).resolve()
+    return (git_dir / "gh-stack").exists()
+
+
 def is_branch_merged(branch: str, base: str = "HEAD", cwd: Optional[Path] = None) -> bool:
-    """Check if branch is merged into base."""
+    """Check if branch is merged into base.
+
+    `git branch --merged` prefixes the current branch with `* ` and any
+    branch checked out in another worktree with `+ ` — strip both marker
+    characters (and the separating space) so a branch merged but checked
+    out elsewhere isn't misread as unmerged.
+    """
     result = run_git(["branch", "--merged", base], cwd=cwd, check=False)
     if result.returncode != 0:
         return False
-    merged_branches = [b.strip().lstrip("* ") for b in result.stdout.strip().split("\n")]
+    merged_branches = [b.strip().lstrip("*+ ") for b in result.stdout.strip().split("\n")]
     return branch in merged_branches
 
 

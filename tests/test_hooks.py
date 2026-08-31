@@ -38,6 +38,18 @@ from preflight_utils import (
 )
 
 
+@pytest.fixture(autouse=True)
+def _satisfy_stack_guard(monkeypatch):
+    """The unconditional gh-stack prerequisite gate runs first in
+    run_preflight_check; these tests exercise the pre-existing checks, so the
+    gate is satisfied here. Gate behavior is covered by
+    packages/sc-commit-push-pr/tests/test_stack_awareness.py."""
+    import preflight_utils as _pf
+    monkeypatch.setattr(_pf, "check_stack_prerequisites",
+                        lambda *a, **k: {"gh_cli": True, "gh_stack_extension": True,
+                                         "sc_gh_stack_skill": True, "ok": True})
+
+
 class TestLoadSharedSettings:
     """Tests for load_shared_settings function."""
 

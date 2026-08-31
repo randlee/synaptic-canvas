@@ -4,7 +4,8 @@ description:
   Create, manage, scan, update, and clean up git worktrees for parallel development with protected branch safeguards.
   Use when working on multiple branches simultaneously, isolating experiments, updating protected branches (main/develop),
   or when user mentions "worktree", "parallel branches", "feature isolation", "branch cleanup", "worktree status", or "update main/develop".
-version: 0.12.0
+  Optional gh-stack interop (stacked-PR worktrees defer to the sc-gh-stack skill; stack-tracking worktrees are guarded unconditionally).
+version: 0.13.0
 entry_point: /sc-git-worktree
 ---
 
@@ -14,13 +15,13 @@ Use this skill to manage worktrees with a standard structure and tracking. Use t
 
 ## Agent Delegation (Required)
 
-This skill delegates all execution to specialized agents via the **Task tool** (no manual git commands in the primary session).
+This skill delegates all execution to specialized agents via the **Agent tool** (formerly Task) (no manual git commands in the primary session).
 Always pass inputs via `<input_json>` and render `<output_json>` from the subagent response.
 
-**Task tool template:**
+**Agent tool template:**
 
 ```xml
-<invoke name="Task">
+<invoke name="Agent">
 <parameter name="subagent_type">$SUBAGENT</parameter>
 <parameter name="description">$DESCRIPTION</parameter>
 <parameter name="prompt">Run $SUBAGENT with this input:
@@ -42,7 +43,34 @@ $INPUT_JSON
 | Abort | `sc-worktree-abort` | JSON: success, worktree_removed, tracking_update |
 | Update | `sc-worktree-update` | JSON: success, commits_pulled, conflicts (if any) |
 
-To invoke an agent, use the Task tool with the agent prompt and pass parameters exactly as documented in the agent Inputs section.
+To invoke an agent, use the Agent tool (formerly Task) with the agent prompt and pass parameters exactly as documented in the agent Inputs section.
+
+**Script route — the default whenever delegation is not verified working.** Delegation
+requires the `sc-worktree-*` subagent types to be installed AND invocable; the Agent/Task
+tool merely existing is not enough. Headless sessions, restricted tool sets, a delegation
+attempt that errors or returns nothing useful, or any doubt → run the packaged scripts
+directly with the same JSON inputs the agents document —
+`python3 .claude/scripts/worktree_create.py '<json>'`, `worktree_scan.py`,
+`worktree_cleanup.py '<json>'`, `worktree_abort.py`, `worktree_update.py`. **Never
+improvise raw `git worktree` commands instead** — the scripts carry the guards this
+skill promises (needs-stack routing, gh-stack-tracked cleanup skip, protected-branch
+protection); bypassing them can destroy stack tracking or delete protected state. Three
+rules when using the scripts: (1) **omit `worktree_base`** unless the user names one —
+the default sibling layout (`../<repo>-worktrees/<branch>`) is the convention every
+other tool expects; (2) **"clean up merged worktrees"-style sweeps use BATCH mode**
+(`worktree_cleanup.py '{}'`) — it skips gh-stack-tracked worktrees automatically;
+cleaning a worktree whose output shows `gh_stack_tracked: true` in single-branch mode
+requires explicit user approval naming the stack first — STOP and ask; (3) **relay
+refusal envelopes' `suggested_action` verbatim** — never soften a refusal into an offer
+to work around it.
+
+**Other runtimes (Codex):** delegation there uses the `collaboration.spawn_agent` tool —
+called directly by the model, never from shell. Spawn one agent per concrete bounded
+task, using the agent `.md` file's Purpose/Inputs/Output contract as the task
+specification; the same `<input_json>` fields and fenced-JSON output contract apply.
+Constraints carry over unchanged: never delegate edits to the same files to two agents,
+and the caller owns integration and the final report. If spawn_agent is unavailable,
+use the script route above.
 
 ## Standards and Paths
 - Repo root: current directory.
@@ -71,6 +99,36 @@ git:
 - **Cleanup/abort agents NEVER delete protected branches** (local or remote)
 - Protected branches can only be removed from worktrees, never deleted
 - Use `--update` to safely pull changes for protected branches in worktrees
+
+## Stacked-PR worktrees (optional, gated)
+
+Create is a **factory**: every request resolves to exactly one of three
+products - **A** (flat worktree, legacy/unchanged), **B** (a new stack, same
+path as A plus `gh stack init`), or **C** (a layer added to an existing
+stack's worktree, no new worktree). See DESIGN.md "Worktree factory decision
+model" for the full precedence (Intent > Dependency > Policy > default A).
+
+Read `references/gh-stack-support.md` before proceeding when EITHER holds:
+
+- the repo is **stack-active** — `git.always_stack: true` in
+  `.sc/shared-settings.yaml`, OR any existing worktree carries gh-stack
+  tracking — in which case CREATE enforces mandatory prerequisites for every
+  collaborator (`CREATE.STACK_PREREQS_MISSING` lists the installs) before
+  resolving a base branch's dependency into product B or C (rule 5); a
+  stack-inactive repo never evaluates any of this and every create is product
+  A, auto-upgrading legacy prompts with zero behavior change (the
+  positive-signal rule); or
+- a worktree under scan/cleanup/abort carries gh-stack tracking
+  (`test -e "$(git -C <wt> rev-parse --git-dir)/gh-stack"`; scan and cleanup
+  report this as `gh_stack_tracked`, and batch cleanup skips such worktrees) —
+  this destructive-safety gate applies **regardless of whether the gh-stack
+  extension is installed locally**, since tracking is repository state; or
+- the task involves stacked PRs and the `gh-stack` extension is installed
+  (`gh extension list | grep -q gh-stack`).
+
+The reference defers all stack authority to the `managing-gh-stacks` skill
+(package `sc-gh-stack`) when installed, and otherwise strongly recommends
+installing it. Neither condition → skip this entirely.
 
 ## Safety and reminders
 - **NEVER delete protected branches** (main, develop, master) under any circumstances.

@@ -18,6 +18,7 @@ import argparse
 import json
 import subprocess
 import sys
+from pathlib import Path
 from typing import List, Optional
 
 from pydantic import BaseModel
@@ -28,11 +29,27 @@ try:
     from .provider_detect import detect_provider, get_remote_url, ProviderInfo
     from .pr_provider import get_provider, PullRequestInfo, PrProviderError
     from .preflight_utils import load_shared_settings, get_protected_branches
+    from .stack_guard import (
+        check_gh_stack_marker,
+        check_stack_prerequisites,
+        get_repo_root,
+        missing_prereq_actions,
+        STACK_PREREQS_MISSING_MESSAGE,
+        STACK_USE_GH_STACK_SUGGESTED_ACTION,
+    )
 except ImportError:
     from envelope import Envelope, ErrorCodes
     from provider_detect import detect_provider, get_remote_url, ProviderInfo
     from pr_provider import get_provider, PullRequestInfo, PrProviderError
     from preflight_utils import load_shared_settings, get_protected_branches
+    from stack_guard import (
+        check_gh_stack_marker,
+        check_stack_prerequisites,
+        get_repo_root,
+        missing_prereq_actions,
+        STACK_PREREQS_MISSING_MESSAGE,
+        STACK_USE_GH_STACK_SUGGESTED_ACTION,
+    )
 
 
 # =============================================================================
@@ -302,6 +319,25 @@ def run_pipeline(input_data: CommitPushInput) -> Envelope:
     Returns:
         Envelope with result data or error
     """
+    # Step 0: Mandatory gh-stack toolchain prerequisites (unconditional).
+    # sc-commit-push-pr is the critical junction where a stack-unaware
+    # commit/pull/merge/push can corrupt gh-stack linearity, so the full
+    # toolchain is required on every invocation, regardless of branch or
+    # provider. This check runs before any git mutation.
+    repo_root = get_repo_root()
+    prereqs = check_stack_prerequisites(repo_root)
+    if not prereqs["ok"]:
+        return Envelope.error_response(
+            code=ErrorCodes.PREFLIGHT_STACK_PREREQS_MISSING,
+            message=STACK_PREREQS_MISSING_MESSAGE,
+            recoverable=True,
+            suggested_action="; ".join(missing_prereq_actions(prereqs)),
+            data=prereqs,
+        )
+
+    # Step 0b: gh-stack layer detection (state-based, current worktree).
+    stack_detected = check_gh_stack_marker(Path.cwd())
+
     # Step 1: Resolve branches
     try:
         source_branch = resolve_source_branch(input_data.source)
@@ -321,6 +357,40 @@ def run_pipeline(input_data: CommitPushInput) -> Envelope:
             message=str(e),
             recoverable=False,
             suggested_action="Configure protected branches or specify --destination."
+        )
+
+    # Step 1b: On a gh-stack layer, pull/merge into the layer and direct
+    # push/PR creation would corrupt stack linearity. Refuse the push+PR
+    # portion outright and skip pull/merge entirely -- `gh stack sync` and
+    # `gh stack submit --auto` own those operations. Any commit the caller
+    # already made (outside this script) stands; nothing here is pushed.
+    if stack_detected:
+        return Envelope.error_response(
+            code=ErrorCodes.STACK_USE_GH_STACK,
+            message=(
+                f"Branch '{source_branch}' is a layer of a gh stack; "
+                "pull/merge-from-destination and push/PR creation are "
+                "owned by `gh stack submit --auto`, not sc-commit-push-pr."
+            ),
+            recoverable=True,
+            suggested_action=STACK_USE_GH_STACK_SUGGESTED_ACTION,
+            data={
+                "committed": True,
+                "pushed": False,
+                "source_branch": source_branch,
+                "destination_branch": destination_branch,
+                "stack": {
+                    "detected": True,
+                    "pull_merge_skipped": True,
+                    "reason": (
+                        "gh-stack layer branches must never be merged "
+                        "into or pushed directly -- `gh stack sync` owns "
+                        "syncing a layer with its base, and `gh stack "
+                        "submit --auto` owns pushing plus PR base "
+                        "linkage."
+                    ),
+                },
+            },
         )
 
     # Step 2: Check staged changes (informational - we continue either way)

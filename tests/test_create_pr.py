@@ -32,6 +32,19 @@ from pr_provider import (
 )
 from provider_detect import ProviderInfo
 
+@pytest.fixture(autouse=True)
+def _satisfy_stack_guard(monkeypatch):
+    """The unconditional gh-stack prerequisite gate (stack_guard) fires before
+    every pipeline scenario; these tests exercise the pipeline itself, so the
+    gate is satisfied and no stack marker is present. The gate's own behavior
+    is covered by packages/sc-commit-push-pr/tests/test_stack_awareness.py."""
+    import create_pr as _guarded
+    monkeypatch.setattr(_guarded, "check_stack_prerequisites",
+                        lambda *a, **k: {"gh_cli": True, "gh_stack_extension": True,
+                                          "sc_gh_stack_skill": True, "ok": True})
+    monkeypatch.setattr(_guarded, "check_gh_stack_marker", lambda *a, **k: False)
+
+
 
 # =============================================================================
 # Input Model Tests

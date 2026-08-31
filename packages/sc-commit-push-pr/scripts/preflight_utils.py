@@ -18,6 +18,11 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import yaml
 
+try:
+    from .stack_guard import check_stack_prerequisites, missing_prereq_actions
+except ImportError:
+    from stack_guard import check_stack_prerequisites, missing_prereq_actions
+
 
 # Package name for logging
 PACKAGE_NAME = "sc-commit-push-pr"
@@ -308,6 +313,34 @@ def run_preflight_check(hook_name: str) -> int:
         repo_root = get_repo_root()
     except RuntimeError as e:
         print(f"ERROR: {e}", file=sys.stderr)
+        return 2
+
+    # Step 0: Mandatory gh-stack toolchain prerequisites (unconditional).
+    # This blocks the agent before it starts -- and therefore before any
+    # commit -- so installing sc-commit-push-pr without the gh-stack
+    # toolchain becomes the enforcement point, not a runtime surprise.
+    stack_prereqs = check_stack_prerequisites(repo_root)
+    if not stack_prereqs["ok"]:
+        actions = missing_prereq_actions(stack_prereqs)
+        error_msg = (
+            "ERROR: gh-stack toolchain prerequisites not met.\n\n"
+            "sc-commit-push-pr requires the gh CLI, the gh-stack "
+            "extension, and the managing-gh-stacks skill to be installed "
+            "before it will run:\n" + "\n".join(f"  - {a}" for a in actions)
+        )
+        print(error_msg, file=sys.stderr)
+
+        log_preflight(
+            level="error",
+            message=f"Preflight check failed - gh-stack toolchain prerequisites missing ({hook_name})",
+            context={
+                "hook": hook_name,
+                "error": "PREFLIGHT.STACK_PREREQS_MISSING",
+                "prereqs": stack_prereqs,
+            },
+            repo_root=repo_root,
+        )
+
         return 2
 
     # Step 1: Check for protected branches in shared settings

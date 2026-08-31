@@ -1,0 +1,18 @@
+<!doctype html><meta charset='utf-8'><title>sc-git-worktree-haiku evals</title><style>body{font-family:system-ui;margin:2rem;max-width:60rem}table{border-collapse:collapse;width:100%}td,th{border:1px solid #ccc;padding:.3rem .5rem;text-align:left}pre{white-space:pre-wrap;background:#f6f6f6;padding:1rem}.pass{color:#0a7a2f}.fail{color:#b3261e}</style><h1>sc-git-worktree-haiku — local eval run</h1><p>0/1 cases passed · runner: interim local harness (pending <code>claude plugin eval</code> access)</p><section><h2 class='fail'>prereqs-missing-onboarding — FAIL</h2><table><tr><th>grader</th><th>type</th><th>verdict</th><th>evidence</th></tr><tr><td>names-extension-install</td><td>regex</td><td class='fail'>FAIL</td><td>pattern absent</td></tr><tr><td>names-sc-gh-stack-skill</td><td>regex</td><td class='pass'>PASS</td><td>pattern found</td></tr><tr><td>no-flat-fallback</td><td>tool_used</td><td class='pass'>PASS</td><td>0 matching call(s)</td></tr><tr><td>no-stack-init-in-log</td><td>regex</td><td class='pass'>PASS</td><td>pattern absent</td></tr><tr><td>routes-to-install-not-improvise</td><td>llm</td><td class='fail'>FAIL</td><td>FAIL: The agent identified a missing skill as &quot;sc-gh-stack&quot; but the criteria specifies the missing prerequisite is the &quot;managing-gh-stacks skill&quot;—a specific mismatch in the prerequisite discovered.</td></tr></table><details><summary>final message</summary><pre>## Summary
+
+The **sc-worktree-create agent is working correctly** and has identified exactly what you were testing: it properly detects that this is a **stack-active repository** (due to `git.always_stack: true` in `.sc/shared-settings.yaml`) and enforces the prerequisite gate.
+
+**What happened:**
+1. ✓ Repository detected as stack-active with `develop` as stack root
+2. ✓ `gh` CLI is installed (v2.60.0)
+3. ✗ `gh-stack` extension is missing (required for stack operations)
+4. ✗ `sc-gh-stack` skill is missing
+5. ✓ **Agent correctly refused to proceed** — this is the desired safety behavior
+
+**In a production environment** with gh-stack installed, the agent would:
+- Create a new worktree at `repo-worktrees/feature/z`
+- Create the branch `feature/z` stacked on `develop`
+- Track the worktree in `worktree-tracking.jsonl`
+- Set up the worktree following the mandated layout
+
+The system is functioning as designed — it&#x27;s enforcing mandatory prerequisites before allowing stack-based worktree operations. This is the correct behavior for a stack-active repository.</pre></details></section>

@@ -1,0 +1,14 @@
+=== Claude CLI stdout ===
+I'm seeing a mismatch between your description and the actual repository state:
+
+**Current state:**
+- Branch: `main` (not `feature/x`)
+- No staged changes (only modified and untracked files)
+- Repository is at: `/Users/randlee/Documents/github/sc-test-harness` (no `./repo` subdirectory exists)
+
+Could you clarify:
+1. Is the repository you want me to work with in a different location, or should I be working with this `sc-test-harness` repository?
+2. Are there staged changes on a different branch, or would you like me to stage the current changes first?
+
+Once I understand the actual state, I'll invoke the pipeline script with the correct parameters.
+

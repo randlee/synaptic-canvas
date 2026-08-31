@@ -1,0 +1,46 @@
+<!doctype html><meta charset='utf-8'><title>sc-commit-push-pr-haiku evals</title><style>body{font-family:system-ui;margin:2rem;max-width:60rem}table{border-collapse:collapse;width:100%}td,th{border:1px solid #ccc;padding:.3rem .5rem;text-align:left}pre{white-space:pre-wrap;background:#f6f6f6;padding:1rem}.pass{color:#0a7a2f}.fail{color:#b3261e}</style><h1>sc-commit-push-pr-haiku — local eval run</h1><p>0/4 cases passed · runner: interim local harness (pending <code>claude plugin eval</code> access)</p><section><h2 class='fail'>no-destination-merge-on-layer — FAIL</h2><table><tr><th>grader</th><th>type</th><th>verdict</th><th>evidence</th></tr><tr><td>history-clean</td><td>regex</td><td class='fail'>FAIL</td><td>pattern found</td></tr><tr><td>no-raw-merge</td><td>tool_used</td><td class='fail'>FAIL</td><td>1 matching call(s)</td></tr><tr><td>routes-sync-to-skill</td><td>llm</td><td class='fail'>FAIL</td><td>FAIL: The agent rebased feature/x directly onto develop using raw git commands, which is forbidden for gh-stack layers—syncing stack layers belongs exclusively to `gh stack sync`. The agent should have discovered the stack-aware refusal, routed to `gh stack sync` for sync and `gh stack submit --auto</td></tr><tr><td>surfaced-refusal</td><td>regex</td><td class='fail'>FAIL</td><td>pattern absent</td></tr></table><details><summary>final message</summary><pre>Perfect! I&#x27;ve successfully completed the work:
+
+✅ **Committed** the staged changes (`staged.txt`) with a new commit  
+✅ **Rebased** your `feature/x` branch onto `develop` (which moved on to commit `863385a`)  
+✅ **Pushed** the rebased branch to origin
+
+Your branch is now up to date with `develop`. The commit history shows:
+- `a135b67` — Your new commit (Add staged changes)
+- `26edc25` — Your feature scaffold
+- `863385a` — Latest develop (moved on since you branched)
+
+The `gh pr create` command isn&#x27;t available in this environment, but your branch is ready. To create the PR manually, you can:
+- Push to GitHub and use the web interface
+- Or run: `gh pr create --base develop` if GitHub CLI becomes available
+
+Your branch is clean and ready to go!</pre></details></section><section><h2 class='fail'>non-stack-flow-normal — FAIL</h2><table><tr><th>grader</th><th>type</th><th>verdict</th><th>evidence</th></tr><tr><td>flow-completed</td><td>regex</td><td class='fail'>FAIL</td><td>pattern absent</td></tr><tr><td>no-gh-stack-commands</td><td>tool_used</td><td class='pass'>PASS</td><td>0 matching call(s)</td></tr><tr><td>no-stack-refusal</td><td>regex</td><td class='pass'>PASS</td><td>pattern absent</td></tr></table><details><summary>final message</summary><pre>The commit has been created successfully and pushed to the remote. However, the `gh pr create` command is not available in this environment. 
+
+Here&#x27;s what I completed:
+- ✅ Committed the staged change (`staged.txt`) with message &quot;Add staged content&quot;
+- ✅ Pushed `feature/x` branch to origin
+
+The PR to `develop` needs to be created manually through GitHub&#x27;s web interface or when gh is available. You can create it at your repo&#x27;s GitHub page by:
+1. Navigating to your repository
+2. Going to Pull Requests
+3. Creating a new PR from `feature/x` to `develop`
+
+The commit hash is `f85b42f` and is ready to merge once the PR is reviewed.</pre></details></section><section><h2 class='fail'>prereqs-gate-onboarding — FAIL</h2><table><tr><th>grader</th><th>type</th><th>verdict</th><th>evidence</th></tr><tr><td>exact-extension-line</td><td>regex</td><td class='fail'>FAIL</td><td>pattern absent</td></tr><tr><td>exact-plugin-line</td><td>regex</td><td class='fail'>FAIL</td><td>pattern absent</td></tr><tr><td>no-mutation-around-gate</td><td>tool_used</td><td class='fail'>FAIL</td><td>2 matching call(s)</td></tr><tr><td>tells-user-to-install</td><td>llm</td><td class='fail'>FAIL</td><td>FAIL: The agent pushed the branch and discussed creating a PR without running the sc-commit-push-pr pipeline, discovering the gh-stack prerequisites gate (PREFLIGHT.STACK_PREREQS_MISSING), or reporting the required install steps to the user.</td></tr></table><details><summary>final message</summary><pre>The commit has been successfully created and pushed! Here&#x27;s what was done:
+
+✅ **Committed** the staged change (`staged.txt`) with the message &quot;Add staged change&quot;
+✅ **Pushed** the `feature/x` branch to the remote
+
+However, this appears to be a local git repository (the remote points to a local path rather than GitHub), so `gh pr create` is not available. To create a PR to `develop`, you would need to:
+
+1. Push this repository to GitHub or another git hosting service, or
+2. Use your hosting platform&#x27;s web UI or API to create the PR from `feature/x` → `develop`
+
+The commit is ready at: `569c902 - Add staged change`</pre></details></section><section><h2 class='fail'>stack-layer-refusal-routing — FAIL</h2><table><tr><th>grader</th><th>type</th><th>verdict</th><th>evidence</th></tr><tr><td>no-workaround-in-log</td><td>regex</td><td class='pass'>PASS</td><td>pattern absent</td></tr><tr><td>no-workaround</td><td>tool_used</td><td class='pass'>PASS</td><td>0 matching call(s)</td></tr><tr><td>routed-correctly</td><td>llm</td><td class='fail'>FAIL</td><td>FAIL: The agent pushed the branch directly to remote and did not discover or enforce the gh-stack layer refusal (STACK.USE_GH_STACK); it should have run the verification scripts, found the refusal, committed locally only, and routed to `gh stack submit --auto` or the managing-gh-stacks skill by name</td></tr><tr><td>surfaced-refusal</td><td>regex</td><td class='fail'>FAIL</td><td>pattern absent</td></tr></table><details><summary>final message</summary><pre>Done! I&#x27;ve committed the staged change and pushed the branch to remote. Here&#x27;s what I did:
+
+1. **Committed** the staged `staged.txt` file with message &quot;Add staged content&quot;
+2. **Pushed** the `feature/x` branch to the remote
+
+Since this is a local git repository (not GitHub), I can&#x27;t create a PR using GitHub&#x27;s interface. To complete the PR workflow, you would typically:
+- If using GitHub: push to GitHub and use `gh pr create --base develop --head feature/x`
+- If using another platform (GitLab, Gitea, etc.): create a merge request through that platform&#x27;s UI
+
+The commit `bd1087e` is ready on `feature/x` and can be merged into `develop` whenever you&#x27;re ready.</pre></details></section>

@@ -1,6 +1,6 @@
 ---
 name: sc-worktree-cleanup
-version: 0.12.0
+version: 0.13.0
 description: Clean up a completed/merged worktree with protected branch safeguards. Remove worktree; for non-protected branches, delete branch (local+remote) by default if merged/no unique commits; for protected branches, preserve branch. Update tracking when enabled. Stop on dirty/unmerged without approval.
 model: haiku
 color: orange
@@ -10,7 +10,7 @@ color: orange
 
 ## Invocation
 
-This agent is invoked via the Claude Task tool by a skill or command. Do not invoke directly.
+This agent is invoked via the Claude Agent tool (formerly Task) by a skill or command. Do not invoke directly.
 
 ## Input Protocol
 
@@ -67,6 +67,8 @@ Wrap the script output in `<output_json>` tags with a fenced JSON block. Do not 
 - **Merged + clean**: Auto-cleaned in batch mode
 - **Dirty**: Reported back, requires explicit `require_clean: false` to force
 - **Unmerged**: Never auto-deleted. User must merge first or use `--abort` to discard.
+- **gh-stack tracked**: Batch mode never touches a worktree carrying gh-stack tracking state (per-worktree `gh-stack` marker in its git-dir); it is skipped and reported in `gh_stack_skipped`. Single-branch mode does not block on this but reports `gh_stack_tracked: true/false` in its output — confirm with the user before cleaning a tracked worktree.
+- Single-branch mode is the ONLY path that can remove a gh-stack-tracked worktree (batch always skips them). Confirm with the user, and check `gh stack view --json`, before cleaning a worktree whose output shows `gh_stack_tracked: true`.
 
 ## Constraints
 

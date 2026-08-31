@@ -1,5 +1,5 @@
 name: sc-git-worktree
-version: 0.12.0
+version: 0.13.0
 description: >
   Manage git worktrees with optional tracking and protected branch safeguards: create, scan, cleanup, abort, and update
   worktrees using a standard sibling folder layout with tracking documents. Prevents accidental deletion of protected branches.
@@ -18,6 +18,7 @@ artifacts:
     - commands/sc-git-worktree.md
   skills:
     - skills/sc-git-worktree/SKILL.md
+    - skills/sc-git-worktree/references/gh-stack-support.md
   agents:
     - agents/sc-git-worktree-create.md
     - agents/sc-git-worktree-scan.md
@@ -54,4 +55,5 @@ options:
 requires:
   - python3
   - pydantic
+  - pyyaml
   - git >= 2.20

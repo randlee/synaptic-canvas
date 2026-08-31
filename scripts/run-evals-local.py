@@ -74,7 +74,13 @@ def _scalar(val: str) -> Any:
             out[k.strip()] = _scalar(v.strip())
         return out
     if len(val) >= 2 and val[0] == val[-1] and val[0] in "\"'":
-        return val[1:-1]
+        inner = val[1:-1]
+        # Double-quoted YAML processes escapes; without this, an authored
+        # "STACK\\.X" regex arrives with a literal double backslash and can
+        # never match (bit the harness AND every local run of that grader).
+        if val[0] == '"':
+            inner = inner.replace('\\\\', '\\')
+        return inner
     if val in ("true", "false"):
         return val == "true"
     try:
@@ -182,6 +188,13 @@ def run_agent(prompt: str, meta: Dict[str, Any], cwd: Path, model: str,
     env = dict(os.environ)
     for k, v in (meta.get("env") or {}).items():
         env[k] = str(v)
+    # The case env's relative PATH entries (./bin, ../bin) break for
+    # processes the agent's scripts spawn from other cwds (e.g. a new
+    # worktree). Prepend the workspace stub dir ABSOLUTELY so stubs win
+    # everywhere — the claude-path analogue of the codex ZDOTDIR fix.
+    ws_bin = cwd / "bin"
+    if ws_bin.is_dir():
+        env["PATH"] = f"{ws_bin}:{env.get('PATH', '')}"
     cmd = [claude_bin, "-p", prompt, "--model", model,
            "--output-format", "stream-json", "--verbose",
            "--max-turns", str(meta.get("max_turns", 20))]
@@ -190,9 +203,13 @@ def run_agent(prompt: str, meta: Dict[str, Any], cwd: Path, model: str,
         cmd += ["--allowedTools", ",".join(tools)]
     try:
         proc = subprocess.run(cmd, cwd=cwd, env=env, capture_output=True, text=True,
+                              stdin=subprocess.DEVNULL,
                               timeout=int(meta.get("timeout_seconds", 300)))
-    except subprocess.TimeoutExpired:
-        return Transcript("", [], error="timeout")
+    except subprocess.TimeoutExpired as exc:
+        partial = (exc.stdout or b"")
+        if isinstance(partial, bytes):
+            partial = partial.decode("utf-8", "ignore")
+        return Transcript("", [], error=f"timeout (partial: {partial[-400:]!r})")
     last, calls = "", []
     for line in proc.stdout.splitlines():
         try:

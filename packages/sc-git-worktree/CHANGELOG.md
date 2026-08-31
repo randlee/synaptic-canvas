@@ -5,6 +5,71 @@ All notable changes to the **sc-git-worktree** package will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **Worktree factory decision model** (supersedes the three guards previously
+  described in this section - need-based stacking, `always_stack`, and the
+  destructive-safety guard were built incrementally as patches; this releases
+  them as one designed model instead). `worktree_create.py` is now a factory
+  producing exactly one of three products per request, precedence **Intent >
+  Dependency > Policy > default A**, evaluated lazily (see DESIGN.md
+  "Worktree factory decision model" for the full decision function and
+  `resolve_product()`):
+  - **A. Flat worktree** - legacy, unchanged.
+  - **B. New stack** - identical to A (SAME path, no `stack/` prefix
+    anywhere - this removes the last `stack`-prefixed worktree path from the
+    package),
+    plus `git config rerere.enabled true` and `gh stack init` in the new
+    worktree.
+  - **C. Stack layer** - NO new worktree; the new branch is checked out and
+    adopted (`gh stack add`) directly in the base's existing stack worktree.
+    `data.path` is that stack worktree, so legacy callers reading `path` keep
+    working unmodified.
+
+  The key behavioral guarantee is the **positive-signal / auto-upgrade rule**:
+  a stack-inactive repo (no `git.always_stack`, no gh-stack-tracked worktree
+  anywhere) evaluates none of this - every create, including branch-of-branch
+  off an unmerged base, is product A with a transcript and data payload
+  byte-identical to the pre-guard package. Stack-activity is a single cheap,
+  fail-closed-to-inactive probe; only once a repo is confirmed stack-active
+  does the mandatory prerequisite gate (`CREATE.STACK_PREREQS_MISSING`) and
+  dependency resolution (`CREATE.NEEDS_STACK` for a dependent base with no
+  stack to join, or with a stack worktree mid-rebase) ever run. `flat: true`
+  remains the explicit human escape hatch and short-circuits everything else.
+  Also fixes the shared-settings fallback parser (no PyYAML installed): inline
+  comments are now stripped before boolean coercion, and an unrecognized
+  scalar for a boolean key coerces to `False` rather than passing through as
+  truthy. `pyyaml` is now a declared `manifest.yaml` runtime requirement.
+  `test_needs_stack_guard.py` and `test_always_stack.py` are replaced by
+  `test_factory_decision.py`, derived from the full decision matrix.
+- Destructive-safety guard (unconditional — applies even without the gh-stack
+  extension, since tracking is repository state, and unaffected by the
+  factory rework above): `check_gh_stack_tracked()` in `worktree_shared.py`;
+  **batch cleanup skips any worktree carrying gh-stack tracking**
+  (`.git/worktrees/<wt>/gh-stack`), surfacing them in a `gh_stack_skipped`
+  bucket; scan reports `gh_stack_tracked` per worktree; single-branch cleanup
+  and abort surface `gh_stack_tracked` without blocking (they already require
+  explicit approval).
+- Optional gh-stack interop docs. `references/gh-stack-support.md` defers all
+  stacked-PR authority to the `managing-gh-stacks` skill (sc-gh-stack) when
+  installed and strongly recommends installing it otherwise (minimal
+  non-interactive survival-kit command table as fallback); rules 5-6 now
+  describe the factory decision model (products A/B/C, precedence,
+  stack-activity gating, auto-upgrade for legacy prompts, positive-signal
+  rule). SKILL.md changes are surgical: one description clause and one gated
+  pointer section.
+
+### Fixed
+- Abort agent doc contradicted the implementation on protected branches (claimed
+  local deletion possible with approval; the script unconditionally preserves).
+- Scan agent example error code casing (`tracking.missing` -> `TRACKING.MISSING`).
+- `is_branch_merged` misread branches checked out in other worktrees as
+  unmerged (git's `+ ` prefix was not stripped) — single-branch cleanup of a
+  genuinely merged branch always refused with `WORKTREE.UNMERGED` unless the
+  caller overrode with `merged: true`. Batch cleanup behavior is unchanged
+  (verified equivalent pre/post).
+
 ## [0.10.0] - 2026-04-18
 
 ### Added

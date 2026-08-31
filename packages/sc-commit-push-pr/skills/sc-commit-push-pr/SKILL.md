@@ -1,6 +1,6 @@
 ---
 name: sc-commit-push-pr
-version: 0.12.0
+version: 0.13.0
 description: Commit staged changes, push to remote, and create PRs for GitHub and Azure DevOps
 ---
 
@@ -14,6 +14,25 @@ Orchestrates the commit, push, and PR creation workflow using background agents.
 |---------|-------------|
 | `/sc-commit-push-pr` | Full pipeline: commit, push, and create PR if needed |
 | `/sc-create-pr` | Create PR from title/body (standalone) |
+
+## Script route (default when delegation is not verified working)
+
+Delegation requires the `commit-push`/`create-pr` subagent types to be installed AND
+invocable — the Agent/Task tool merely existing is not enough. Headless sessions,
+restricted tool sets, a delegation attempt that errors, or any doubt → run the packaged
+scripts directly: `python3 .claude/scripts/commit_pull_merge_commit_push.py '<json>'`
+(full pipeline) and `python3 .claude/scripts/create_pr.py '<json>'` (standalone PR).
+**Never hand-roll `git push` / `gh pr create` instead** — the scripts carry the
+stack-awareness guards (prerequisite gate, `STACK.USE_GH_STACK` refusals) this skill
+promises; bypassing them is exactly the failure mode the guards exist to stop.
+
+**Other runtimes (Codex):** delegation there uses the `collaboration.spawn_agent` tool —
+called directly by the model, never from shell. Spawn one agent per concrete bounded
+task, using the agent `.md` file's Purpose/Inputs/Output contract as the task
+specification; the same `<input_json>` fields and fenced-JSON output contract apply.
+Constraints carry over unchanged: never delegate edits to the same files to two agents,
+and the caller owns integration and the final report. If spawn_agent is unavailable,
+use the script route above.
 
 ## Agent Delegation
 
@@ -56,6 +75,43 @@ Orchestrates the commit, push, and PR creation workflow using background agents.
 
 Provider is auto-detected from git remote on each run.
 
+## Stacked Branches
+
+sc-commit-push-pr is the general-purpose commit/push/PR package, but it is
+also the critical junction where a stack-unaware pull-merge-push or PR
+creation can corrupt a gh-stack's linearity. Stack ownership belongs to
+`gh stack` and the **managing-gh-stacks skill (package `sc-gh-stack`)** —
+this package defers to it rather than working around it.
+
+**Hard prerequisite (unconditional, every run, every branch, every
+provider — including Azure DevOps-hosted repos):** the `gh` CLI, the
+`gh-stack` extension, and the managing-gh-stacks skill must all be
+installed. If any is missing, every script (and the SubAgentStart preflight
+hooks for both agents) refuses immediately with
+`PREFLIGHT.STACK_PREREQS_MISSING`, listing the exact install command for
+whichever piece is missing. This makes installing sc-commit-push-pr the
+enforcement point — a repo can't end up running this package without the
+stack-safety toolchain in place, whether or not any branch in it happens to
+be a stack layer.
+
+**Stack-layer detection (state-based, once prerequisites pass):** each
+script checks whether the *current* worktree carries gh-stack tracking (a
+`gh-stack` marker under the worktree's git-dir — the same signal `gh stack`
+itself uses). On a plain branch, nothing changes: byte-identical behavior,
+no extra steps in the output. On a stack layer:
+
+- Commit stays normal — fixing a bug on the layer that owns it is correct.
+- Pull/merge-from-destination is **skipped** — syncing a layer with its
+  base is `gh stack sync`'s job, never a plain merge.
+- Push and PR creation are **refused** with `STACK.USE_GH_STACK`
+  (recoverable) — a layer's PR base (the layer below it, with stack object
+  linkage) and its push are owned exclusively by `gh stack submit --auto`.
+
+If you see `STACK.USE_GH_STACK` or `PREFLIGHT.STACK_PREREQS_MISSING`: do
+not work around it with a direct `git push` or `gh pr create` — follow the
+`suggested_action`, install whatever is missing, and use the
+**managing-gh-stacks skill** for the stacked-branch operation instead.
+
 ## Configuration
 
 ### Required: Protected Branches
@@ -85,6 +141,8 @@ Set environment variables:
 | `GIT.AUTH` | Authentication failure | Check credentials |
 | `PR.CREATE_FAILED` | API error creating PR | Check permissions |
 | `CONFIG.PROTECTED_BRANCH_NOT_SET` | Missing config | Create shared-settings.yaml |
+| `STACK.USE_GH_STACK` | Branch is a gh-stack layer | Use the managing-gh-stacks skill (`gh stack sync` / `gh stack submit --auto`); never work around with direct `git push`/`gh pr create` |
+| `PREFLIGHT.STACK_PREREQS_MISSING` | gh-stack toolchain not installed | Install whatever `suggested_action` lists (gh CLI, `gh extension install github/gh-stack`, or the sc-gh-stack plugin) |
 
 ## Storage
 

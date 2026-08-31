@@ -1,6 +1,6 @@
 ---
 name: commit-push
-version: 0.12.0
+version: 0.13.0
 description: Background agent for commit/pull/merge/push and PR status lookup.
 hooks:
   SubAgentStart:
@@ -93,9 +93,34 @@ Returns fenced JSON with standard envelope.
 }
 ```
 
+## Stacked Branches
+
+This agent must never work around a `STACK.USE_GH_STACK` refusal with a
+direct `git push` or `gh pr create` -- surface it to the user and defer to
+the **managing-gh-stacks skill (package `sc-gh-stack`)**. Two distinct
+gh-stack gates apply:
+
+1. **Unconditional toolchain prerequisite.** Before anything else, both the
+   SubAgentStart hook and the underlying script verify the `gh` CLI, the
+   `gh-stack` extension, and the managing-gh-stacks skill are all
+   installed -- on every branch, for every provider. Missing any of them
+   blocks the agent (`PREFLIGHT.STACK_PREREQS_MISSING`, hook exit code 2)
+   or refuses the script call with the same code, listing exact install
+   steps.
+2. **Stack-layer detection.** Once prerequisites pass, the script checks
+   whether the current worktree is a gh-stack layer (state-based: a
+   `gh-stack` marker under the worktree's git-dir). On a plain branch,
+   nothing changes. On a layer: commit stays normal, pull/merge-from-
+   destination is skipped, and push/PR creation is refused with
+   `STACK.USE_GH_STACK` -- report `committed: true, pushed: false`
+   accurately and hand the user to `gh stack submit --auto` via the
+   managing-gh-stacks skill.
+
 ## Preflight Hook
 
 The SubAgentStart hook validates:
+- gh-stack toolchain prerequisites (gh CLI, gh-stack extension,
+  managing-gh-stacks skill) are all present -- unconditional, every run
 - Protected branches are configured in `.sc/shared-settings.yaml`
 - Git authentication is valid
 - Logs preflight status to `.claude/state/logs/sc-commit-push-pr/`
@@ -108,3 +133,5 @@ If preflight fails, the hook exits with code 2 to block execution.
 - `GIT.AUTH` - Git authentication failure
 - `GIT.REMOTE` - Remote fetch/push failure
 - `GIT.NO_CHANGES` - No staged changes to commit
+- `STACK.USE_GH_STACK` - Branch is a gh-stack layer; push/PR creation is owned by `gh stack submit --auto` (recoverable -- defer to managing-gh-stacks, never work around)
+- `PREFLIGHT.STACK_PREREQS_MISSING` - gh-stack toolchain not installed (recoverable -- install what `suggested_action` lists)

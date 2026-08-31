@@ -1,0 +1,20 @@
+<!doctype html><meta charset='utf-8'><title>sc-git-worktree-haiku evals</title><style>body{font-family:system-ui;margin:2rem;max-width:60rem}table{border-collapse:collapse;width:100%}td,th{border:1px solid #ccc;padding:.3rem .5rem;text-align:left}pre{white-space:pre-wrap;background:#f6f6f6;padding:1rem}.pass{color:#0a7a2f}.fail{color:#b3261e}</style><h1>sc-git-worktree-haiku — local eval run</h1><p>0/1 cases passed · runner: interim local harness (pending <code>claude plugin eval</code> access)</p><section><h2 class='fail'>prereqs-missing-onboarding — FAIL</h2><table><tr><th>grader</th><th>type</th><th>verdict</th><th>evidence</th></tr><tr><td>names-extension-install</td><td>regex</td><td class='fail'>FAIL</td><td>pattern absent</td></tr><tr><td>names-sc-gh-stack-skill</td><td>regex</td><td class='pass'>PASS</td><td>pattern found</td></tr><tr><td>no-flat-fallback</td><td>tool_used</td><td class='pass'>PASS</td><td>0 matching call(s)</td></tr><tr><td>no-stack-init-in-log</td><td>regex</td><td class='pass'>PASS</td><td>pattern absent</td></tr><tr><td>routes-to-install-not-improvise</td><td>llm</td><td class='fail'>FAIL</td><td>FAIL: The agent undermines the clear routing toward prerequisites by ending with &quot;Would you like me to try using the `gh-stack` skill to set up the extension?&quot; — this introduces speculative alternatives rather than definitively stating the prerequisites must be installed before retrying, contradicti</td></tr></table><details><summary>final message</summary><pre>The `gh extension install` command isn&#x27;t available in this environment. The worktree creation detected that your repository has stack-based git configured (`git.always_stack: true`), which requires the `gh-stack` extension to work properly.
+
+Here&#x27;s the situation:
+
+**What was found:**
+- Repository is stack-active with `develop` as the stack root
+- `gh` CLI is installed ✓
+- `gh-stack` extension is **not installed** ✗
+- `sc-gh-stack` skill is **not available** ✗
+
+**Why this matters:**
+The sc-worktree-create agent is correctly refusing to proceed without these prerequisites. Creating a worktree with `git.always_stack: true` requires gh-stack so it can properly track the stack hierarchy and maintain the stacking workflow.
+
+**What you can do:**
+
+1. **Install gh-stack manually** in your environment if you have access to do so, then I can retry the worktree creation.
+
+2. **Check if the sc-gh-stack skill is available** - looking at the available skills, I see `gh-stack` is listed. Let me try invoking that to set things up.
+
+Would you like me to try using the `gh-stack` skill to set up the extension, or do you have another way to install the gh-stack prerequisites?</pre></details></section>

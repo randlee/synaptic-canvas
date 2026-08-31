@@ -25,6 +25,7 @@ from pydantic import BaseModel, Field, field_validator
 try:
     from .envelope import Envelope, ErrorCodes, Transcript
     from .worktree_shared import (
+        check_gh_stack_tracked,
         check_remote_branch_exists,
         delete_local_branch,
         delete_remote_branch,
@@ -39,6 +40,7 @@ try:
 except ImportError:
     from envelope import Envelope, ErrorCodes, Transcript
     from worktree_shared import (
+        check_gh_stack_tracked,
         check_remote_branch_exists,
         delete_local_branch,
         delete_remote_branch,
@@ -165,6 +167,16 @@ def abort_worktree_main(input_data: AbortInput) -> Envelope:
             message="exists",
         )
 
+        # Probe for gh-stack tracking (per-worktree stack state). Not a
+        # hard block here — abort already requires explicit approval to
+        # delete branches — but surface it so the caller can confirm
+        # with the user before proceeding.
+        gh_stack_tracked = check_gh_stack_tracked(worktree_path)
+        transcript.step_ok(
+            step=f"git -C {worktree_path} rev-parse --git-dir",
+            message="gh-stack tracking present" if gh_stack_tracked else "no gh-stack tracking",
+        )
+
         # Check if worktree is clean
         is_clean, dirty_files = get_worktree_status(worktree_path)
         transcript.step_ok(
@@ -258,6 +270,7 @@ def abort_worktree_main(input_data: AbortInput) -> Envelope:
             "path": str(worktree_path),
             "repo_name": repo_name,
             "is_protected": is_protected,
+            "gh_stack_tracked": gh_stack_tracked,
             "worktree_removed": True,
             "branch_deleted_local": branch_deleted_local,
             "branch_deleted_remote": branch_deleted_remote,

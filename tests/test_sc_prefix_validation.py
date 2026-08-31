@@ -49,7 +49,7 @@ PACKAGES = {
         'agents': ['sc-git-worktree-create', 'sc-git-worktree-scan', 'sc-git-worktree-cleanup', 'sc-git-worktree-abort', 'sc-git-worktree-update'],
         'commands': ['sc-git-worktree'],
         'skills': ['sc-managing-worktrees'],
-        'version': _CURRENT_VERSION,
+        'version': '0.13.0',  # bumped ahead of the platform release (stack layer below the bump)
         'path': 'packages/sc-git-worktree',
         'artifact_counts': {'agents': 5, 'commands': 1, 'skills': 1}
     },

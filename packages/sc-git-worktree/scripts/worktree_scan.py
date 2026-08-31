@@ -28,6 +28,9 @@ try:
     from .envelope import Envelope, ErrorCodes, Transcript
     from .worktree_shared import (
         TrackingEntry,
+        check_gh_stack_tracked,
+        check_stack_prerequisites,
+        get_always_stack_setting,
         get_default_tracking_path,
         get_protected_branches,
         get_repo_name,
@@ -40,6 +43,9 @@ except ImportError:
     from envelope import Envelope, ErrorCodes, Transcript
     from worktree_shared import (
         TrackingEntry,
+        check_gh_stack_tracked,
+        check_stack_prerequisites,
+        get_always_stack_setting,
         get_default_tracking_path,
         get_protected_branches,
         get_repo_name,
@@ -484,6 +490,7 @@ def scan_worktrees(
             "is_locked": wt.is_locked,
             "prunable": wt.prunable,
             "remote_ahead": remote_ahead if remote_ahead > 0 else None,
+            "gh_stack_tracked": check_gh_stack_tracked(Path(wt.path)),
         })
 
     # Generate recommendations
@@ -506,6 +513,24 @@ def scan_worktrees(
     if remote_ahead_count > 0:
         recommendations.append(f"pull changes in {remote_ahead_count} branch(es) where remote is ahead")
 
+    # Repo-level always-stack policy summary (no per-worktree fields; scan is read-only).
+    always_stack = get_always_stack_setting(repo_root)
+    summary: Dict[str, Any] = {
+        "total_worktrees": len(non_bare_worktrees),
+        "clean": sum(1 for wt in worktree_results if wt["status"] == "clean"),
+        "dirty": dirty_count,
+        "errors": sum(1 for wt in worktree_results if wt["status"] == "error"),
+        "tracked": sum(1 for wt in worktree_results if wt["tracked"]),
+        "untracked": len(untracked_worktrees),
+        "orphaned_remotes": len(orphaned_remotes),
+        "remote_ahead": remote_ahead_count,
+        "gh_stack_tracked": sum(
+            1 for wt in worktree_results if wt.get("gh_stack_tracked")),
+        "always_stack": always_stack,
+    }
+    if always_stack:
+        summary["stack_prereqs_ok"] = check_stack_prerequisites(repo_root)["ok"]
+
     return Envelope.success_response(
         data={
             "action": "scan",
@@ -520,16 +545,7 @@ def scan_worktrees(
             "removed_entries": removed_branches if removed_branches else None,
             "remote_warnings": remote_warnings if remote_warnings else None,
             "recommendations": recommendations if recommendations else None,
-            "summary": {
-                "total_worktrees": len(non_bare_worktrees),
-                "clean": sum(1 for wt in worktree_results if wt["status"] == "clean"),
-                "dirty": dirty_count,
-                "errors": sum(1 for wt in worktree_results if wt["status"] == "error"),
-                "tracked": sum(1 for wt in worktree_results if wt["tracked"]),
-                "untracked": len(untracked_worktrees),
-                "orphaned_remotes": len(orphaned_remotes),
-                "remote_ahead": remote_ahead_count,
-            },
+            "summary": summary,
         },
         transcript=transcript,
     )

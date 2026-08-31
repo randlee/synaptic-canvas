@@ -184,6 +184,11 @@ class CollectedData:
     # Log analysis results (warnings/errors from logs)
     log_analysis: LogAnalysisResult | None = None
 
+    # Token usage (populated for Codex sessions from turn.completed events;
+    # the Claude path can be backfilled the same way from transcript usage
+    # via extract_token_usage, but is not currently wired in)
+    token_usage: TokenUsage | None = None
+
     @property
     def duration_ms(self) -> int | None:
         """Compute session duration in milliseconds."""
@@ -315,6 +320,140 @@ def parse_transcript(transcript_path: Path | str) -> list[dict[str, Any]]:
 
     logger.debug(f"Parsed {len(entries)} entries from transcript")
     return entries
+
+
+def parse_codex_events(events_path: Path | str) -> list[dict[str, Any]]:
+    """Parse the JSONL event stream from `codex exec --json`.
+
+    Codex has no hook system, so this file plays the same role for Codex
+    sessions that trace.jsonl plays for Claude sessions: it IS the trace.
+    Tolerant of blank lines and malformed JSON, mirroring parse_trace_file.
+
+    Args:
+        events_path: Path to the codex events JSONL file
+
+    Returns:
+        List of parsed event dictionaries (item.completed, turn.completed, ...)
+    """
+    events_path = Path(events_path)
+
+    if not events_path.exists():
+        logger.warning(f"Codex events file not found: {events_path}")
+        return []
+
+    events = []
+    with open(events_path, "r") as f:
+        for line_num, line in enumerate(f, 1):
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                events.append(json.loads(line))
+            except json.JSONDecodeError as e:
+                logger.warning(f"Invalid JSON at line {line_num} in codex events: {e}")
+                continue
+
+    logger.debug(f"Parsed {len(events)} events from codex events file")
+    return events
+
+
+def build_collected_data_from_codex_events(
+    events: list[dict[str, Any]],
+    prompt: str | None = None,
+) -> CollectedData:
+    """Map a Codex `exec --json` event stream onto CollectedData.
+
+    Codex has no PreToolUse/PostToolUse hooks and no transcript file --
+    everything the harness needs comes from this single event stream. The
+    mapping below targets the same CollectedData shape the Claude hook +
+    transcript path produces, so every existing expectation evaluator
+    (tool_call, tool_not_called, tool_order, output_contains, llm_judge,
+    file_contains, ...) works unchanged against Codex runs:
+
+        codex event                         -> CollectedData
+        --------------------------------------------------------------
+        item.completed / command_execution  -> CorrelatedToolCall(
+                                                    tool_name="Bash",
+                                                    tool_input={"command": ...},
+                                                    tool_response={"stdout":
+                                                        aggregated_output,
+                                                        "exit_code": ...})
+        item.completed / agent_message      -> ClaudeResponseText
+        turn.completed (usage)              -> TokenUsage (best-effort;
+                                                    aggregated across turns)
+
+    Args:
+        events: Parsed codex events (see parse_codex_events)
+        prompt: The prompt sent to codex, for CollectedData.prompt
+
+    Returns:
+        CollectedData populated from the codex event stream
+    """
+    data = CollectedData()
+    data.prompt = prompt
+    data.raw_hook_events = events
+
+    tool_calls: list[CorrelatedToolCall] = []
+    responses: list[ClaudeResponseText] = []
+    usage = {
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cache_creation_tokens": 0,
+        "cache_read_tokens": 0,
+    }
+    saw_usage = False
+
+    for idx, event in enumerate(events):
+        event_type = event.get("type")
+
+        if event_type == "item.completed":
+            item = event.get("item") or {}
+            item_type = item.get("type")
+
+            if item_type == "command_execution":
+                exit_code = item.get("exit_code")
+                tool_calls.append(
+                    CorrelatedToolCall(
+                        tool_use_id=item.get("id") or f"codex-cmd-{idx}",
+                        tool_name="Bash",
+                        tool_input={"command": item.get("command", "")},
+                        tool_response={
+                            "stdout": item.get("aggregated_output", ""),
+                            "exit_code": exit_code,
+                        },
+                        is_error=exit_code not in (0, None),
+                    )
+                )
+            elif item_type == "agent_message":
+                text = item.get("text", "")
+                if text:
+                    responses.append(ClaudeResponseText(text=text))
+
+        elif event_type == "turn.completed":
+            turn_usage = event.get("usage") or {}
+            if turn_usage:
+                saw_usage = True
+                usage["input_tokens"] += turn_usage.get("input_tokens", 0) or 0
+                usage["output_tokens"] += turn_usage.get("output_tokens", 0) or 0
+                usage["cache_creation_tokens"] += (
+                    turn_usage.get("cached_input_tokens", 0) or 0
+                )
+
+    data.tool_calls = tool_calls
+    data.claude_responses = responses
+    if saw_usage:
+        data.token_usage = TokenUsage(
+            input_tokens=usage["input_tokens"],
+            output_tokens=usage["output_tokens"],
+            cache_creation_tokens=usage["cache_creation_tokens"],
+        )
+
+    logger.info(
+        f"Collected codex data: {len(data.tool_calls)} tool calls, "
+        f"{len(data.claude_responses)} responses"
+    )
+
+    return data
 
 
 def parse_timestamp(ts_str: str | None) -> datetime | None:
@@ -831,6 +970,38 @@ class DataCollector:
             f"{len(data.claude_responses)} responses, "
             f"{len(data.errors)} errors"
         )
+
+        return data
+
+    def collect_from_codex_events(
+        self,
+        events_path: Path | str,
+        prompt: str | None = None,
+    ) -> CollectedData:
+        """Collect data from a Codex `exec --json` event stream.
+
+        Parity counterpart to collect(): where collect() reads trace.jsonl
+        (hooks) + transcript.jsonl, this reads the single JSONL event stream
+        Codex emits -- there are no hooks or transcript for Codex, so that
+        stream is the entire trace. See build_collected_data_from_codex_events
+        for the event-to-CollectedData mapping.
+
+        Args:
+            events_path: Path to the codex events JSONL file (or an explicit
+                path override of self.trace_path)
+            prompt: The prompt sent to codex, for CollectedData.prompt
+
+        Returns:
+            CollectedData populated from the codex event stream
+        """
+        events = parse_codex_events(events_path)
+        data = build_collected_data_from_codex_events(events, prompt=prompt)
+
+        if data.claude_cli_stdout or data.claude_cli_stderr:
+            combined_output = data.claude_cli_stdout
+            if data.claude_cli_stderr:
+                combined_output += "\n" + data.claude_cli_stderr
+            data.log_analysis = analyze_logs(combined_output)
 
         return data
 

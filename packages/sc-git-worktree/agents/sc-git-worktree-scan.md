@@ -1,6 +1,6 @@
 ---
 name: sc-worktree-scan
-version: 0.12.0
+version: 0.13.0
 description: Scan git worktrees vs tracking; report status (clean/dirty), missing/stale tracking rows, and recommended actions. No mutations.
 model: haiku
 color: cyan
@@ -10,7 +10,7 @@ color: cyan
 
 ## Invocation
 
-This agent is invoked via the Claude Task tool by a skill or command. Do not invoke directly.
+This agent is invoked via the Claude Agent tool (formerly Task) by a skill or command. Do not invoke directly.
 
 ## Input Protocol
 
@@ -55,6 +55,7 @@ Return fenced JSON with minimal envelope:
         "path": "../repo-worktrees/feature-x",
         "status": "clean",
         "tracked": true,
+        "gh_stack_tracked": false,
         "tracking_entry": {
           "branch": "feature-x",
           "path": "../repo-worktrees/feature-x",
@@ -71,12 +72,23 @@ Return fenced JSON with minimal envelope:
     ],
     "tracking_missing_rows": [],
     "tracking_extra_rows": [],
-    "recommendations": ["run cleanup on merged branches"]
+    "recommendations": ["run cleanup on merged branches"],
+    "summary": {
+      "total_worktrees": 1,
+      "always_stack": true,
+      "stack_prereqs_ok": true
+    }
   },
   "error": null
 }
 ```
 ````
+
+`summary.always_stack` reflects `.sc/shared-settings.yaml`'s `git.always_stack` setting
+(false when absent). `summary.stack_prereqs_ok` is only present when `always_stack` is
+`true`, and reports whether `gh`, the `gh-stack` extension, and the `managing-gh-stacks`
+skill are all available (see the create agent's `CREATE.STACK_PREREQS_MISSING` for what
+each check covers). This is a single repo-wide check, not per-worktree.
 
 On error (e.g., tracking file missing):
 
@@ -86,7 +98,7 @@ On error (e.g., tracking file missing):
   "success": false,
   "data": null,
   "error": {
-    "code": "tracking.missing",
+    "code": "TRACKING.MISSING",
     "message": "tracking file not found at expected path",
     "recoverable": true,
     "suggested_action": "create tracking file or disable tracking"
