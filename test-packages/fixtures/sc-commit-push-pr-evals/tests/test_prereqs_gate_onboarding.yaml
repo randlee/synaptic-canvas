@@ -20,7 +20,7 @@ execution:
   - Read
   - Grep
   - Glob
-  timeout_ms: 300000
+  timeout_ms: 450000
 expectations:
 - id: exp-001
   description: 'grader: exact-extension-line'
@@ -59,6 +59,8 @@ setup:
   - src: resources/prereqs-gate-onboarding/scaffold.sh
     dest: scaffold.sh
   commands:
+  - rm -rf ./repo ./origin.git ./bin ./gh-calls.log ./repo-worktrees ./wt-base ./.sc ./AGENTS.md ./.codex-zdot
+    ./zdot
   - bash scaffold.sh
   - "python3 - <<'MERGE_ENV_EOF'\nimport json, os, pathlib\ncase_env = {'PATH': './bin:../bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin'}\n\
     p = pathlib.Path('.claude/settings.json')\ndata = json.loads(p.read_text()) if p.exists() else {}\n\

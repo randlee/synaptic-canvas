@@ -43,7 +43,7 @@ expectations:
   type: tool_not_called
   expected:
     tool: Bash
-    pattern: worktree add[^\\n]*feature/z
+    pattern: worktree add[^\n]*feature/z
     flags: i
 - id: exp-004
   description: 'grader: no-stack-init-in-log'
@@ -66,6 +66,8 @@ setup:
   - src: resources/prereqs-missing-onboarding/scaffold.sh
     dest: scaffold.sh
   commands:
+  - rm -rf ./repo ./origin.git ./bin ./gh-calls.log ./repo-worktrees ./wt-base ./.sc ./AGENTS.md ./.codex-zdot
+    ./zdot
   - bash scaffold.sh
   - "python3 - <<'MERGE_ENV_EOF'\nimport json, os, pathlib\ncase_env = {'PATH': './bin:../bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin'}\n\
     p = pathlib.Path('.claude/settings.json')\ndata = json.loads(p.read_text()) if p.exists() else {}\n\

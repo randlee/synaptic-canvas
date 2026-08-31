@@ -495,6 +495,12 @@ class TestRunner:
                         codex_events_path, prompt=test_config.prompt
                     )
 
+                    # File-based expectations resolve against data.cwd; the
+                    # transcript's cwd does not reliably survive HOME-override
+                    # path translation — the runner's project path is
+                    # authoritative by construction (sessions run there).
+                    collected_data.cwd = str(self.project_path)
+
                     collected_data.claude_cli_stdout = claude_stdout
                     collected_data.claude_cli_stderr = claude_stderr
 
@@ -533,6 +539,12 @@ class TestRunner:
                         transcript_path=session.transcript_path,
                     )
                     collected_data = collector.collect()
+
+                    # File-based expectations resolve against data.cwd; the
+                    # transcript's cwd does not reliably survive HOME-override
+                    # path translation — the runner's project path is
+                    # authoritative by construction (sessions run there).
+                    collected_data.cwd = str(self.project_path)
 
                     # Propagate Claude CLI output to collected data
                     collected_data.claude_cli_stdout = claude_stdout

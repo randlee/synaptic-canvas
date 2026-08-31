@@ -1,0 +1,449 @@
+{
+  "schema_version": "3.0",
+  "fixture": {
+    "fixture_id": "sc-commit-push-pr-evals",
+    "fixture_name": "Field-incident evals for sc-commit-push-pr (source: packages/sc-commit-push-pr/evals, see its INCIDENTS.md)",
+    "package": "sc-commit-push-pr@synaptic-canvas",
+    "agent_or_skill": "sc-commit-push-pr@synaptic-canvas",
+    "agent_or_skill_path": "/Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sc-git-worktree-gh-stack/packages/sc-commit-push-pr/skills/sc-commit-push-pr/SKILL.md",
+    "fixture_path": "/Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sc-git-worktree-gh-stack/test-packages/fixtures/sc-commit-push-pr-evals/fixture.yaml",
+    "report_path": "/Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sc-git-worktree-gh-stack/site/reports/evals/sc-commit-push-pr/20260830-205212-sc-commit-push-pr-evals.html",
+    "generated_at": "2026-08-30T20:52:12.608625",
+    "summary": {
+      "total_tests": 1,
+      "passed": 0,
+      "failed": 0,
+      "partial": 1,
+      "skipped": 0
+    },
+    "tags": []
+  },
+  "tests": [
+    {
+      "test_id": "sc-commit-push-pr-eval-non-stack-flow-normal",
+      "test_name": "Ordinary commit/push/PR flow (no stack)",
+      "tab_label": "Ordinary commit/push",
+      "description": "Generated from packages/sc-commit-push-pr/evals/non-stack-flow-normal (background: packages/sc-commit-push-pr/evals/INCIDENTS.md)",
+      "timestamp": "2026-08-31T03:51:51",
+      "duration_ms": 21000,
+      "status": "partial",
+      "status_icon": "warning",
+      "pass_rate": "3/4",
+      "tags": [
+        "baseline",
+        "non-stack",
+        "generated-eval"
+      ],
+      "skip_reason": null,
+      "metadata": {
+        "fixture": "sc-commit-push-pr-evals",
+        "package": "sc-commit-push-pr@synaptic-canvas",
+        "model": "claude-haiku-4-5-20251001",
+        "session_id": "cfcc34af-5235-4874-8181-916e25145ae3",
+        "test_repo": ""
+      },
+      "reproduce": {
+        "setup_commands": [
+          "claude plugin install sc-commit-push-pr@synaptic-canvas --scope project",
+          "bash scaffold.sh",
+          "python3 - <<'MERGE_ENV_EOF'\nimport json, os, pathlib\ncase_env = {'PATH': './bin:../bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin'}\np = pathlib.Path('.claude/settings.json')\ndata = json.loads(p.read_text()) if p.exists() else {}\nenv = data.setdefault('env', {})\ncwd = os.getcwd()\nfor key, raw in case_env.items():\n    if key == 'PATH':\n        parts = []\n        for entry in raw.split(':'):\n            if entry.startswith('./') or entry.startswith('../'):\n                parts.append(os.path.normpath(os.path.join(cwd, entry)))\n            else:\n                parts.append(entry)\n        env[key] = ':'.join(parts)\n    else:\n        env[key] = raw\np.parent.mkdir(parents=True, exist_ok=True)\np.write_text(json.dumps(data, indent=2))\nMERGE_ENV_EOF"
+        ],
+        "test_command": "claude -p 'The repository at `./repo` is on branch `feature/x` with a staged change ready to go.\nPlease commit the staged change and open a PR to `develop`.\n\nInvoke the sc-commit-push-pr skill and use its packaged pipeline scripts (.claude/scripts/) — do not hand-roll git push or gh pr create.\n\nRun every command in the foreground; never run commands or tasks in the background.' --model claude-haiku-4-5-20251001 --tools Skill,Bash,Read,Grep,Glob --dangerously-skip-permissions --setting-sources project",
+        "cleanup_commands": [],
+        "environment": {
+          "ANTHROPIC_API_KEY": "(required)"
+        },
+        "git_state": {
+          "branch": "feature/sc-git-worktree-gh-stack",
+          "commit": "c169d0b",
+          "modified_files": [
+            "packages/sc-commit-push-pr/evals/no-destination-merge-on-layer/prompt.md",
+            "packages/sc-commit-push-pr/evals/non-stack-flow-normal/prompt.md",
+            "packages/sc-commit-push-pr/evals/prereqs-gate-onboarding/prompt.md",
+            "packages/sc-commit-push-pr/evals/stack-layer-refusal-routing/prompt.md",
+            "scripts/run-evals-local.py",
+            "test-packages/fixtures/sc-commit-push-pr-evals/tests/test_no_destination_merge_on_layer.yaml",
+            "test-packages/fixtures/sc-commit-push-pr-evals/tests/test_non_stack_flow_normal.yaml",
+            "test-packages/fixtures/sc-commit-push-pr-evals/tests/test_prereqs_gate_onboarding.yaml",
+            "test-packages/fixtures/sc-commit-push-pr-evals/tests/test_stack_layer_refusal_routing.yaml",
+            "test-packages/fixtures/sc-git-worktree-evals/tests/test_cleanup_skips_tracked_stack.yaml",
+            "test-packages/fixtures/sc-git-worktree-evals/tests/test_dependent_base_joins_stack.yaml",
+            "test-packages/fixtures/sc-git-worktree-evals/tests/test_prereqs_missing_onboarding.yaml",
+            "test-packages/harness/environment.py",
+            "test-packages/harness/runner.py"
+          ]
+        }
+      },
+      "execution": {
+        "prompt": "The repository at `./repo` is on branch `feature/x` with a staged change ready to go.\nPlease commit the staged change and open a PR to `develop`.\n\nInvoke the sc-commit-push-pr skill and use its packaged pipeline scripts (.claude/scripts/) — do not hand-roll git push or gh pr create.\n\nRun every command in the foreground; never run commands or tasks in the background.",
+        "model": "claude-haiku-4-5-20251001",
+        "tools_allowed": [
+          "Skill",
+          "Bash",
+          "Read",
+          "Grep",
+          "Glob"
+        ],
+        "token_usage": null
+      },
+      "expectations": [
+        {
+          "id": "exp-001",
+          "description": "grader: flow-completed",
+          "type": "file_contains",
+          "status": "fail",
+          "has_details": false,
+          "expected": {
+            "path": "gh-calls.log",
+            "pattern": "PR-CREATED",
+            "flags": ""
+          },
+          "actual": null,
+          "matched_at": null,
+          "failure_reason": "File not readable: gh-calls.log"
+        },
+        {
+          "id": "exp-002",
+          "description": "grader: no-gh-stack-commands",
+          "type": "tool_not_called",
+          "status": "pass",
+          "has_details": false,
+          "expected": {
+            "tool": "Bash",
+            "pattern": "gh stack",
+            "flags": "i"
+          },
+          "actual": null,
+          "matched_at": null,
+          "failure_reason": null
+        },
+        {
+          "id": "exp-003",
+          "description": "grader: no-stack-refusal",
+          "type": "output_not_contains",
+          "status": "pass",
+          "has_details": false,
+          "expected": {
+            "pattern": "STACK\\.USE_GH_STACK|PREFLIGHT\\.STACK_PREREQS_MISSING",
+            "flags": "i"
+          },
+          "actual": null,
+          "matched_at": null,
+          "failure_reason": null
+        },
+        {
+          "id": "implicit-no-warnings",
+          "description": "No warnings or errors in logs",
+          "type": "hook_event",
+          "status": "pass",
+          "has_details": true,
+          "expected": {
+            "no_warnings": true,
+            "no_errors": true,
+            "allow_warnings": false
+          },
+          "actual": {
+            "warning_count": 0,
+            "error_count": 0,
+            "has_issues": false
+          },
+          "matched_at": {
+            "sequence": 1,
+            "timestamp": "2026-08-30T20:52:12.552116"
+          },
+          "failure_reason": null
+        }
+      ],
+      "timeline": [
+        {
+          "seq": 1,
+          "type": "response",
+          "timestamp": "2026-08-31T03:51:51",
+          "elapsed_ms": 0,
+          "tool": null,
+          "input": null,
+          "output": null,
+          "duration_ms": null,
+          "intent": null,
+          "content": "Looking at the skill documentation, the scripts expect JSON input. Let me first check the current state in `./repo` and then invoke the commit-push pipeline script with the appropriate parameters.",
+          "content_preview": "Looking at the skill documentation, the scripts expect JSON input. Let me first check the current state in `./repo` and then invoke the commit-push pipeline script with the appropriate parameters.",
+          "content_length": 196,
+          "agent_id": null,
+          "agent_type": null,
+          "agent_transcript_path": null,
+          "pid": null,
+          "tool_use_id": null
+        },
+        {
+          "seq": 2,
+          "type": "response",
+          "timestamp": "2026-08-31T03:51:51",
+          "elapsed_ms": 0,
+          "tool": null,
+          "input": null,
+          "output": null,
+          "duration_ms": null,
+          "intent": null,
+          "content": "I don't see a `./repo` subdirectory in the current working directory. Let me check if there's a repository directory elsewhere or if you meant to work in the current directory `/Users/randlee/Documents/github/sc-test-harness`:",
+          "content_preview": "I don't see a `./repo` subdirectory in the current working directory. Let me check if there's a repository directory elsewhere or if you meant to work in the current directory `/Users/randlee/Document...",
+          "content_length": 226,
+          "agent_id": null,
+          "agent_type": null,
+          "agent_transcript_path": null,
+          "pid": null,
+          "tool_use_id": null
+        },
+        {
+          "seq": 3,
+          "type": "response",
+          "timestamp": "2026-08-31T03:51:51",
+          "elapsed_ms": 0,
+          "tool": null,
+          "input": null,
+          "output": null,
+          "duration_ms": null,
+          "intent": null,
+          "content": "The only git repository found is the current directory. Let me check the current git status:",
+          "content_preview": "The only git repository found is the current directory. Let me check the current git status:",
+          "content_length": 92,
+          "agent_id": null,
+          "agent_type": null,
+          "agent_transcript_path": null,
+          "pid": null,
+          "tool_use_id": null
+        },
+        {
+          "seq": 4,
+          "type": "response",
+          "timestamp": "2026-08-31T03:51:51",
+          "elapsed_ms": 0,
+          "tool": null,
+          "input": null,
+          "output": null,
+          "duration_ms": null,
+          "intent": null,
+          "content": "I'm seeing a mismatch between your description and the actual repository state:\n\n**Current state:**\n- Branch: `main` (not `feature/x`)\n- No staged changes (only modified and untracked files)\n- Repository is at: `/Users/randlee/Documents/github/sc-test-harness` (no `./repo` subdirectory exists)\n\nCould you clarify:\n1. Is the repository you want me to work with in a different location, or should I be working with this `sc-test-harness` repository?\n2. Are there staged changes on a different branch, or would you like me to stage the current changes first?\n\nOnce I understand the actual state, I'll invoke the pipeline script with the correct parameters.",
+          "content_preview": "I'm seeing a mismatch between your description and the actual repository state:\n\n**Current state:**\n- Branch: `main` (not `feature/x`)\n- No staged changes (only modified and untracked files)\n- Reposit...",
+          "content_length": 654,
+          "agent_id": null,
+          "agent_type": null,
+          "agent_transcript_path": null,
+          "pid": null,
+          "tool_use_id": null
+        },
+        {
+          "seq": 5,
+          "type": "prompt",
+          "timestamp": "2026-08-31T03:51:52",
+          "elapsed_ms": 1000,
+          "tool": null,
+          "input": null,
+          "output": null,
+          "duration_ms": null,
+          "intent": null,
+          "content": "The repository at `./repo` is on branch `feature/x` with a staged change ready to go.\nPlease commit the staged change and open a PR to `develop`.\n\nInvoke the sc-commit-push-pr skill and use its packaged pipeline scripts (.claude/scripts/) — do not hand-roll git push or gh pr create.\n\nRun every command in the foreground; never run commands or tasks in the background.",
+          "content_preview": null,
+          "content_length": null,
+          "agent_id": null,
+          "agent_type": null,
+          "agent_transcript_path": null,
+          "pid": null,
+          "tool_use_id": null
+        },
+        {
+          "seq": 6,
+          "type": "tool_call",
+          "timestamp": "2026-08-31T03:51:54",
+          "elapsed_ms": 3000,
+          "tool": "Skill",
+          "input": {
+            "command": null,
+            "description": null,
+            "file_path": null,
+            "skill": "sc-commit-push-pr",
+            "args": "--repo ./repo --branch develop",
+            "extra": {}
+          },
+          "output": {
+            "stdout": null,
+            "stderr": null,
+            "exit_code": null,
+            "content": null,
+            "is_error": false,
+            "extra": {}
+          },
+          "duration_ms": 0,
+          "intent": "Invoke skill: sc-commit-push-pr --repo ./repo --branch develop",
+          "content": null,
+          "content_preview": null,
+          "content_length": null,
+          "agent_id": null,
+          "agent_type": null,
+          "agent_transcript_path": null,
+          "pid": 35493,
+          "tool_use_id": "toolu_01YCsHtkLGFcKLPByGe3S92i"
+        },
+        {
+          "seq": 7,
+          "type": "tool_call",
+          "timestamp": "2026-08-31T03:51:59",
+          "elapsed_ms": 8000,
+          "tool": "Bash",
+          "input": {
+            "command": "cd ./repo && git status",
+            "description": null,
+            "file_path": null,
+            "skill": null,
+            "args": null,
+            "extra": {}
+          },
+          "output": null,
+          "duration_ms": null,
+          "intent": "Change directory",
+          "content": null,
+          "content_preview": null,
+          "content_length": null,
+          "agent_id": null,
+          "agent_type": null,
+          "agent_transcript_path": null,
+          "pid": 35611,
+          "tool_use_id": "toolu_01FamTVZdWWzsExPyAsopanR"
+        },
+        {
+          "seq": 8,
+          "type": "tool_call",
+          "timestamp": "2026-08-31T03:52:00",
+          "elapsed_ms": 9000,
+          "tool": "Bash",
+          "input": {
+            "command": "pwd && ls -la",
+            "description": null,
+            "file_path": null,
+            "skill": null,
+            "args": null,
+            "extra": {}
+          },
+          "output": {
+            "stdout": "/Users/randlee/Documents/github/sc-test-harness\ntotal 32\ndrwxr-xr-x@  11 randlee  staff   352 Aug 30 20:51 .\ndrwxr-xr-x@ 137 randlee  staff  4384 Aug 20 12:40 ..\ndrwxr-xr-x@   7 randlee  staff   224 Aug 30 20:51 .claude\ndrwxr-xr-x@  16 randlee  staff   512 Aug 30 20:51 .git\n-rw-r--r--@   1 randlee  staff   100 Aug 30 20:32 .gitignore\n-rw-r--r--@   1 randlee  staff  1065 Jan 15  2026 LICENSE\n-rw-r--r--@   1 randlee  staff  4860 Aug 30 16:30 README.md\ndrwxr-xr-x@   9 randlee  staff   288 Aug 30 16:29 docs\ndrwxr-xr-x@   3 randlee  staff    96 Apr 28 21:25 pm\ndrwxr-xr-x@   3 randlee  staff    96 Aug 30 20:51 reports\ndrwxr-xr-x@   7 randlee  staff   224 Jan 18  2026 scripts",
+            "stderr": "",
+            "exit_code": null,
+            "content": null,
+            "is_error": false,
+            "extra": {}
+          },
+          "duration_ms": 1000,
+          "intent": "Execute: pwd && ls -la",
+          "content": null,
+          "content_preview": null,
+          "content_length": null,
+          "agent_id": null,
+          "agent_type": null,
+          "agent_transcript_path": null,
+          "pid": 35643,
+          "tool_use_id": "toolu_01D3fUBQ3rMUEPKaRb1nQmpp"
+        },
+        {
+          "seq": 9,
+          "type": "tool_call",
+          "timestamp": "2026-08-31T03:52:03",
+          "elapsed_ms": 12000,
+          "tool": "Bash",
+          "input": {
+            "command": "find . -maxdepth 2 -name \".git\" -type d",
+            "description": null,
+            "file_path": null,
+            "skill": null,
+            "args": null,
+            "extra": {}
+          },
+          "output": {
+            "stdout": "./.git",
+            "stderr": "",
+            "exit_code": null,
+            "content": null,
+            "is_error": false,
+            "extra": {}
+          },
+          "duration_ms": 0,
+          "intent": "Find files",
+          "content": null,
+          "content_preview": null,
+          "content_length": null,
+          "agent_id": null,
+          "agent_type": null,
+          "agent_transcript_path": null,
+          "pid": 35710,
+          "tool_use_id": "toolu_01WvBDevLgAfaWHKPMcrFHPh"
+        },
+        {
+          "seq": 10,
+          "type": "tool_call",
+          "timestamp": "2026-08-31T03:52:05",
+          "elapsed_ms": 14000,
+          "tool": "Bash",
+          "input": {
+            "command": "git status",
+            "description": null,
+            "file_path": null,
+            "skill": null,
+            "args": null,
+            "extra": {}
+          },
+          "output": {
+            "stdout": "On branch main\nYour branch is up to date with 'origin/main'.\n\nChanges not staged for commit:\n  (use \"git add <file>...\" to update what will be committed)\n  (use \"git restore <file>...\" to discard changes in working directory)\n\tmodified:   .claude/agents/registry.yaml\n\tmodified:   .claude/settings.json\n\nUntracked files:\n  (use \"git add <file>...\" to include in what will be committed)\n\t.claude/agents/commit-push.md\n\t.claude/agents/create-pr.md\n\t.claude/scripts/commit_pull_merge_commit_push.py\n\t.claude/scripts/commit_push_agent_start_hook.py\n\t.claude/scripts/create_pr.py\n\t.claude/scripts/create_pr_agent_start_hook.py\n\t.claude/scripts/envelope.py\n\t.claude/scripts/pr_provider.py\n\t.claude/scripts/preflight_utils.py\n\t.claude/scripts/provider_detect.py\n\t.claude/scripts/sc_shared.py\n\t.claude/scripts/stack_guard.py\n\t.claude/skills/sc-commit-push-pr/\n\nno changes added to commit (use \"git add\" and/or \"git commit -a\")",
+            "stderr": "",
+            "exit_code": null,
+            "content": null,
+            "is_error": false,
+            "extra": {}
+          },
+          "duration_ms": 0,
+          "intent": "Git: status",
+          "content": null,
+          "content_preview": null,
+          "content_length": null,
+          "agent_id": null,
+          "agent_type": null,
+          "agent_transcript_path": null,
+          "pid": 35741,
+          "tool_use_id": "toolu_01PWcwH9oVoFPRsAfMGVJMaR"
+        }
+      ],
+      "side_effects": {
+        "files_created": [],
+        "files_modified": [],
+        "files_deleted": [],
+        "git_changes": false
+      },
+      "claude_response": {
+        "preview": "I'm seeing a mismatch between your description and the actual repository state:\n\n**Current state:**\n- Branch: `main` (not `feature/x`)\n- No staged changes (only modified and untracked files)\n- Reposit",
+        "full_text": "I'm seeing a mismatch between your description and the actual repository state:\n\n**Current state:**\n- Branch: `main` (not `feature/x`)\n- No staged changes (only modified and untracked files)\n- Repository is at: `/Users/randlee/Documents/github/sc-test-harness` (no `./repo` subdirectory exists)\n\nCould you clarify:\n1. Is the repository you want me to work with in a different location, or should I be working with this `sc-test-harness` repository?\n2. Are there staged changes on a different branch, or would you like me to stage the current changes first?\n\nOnce I understand the actual state, I'll invoke the pipeline script with the correct parameters.",
+        "word_count": 98
+      },
+      "debug": {
+        "pytest_output": null,
+        "pytest_status": null,
+        "raw_trace_file": null,
+        "errors": [],
+        "plugin_verification": {
+          "expected_plugins": [
+            "sc-commit-push-pr@synaptic-canvas"
+          ],
+          "install_results": [
+            {
+              "plugin_name": "sc-commit-push-pr@synaptic-canvas",
+              "success": true,
+              "stdout": "\u001b[0;32m✓\u001b[0m Installing sc-commit-push-pr to /Users/randlee/Documents/github/sc-test-harness/.claude\n\u001b[0;32m✓\u001b[0m Installed: skills/sc-commit-push-pr/SKILL.md\n\u001b[0;32m✓\u001b[0m Installed: agents/commit-push.md\n\u001b[0;32m✓\u001b[0m Installed: agents/create-pr.md\n\u001b[0;32m✓\u001b[0m Installed: scripts/envelope.py\n\u001b[0;32m✓\u001b[0m Installed: scripts/sc_shared.py\n\u001b[0;32m✓\u001b[0m Installed: scripts/provider_detect.py\n\u001b[0;32m✓\u001b[0m Installed: scripts/pr_provider.py\n\u001b[0;32m✓\u001b[0m Installed: scripts/preflight_utils.py\n\u001b[0;32m✓\u001b[0m Installed: scripts/stack_guard.py\n\u001b[0;32m✓\u001b[0m Installed: scripts/commit_push_agent_start_hook.py\n\u001b[0;32m✓\u001b[0m Installed: scripts/create_pr_agent_start_hook.py\n\u001b[0;32m✓\u001b[0m Installed: scripts/commit_pull_merge_commit_push.py\n\u001b[0;32m✓\u001b[0m Installed: scripts/create_pr.py\n\u001b[0;32m✓\u001b[0m Updated registry: /Users/randlee/Documents/github/sc-test-harness/.claude/agents/registry.yaml\n\u001b[0;32m✓\u001b[0m Done installing sc-commit-push-pr\n",
+              "stderr": "",
+              "return_code": 0
+            }
+          ]
+        }
+      },
+      "timeline_tree": null,
+      "artifacts": null,
+      "log_analysis": null,
+      "allow_warnings": false
+    }
+  ]
+}

@@ -340,6 +340,12 @@ class YAMLTestItem(pytest.Item):
                 # Install plugins before setup commands
                 self._install_plugins(session, merged_setup)
 
+                # Copy setup files (FileMapping: src relative to the fixture
+                # dir, dest relative to the project) BEFORE commands — the
+                # loader has always supported setup.files, but execution was
+                # never wired in, so fixture scaffolds silently never arrived.
+                self._copy_setup_files(session, merged_setup)
+
                 # Run setup commands
                 self._run_setup_commands(session, merged_setup)
 
@@ -593,6 +599,32 @@ class YAMLTestItem(pytest.Item):
             "variable or ensure sc-test-harness exists as a sibling to synaptic-canvas. "
             f"Searched from: {current}"
         )
+
+    def _copy_setup_files(self, session: Any, setup: Any) -> None:
+        """Copy setup.files (FileMapping src->dest) into the project.
+
+        src is relative to the fixture directory (test source location);
+        dest is relative to the project root.
+        """
+        import shutil as _shutil
+
+        files = getattr(setup, "files", None) or []
+        if not files:
+            return
+        source_path = getattr(self.test_config, "source_path", None)
+        if source_path is None:
+            logger.warning("setup.files present but test source_path unknown")
+            return
+        fixture_dir = Path(source_path).parent.parent
+        for mapping in files:
+            src = fixture_dir / mapping.src
+            dest = Path(session.project_path) / mapping.dest
+            if not src.exists():
+                logger.warning(f"setup file missing: {src}")
+                continue
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            _shutil.copy2(src, dest)
+            logger.debug(f"Copied setup file: {mapping.src} -> {dest}")
 
     def _run_setup_commands(self, session: Any, setup: Any) -> None:
         """Run setup commands in the isolated session.

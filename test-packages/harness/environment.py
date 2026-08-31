@@ -176,6 +176,32 @@ def copy_marketplace_data(
     return copied_any
 
 
+def copy_claude_auth(isolated_home: Path, source_home: Path | None = None) -> bool:
+    """Copy Claude Code auth/account linkage into the isolated HOME.
+
+    The HOME override hides the user's real Claude state — including the
+    account/OAuth linkage. On macOS credentials live in the keychain, but the
+    session still needs `~/.claude.json` (account/config state) and, where it
+    exists, `~/.claude/.credentials.json` to authenticate. Without this,
+    every isolated session fails with an authentication error.
+    """
+    source_home = source_home or Path.home()
+    copied_any = False
+    src = source_home / ".claude.json"
+    if src.exists():
+        shutil.copy2(src, isolated_home / ".claude.json")
+        copied_any = True
+    src = source_home / ".claude" / ".credentials.json"
+    if src.exists():
+        dest_dir = isolated_home / ".claude"
+        dest_dir.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(src, dest_dir / ".credentials.json")
+        copied_any = True
+    if not copied_any:
+        logger.warning("No Claude auth state found to copy into isolated HOME")
+    return copied_any
+
+
 def copy_codex_auth(isolated_home: Path, source_home: Path | None = None) -> bool:
     """Copy Codex auth/config files into isolated HOME."""
     source_home = source_home or Path.home()
@@ -219,6 +245,7 @@ def setup_codex_home(isolated_home: Path, source_home: Path | None = None) -> Pa
     """
     codex_home = isolated_home / CODEX_DIR
     codex_home.mkdir(parents=True, exist_ok=True)
+    copy_claude_auth(isolated_home, source_home)
     copy_codex_auth(isolated_home, source_home)
     return codex_home
 
@@ -286,6 +313,28 @@ def write_codex_agents_md(project_path: Path) -> Path | None:
     return agents_path
 
 
+_API_KEY_DEAD_CACHE: dict[str, bool] = {}
+
+
+def _api_key_is_dead(key: str) -> bool:
+    """True only when the key provably fails auth (HTTP 401). Network or
+    other errors return False (indeterminate — keep the key)."""
+    if key in _API_KEY_DEAD_CACHE:
+        return _API_KEY_DEAD_CACHE[key]
+    dead = False
+    try:
+        import urllib.request
+        req = urllib.request.Request(
+            "https://api.anthropic.com/v1/models",
+            headers={"x-api-key": key, "anthropic-version": "2023-06-01"})
+        urllib.request.urlopen(req, timeout=5)
+    except Exception as exc:
+        code = getattr(exc, "code", None)
+        dead = code == 401
+    _API_KEY_DEAD_CACHE[key] = dead
+    return dead
+
+
 def setup_test_environment(
     isolated_home: Path,
     project_path: Path,
@@ -315,6 +364,18 @@ def setup_test_environment(
 
     # Override HOME for isolation
     env["HOME"] = str(isolated_home)
+
+    # Isolated (fresh-HOME) sessions cannot use the user's OAuth session on
+    # keychain-auth machines (verified: no file-copy combination transfers
+    # it) — a VALID ANTHROPIC_API_KEY is the auth path. But a STALE env key
+    # hijacks every session with 401s. Validate once per process and scrub
+    # only when provably dead; offline/indeterminate keeps the key.
+    key = env.get("ANTHROPIC_API_KEY")
+    if key and _api_key_is_dead(key):
+        logger.warning("ANTHROPIC_API_KEY in environment is invalid (401) — "
+                       "scrubbing it; isolated sessions need a VALID key to "
+                       "authenticate (OAuth does not transfer into a fresh HOME)")
+        env.pop("ANTHROPIC_API_KEY", None)
 
     # Ensure project path is absolute
     env["SC_TEST_PROJECT"] = str(project_path.absolute())

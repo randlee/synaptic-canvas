@@ -74,7 +74,13 @@ def _scalar(val: str) -> Any:
             out[k.strip()] = _scalar(v.strip())
         return out
     if len(val) >= 2 and val[0] == val[-1] and val[0] in "\"'":
-        return val[1:-1]
+        inner = val[1:-1]
+        # Double-quoted YAML processes escapes; without this, an authored
+        # "STACK\\.X" regex arrives with a literal double backslash and can
+        # never match (bit the harness AND every local run of that grader).
+        if val[0] == '"':
+            inner = inner.replace('\\\\', '\\')
+        return inner
     if val in ("true", "false"):
         return val == "true"
     try:

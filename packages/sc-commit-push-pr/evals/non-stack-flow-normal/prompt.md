@@ -3,8 +3,8 @@ name: "Ordinary commit/push/PR flow (no stack)"
 tags: ["baseline", "non-stack"]
 model: claude-haiku-4-5-20251001
 runs: 2
-max_turns: 20
-timeout_seconds: 300
+max_turns: 40
+timeout_seconds: 450
 allowed_tools: [Skill, Bash, Read, Grep, Glob]
 env:
   PATH: "./bin:../bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin"

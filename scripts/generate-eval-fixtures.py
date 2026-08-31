@@ -151,6 +151,11 @@ def generate_package(pkg: str) -> List[Path]:
             written.append(res)
             files.append({"src": f"resources/{case_dir.name}/scaffold.sh",
                           "dest": "scaffold.sh"})
+            # The harness project persists across cases — scrub prior
+            # scaffold residue so fixtures never collide.
+            commands.append("rm -rf ./repo ./origin.git ./bin ./gh-calls.log "
+                            "./repo-worktrees ./wt-base ./.sc ./AGENTS.md "
+                            "./.codex-zdot ./zdot")
             commands.append("bash scaffold.sh")
         if meta.get("env"):
             commands.append(_env_merge_command(meta["env"]))

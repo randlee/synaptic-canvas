@@ -1,0 +1,624 @@
+{
+  "test_context": {
+    "fixture_id": "20260830-205212-sc-commit-push-pr-evals",
+    "test_id": "sc-commit-push-pr-eval-non-stack-flow-normal",
+    "test_name": "Ordinary commit/push/PR flow (no stack)",
+    "package": "sc-commit-push-pr@synaptic-canvas",
+    "paths": {
+      "fixture_yaml": "/Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sc-git-worktree-gh-stack/test-packages/fixtures/sc-commit-push-pr-evals/fixture.yaml",
+      "test_yaml": "/Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sc-git-worktree-gh-stack/test-packages/fixtures/sc-commit-push-pr-evals/tests/test_non_stack_flow_normal.yaml",
+      "skill_md": null,
+      "agent_md": null
+    }
+  },
+  "artifacts": {
+    "transcript": "20260830-205212-sc-commit-push-pr-evals/sc-commit-push-pr-eval-non-stack-flow-normal-transcript.jsonl",
+    "trace": "20260830-205212-sc-commit-push-pr-evals/sc-commit-push-pr-eval-non-stack-flow-normal-trace.jsonl",
+    "enriched": "20260830-205212-sc-commit-push-pr-evals/sc-commit-push-pr-eval-non-stack-flow-normal-enriched.json",
+    "claude_cli": null,
+    "pytest_output": null
+  },
+  "tree": {
+    "root_uuid": "root",
+    "nodes": {
+      "d0dc74f4-83b9-47e9-8afa-432562b14eea": {
+        "parent_uuid": null,
+        "depth": 1,
+        "seq": 1,
+        "node_type": "response",
+        "timestamp": "2026-08-31T03:51:51.986Z",
+        "elapsed_ms": 0,
+        "agent_id": null,
+        "agent_type": null,
+        "tool_name": null,
+        "children": [
+          "b266e962-074b-43dc-b371-6a03d6494ebc"
+        ]
+      },
+      "b266e962-074b-43dc-b371-6a03d6494ebc": {
+        "parent_uuid": "d0dc74f4-83b9-47e9-8afa-432562b14eea",
+        "depth": 2,
+        "seq": 2,
+        "node_type": "prompt",
+        "timestamp": "2026-08-31T03:51:52.002Z",
+        "elapsed_ms": 16,
+        "agent_id": null,
+        "agent_type": null,
+        "tool_name": null,
+        "children": [
+          "b0334af9-4f40-48cd-b782-bb2c406e81a8"
+        ]
+      },
+      "b0334af9-4f40-48cd-b782-bb2c406e81a8": {
+        "parent_uuid": "b266e962-074b-43dc-b371-6a03d6494ebc",
+        "depth": 3,
+        "seq": 3,
+        "node_type": "response",
+        "timestamp": "2026-08-31T03:51:52.002Z",
+        "elapsed_ms": 16,
+        "agent_id": null,
+        "agent_type": null,
+        "tool_name": null,
+        "children": [
+          "6f4be213-eef9-499d-8a78-4abe8f6444ec"
+        ]
+      },
+      "6f4be213-eef9-499d-8a78-4abe8f6444ec": {
+        "parent_uuid": "b0334af9-4f40-48cd-b782-bb2c406e81a8",
+        "depth": 4,
+        "seq": 4,
+        "node_type": "response",
+        "timestamp": "2026-08-31T03:51:52.002Z",
+        "elapsed_ms": 16,
+        "agent_id": null,
+        "agent_type": null,
+        "tool_name": null,
+        "children": [
+          "e77bff08-2462-45a2-835c-98cc147f18bc"
+        ]
+      },
+      "e77bff08-2462-45a2-835c-98cc147f18bc": {
+        "parent_uuid": "6f4be213-eef9-499d-8a78-4abe8f6444ec",
+        "depth": 5,
+        "seq": 5,
+        "node_type": "response",
+        "timestamp": "2026-08-31T03:51:54.228Z",
+        "elapsed_ms": 2242,
+        "agent_id": null,
+        "agent_type": null,
+        "tool_name": null,
+        "children": [
+          "d6889ef6-75f8-47e9-b752-436dec752b30"
+        ]
+      },
+      "d6889ef6-75f8-47e9-b752-436dec752b30": {
+        "parent_uuid": "e77bff08-2462-45a2-835c-98cc147f18bc",
+        "depth": 6,
+        "seq": 6,
+        "node_type": "tool_call",
+        "timestamp": "2026-08-31T03:51:54.274Z",
+        "elapsed_ms": 2288,
+        "agent_id": null,
+        "agent_type": null,
+        "tool_name": "Skill",
+        "children": [
+          "5f8ee987-1f46-4121-9ceb-a6d7f9528cba",
+          "54e61fef-8923-403e-89d2-eb2eecc5fda0"
+        ]
+      },
+      "5f8ee987-1f46-4121-9ceb-a6d7f9528cba": {
+        "parent_uuid": "d6889ef6-75f8-47e9-b752-436dec752b30",
+        "depth": 7,
+        "seq": 7,
+        "node_type": "response",
+        "timestamp": "2026-08-31T03:51:54.329Z",
+        "elapsed_ms": 2343,
+        "agent_id": null,
+        "agent_type": null,
+        "tool_name": null,
+        "children": []
+      },
+      "54e61fef-8923-403e-89d2-eb2eecc5fda0": {
+        "parent_uuid": "d6889ef6-75f8-47e9-b752-436dec752b30",
+        "depth": 7,
+        "seq": 8,
+        "node_type": "tool_result",
+        "timestamp": "2026-08-31T03:51:54.374Z",
+        "elapsed_ms": 2388,
+        "agent_id": null,
+        "agent_type": null,
+        "tool_name": null,
+        "children": [
+          "bcb04c41-9a62-4994-b52d-8f5d9c79e656"
+        ]
+      },
+      "bcb04c41-9a62-4994-b52d-8f5d9c79e656": {
+        "parent_uuid": "54e61fef-8923-403e-89d2-eb2eecc5fda0",
+        "depth": 8,
+        "seq": 9,
+        "node_type": "response",
+        "timestamp": "2026-08-31T03:51:54.374Z",
+        "elapsed_ms": 2388,
+        "agent_id": null,
+        "agent_type": null,
+        "tool_name": null,
+        "children": [
+          "ec0a86a6-9879-4948-9b8f-a314da394e5f"
+        ]
+      },
+      "ec0a86a6-9879-4948-9b8f-a314da394e5f": {
+        "parent_uuid": "bcb04c41-9a62-4994-b52d-8f5d9c79e656",
+        "depth": 9,
+        "seq": 10,
+        "node_type": "prompt",
+        "timestamp": "2026-08-31T03:51:54.332Z",
+        "elapsed_ms": 2346,
+        "agent_id": null,
+        "agent_type": null,
+        "tool_name": null,
+        "children": [
+          "c6961141-c1c4-4414-b5d9-14253e2ce081"
+        ]
+      },
+      "c6961141-c1c4-4414-b5d9-14253e2ce081": {
+        "parent_uuid": "ec0a86a6-9879-4948-9b8f-a314da394e5f",
+        "depth": 10,
+        "seq": 11,
+        "node_type": "response",
+        "timestamp": "2026-08-31T03:51:54.332Z",
+        "elapsed_ms": 2346,
+        "agent_id": null,
+        "agent_type": null,
+        "tool_name": null,
+        "children": [
+          "4f3df6eb-7b33-4b35-be75-1a2d9c5f63c2"
+        ]
+      },
+      "4f3df6eb-7b33-4b35-be75-1a2d9c5f63c2": {
+        "parent_uuid": "c6961141-c1c4-4414-b5d9-14253e2ce081",
+        "depth": 11,
+        "seq": 12,
+        "node_type": "response",
+        "timestamp": "2026-08-31T03:51:54.375Z",
+        "elapsed_ms": 2389,
+        "agent_id": null,
+        "agent_type": null,
+        "tool_name": null,
+        "children": [
+          "58216674-d794-4491-a164-63b377cd915d"
+        ]
+      },
+      "58216674-d794-4491-a164-63b377cd915d": {
+        "parent_uuid": "4f3df6eb-7b33-4b35-be75-1a2d9c5f63c2",
+        "depth": 12,
+        "seq": 13,
+        "node_type": "response",
+        "timestamp": "2026-08-31T03:51:59.239Z",
+        "elapsed_ms": 7253,
+        "agent_id": null,
+        "agent_type": null,
+        "tool_name": null,
+        "children": [
+          "39ffdd2c-2978-4ca2-98f2-83568b5af9c4"
+        ]
+      },
+      "39ffdd2c-2978-4ca2-98f2-83568b5af9c4": {
+        "parent_uuid": "58216674-d794-4491-a164-63b377cd915d",
+        "depth": 13,
+        "seq": 14,
+        "node_type": "response",
+        "timestamp": "2026-08-31T03:51:59.587Z",
+        "elapsed_ms": 7601,
+        "agent_id": null,
+        "agent_type": null,
+        "tool_name": null,
+        "children": [
+          "99ca7a63-a272-4e16-87cc-edd8b73cde1f"
+        ]
+      },
+      "99ca7a63-a272-4e16-87cc-edd8b73cde1f": {
+        "parent_uuid": "39ffdd2c-2978-4ca2-98f2-83568b5af9c4",
+        "depth": 14,
+        "seq": 15,
+        "node_type": "tool_call",
+        "timestamp": "2026-08-31T03:51:59.632Z",
+        "elapsed_ms": 7646,
+        "agent_id": null,
+        "agent_type": null,
+        "tool_name": "Bash",
+        "children": [
+          "3c94f38e-ff39-479a-bd0b-dc2c429e8a20",
+          "c528ba76-a54b-4f56-b532-a3a5706bb3c3"
+        ]
+      },
+      "3c94f38e-ff39-479a-bd0b-dc2c429e8a20": {
+        "parent_uuid": "99ca7a63-a272-4e16-87cc-edd8b73cde1f",
+        "depth": 15,
+        "seq": 16,
+        "node_type": "response",
+        "timestamp": "2026-08-31T03:51:59.680Z",
+        "elapsed_ms": 7694,
+        "agent_id": null,
+        "agent_type": null,
+        "tool_name": null,
+        "children": []
+      },
+      "c528ba76-a54b-4f56-b532-a3a5706bb3c3": {
+        "parent_uuid": "99ca7a63-a272-4e16-87cc-edd8b73cde1f",
+        "depth": 15,
+        "seq": 17,
+        "node_type": "tool_result",
+        "timestamp": "2026-08-31T03:51:59.709Z",
+        "elapsed_ms": 7723,
+        "agent_id": null,
+        "agent_type": null,
+        "tool_name": null,
+        "children": [
+          "36e12258-469a-4288-b41f-55823bc6ce5f"
+        ]
+      },
+      "36e12258-469a-4288-b41f-55823bc6ce5f": {
+        "parent_uuid": "c528ba76-a54b-4f56-b532-a3a5706bb3c3",
+        "depth": 16,
+        "seq": 18,
+        "node_type": "response",
+        "timestamp": "2026-08-31T03:51:59.710Z",
+        "elapsed_ms": 7724,
+        "agent_id": null,
+        "agent_type": null,
+        "tool_name": null,
+        "children": [
+          "5315cefe-6c46-4399-b036-950dfc8ede74"
+        ]
+      },
+      "5315cefe-6c46-4399-b036-950dfc8ede74": {
+        "parent_uuid": "36e12258-469a-4288-b41f-55823bc6ce5f",
+        "depth": 17,
+        "seq": 19,
+        "node_type": "response",
+        "timestamp": "2026-08-31T03:52:00.910Z",
+        "elapsed_ms": 8924,
+        "agent_id": null,
+        "agent_type": null,
+        "tool_name": null,
+        "children": [
+          "2070c9e7-835f-4e3d-b87b-90f76547f8a5"
+        ]
+      },
+      "2070c9e7-835f-4e3d-b87b-90f76547f8a5": {
+        "parent_uuid": "5315cefe-6c46-4399-b036-950dfc8ede74",
+        "depth": 18,
+        "seq": 20,
+        "node_type": "tool_call",
+        "timestamp": "2026-08-31T03:52:00.911Z",
+        "elapsed_ms": 8925,
+        "agent_id": null,
+        "agent_type": null,
+        "tool_name": "Bash",
+        "children": [
+          "0f06306d-8973-4238-932a-602f2a79300a",
+          "3a3730bb-c798-47a4-bbb1-bb5c4f3ee985"
+        ]
+      },
+      "0f06306d-8973-4238-932a-602f2a79300a": {
+        "parent_uuid": "2070c9e7-835f-4e3d-b87b-90f76547f8a5",
+        "depth": 19,
+        "seq": 21,
+        "node_type": "response",
+        "timestamp": "2026-08-31T03:52:00.968Z",
+        "elapsed_ms": 8982,
+        "agent_id": null,
+        "agent_type": null,
+        "tool_name": null,
+        "children": []
+      },
+      "3a3730bb-c798-47a4-bbb1-bb5c4f3ee985": {
+        "parent_uuid": "2070c9e7-835f-4e3d-b87b-90f76547f8a5",
+        "depth": 19,
+        "seq": 22,
+        "node_type": "tool_result",
+        "timestamp": "2026-08-31T03:52:01.047Z",
+        "elapsed_ms": 9061,
+        "agent_id": null,
+        "agent_type": null,
+        "tool_name": null,
+        "children": [
+          "48d0f923-ecc9-494e-97ad-402216fc7fef"
+        ]
+      },
+      "48d0f923-ecc9-494e-97ad-402216fc7fef": {
+        "parent_uuid": "3a3730bb-c798-47a4-bbb1-bb5c4f3ee985",
+        "depth": 20,
+        "seq": 23,
+        "node_type": "response",
+        "timestamp": "2026-08-31T03:52:01.047Z",
+        "elapsed_ms": 9061,
+        "agent_id": null,
+        "agent_type": null,
+        "tool_name": null,
+        "children": [
+          "703c8c0b-596c-460d-ac58-88d3ee579fc8"
+        ]
+      },
+      "703c8c0b-596c-460d-ac58-88d3ee579fc8": {
+        "parent_uuid": "48d0f923-ecc9-494e-97ad-402216fc7fef",
+        "depth": 21,
+        "seq": 24,
+        "node_type": "response",
+        "timestamp": "2026-08-31T03:52:01.048Z",
+        "elapsed_ms": 9062,
+        "agent_id": null,
+        "agent_type": null,
+        "tool_name": null,
+        "children": [
+          "3b58942f-8038-4ca2-9cf1-194cff301eb8"
+        ]
+      },
+      "3b58942f-8038-4ca2-9cf1-194cff301eb8": {
+        "parent_uuid": "703c8c0b-596c-460d-ac58-88d3ee579fc8",
+        "depth": 22,
+        "seq": 25,
+        "node_type": "response",
+        "timestamp": "2026-08-31T03:52:03.340Z",
+        "elapsed_ms": 11354,
+        "agent_id": null,
+        "agent_type": null,
+        "tool_name": null,
+        "children": [
+          "8b984b65-ec9f-426d-a087-201b1cd3b7b8"
+        ]
+      },
+      "8b984b65-ec9f-426d-a087-201b1cd3b7b8": {
+        "parent_uuid": "3b58942f-8038-4ca2-9cf1-194cff301eb8",
+        "depth": 23,
+        "seq": 26,
+        "node_type": "response",
+        "timestamp": "2026-08-31T03:52:03.683Z",
+        "elapsed_ms": 11697,
+        "agent_id": null,
+        "agent_type": null,
+        "tool_name": null,
+        "children": [
+          "d911fee5-6eff-46c0-a3e8-1900f7e50476"
+        ]
+      },
+      "d911fee5-6eff-46c0-a3e8-1900f7e50476": {
+        "parent_uuid": "8b984b65-ec9f-426d-a087-201b1cd3b7b8",
+        "depth": 24,
+        "seq": 27,
+        "node_type": "tool_call",
+        "timestamp": "2026-08-31T03:52:03.757Z",
+        "elapsed_ms": 11771,
+        "agent_id": null,
+        "agent_type": null,
+        "tool_name": "Bash",
+        "children": [
+          "abd94685-ebd1-4e51-b21a-231415e7f20a",
+          "054f17a5-0b11-4df2-bcd7-eac2a8bbbcd7"
+        ]
+      },
+      "abd94685-ebd1-4e51-b21a-231415e7f20a": {
+        "parent_uuid": "d911fee5-6eff-46c0-a3e8-1900f7e50476",
+        "depth": 25,
+        "seq": 28,
+        "node_type": "response",
+        "timestamp": "2026-08-31T03:52:03.800Z",
+        "elapsed_ms": 11814,
+        "agent_id": null,
+        "agent_type": null,
+        "tool_name": null,
+        "children": []
+      },
+      "054f17a5-0b11-4df2-bcd7-eac2a8bbbcd7": {
+        "parent_uuid": "d911fee5-6eff-46c0-a3e8-1900f7e50476",
+        "depth": 25,
+        "seq": 29,
+        "node_type": "tool_result",
+        "timestamp": "2026-08-31T03:52:03.856Z",
+        "elapsed_ms": 11870,
+        "agent_id": null,
+        "agent_type": null,
+        "tool_name": null,
+        "children": [
+          "d2d35002-77ba-4949-a8fa-5d8bfcfde3c1"
+        ]
+      },
+      "d2d35002-77ba-4949-a8fa-5d8bfcfde3c1": {
+        "parent_uuid": "054f17a5-0b11-4df2-bcd7-eac2a8bbbcd7",
+        "depth": 26,
+        "seq": 30,
+        "node_type": "response",
+        "timestamp": "2026-08-31T03:52:03.856Z",
+        "elapsed_ms": 11870,
+        "agent_id": null,
+        "agent_type": null,
+        "tool_name": null,
+        "children": [
+          "52591b01-fdda-41b1-8c78-6b7d32953e9a"
+        ]
+      },
+      "52591b01-fdda-41b1-8c78-6b7d32953e9a": {
+        "parent_uuid": "d2d35002-77ba-4949-a8fa-5d8bfcfde3c1",
+        "depth": 27,
+        "seq": 31,
+        "node_type": "response",
+        "timestamp": "2026-08-31T03:52:03.857Z",
+        "elapsed_ms": 11871,
+        "agent_id": null,
+        "agent_type": null,
+        "tool_name": null,
+        "children": [
+          "b6a106d9-7dab-4129-8e26-33ff744c9e3b"
+        ]
+      },
+      "b6a106d9-7dab-4129-8e26-33ff744c9e3b": {
+        "parent_uuid": "52591b01-fdda-41b1-8c78-6b7d32953e9a",
+        "depth": 28,
+        "seq": 32,
+        "node_type": "response",
+        "timestamp": "2026-08-31T03:52:05.169Z",
+        "elapsed_ms": 13183,
+        "agent_id": null,
+        "agent_type": null,
+        "tool_name": null,
+        "children": [
+          "ae5fcc8c-8db4-4454-8d34-f430b8b84487"
+        ]
+      },
+      "ae5fcc8c-8db4-4454-8d34-f430b8b84487": {
+        "parent_uuid": "b6a106d9-7dab-4129-8e26-33ff744c9e3b",
+        "depth": 29,
+        "seq": 33,
+        "node_type": "response",
+        "timestamp": "2026-08-31T03:52:05.311Z",
+        "elapsed_ms": 13325,
+        "agent_id": null,
+        "agent_type": null,
+        "tool_name": null,
+        "children": [
+          "8d4d2c63-0011-4fe3-b675-6dd4fc7dd7fa"
+        ]
+      },
+      "8d4d2c63-0011-4fe3-b675-6dd4fc7dd7fa": {
+        "parent_uuid": "ae5fcc8c-8db4-4454-8d34-f430b8b84487",
+        "depth": 30,
+        "seq": 34,
+        "node_type": "tool_call",
+        "timestamp": "2026-08-31T03:52:05.312Z",
+        "elapsed_ms": 13326,
+        "agent_id": null,
+        "agent_type": null,
+        "tool_name": "Bash",
+        "children": [
+          "e09312d2-3952-4a78-8b93-45404e715e7a",
+          "1a0e0957-7c93-4e5c-b29b-a6b98c55f407"
+        ]
+      },
+      "e09312d2-3952-4a78-8b93-45404e715e7a": {
+        "parent_uuid": "8d4d2c63-0011-4fe3-b675-6dd4fc7dd7fa",
+        "depth": 31,
+        "seq": 35,
+        "node_type": "response",
+        "timestamp": "2026-08-31T03:52:05.366Z",
+        "elapsed_ms": 13380,
+        "agent_id": null,
+        "agent_type": null,
+        "tool_name": null,
+        "children": []
+      },
+      "1a0e0957-7c93-4e5c-b29b-a6b98c55f407": {
+        "parent_uuid": "8d4d2c63-0011-4fe3-b675-6dd4fc7dd7fa",
+        "depth": 31,
+        "seq": 36,
+        "node_type": "tool_result",
+        "timestamp": "2026-08-31T03:52:05.422Z",
+        "elapsed_ms": 13436,
+        "agent_id": null,
+        "agent_type": null,
+        "tool_name": null,
+        "children": [
+          "40587d73-6ddc-46fe-b7ff-065df82f3cb5"
+        ]
+      },
+      "40587d73-6ddc-46fe-b7ff-065df82f3cb5": {
+        "parent_uuid": "1a0e0957-7c93-4e5c-b29b-a6b98c55f407",
+        "depth": 32,
+        "seq": 37,
+        "node_type": "response",
+        "timestamp": "2026-08-31T03:52:05.422Z",
+        "elapsed_ms": 13436,
+        "agent_id": null,
+        "agent_type": null,
+        "tool_name": null,
+        "children": [
+          "12fcabb4-ffd6-40d0-9b1a-aa9526109915"
+        ]
+      },
+      "12fcabb4-ffd6-40d0-9b1a-aa9526109915": {
+        "parent_uuid": "40587d73-6ddc-46fe-b7ff-065df82f3cb5",
+        "depth": 33,
+        "seq": 38,
+        "node_type": "response",
+        "timestamp": "2026-08-31T03:52:05.423Z",
+        "elapsed_ms": 13437,
+        "agent_id": null,
+        "agent_type": null,
+        "tool_name": null,
+        "children": [
+          "32e17cbd-0a6d-4461-9ede-5ca620d1c95e"
+        ]
+      },
+      "32e17cbd-0a6d-4461-9ede-5ca620d1c95e": {
+        "parent_uuid": "12fcabb4-ffd6-40d0-9b1a-aa9526109915",
+        "depth": 34,
+        "seq": 39,
+        "node_type": "response",
+        "timestamp": "2026-08-31T03:52:09.361Z",
+        "elapsed_ms": 17375,
+        "agent_id": null,
+        "agent_type": null,
+        "tool_name": null,
+        "children": [
+          "ba6367e3-7599-48f2-afe9-1a3d762740c8"
+        ]
+      },
+      "ba6367e3-7599-48f2-afe9-1a3d762740c8": {
+        "parent_uuid": "32e17cbd-0a6d-4461-9ede-5ca620d1c95e",
+        "depth": 35,
+        "seq": 40,
+        "node_type": "response",
+        "timestamp": "2026-08-31T03:52:10.513Z",
+        "elapsed_ms": 18527,
+        "agent_id": null,
+        "agent_type": null,
+        "tool_name": null,
+        "children": [
+          "578d48c7-57ee-4db8-9c11-2bface14ea6e"
+        ]
+      },
+      "578d48c7-57ee-4db8-9c11-2bface14ea6e": {
+        "parent_uuid": "ba6367e3-7599-48f2-afe9-1a3d762740c8",
+        "depth": 36,
+        "seq": 41,
+        "node_type": "response",
+        "timestamp": "2026-08-31T03:52:11.842Z",
+        "elapsed_ms": 19856,
+        "agent_id": null,
+        "agent_type": null,
+        "tool_name": null,
+        "children": []
+      },
+      "root": {
+        "parent_uuid": null,
+        "depth": 0,
+        "seq": 0,
+        "node_type": "root",
+        "timestamp": null,
+        "elapsed_ms": 0,
+        "agent_id": null,
+        "agent_type": null,
+        "tool_name": null,
+        "children": [
+          "d0dc74f4-83b9-47e9-8afa-432562b14eea"
+        ]
+      }
+    },
+    "stats": null
+  },
+  "agents": {},
+  "stats": {
+    "total_nodes": 41,
+    "max_depth": 36,
+    "agent_count": 0,
+    "tool_call_count": 5,
+    "token_usage": {
+      "input_tokens": 130,
+      "output_tokens": 3541,
+      "cache_creation_tokens": 24036,
+      "cache_read_tokens": 233517,
+      "subagent_tokens": 0,
+      "total_billable": 27707,
+      "total_all": 261224
+    }
+  }
+}
