@@ -1,0 +1,7 @@
+<!doctype html><meta charset='utf-8'><title>sc-git-worktree-haiku evals</title><style>body{font-family:system-ui;margin:2rem;max-width:60rem}table{border-collapse:collapse;width:100%}td,th{border:1px solid #ccc;padding:.3rem .5rem;text-align:left}pre{white-space:pre-wrap;background:#f6f6f6;padding:1rem}.pass{color:#0a7a2f}.fail{color:#b3261e}</style><h1>sc-git-worktree-haiku — local eval run</h1><p>0/1 cases passed · runner: interim local harness (pending <code>claude plugin eval</code> access)</p><section><h2 class='fail'>branch-of-branch-naive — FAIL</h2><table><tr><th>grader</th><th>type</th><th>verdict</th><th>evidence</th></tr><tr><td>no-stack-ops</td><td>regex</td><td class='pass'>PASS</td><td>pattern absent</td></tr><tr><td>succeeded-flat-no-refusal</td><td>llm</td><td class='pass'>PASS</td><td>PASS: Agent successfully created the worktree for feature/child based on the unmerged feat/base branch without refusing, requesting overrides, or warning about stack requirements—treating it as a normal branch-of-branch operation as expected for a stack-naive repo.</td></tr><tr><td>worktree-created</td><td>regex</td><td class='fail'>FAIL</td><td>pattern absent</td></tr></table><details><summary>final message</summary><pre>Done! I&#x27;ve created a worktree for `feature/child` based on `feat/base`. It landed at:
+
+```
+/private/var/folders/zk/zklzmbr52q55r1y8zv_k84k80000gn/T/eval-branch-of-branch-naive-cti90pe6/feature-child
+```
+
+The worktree is on the `feature/child` branch (d2c056f), which is tracking from `feat/base`.</pre></details></section>

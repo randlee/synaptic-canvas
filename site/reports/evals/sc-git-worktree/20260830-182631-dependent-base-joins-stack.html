@@ -1,0 +1,16 @@
+<!doctype html><meta charset='utf-8'><title>sc-git-worktree-haiku evals</title><style>body{font-family:system-ui;margin:2rem;max-width:60rem}table{border-collapse:collapse;width:100%}td,th{border:1px solid #ccc;padding:.3rem .5rem;text-align:left}pre{white-space:pre-wrap;background:#f6f6f6;padding:1rem}.pass{color:#0a7a2f}.fail{color:#b3261e}</style><h1>sc-git-worktree-haiku — local eval run</h1><p>0/1 cases passed · runner: interim local harness (pending <code>claude plugin eval</code> access)</p><section><h2 class='fail'>dependent-base-joins-stack — FAIL</h2><table><tr><th>grader</th><th>type</th><th>verdict</th><th>evidence</th></tr><tr><td>checked-out-in-stack-worktree</td><td>tool_used</td><td class='fail'>FAIL</td><td>0 matching call(s)</td></tr><tr><td>names-existing-worktree</td><td>llm</td><td class='pass'>PASS</td><td>PASS: Agent correctly identified feat/bottom as an existing gh-stack-tracked dependent, joined feature/next as a new layer in that worktree at ./repo-worktrees/feat/bottom, and explicitly named the existing worktree location as where the work now lives without claiming any new worktree was created.</td></tr><tr><td>no-new-worktree-dir</td><td>tool_used</td><td class='pass'>PASS</td><td>0 matching call(s)</td></tr><tr><td>stack-add-ran</td><td>regex</td><td class='pass'>PASS</td><td>pattern found</td></tr></table><details><summary>final message</summary><pre>Success! The worktree creation completed, but interestingly it created a **stack layer** rather than a new worktree directory. Here&#x27;s what happened:
+
+## Result Summary
+
+The `feature/next` branch was created as a **new layer** in the existing `feat/bottom` stack worktree, rather than as a separate worktree. This is Product C behavior from the factory decision model.
+
+**Work location:** `/private/var/folders/zk/zklzmbr52q55r1y8zv_k84k80000gn/T/eval-dependent-base-joins-stack-ph_zzrm6/repo-worktrees/feat/bottom`
+
+**Stack shape:** `(feat/bottom) &lt;- feature/next`
+
+This happened because:
+- `feat/bottom` is an unmerged, gh-stack-tracked branch (already has a worktree with stack metadata)
+- Since the base is dependent on trunk and already tracked with gh-stack, the script opted to add `feature/next` as a new layer within that same stack worktree via `git checkout -b` + `gh stack add`
+- This keeps related branches organized together in a single worktree hierarchy
+
+The tracking entry has been added to `repo-worktrees/worktree-tracking.jsonl` with full metadata (created timestamp, owner, purpose, etc).</pre></details></section>

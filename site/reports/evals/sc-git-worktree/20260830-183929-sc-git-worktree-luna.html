@@ -1,0 +1,40 @@
+<!doctype html><meta charset='utf-8'><title>sc-git-worktree-luna evals</title><style>body{font-family:system-ui;margin:2rem;max-width:60rem}table{border-collapse:collapse;width:100%}td,th{border:1px solid #ccc;padding:.3rem .5rem;text-align:left}pre{white-space:pre-wrap;background:#f6f6f6;padding:1rem}.pass{color:#0a7a2f}.fail{color:#b3261e}</style><h1>sc-git-worktree-luna — local eval run</h1><p>5/6 cases passed · runner: interim local harness (pending <code>claude plugin eval</code> access)</p><section><h2 class='pass'>always-stack-product-b — PASS</h2><table><tr><th>grader</th><th>type</th><th>verdict</th><th>evidence</th></tr><tr><td>output-mentions-stack</td><td>llm</td><td class='pass'>PASS</td><td>PASS: Agent created feature/y as a tracked gh-stack (explicitly mentioning &quot;new stack&quot;, &quot;gh stack init reported success&quot;, and worktree tracking JSONL update), correctly honoring git.always_stack: true from the fixture configuration.</td></tr><tr><td>same-path-no-stack-prefix</td><td>regex</td><td class='pass'>PASS</td><td>pattern absent</td></tr><tr><td>stack-init-ran</td><td>regex</td><td class='pass'>PASS</td><td>pattern found</td></tr></table><details><summary>final message</summary><pre>Created successfully via `worktree_create.py`:
+
+- Path: `/private/var/folders/zk/zklzmbr52q55r1y8zv_k84k80000gn/T/eval-always-stack-product-b-0cef3bq2/repo-worktrees/feature/y`
+- Branch: `feature/y`, based on `develop`
+- Product: new stack `(develop) &lt;- feature/y`
+- `gh stack init` reported success
+- Worktree tracking JSONL updated; entry is active and clean
+
+Caveat: the final scan reports the low-level `gh_stack_tracked` marker as false because this environment’s `gh` stub does not materialize it, and `gh stack view --json` is unsupported. Thus it is recorded and initialized as a stack, but the physical gh-stack marker cannot be confirmed here.</pre></details></section><section><h2 class='pass'>branch-of-branch-naive — PASS</h2><table><tr><th>grader</th><th>type</th><th>verdict</th><th>evidence</th></tr><tr><td>no-stack-ops</td><td>regex</td><td class='pass'>PASS</td><td>pattern absent</td></tr><tr><td>succeeded-flat-no-refusal</td><td>llm</td><td class='pass'>PASS</td><td>PASS: Agent created the worktree without refusal, override requests, stack warnings, or dependency-signal handling—exactly the legacy behavior required in a stack-naive repo.</td></tr><tr><td>worktree-created</td><td>regex</td><td class='pass'>PASS</td><td>pattern found</td></tr></table><details><summary>final message</summary><pre>Created `feature/child` from `feat/base`.
+
+It landed at:
+
+[`repo-worktrees/feature/child`](&lt;/private/var/folders/zk/zklzmbr52q55r1y8zv_k84k80000gn/T/eval-branch-of-branch-naive-7v40z6ms/repo-worktrees/feature/child&gt;)
+
+Verified it points to the same commit as `feat/base`.</pre></details></section><section><h2 class='pass'>cleanup-skips-tracked-stack — PASS</h2><table><tr><th>grader</th><th>type</th><th>verdict</th><th>evidence</th></tr><tr><td>merged-plain-cleaned</td><td>tool_used</td><td class='pass'>PASS</td><td>1 matching call(s)</td></tr><tr><td>no-removal-of-tracked</td><td>tool_used</td><td class='pass'>PASS</td><td>0 matching call(s)</td></tr><tr><td>surfaces-skip-reason</td><td>llm</td><td class='pass'>PASS</td><td>PASS: Clearly distinguishes the two worktrees—removed feature/merged-plain normally while explicitly skipping feature/tracked-stack due to gh-stack tracking metadata, and correctly states it requires explicit approval to remove.</td></tr><tr><td>tracked-worktree-survives</td><td>regex</td><td class='pass'>PASS</td><td>pattern found</td></tr></table><details><summary>final message</summary><pre>Cleanup completed using the packaged scripts.
+
+- Removed `feature/merged-plain` worktree.
+- Deleted its local and remote branches.
+- Skipped `feature/tracked-stack` because it has gh-stack tracking metadata; batch cleanup requires this safety skip.
+- Tracking file was updated and verified.
+- Main worktree remains untouched, with only untracked `.claude/` content.
+
+The remaining stack-tracked worktree requires explicit approval naming the stack before single-branch cleanup.</pre></details></section><section><h2 class='fail'>dependent-base-joins-stack — FAIL</h2><table><tr><th>grader</th><th>type</th><th>verdict</th><th>evidence</th></tr><tr><td>checked-out-in-stack-worktree</td><td>tool_used</td><td class='fail'>FAIL</td><td>0 matching call(s)</td></tr><tr><td>names-existing-worktree</td><td>llm</td><td class='pass'>PASS</td><td>PASS: Agent correctly identified the existing tracked worktree for feat/bottom, joined feature/next into it as a new layer, and explicitly confirmed the work lives in the existing repo-worktrees/feat/bottom worktree without claiming a new one was created.</td></tr><tr><td>no-new-worktree-dir</td><td>tool_used</td><td class='pass'>PASS</td><td>0 matching call(s)</td></tr><tr><td>stack-add-ran</td><td>regex</td><td class='pass'>PASS</td><td>pattern found</td></tr></table><details><summary>final message</summary><pre>Created `feature/next` as a gh-stack layer on `feat/bottom`.
+
+It lives in the existing worktree:
+
+[repo-worktrees/feat/bottom](/private/var/folders/zk/zklzmbr52q55r1y8zv_k84k80000gn/T/eval-dependent-base-joins-stack-50y72sb8/repo-worktrees/feat/bottom)
+
+The worktree is checked out to `feature/next`, clean, and tracking was updated.</pre></details></section><section><h2 class='pass'>flat-create-stays-flat — PASS</h2><table><tr><th>grader</th><th>type</th><th>verdict</th><th>evidence</th></tr><tr><td>no-stack-language</td><td>llm</td><td class='pass'>PASS</td><td>PASS: Agent created a worktree from main, reported success, and made no mention of stacks or gh-stack, treating the operation as a routine non-stack-aware create.</td></tr><tr><td>no-stack-ops</td><td>regex</td><td class='pass'>PASS</td><td>pattern absent</td></tr><tr><td>worktree-created</td><td>regex</td><td class='pass'>PASS</td><td>pattern found</td></tr></table><details><summary>final message</summary><pre>Created a flat worktree for `feature/x` from `main`.
+
+Location: `/private/var/folders/zk/zklzmbr52q55r1y8zv_k84k80000gn/T/eval-flat-create-stays-flat-jgii03w1/repo-worktrees/feature/x`
+
+It is clean and verified on branch `feature/x`.</pre></details></section><section><h2 class='pass'>prereqs-missing-onboarding — PASS</h2><table><tr><th>grader</th><th>type</th><th>verdict</th><th>evidence</th></tr><tr><td>names-extension-install</td><td>regex</td><td class='pass'>PASS</td><td>pattern found</td></tr><tr><td>names-sc-gh-stack-skill</td><td>regex</td><td class='pass'>PASS</td><td>pattern found</td></tr><tr><td>no-flat-fallback</td><td>tool_used</td><td class='pass'>PASS</td><td>0 matching call(s)</td></tr><tr><td>no-stack-init-in-log</td><td>regex</td><td class='pass'>PASS</td><td>pattern absent</td></tr><tr><td>routes-to-install-not-improvise</td><td>llm</td><td class='pass'>PASS</td><td>PASS: Agent correctly identified missing gh-stack extension and sc-gh-stack skill, explicitly refused to create a worktree, confirmed no creation occurred, and routed the user to install prerequisites before retrying.</td></tr></table><details><summary>final message</summary><pre>It did not work. Creation was refused because the repo requires stack tooling, but both are missing:
+
+- `gh-stack` extension
+- `sc-gh-stack` skill
+
+No `feature/z` worktree or branch was created. Suggested setup:
+
+`gh extension install github/gh-stack; /plugin marketplace add randlee/synaptic-canvas &amp;&amp; /plugin install sc-gh-stack@synaptic-canvas`</pre></details></section>

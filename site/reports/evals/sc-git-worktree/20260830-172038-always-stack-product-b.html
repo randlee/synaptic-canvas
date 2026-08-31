@@ -1,0 +1,14 @@
+<!doctype html><meta charset='utf-8'><title>sc-git-worktree-haiku evals</title><style>body{font-family:system-ui;margin:2rem;max-width:60rem}table{border-collapse:collapse;width:100%}td,th{border:1px solid #ccc;padding:.3rem .5rem;text-align:left}pre{white-space:pre-wrap;background:#f6f6f6;padding:1rem}.pass{color:#0a7a2f}.fail{color:#b3261e}</style><h1>sc-git-worktree-haiku — local eval run</h1><p>1/1 cases passed · runner: interim local harness (pending <code>claude plugin eval</code> access)</p><section><h2 class='pass'>always-stack-product-b — PASS</h2><table><tr><th>grader</th><th>type</th><th>verdict</th><th>evidence</th></tr><tr><td>output-mentions-stack</td><td>llm</td><td class='pass'>PASS</td><td>PASS: Agent clearly communicated that the worktree is gh-stack tracked, explicitly mentioned `gh stack init --base develop feature/y`, and referenced the `always_stack: true` configuration, meeting all criteria.</td></tr><tr><td>same-path-no-stack-prefix</td><td>regex</td><td class='pass'>PASS</td><td>pattern absent</td></tr><tr><td>stack-init-ran</td><td>regex</td><td class='pass'>PASS</td><td>pattern found</td></tr></table><details><summary>final message</summary><pre>Done! Here&#x27;s what happened:
+
+**Worktree Created Successfully**
+- **Path:** `../repo-worktrees/feature/y`
+- **Branch:** `feature/y` (based on `develop`)
+- **Status:** Clean and ready to use
+
+**Stack Tracking: YES ✓**
+The branch **is tracked as a gh-stack**:
+- **Stack relationship:** `(develop) ← feature/y`
+- **Product type:** New stack (Product B)
+- **Stack initialized:** via `gh stack init --base develop feature/y`
+
+The repo&#x27;s `.sc/shared-settings.yaml` has `always_stack: true`, which means all new worktrees are automatically created as stacked branches for better multi-PR workflows. The worktree tracking file (worktree-tracking.jsonl) has been updated with the entry, including the stack notation in the notes field.</pre></details></section>

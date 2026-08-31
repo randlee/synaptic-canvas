@@ -1,0 +1,10 @@
+<!doctype html><meta charset='utf-8'><title>sc-git-worktree-haiku evals</title><style>body{font-family:system-ui;margin:2rem;max-width:60rem}table{border-collapse:collapse;width:100%}td,th{border:1px solid #ccc;padding:.3rem .5rem;text-align:left}pre{white-space:pre-wrap;background:#f6f6f6;padding:1rem}.pass{color:#0a7a2f}.fail{color:#b3261e}</style><h1>sc-git-worktree-haiku — local eval run</h1><p>0/1 cases passed · runner: interim local harness (pending <code>claude plugin eval</code> access)</p><section><h2 class='fail'>dependent-base-joins-stack — FAIL</h2><table><tr><th>grader</th><th>type</th><th>verdict</th><th>evidence</th></tr><tr><td>checked-out-in-stack-worktree</td><td>tool_used</td><td class='fail'>FAIL</td><td>0 matching call(s)</td></tr><tr><td>names-existing-worktree</td><td>llm</td><td class='pass'>PASS</td><td>PASS: Agent correctly identified feat/bottom&#x27;s existing gh-stack worktree, added feature/next as a new layer within ./repo-worktrees/feat/bottom rather than creating a separate worktree, and explicitly stated this architectural decision in the final message.</td></tr><tr><td>no-new-worktree-dir</td><td>tool_used</td><td class='pass'>PASS</td><td>0 matching call(s)</td></tr><tr><td>stack-add-ran</td><td>regex</td><td class='pass'>PASS</td><td>pattern found</td></tr></table><details><summary>final message</summary><pre>Perfect! The worktree for `feature/next` has been successfully created. Here&#x27;s where the work ended up:
+
+**Location:** `/private/var/folders/zk/zklzmbr52q55r1y8zv_k84k80000gn/T/eval-dependent-base-joins-stack-h0q4u1dw/repo-worktrees/feat/bottom`
+
+**Branch Details:**
+- Currently checked out: `feature/next` (commit 4b12b48)
+- Based on: `feat/bottom` (same commit)
+- Working tree: Clean
+
+The key insight is that since `feat/bottom` was already part of a gh-stack, the worktree creation intelligently added `feature/next` as a layer within the existing stack worktree rather than creating a separate worktree. This is the optimal structure for dependent branches in a gh-stack workflow. The stack shape is now: `(feat/bottom) &lt;- feature/next`.</pre></details></section>
