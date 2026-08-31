@@ -1,6 +1,6 @@
 {
   "name": "synaptic-canvas",
-  "version": "0.12.0",
+  "version": "0.13.0",
   "description": "A marketplace for Claude Code skills",
   "author": {
     "name": "randlee"
@@ -8,7 +8,7 @@
   "packages": [
     {
       "name": "sc-ai-cli",
-      "version": "0.12.0",
+      "version": "0.13.0",
       "description": "AI-first CLI design toolkit: create, review, and harden JSON-first CLIs with MCP-ready contract seams, typed error contracts, auditable mutations, repeatable scaffolding patterns, and stateful simulator design guidance.\n",
       "author": "randlee",
       "license": "MIT",
@@ -21,11 +21,11 @@
         "scripts": 0,
         "schemas": 0
       },
-      "lastUpdated": "2026-08-30T22:32:48.289968+00:00"
+      "lastUpdated": "2026-08-30T22:34:47.252255+00:00"
     },
     {
       "name": "sc-ci-automation",
-      "version": "0.12.0",
+      "version": "0.13.0",
       "description": "Run CI quality gates (pull \u2192 build \u2192 test) with optional auto-fix and PR creation. Coordinates pull from upstream, builds projects, runs tests, applies straightforward fixes, and creates PRs when all quality gates pass. Supports version bumping with --patch flag.\n",
       "author": "randlee",
       "license": "MIT",
@@ -38,11 +38,11 @@
         "scripts": 1,
         "schemas": 0
       },
-      "lastUpdated": "2026-08-30T22:32:48.290999+00:00"
+      "lastUpdated": "2026-08-30T22:34:47.253317+00:00"
     },
     {
       "name": "sc-codex",
-      "version": "0.12.0",
+      "version": "0.13.0",
       "description": "Run Codex agents via a Task Tool-compatible runner, with hooks emulation and background execution support.\n",
       "author": "synaptic-canvas",
       "license": "MIT",
@@ -55,11 +55,11 @@
         "scripts": 2,
         "schemas": 2
       },
-      "lastUpdated": "2026-08-30T22:32:48.291746+00:00"
+      "lastUpdated": "2026-08-30T22:34:47.254150+00:00"
     },
     {
       "name": "sc-coding-agent-hardening",
-      "version": "0.12.0",
+      "version": "0.13.0",
       "description": "Harden coding, QA, and orchestration agent prompts so straightforward defects are fixed instead of being dismissed as minor, pre-existing, non-blocking, or technical debt.\n",
       "author": "randlee",
       "license": "MIT",
@@ -72,7 +72,7 @@
         "scripts": 0,
         "schemas": 0
       },
-      "lastUpdated": "2026-08-30T22:32:48.292194+00:00"
+      "lastUpdated": "2026-08-30T22:34:47.254660+00:00"
     },
     {
       "name": "sc-commit-push-pr",
@@ -89,11 +89,11 @@
         "scripts": 10,
         "schemas": 0
       },
-      "lastUpdated": "2026-08-30T22:32:48.293058+00:00"
+      "lastUpdated": "2026-08-30T22:34:47.255567+00:00"
     },
     {
       "name": "sc-delay-tasks",
-      "version": "0.12.0",
+      "version": "0.13.0",
       "description": "Schedule delayed one-shot or bounded polling actions with minimal heartbeats. Useful for waiting before running checks (e.g., CI status) or polling with stop-on-success.\n",
       "author": "randlee",
       "license": "MIT",
@@ -106,7 +106,7 @@
         "scripts": 2,
         "schemas": 0
       },
-      "lastUpdated": "2026-08-30T22:32:48.293630+00:00"
+      "lastUpdated": "2026-08-30T22:34:47.256343+00:00"
     },
     {
       "name": "sc-docling-pdf",
@@ -123,7 +123,7 @@
         "scripts": 0,
         "schemas": 0
       },
-      "lastUpdated": "2026-08-30T22:32:48.294512+00:00"
+      "lastUpdated": "2026-08-30T22:34:47.257303+00:00"
     },
     {
       "name": "sc-gh-stack",
@@ -140,7 +140,7 @@
         "scripts": 5,
         "schemas": 0
       },
-      "lastUpdated": "2026-08-30T22:32:48.295409+00:00"
+      "lastUpdated": "2026-08-30T22:34:47.258256+00:00"
     },
     {
       "name": "sc-git-worktree",
@@ -157,11 +157,11 @@
         "scripts": 7,
         "schemas": 0
       },
-      "lastUpdated": "2026-08-30T22:32:48.296382+00:00"
+      "lastUpdated": "2026-08-30T22:34:47.259289+00:00"
     },
     {
       "name": "sc-github-issue",
-      "version": "0.12.0",
+      "version": "0.13.0",
       "description": "GitHub issue lifecycle management with worktree isolation: list, create, update, and fix issues with automated workflows including PR creation. Integrates with sc-git-worktree for safe isolation.\n",
       "author": "randlee",
       "license": "MIT",
@@ -174,7 +174,7 @@
         "scripts": 1,
         "schemas": 0
       },
-      "lastUpdated": "2026-08-30T22:32:48.297401+00:00"
+      "lastUpdated": "2026-08-30T22:34:47.260329+00:00"
     },
     {
       "name": "sc-just",
@@ -191,11 +191,11 @@
         "scripts": 0,
         "schemas": 0
       },
-      "lastUpdated": "2026-08-30T22:32:48.298434+00:00"
+      "lastUpdated": "2026-08-30T22:34:47.261395+00:00"
     },
     {
       "name": "sc-kanban",
-      "version": "0.12.0",
+      "version": "0.13.0",
       "description": "Kanban state machine for Synaptic Canvas: backlog \u2192 board \u2192 done with gate validation, scrubbing, and shared board config (v0.7).\n",
       "author": "randlee",
       "license": "MIT",
@@ -208,11 +208,11 @@
         "scripts": 5,
         "schemas": 0
       },
-      "lastUpdated": "2026-08-30T22:32:48.299166+00:00"
+      "lastUpdated": "2026-08-30T22:34:47.262100+00:00"
     },
     {
       "name": "sc-launch-term",
-      "version": "0.12.0",
+      "version": "0.13.0",
       "description": "Launch Claude (including Fable), Codex (including Sol, Terra, and Luna), and Gemini sessions in supported terminals with platform-aware autodetect, cmux workspace tabs, and optional tmux session management.\n",
       "author": "randlee",
       "license": "MIT",
@@ -225,11 +225,11 @@
         "scripts": 3,
         "schemas": 0
       },
-      "lastUpdated": "2026-08-30T22:32:48.299847+00:00"
+      "lastUpdated": "2026-08-30T22:34:47.262774+00:00"
     },
     {
       "name": "sc-launchpad",
-      "version": "0.12.0",
+      "version": "0.13.0",
       "description": "Launch Claude (including Fable), Codex (including Sol, Terra, and Luna), or Gemini as a separate background sub-agent runtime, with explicit ATM teammate-mode normalization and roster registration.\n",
       "author": "synaptic-canvas",
       "license": "MIT",
@@ -242,11 +242,11 @@
         "scripts": 2,
         "schemas": 0
       },
-      "lastUpdated": "2026-08-30T22:32:48.300530+00:00"
+      "lastUpdated": "2026-08-30T22:34:47.263471+00:00"
     },
     {
       "name": "sc-manage",
-      "version": "0.12.0",
+      "version": "0.13.0",
       "description": "Manage Synaptic Canvas Claude packages. List available packages and their install status (local/global), and install or uninstall packages according to policy.\n",
       "author": "synaptic-canvas",
       "license": "MIT",
@@ -259,11 +259,28 @@
         "scripts": 8,
         "schemas": 0
       },
-      "lastUpdated": "2026-08-30T22:32:48.301209+00:00"
+      "lastUpdated": "2026-08-30T22:34:47.264250+00:00"
+    },
+    {
+      "name": "sc-refactory",
+      "version": "0.2.0",
+      "description": "Design and install a rule-driven refactoring toolkit with startup policy injection, approved-fix lookup, curated rule authoring, and named-teammate orchestration for large migration campaigns.\n",
+      "author": "synaptic-canvas",
+      "license": "MIT",
+      "keywords": [],
+      "category": "tools",
+      "artifacts": {
+        "commands": 5,
+        "skills": 6,
+        "agents": 6,
+        "scripts": 10,
+        "schemas": 0
+      },
+      "lastUpdated": "2026-08-30T22:34:47.265571+00:00"
     },
     {
       "name": "sc-repomix-nuget",
-      "version": "0.12.0",
+      "version": "0.13.0",
       "description": "Generate AI-optimized NuGet package context using Repomix with NuGet metadata (dependencies, dependents, namespaces, frameworks). Produces a compressed API surface.\n",
       "author": "synaptic-canvas",
       "license": "MIT",
@@ -276,11 +293,11 @@
         "scripts": 3,
         "schemas": 0
       },
-      "lastUpdated": "2026-08-30T22:32:48.301884+00:00"
+      "lastUpdated": "2026-08-30T22:34:47.266269+00:00"
     },
     {
       "name": "sc-roslyn-diff",
-      "version": "0.12.0",
+      "version": "0.13.0",
       "description": "Semantic diffing for .NET source using roslyn-diff with JSON-first outputs, HTML reports, and git/PR-aware comparisons.\n",
       "author": "randlee",
       "license": "MIT",
@@ -293,11 +310,11 @@
         "scripts": 6,
         "schemas": 0
       },
-      "lastUpdated": "2026-08-30T22:32:48.302580+00:00"
+      "lastUpdated": "2026-08-30T22:34:47.267000+00:00"
     },
     {
       "name": "sc-rust",
-      "version": "0.12.0",
+      "version": "0.13.0",
       "description": "Rust development toolkit: idiomatic guidelines, service hardening guidance, design pattern enforcement, and specialized agents for architecture, code review, exploration, implementation, and QA. Includes cross-platform portability guidelines for Ubuntu, macOS, and Windows.\n",
       "author": "randlee",
       "license": "MIT",
@@ -310,11 +327,11 @@
         "scripts": 0,
         "schemas": 0
       },
-      "lastUpdated": "2026-08-30T22:32:48.303754+00:00"
+      "lastUpdated": "2026-08-30T22:34:47.268240+00:00"
     },
     {
       "name": "sc-startup",
-      "version": "0.12.0",
+      "version": "0.13.0",
       "description": "Startup runner for Synaptic Canvas: read startup prompt, sync master checklist, optional PR triage, worktree hygiene, and CI pull, then emit a concise status with next steps. Supports read-only mode.\n",
       "author": "randlee",
       "license": "MIT",
@@ -327,17 +344,17 @@
         "scripts": 1,
         "schemas": 0
       },
-      "lastUpdated": "2026-08-30T22:32:48.304498+00:00"
+      "lastUpdated": "2026-08-30T22:34:47.269016+00:00"
     }
   ],
   "metadata": {
-    "totalPackages": 19,
-    "totalCommands": 10,
-    "totalSkills": 22,
-    "totalAgents": 48,
-    "totalScripts": 56,
+    "totalPackages": 20,
+    "totalCommands": 15,
+    "totalSkills": 28,
+    "totalAgents": 54,
+    "totalScripts": 66,
     "totalSchemas": 2
   },
-  "generated": "2026-08-30T22:32:48.304513+00:00",
-  "lastUpdated": "2026-08-30T22:32:48.304514+00:00"
+  "generated": "2026-08-30T22:34:47.269033+00:00",
+  "lastUpdated": "2026-08-30T22:34:47.269034+00:00"
 }

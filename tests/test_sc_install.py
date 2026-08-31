@@ -88,3 +88,16 @@ def test_install_sc_docling_pdf_copies_skill_and_references(tmp_path: Path):
     assert (skill_dir / "references/profile-rich.md").exists()
     assert (skill_dir / "references/profile-scan.md").exists()
     assert (skill_dir / "references/profile-vlm.md").exists()
+
+
+def test_install_sc_refactory_copies_plugin_artifact(tmp_path: Path):
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    _init_git_repo(repo)
+    dest = repo / ".claude"
+
+    rc = sc_install.main(["install", "sc-refactory", "--dest", str(dest)])
+    assert rc == 0
+
+    assert (dest / ".claude-plugin" / "plugin.json").exists()
+    assert (dest / "assets" / "startup-wrapper-template" / "team-lead.py").exists()
