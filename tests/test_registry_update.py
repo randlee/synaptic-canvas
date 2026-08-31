@@ -172,13 +172,15 @@ class TestUpdateRegistry:
         rc = _update_registry(dest, ["skills/my-skill/SKILL.md"])
         assert rc == 0
 
-        # Verify registry exists and contains skill
+        # Verify registry exists and contains skill. The registry schema
+        # forbids `version` on skills entries (only depends_on/entry_point).
         registry_path = dest / "agents" / "registry.yaml"
         assert registry_path.exists()
         content = registry_path.read_text()
         assert "my-skill:" in content
-        assert "version: 2.0.0" in content
+        assert "version: 2.0.0" not in content
         assert "entry_point: /my-skill" in content
+        assert "depends_on" in content
 
     def test_update_existing_agent(self, tmp_path: Path):
         """Test updating an existing agent entry."""
@@ -447,8 +449,9 @@ class TestUpdateRegistry:
         registry_path = dest / "agents" / "registry.yaml"
         content = registry_path.read_text()
         assert "silent-skill:" in content
-        # Should have version but no entry_point line
-        assert "version: 1.0.0" in content
+        # Schema forbids version on skills entries; no entry_point declared
+        assert "version: 1.0.0" not in content
+        assert "entry_point" not in content
 
     def test_whitespace_handling(self, tmp_path: Path):
         """Test handling of whitespace in YAML."""
@@ -468,3 +471,113 @@ class TestUpdateRegistry:
 
         registry_path = agents_dir / "registry.yaml"
         assert registry_path.exists()
+
+
+def _write_agent(dest: Path, name: str, version: str) -> str:
+    agents_dir = dest / "agents"
+    agents_dir.mkdir(parents=True, exist_ok=True)
+    (agents_dir / f"{name}.md").write_text(
+        f"---\nname: {name}\nversion: {version}\n---\n# Agent"
+    )
+    return f"agents/{name}.md"
+
+
+def _write_skill(dest: Path, name: str, frontmatter_extra: str = "") -> str:
+    skill_dir = dest / "skills" / name
+    skill_dir.mkdir(parents=True, exist_ok=True)
+    (skill_dir / "SKILL.md").write_text(
+        f"---\nname: {name}\nversion: 1.0.0\n{frontmatter_extra}---\n# Skill"
+    )
+    return f"skills/{name}/SKILL.md"
+
+
+def _load_registry(dest: Path) -> Dict:
+    yaml_mod = pytest.importorskip("yaml")
+    return yaml_mod.safe_load((dest / "agents" / "registry.yaml").read_text())
+
+
+class TestSkillEntrySchema:
+    """Regression tests: the registry schema (validate-agents.py AgentRegistry)
+    forbids anything beyond depends_on/entry_point on a skills entry — the
+    installer used to write a bare `version:` there, breaking validation."""
+
+    def test_major_constraint(self):
+        assert install_module._major_constraint("0.2.0") == "0.x"
+        assert install_module._major_constraint("1.4.2") == "1.x"
+        assert install_module._major_constraint("") == "0.x"
+        assert install_module._major_constraint("garbage") == "0.x"
+
+    def test_skill_entry_contains_only_schema_fields(self, tmp_path: Path):
+        dest = tmp_path / ".claude"
+        dest.mkdir()
+        rels = [_write_agent(dest, "helper-agent", "0.2.0"),
+                _write_skill(dest, "my-skill", "entry_point: /my-skill\n")]
+        assert _update_registry(dest, rels) == 0
+        reg = _load_registry(dest)
+        entry = reg["skills"]["my-skill"]
+        assert set(entry.keys()) <= {"depends_on", "entry_point"}
+        assert "version" not in entry
+
+    def test_depends_on_synthesized_from_same_run_agents(self, tmp_path: Path):
+        """The sc-gh-stack scenario: skill + agents installed together, no
+        depends_on in frontmatter -> constraints synthesized as <major>.x."""
+        dest = tmp_path / ".claude"
+        dest.mkdir()
+        rels = [_write_agent(dest, "sc-stack-plan", "0.2.0"),
+                _write_agent(dest, "sc-stack-convert", "0.2.0"),
+                _write_skill(dest, "managing-gh-stacks")]
+        assert _update_registry(dest, rels) == 0
+        reg = _load_registry(dest)
+        assert reg["skills"]["managing-gh-stacks"]["depends_on"] == {
+            "sc-stack-plan": "0.x", "sc-stack-convert": "0.x"}
+
+    def test_frontmatter_depends_on_wins_over_synthesis(self, tmp_path: Path):
+        dest = tmp_path / ".claude"
+        dest.mkdir()
+        rels = [_write_agent(dest, "some-agent", "1.0.0"),
+                _write_skill(dest, "picky-skill", "depends_on: other-agent: 2.x\n")]
+        assert _update_registry(dest, rels) == 0
+        reg = _load_registry(dest)
+        assert reg["skills"]["picky-skill"]["depends_on"] == {"other-agent": "2.x"}
+
+    def test_skill_only_install_gets_empty_depends_on(self, tmp_path: Path):
+        dest = tmp_path / ".claude"
+        dest.mkdir()
+        assert _update_registry(dest, [_write_skill(dest, "solo-skill")]) == 0
+        reg = _load_registry(dest)
+        assert reg["skills"]["solo-skill"] == {"depends_on": {}}
+
+    def test_legacy_invalid_entries_sanitized_on_merge(self, tmp_path: Path):
+        """An existing registry polluted by the old bug (version on a skills
+        entry) must come out clean after any subsequent install."""
+        dest = tmp_path / ".claude"
+        (dest / "agents").mkdir(parents=True)
+        (dest / "agents" / "registry.yaml").write_text(
+            "agents: {}\nskills:\n  old-skill:\n    version: 0.9.0\n"
+            "    entry_point: /old\n")
+        assert _update_registry(dest, [_write_skill(dest, "new-skill")]) == 0
+        reg = _load_registry(dest)
+        assert reg["skills"]["old-skill"] == {"depends_on": {}, "entry_point": "/old"}
+        assert "version" not in reg["skills"]["new-skill"]
+
+    def test_written_registry_passes_real_schema(self, tmp_path: Path):
+        """Validate against the actual pydantic models in validate-agents.py."""
+        pytest.importorskip("pydantic")
+        import importlib.util
+        import sys
+        spec = importlib.util.spec_from_file_location(
+            "validate_agents",
+            Path(__file__).parent.parent / "scripts" / "validate-agents.py")
+        va = importlib.util.module_from_spec(spec)
+        sys.modules["validate_agents"] = va   # dataclasses resolve via sys.modules
+        try:
+            spec.loader.exec_module(va)
+        finally:
+            sys.modules.pop("validate_agents", None)
+
+        dest = tmp_path / ".claude"
+        dest.mkdir()
+        rels = [_write_agent(dest, "an-agent", "0.2.0"),
+                _write_skill(dest, "a-skill", "entry_point: /a-skill\n")]
+        assert _update_registry(dest, rels) == 0
+        va.AgentRegistry(**_load_registry(dest))   # raises on schema violation

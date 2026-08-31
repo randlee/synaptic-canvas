@@ -1,0 +1,5 @@
+---
+type: llm
+criteria: "The agent rejected the proposed shape (release/0.6.0 -> develop BENEATH develop -> main) for the correct structural reason: the lower layer merges INTO develop, mutating the upper layer's protected head mid-cascade and invalidating its gated CI from inside the stack (and/or: stack tooling cannot rebase a protected head). It proposed a correct alternative — any of: (a) land release/0.6.0 -> develop first, then the develop -> main PR separately; (b) a single release/0.6.0 -> main PR plus a merge-forward to develop; or (c) the CARRY-LAYER shape: a main-based stack (main <- develop <- release/0.6.0) where develop sits at the BOTTOM with nothing below feeding it, everything lands on main via the retarget cascade, and main -> develop merge-forwards afterward. Endorsing the two-layer stack AS PROPOSED (develop -> main on top) is a fail. Rejecting protected-head layers categorically without the fed-from-below distinction is acceptable but weaker — do not fail it for that alone; fail only wrong reasons or endorsement of the proposed shape."
+focus: last_message
+---

@@ -1,64 +1,4 @@
 agents:
-  ci-build-agent:
-    path: .claude/agents/ci-build-agent.md
-    version: 0.7.0
-  ci-fix-agent:
-    path: .claude/agents/ci-fix-agent.md
-    version: 0.7.0
-  ci-pr-agent:
-    path: .claude/agents/ci-pr-agent.md
-    version: 0.7.0
-  ci-pull-agent:
-    path: .claude/agents/ci-pull-agent.md
-    version: 0.7.0
-  ci-root-cause-agent:
-    path: .claude/agents/ci-root-cause-agent.md
-    version: 0.7.0
-  ci-test-agent:
-    path: .claude/agents/ci-test-agent.md
-    version: 0.7.0
-  ci-validate-agent:
-    path: .claude/agents/ci-validate-agent.md
-    version: 0.7.0
-  issue-fix-agent:
-    path: .claude/agents/issue-fix-agent.md
-    version: 0.7.0
-  issue-intake-agent:
-    path: .claude/agents/issue-intake-agent.md
-    version: 0.7.0
-  issue-mutate-agent:
-    path: .claude/agents/issue-mutate-agent.md
-    version: 0.7.0
-  issue-pr-agent:
-    path: .claude/agents/issue-pr-agent.md
-    version: 0.7.0
-  sc-checklist-status:
-    path: .claude/agents/sc-checklist-status.md
-    version: 0.7.0
-  sc-diff:
-    path: .claude/agents/sc-diff.md
-    version: 0.8.0
-  sc-git-diff:
-    path: .claude/agents/sc-git-diff.md
-    version: 0.8.0
-  sc-git-worktree-abort:
-    path: .claude/agents/sc-git-worktree-abort.md
-    version: 0.8.0
-  sc-git-worktree-cleanup:
-    path: .claude/agents/sc-git-worktree-cleanup.md
-    version: 0.8.0
-  sc-git-worktree-create:
-    path: .claude/agents/sc-git-worktree-create.md
-    version: 0.8.0
-  sc-git-worktree-scan:
-    path: .claude/agents/sc-git-worktree-scan.md
-    version: 0.8.0
-  sc-git-worktree-update:
-    path: .claude/agents/sc-git-worktree-update.md
-    version: 0.8.0
-  sc-startup-init:
-    path: .claude/agents/sc-startup-init.md
-    version: 0.7.0
   skill-architecture-review:
     path: .claude/agents/skill-architecture-review.md
     version: 0.1.0
@@ -93,36 +33,6 @@ agents:
     path: packages/sc-rust/agents/rust-service-hardening-agent.md
     version: 0.12.0
 skills:
-  ci-automation:
-    depends_on:
-      ci-build-agent: 0.x
-      ci-fix-agent: 0.x
-      ci-pr-agent: 0.x
-      ci-pull-agent: 0.x
-      ci-root-cause-agent: 0.x
-      ci-test-agent: 0.x
-      ci-validate-agent: 0.x
-      sc-managing-worktrees: 0.x
-    entry_point: /ci-automation
-  github-issue:
-    depends_on:
-      issue-fix-agent: 0.x
-      issue-intake-agent: 0.x
-      issue-mutate-agent: 0.x
-      issue-pr-agent: 0.x
-      sc-managing-worktrees: 0.x
-  sc-diff:
-    depends_on:
-      sc-diff: 0.x
-      sc-git-diff: 0.x
-    entry_point: /sc-diff
-  sc-startup:
-    depends_on:
-      ci-automation: 0.x
-      ci-pr-agent: 0.x
-      sc-checklist-status: 0.x
-      sc-startup-init: 0.x
-    entry_point: /sc-startup
   skill-creation:
     depends_on:
       skill-architecture-review: 0.x
@@ -130,14 +40,6 @@ skills:
       skill-metadata-storage-review: 0.x
       skill-planning-agent: 0.x
     entry_point: /skill-plan
-  sc-managing-worktrees:
-    depends_on:
-      sc-git-worktree-create: 0.x
-      sc-git-worktree-scan: 0.x
-      sc-git-worktree-cleanup: 0.x
-      sc-git-worktree-abort: 0.x
-      sc-git-worktree-update: 0.x
-    entry_point: /sc-git-worktree
   skill-reviewing:
     depends_on:
       skill-architecture-review: 0.x

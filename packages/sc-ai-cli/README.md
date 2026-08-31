@@ -48,3 +48,10 @@ Installed alongside the skills:
 | `creating-ai-clis/references/example-repos.md` | Real-world patterns and non-patterns from example repos |
 | `designing-cli-simulators/references/simulator-examples.md` | Concrete stateful simulator starting patterns |
 | `reviewing-ai-clis/references/review-checklist.md` | Contract-focused review checklist |
+
+## Security
+
+This package installs documentation and scaffolding assets; generated CLIs and
+simulators must be security-reviewed before use. Keep secrets out of prompts,
+configuration, logs, and generated artifacts, and use least-privilege
+credentials for any external systems a generated CLI accesses.

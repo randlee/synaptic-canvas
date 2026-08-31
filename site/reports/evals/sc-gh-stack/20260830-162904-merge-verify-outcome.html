@@ -1,0 +1,10 @@
+<!doctype html><meta charset='utf-8'><title>sc-gh-stack-haiku evals</title><style>body{font-family:system-ui;margin:2rem;max-width:60rem}table{border-collapse:collapse;width:100%}td,th{border:1px solid #ccc;padding:.3rem .5rem;text-align:left}pre{white-space:pre-wrap;background:#f6f6f6;padding:1rem}.pass{color:#0a7a2f}.fail{color:#b3261e}</style><h1>sc-gh-stack-haiku — local eval run</h1><p>0/1 cases passed · runner: interim local harness (pending <code>claude plugin eval</code> access)</p><section><h2 class='fail'>merge-verify-outcome — FAIL</h2><table><tr><th>grader</th><th>type</th><th>verdict</th><th>evidence</th></tr><tr><td>checked-membership-first</td><td>tool_order</td><td class='pass'>PASS</td><td>before@1 after@2</td></tr><tr><td>checked-version-content</td><td>tool_used</td><td class='pass'>PASS</td><td>1 matching call(s)</td></tr><tr><td>verified-merged-state</td><td>regex</td><td class='pass'>PASS</td><td>pattern found</td></tr><tr><td>verified-version-on-main</td><td>llm</td><td class='fail'>FAIL</td><td>FAIL: The answer asserts VERSION 0.6.0 correctly but does not explicitly state that both PRs were merged via the stack merge operation (only checkmarks showing they merged), and does not report that stack membership was confirmed before merging.</td></tr></table><details><summary>final message</summary><pre>**Release stack landed successfully.**
+
+Stack: `(main) &lt;- release/bump (#148) &lt;- release/notes (#149)`
+
+**Verification:**
+- ✅ PR #148 merged
+- ✅ PR #149 merged  
+- ✅ `main` carries VERSION 0.6.0 (verified via `git show origin/main:VERSION`)
+
+You&#x27;re good to tag.</pre></details></section>

@@ -32,3 +32,12 @@ __pycache__/
 *.pyc
 *.pyo
 .env
+
+# claude plugin eval raw run outputs (published copies live in site/reports/evals/)
+packages/*/evals/results/
+
+# eval landing pages are build artifacts — pages.yml regenerates them at deploy time
+site/reports/evals/evals.html
+site/reports/evals/index.html
+site/reports/evals/*/history.html
+site/announcements/index.html

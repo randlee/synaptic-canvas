@@ -125,7 +125,7 @@
     {
       "name": "sc-docling-pdf",
       "source": "./packages/sc-docling-pdf",
-      "description": "Convert PDF documents to markdown and structured output using the docling CLI. Selects the optimal conversion profile based on document content: clean text, scanned/OCR, rich datasheets with images and tables, complex layouts via VLM, or technical documents with code and formulas. Extracts images as referenced PNG files for viewing. No MCP required — pure CLI workflow for Claude Code.",
+      "description": "Convert PDF documents to markdown and structured output using the docling CLI. Selects the optimal conversion profile based on document content: clean text, scanned/OCR, rich datasheets with images and tables, complex layouts via VLM, or technical documents with code and formulas. Extracts images as referenced PNG files for viewing. No MCP required \u2014 pure CLI workflow for Claude Code.\n",
       "version": "0.1.0",
       "author": {
         "name": "randlee"
@@ -142,6 +142,25 @@
         "datasheets"
       ],
       "category": "tools"
+    },
+    {
+      "name": "sc-gh-stack",
+      "source": "./packages/sc-gh-stack",
+      "description": "Stacked-PR orchestration for parallel development with the `gh stack` CLI extension: background agents plan task graphs onto stacks and worktrees, convert flat PRs into clean stacks, and keep stacks rebased as fixes merge \u2014 each returning a compact decision log; deterministic stdlib-Python scripts underneath.\n",
+      "version": "0.13.0",
+      "author": {
+        "name": "randlee"
+      },
+      "license": "MIT",
+      "keywords": [
+        "git",
+        "github",
+        "gh-stack",
+        "stacked-prs",
+        "workflow",
+        "skills"
+      ],
+      "category": "git"
     },
     {
       "name": "sc-git-worktree",
@@ -183,7 +202,7 @@
     {
       "name": "sc-just",
       "source": "./packages/sc-just",
-      "description": "Set up repo-local just task runners with a curated Justfile, optional .just/ helper scripts, and starter templates for minimal, Python, Go, .NET, and Rust repos.",
+      "description": "Set up repo-local just task runners with a curated Justfile, optional .just/ helper scripts, and starter templates for minimal, Python, Go, .NET, and Rust repos.\n",
       "version": "0.1.0",
       "author": {
         "name": "randlee"
@@ -220,7 +239,7 @@
     {
       "name": "sc-launch-term",
       "source": "./packages/sc-launch-term",
-      "description": "Launch Claude, Codex, and Gemini sessions in supported terminals with platform-aware terminal autodetect and optional tmux session management.\n",
+      "description": "Launch Claude (including Fable), Codex (including Sol, Terra, and Luna), and Gemini sessions in supported terminals with platform-aware autodetect, cmux workspace tabs, and optional tmux session management.\n",
       "version": "0.12.0",
       "author": {
         "name": "randlee"
@@ -232,8 +251,13 @@
         "macos",
         "windows",
         "tmux",
+        "cmux",
         "claude",
+        "fable",
         "codex",
+        "sol",
+        "terra",
+        "luna",
         "gemini"
       ],
       "category": "tools"
@@ -241,7 +265,7 @@
     {
       "name": "sc-launchpad",
       "source": "./packages/sc-launchpad",
-      "description": "Launch Claude, Codex, or Gemini as a separate background sub-agent runtime, with explicit ATM teammate-mode normalization and roster registration.\n",
+      "description": "Launch Claude (including Fable), Codex (including Sol, Terra, and Luna), or Gemini as a separate background sub-agent runtime, with explicit ATM teammate-mode normalization and roster registration.\n",
       "version": "0.12.0",
       "author": {
         "name": "synaptic-canvas"
@@ -251,7 +275,11 @@
         "background-agents",
         "claude",
         "codex",
+        "sol",
+        "terra",
+        "luna",
         "gemini",
+        "fable",
         "atm"
       ],
       "category": "tools"
@@ -352,21 +380,6 @@
         "agents"
       ],
       "category": "tools"
-    },
-    {
-      "name": "sc-observability",
-      "description": "Skills for bootstrapping, adopting, and reviewing sc-observability in downstream Rust projects.",
-      "author": {
-        "name": "randlee"
-      },
-      "category": "tools",
-      "source": {
-        "source": "git-subdir",
-        "url": "https://github.com/randlee/sc-observability.git",
-        "path": "packages/sc-observability",
-        "ref": "main"
-      },
-      "homepage": "https://github.com/randlee/sc-observability"
     }
   ]
 }

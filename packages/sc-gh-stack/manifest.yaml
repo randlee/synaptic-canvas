@@ -1,0 +1,53 @@
+name: sc-gh-stack
+version: 0.13.0
+description: >
+  Stacked-PR orchestration for parallel development with the `gh stack` CLI
+  extension: background agents plan task graphs onto stacks and worktrees,
+  convert flat PRs into clean stacks, and keep stacks rebased as fixes merge —
+  each returning a compact decision log; deterministic stdlib-Python scripts
+  underneath.
+author: randlee
+license: MIT
+category: git
+tags:
+  - git
+  - github
+  - gh-stack
+  - stacked-prs
+  - workflow
+  - skills
+
+# Installation source of truth: files copied from this package are declared
+# under artifacts below. `.claude-plugin/plugin.json` is marketplace metadata.
+artifacts:
+  skills:
+    - skills/managing-gh-stacks/SKILL.md
+    - skills/managing-gh-stacks/references/playbook-convert.md
+    - skills/managing-gh-stacks/references/playbook-sync.md
+    - skills/managing-gh-stacks/references/playbook-graph-to-stacks.md
+    - skills/managing-gh-stacks/references/playbook-rebase.md
+    - skills/managing-gh-stacks/references/playbook-merge.md
+    - skills/managing-gh-stacks/references/commands.md
+    - skills/managing-gh-stacks/references/troubleshooting.md
+    - skills/managing-gh-stacks/references/stack-design.md
+    - skills/managing-gh-stacks/references/installation-and-troubleshooting.md
+  agents:
+    - agents/sc-stack-plan.md
+    - agents/sc-stack-convert.md
+    - agents/sc-stack-sync.md
+  scripts:
+    - scripts/sc_shared.py
+    - scripts/gh_stack_shared.py
+    - scripts/gh_stack_preflight.py
+    - scripts/gh_stack_convert.py
+    - scripts/gh_stack_sync.py
+
+install:
+  scope: both
+
+requires:
+  cli:
+    - gh
+    - git >= 2.23
+    - python3 >= 3.9
+  # gh-stack is a gh extension (`gh extension install github/gh-stack`), verified in SKILL.md Step 1.

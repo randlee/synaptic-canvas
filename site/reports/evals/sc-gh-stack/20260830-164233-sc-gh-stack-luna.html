@@ -1,0 +1,89 @@
+<!doctype html><meta charset='utf-8'><title>sc-gh-stack-luna evals</title><style>body{font-family:system-ui;margin:2rem;max-width:60rem}table{border-collapse:collapse;width:100%}td,th{border:1px solid #ccc;padding:.3rem .5rem;text-align:left}pre{white-space:pre-wrap;background:#f6f6f6;padding:1rem}.pass{color:#0a7a2f}.fail{color:#b3261e}</style><h1>sc-gh-stack-luna — local eval run</h1><p>5/6 cases passed · runner: interim local harness (pending <code>claude plugin eval</code> access)</p><section><h2 class='fail'>merge-forward-not-rebase — FAIL</h2><table><tr><th>grader</th><th>type</th><th>verdict</th><th>evidence</th></tr><tr><td>diagnosed-with-revlist</td><td>tool_used</td><td class='pass'>PASS</td><td>3 matching call(s)</td></tr><tr><td>no-rebase-attempt</td><td>regex</td><td class='fail'>FAIL</td><td>pattern found</td></tr><tr><td>recommended-merge-forward</td><td>llm</td><td class='pass'>PASS</td><td>PASS: Agent correctly identified drift above the stack&#x27;s base (main ahead of develop), explicitly refused to rebase/sync, and recommended a merge-forward PR as the policy-compliant fix.</td></tr></table><details><summary>final message</summary><pre>The stack is not stale relative to its trunk:
+
+`(develop) &lt;- feat/lint &lt;- feat/docs`
+
+`gh stack view --json` reports both layers `needsRebase: false`, and all local branches match `origin`.
+
+The actual drift is above the stack base:
+
+- `main` is one commit ahead of `develop`: `hotfix (#116)` (`app.txt`)
+- `develop` is zero commits ahead of `main`
+- Policy requires a merge-forward PR, never a rebase
+
+Do this:
+
+```bash
+gh pr create --base develop --head main \
+  --title &quot;Merge main into develop&quot; \
+  --body &quot;Merge-forward main hotfix into protected develop.&quot;
+```
+
+Merge that PR after required checks. Then sync the stack from its dedicated worktree:
+
+```bash
+git worktree add ../repo-worktrees/develop develop
+cd ../repo-worktrees/develop
+gh stack sync
+gh stack view --json
+```
+
+Do not run `gh stack rebase` now. No repository changes were made. The environment lacks the prescribed `gh_stack_*` scripts, and its stubbed `gh pr list` cannot verify whether a merge-forward PR already exists.</pre></details></section><section><h2 class='pass'>merge-membership-check — PASS</h2><table><tr><th>grader</th><th>type</th><th>verdict</th><th>evidence</th></tr><tr><td>checked-membership</td><td>tool_used</td><td class='pass'>PASS</td><td>1 matching call(s)</td></tr><tr><td>no-blind-subset-merge</td><td>regex</td><td class='pass'>PASS</td><td>pattern absent</td></tr><tr><td>no-rest-experiments</td><td>tool_used</td><td class='pass'>PASS</td><td>0 matching call(s)</td></tr><tr><td>surfaced-missing-pr</td><td>llm</td><td class='pass'>PASS</td><td>PASS: Agent correctly identified #148 is not tracked in the stack via gh stack view --json, explicitly stated the mismatch, refused to merge the incomplete subset, pointed at gh stack link as the solution, and made no changes.</td></tr></table><details><summary>final message</summary><pre>I did not merge the stack because the membership check found a blocker:
+
+- Intended: `(main) &lt;- release/bump (#148) &lt;- release/notes (#149)`
+- Tracked stack: `(main) &lt;- release/notes (#149)` only
+- Git ancestry confirms `release/notes` is based on `release/bump`, but #148 is not linked in the stack object.
+
+Per the `managing-gh-stacks` playbook, merging now could land only #149 out of order. No merge or repository changes were made. PR #148 must first be linked into the stack, then the membership check and stack merge can be rerun.</pre></details></section><section><h2 class='pass'>merge-verify-outcome — PASS</h2><table><tr><th>grader</th><th>type</th><th>verdict</th><th>evidence</th></tr><tr><td>checked-membership-first</td><td>tool_order</td><td class='pass'>PASS</td><td>before@2 after@4</td></tr><tr><td>checked-version-content</td><td>tool_used</td><td class='pass'>PASS</td><td>1 matching call(s)</td></tr><tr><td>verified-merged-state</td><td>regex</td><td class='pass'>PASS</td><td>pattern found</td></tr><tr><td>verified-version-on-main</td><td>llm</td><td class='pass'>PASS</td><td>PASS: Reports stack merged successfully with both PRs #148 and #149 merged, asserts main carries VERSION 0.6.0, uses stack-based workflow terminology, and contains no contradictions.</td></tr></table><details><summary>final message</summary><pre>Release stack landed successfully:
+
+- `(main) &lt;- release/bump (#148) &lt;- release/notes (#149)`
+- PRs #148 and #149: `MERGED`
+- Final `gh stack view`: both branches merged, `needsRebase: false`
+- `origin/main`: `9712e14c62f3712631c6b8e81edd934abe8d656d`
+- `origin/main:VERSION`: `0.6.0`
+
+No conflicts or resolutions occurred. No tag was created. You can safely tag `main` at this commit.</pre></details></section><section><h2 class='pass'>rebase-believe-the-report — PASS</h2><table><tr><th>grader</th><th>type</th><th>verdict</th><th>evidence</th></tr><tr><td>checked-view-json</td><td>tool_used</td><td class='pass'>PASS</td><td>5 matching call(s)</td></tr><tr><td>no-denial</td><td>regex</td><td class='pass'>PASS</td><td>pattern absent</td></tr><tr><td>outcome</td><td>llm</td><td class='pass'>PASS</td><td>PASS: Agent correctly diagnosed the lower-layer advancement (feat/core past feat/api), executed the prescribed cascade rebase via `gh stack rebase --upstack` and `gh stack sync`, verified needsRebase false on both layers, and avoided all prohibited commands (git reset --hard, git push --force, gh ap</td></tr><tr><td>ran-cascade-rebase</td><td>tool_used</td><td class='pass'>PASS</td><td>2 matching call(s)</td></tr></table><details><summary>final message</summary><pre>Rebase was genuinely needed. GitHub was correct: `feat/core` had advanced with `core: fix`, while `feat/api` was still based on the previous core commit.
+
+I used the `managing-gh-stacks` rebase playbook:
+
+- Stack: `(main) &lt;- feat/core &lt;- feat/api`
+- Ran `gh stack rebase --upstack` successfully, with no conflicts.
+- Replayed `feat/api` as commit `7cc7777` on top of `feat/core`.
+- Ran `gh stack sync`, which reported `Synced`.
+- Final `gh stack view --json`: both layers `needsRebase: false`; both remain unmerged.
+- Both worktrees are clean.
+
+`gh stack submit --auto` was unsupported by the repository’s test stub, so I did not use a direct `git push` (prohibited by the skill). The stub’s remote `feat/api` ref remains at its pre-rebase SHA, though the stack’s authoritative state now reports clean.</pre></details></section><section><h2 class='pass'>release-stack-shape — PASS</h2><table><tr><th>grader</th><th>type</th><th>verdict</th><th>evidence</th></tr><tr><td>no-endorsement</td><td>regex</td><td class='pass'>PASS</td><td>pattern absent</td></tr><tr><td>rejects-protected-head-layer</td><td>llm</td><td class='pass'>PASS</td><td>PASS: Agent correctly rejected the proposed shape for the exact structural reason (lower layer mutates the protected head and invalidates gated CI) and proposed two valid alternatives: sequential independent merges and the carry-layer shape.</td></tr></table><details><summary>final message</summary><pre>No. That stack is unsafe:
+
+```text
+(develop) &lt;- release/0.6.0 &lt;- develop -&gt; main
+```
+
+The lower PR would mutate `develop`, which is the protected head of the upper PR. That invalidates the upper PR’s gated CI and cannot be safely rebased during the cascade.
+
+Because you require this exact order, use two sequential, independent merges:
+
+1. Merge `release/0.6.0 -&gt; develop` as a standalone PR. Wait for required CI and approval.
+2. After it lands, update/open `develop -&gt; main`, wait for fresh required CI and approval, then merge it.
+
+Do not link those PRs into one stack or run `gh stack merge --yes` on that shape.
+
+If you prioritize one stack merge over the exact intermediate landing order, the supported carry-layer shape is:
+
+```text
+(main) &lt;- develop &lt;- release/0.6.0
+```
+
+That makes `develop -&gt; main` the bottom layer and `release/0.6.0 -&gt; develop` the top layer. The stack merge lands `develop` into `main`, then retargets the release layer to `main`; a final `main -&gt; develop` merge-forward is then required. This is only appropriate if your branch-protection rules and merge queue do not force fresh base updates mid-cascade.</pre></details></section><section><h2 class='pass'>sync-aborted-detection — PASS</h2><table><tr><th>grader</th><th>type</th><th>verdict</th><th>evidence</th></tr><tr><td>no-false-success</td><td>llm</td><td class='pass'>PASS</td><td>PASS: Agent correctly identified divergence, reported zero operations occurred, presented the caller&#x27;s choice without picking a side, and avoided claiming success.</td></tr><tr><td>ran-sync</td><td>tool_used</td><td class='pass'>PASS</td><td>3 matching call(s)</td></tr><tr><td>reported-divergence</td><td>regex</td><td class='pass'>PASS</td><td>pattern found</td></tr></table><details><summary>final message</summary><pre>Sync was aborted because the local and remote stack shapes diverged:
+
+- Local: `main &lt;- feat/one &lt;- feat/two`
+- Remote: `main &lt;- feat/one &lt;- feat/three`
+
+No rebase, fetch, or push occurred.
+
+Final state:
+
+- `main`: `a615d93` — matches `origin/main`
+- `feat/one`: `1e45e88` — matches `origin/feat/one`
+- `feat/two`: `2ec40f9` — matches `origin/feat/two`
+
+The working tree is unchanged aside from pre-existing untracked `.claude/` files. Choose whether to keep the remote or local stack before syncing can continue.</pre></details></section>

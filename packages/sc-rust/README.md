@@ -87,3 +87,10 @@ Installed alongside the skills:
 | `assets/sc-rust/quality-mgr/templates/rust-best-practices-assignment.json.j2` | Renders fenced-JSON assignments for `rust-best-practices-agent` |
 | `assets/sc-rust/quality-mgr/templates/rust-service-hardening-assignment.json.j2` | Renders fenced-JSON assignments for `rust-service-hardening-agent` |
 | `assets/sc-rust/quality-mgr/templates/rust-qa-assignment.json.j2` | Renders fenced-JSON assignments for `rust-qa-agent` |
+
+## Security
+
+This package installs guidance, agents, and templates; it does not send project
+data or manage credentials itself. Review any generated commands or code before
+execution, grant agents only the tools they need, and keep secrets out of
+prompts, configuration, logs, and generated artifacts.

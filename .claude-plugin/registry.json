@@ -21,7 +21,7 @@
         "scripts": 0,
         "schemas": 0
       },
-      "lastUpdated": "2026-04-29T04:44:47.185067+00:00"
+      "lastUpdated": "2026-08-30T22:31:50.073730+00:00"
     },
     {
       "name": "sc-ci-automation",
@@ -38,7 +38,7 @@
         "scripts": 1,
         "schemas": 0
       },
-      "lastUpdated": "2026-04-29T04:44:47.186098+00:00"
+      "lastUpdated": "2026-08-30T22:31:50.074916+00:00"
     },
     {
       "name": "sc-codex",
@@ -55,7 +55,7 @@
         "scripts": 2,
         "schemas": 2
       },
-      "lastUpdated": "2026-04-29T04:44:47.186834+00:00"
+      "lastUpdated": "2026-08-30T22:31:50.075806+00:00"
     },
     {
       "name": "sc-coding-agent-hardening",
@@ -72,7 +72,7 @@
         "scripts": 0,
         "schemas": 0
       },
-      "lastUpdated": "2026-04-29T04:44:47.187295+00:00"
+      "lastUpdated": "2026-08-30T22:31:50.076323+00:00"
     },
     {
       "name": "sc-commit-push-pr",
@@ -89,7 +89,7 @@
         "scripts": 9,
         "schemas": 0
       },
-      "lastUpdated": "2026-04-29T04:44:47.187922+00:00"
+      "lastUpdated": "2026-08-30T22:31:50.077010+00:00"
     },
     {
       "name": "sc-delay-tasks",
@@ -106,24 +106,15 @@
         "scripts": 2,
         "schemas": 0
       },
-      "lastUpdated": "2026-04-29T04:44:47.188514+00:00"
+      "lastUpdated": "2026-08-30T22:31:50.077653+00:00"
     },
     {
       "name": "sc-docling-pdf",
       "version": "0.1.0",
-      "description": "Convert PDF documents to markdown and structured output using the docling CLI. Selects the optimal conversion profile based on document content: clean text, scanned/OCR, rich datasheets with images and tables, complex layouts via VLM, or technical documents with code and formulas. Extracts images as referenced PNG files for viewing. No MCP required — pure CLI workflow for Claude Code.",
+      "description": "Convert PDF documents to markdown and structured output using the docling CLI. Selects the optimal conversion profile based on document content: clean text, scanned/OCR, rich datasheets with images and tables, complex layouts via VLM, or technical documents with code and formulas. Extracts images as referenced PNG files for viewing. No MCP required \u2014 pure CLI workflow for Claude Code.\n",
       "author": "randlee",
       "license": "MIT",
-      "keywords": [
-        "pdf",
-        "docling",
-        "conversion",
-        "markdown",
-        "ocr",
-        "images",
-        "tables",
-        "datasheets"
-      ],
+      "keywords": [],
       "category": "tools",
       "artifacts": {
         "commands": 0,
@@ -132,7 +123,24 @@
         "scripts": 0,
         "schemas": 0
       },
-      "lastUpdated": "2026-05-14T00:00:00.000000+00:00"
+      "lastUpdated": "2026-08-30T22:31:50.078536+00:00"
+    },
+    {
+      "name": "sc-gh-stack",
+      "version": "0.13.0",
+      "description": "Stacked-PR orchestration for parallel development with the `gh stack` CLI extension: background agents plan task graphs onto stacks and worktrees, convert flat PRs into clean stacks, and keep stacks rebased as fixes merge \u2014 each returning a compact decision log; deterministic stdlib-Python scripts underneath.\n",
+      "author": "randlee",
+      "license": "MIT",
+      "keywords": [],
+      "category": "git",
+      "artifacts": {
+        "commands": 0,
+        "skills": 1,
+        "agents": 3,
+        "scripts": 5,
+        "schemas": 0
+      },
+      "lastUpdated": "2026-08-30T22:31:50.079487+00:00"
     },
     {
       "name": "sc-git-worktree",
@@ -149,7 +157,7 @@
         "scripts": 7,
         "schemas": 0
       },
-      "lastUpdated": "2026-04-29T04:44:47.189493+00:00"
+      "lastUpdated": "2026-08-30T22:31:50.080510+00:00"
     },
     {
       "name": "sc-github-issue",
@@ -166,7 +174,7 @@
         "scripts": 1,
         "schemas": 0
       },
-      "lastUpdated": "2026-04-29T04:44:47.190573+00:00"
+      "lastUpdated": "2026-08-30T22:31:50.081602+00:00"
     },
     {
       "name": "sc-just",
@@ -183,7 +191,7 @@
         "scripts": 0,
         "schemas": 0
       },
-      "lastUpdated": "2026-05-15T21:50:55.867734+00:00"
+      "lastUpdated": "2026-08-30T22:31:50.082603+00:00"
     },
     {
       "name": "sc-kanban",
@@ -200,7 +208,7 @@
         "scripts": 5,
         "schemas": 0
       },
-      "lastUpdated": "2026-04-29T04:44:47.191285+00:00"
+      "lastUpdated": "2026-08-30T22:31:50.083362+00:00"
     },
     {
       "name": "sc-launch-term",
@@ -211,13 +219,13 @@
       "keywords": [],
       "category": "tools",
       "artifacts": {
-        "commands": 9,
+        "commands": 0,
         "skills": 0,
         "agents": 0,
         "scripts": 3,
         "schemas": 0
       },
-      "lastUpdated": "2026-08-09T14:54:36.245664"
+      "lastUpdated": "2026-08-30T22:31:50.084101+00:00"
     },
     {
       "name": "sc-launchpad",
@@ -234,7 +242,7 @@
         "scripts": 2,
         "schemas": 0
       },
-      "lastUpdated": "2026-08-09T14:54:36.395961"
+      "lastUpdated": "2026-08-30T22:31:50.084768+00:00"
     },
     {
       "name": "sc-manage",
@@ -251,7 +259,7 @@
         "scripts": 8,
         "schemas": 0
       },
-      "lastUpdated": "2026-04-29T04:44:47.193173+00:00"
+      "lastUpdated": "2026-08-30T22:31:50.085435+00:00"
     },
     {
       "name": "sc-repomix-nuget",
@@ -268,7 +276,7 @@
         "scripts": 3,
         "schemas": 0
       },
-      "lastUpdated": "2026-04-29T04:44:47.193840+00:00"
+      "lastUpdated": "2026-08-30T22:31:50.086098+00:00"
     },
     {
       "name": "sc-roslyn-diff",
@@ -285,7 +293,7 @@
         "scripts": 6,
         "schemas": 0
       },
-      "lastUpdated": "2026-04-29T04:44:47.194536+00:00"
+      "lastUpdated": "2026-08-30T22:31:50.086788+00:00"
     },
     {
       "name": "sc-rust",
@@ -302,7 +310,7 @@
         "scripts": 0,
         "schemas": 0
       },
-      "lastUpdated": "2026-04-29T04:44:47.195728+00:00"
+      "lastUpdated": "2026-08-30T22:31:50.087964+00:00"
     },
     {
       "name": "sc-startup",
@@ -319,17 +327,17 @@
         "scripts": 1,
         "schemas": 0
       },
-      "lastUpdated": "2026-04-29T04:44:47.196460+00:00"
+      "lastUpdated": "2026-08-30T22:31:50.088739+00:00"
     }
   ],
   "metadata": {
-    "totalPackages": 18,
-    "totalCommands": 19,
-    "totalSkills": 21,
-    "totalAgents": 45,
-    "totalScripts": 50,
+    "totalPackages": 19,
+    "totalCommands": 10,
+    "totalSkills": 22,
+    "totalAgents": 48,
+    "totalScripts": 55,
     "totalSchemas": 2
   },
-  "generated": "2026-08-09T14:54:36.395998",
-  "lastUpdated": "2026-08-09T14:54:36.396000"
+  "generated": "2026-08-30T22:31:50.088752+00:00",
+  "lastUpdated": "2026-08-30T22:31:50.088753+00:00"
 }

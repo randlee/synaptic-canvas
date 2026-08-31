@@ -20,3 +20,10 @@ Marketplace package for hardening coding, QA, and orchestration agent prompts.
 - `./skills/coding-agent-hardening/references/repo-target-map.md`
 
 `repo-target-map.md` is optional and only applies when hardening agents inside the Synaptic Canvas repository itself.
+
+## Security
+
+This package supplies prompt-hardening guidance only and does not manage
+credentials or transmit project data by itself. Review the permissions and
+commands granted to consuming agents, and do not include secrets in prompts,
+configuration, logs, or generated artifacts.

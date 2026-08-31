@@ -76,10 +76,15 @@ class ExpectationType(str, Enum):
     SUBAGENT_EVENT = "subagent_event"
     SUBAGENT_LIFECYCLE = "subagent_lifecycle"
     OUTPUT_CONTAINS = "output_contains"
+    OUTPUT_NOT_CONTAINS = "output_not_contains"
     EXECUTION_PARAM = "execution_param"
     FILE_CREATED = "file_created"
     FILE_MODIFIED = "file_modified"
     FILE_DELETED = "file_deleted"
+    FILE_CONTAINS = "file_contains"
+    FILE_NOT_CONTAINS = "file_not_contains"
+    TOOL_ORDER = "tool_order"
+    LLM_JUDGE = "llm_judge"
 
 
 class TimelineEntryType(str, Enum):

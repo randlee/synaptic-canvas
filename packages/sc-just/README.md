@@ -42,3 +42,10 @@ right default.
 
 This package installs into `.claude/` only. It does not create persistent state
 at runtime. The copied `Justfile` and `.just/` helpers live in the target repo.
+
+## Security
+
+This package copies task-runner templates into the target repository; `just`
+recipes execute the commands defined by that repository. Review generated
+`Justfile` recipes and helper scripts before running them, use trusted project
+dependencies, and do not place secrets in template configuration or task output.

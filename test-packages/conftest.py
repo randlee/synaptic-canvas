@@ -155,6 +155,13 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         default=None,
         help="Directory for generated reports (default: test-packages/reports)",
     )
+    parser.addoption(
+        "--run-evals",
+        action="store_true",
+        default=False,
+        help="Run *-evals fixtures (generated from packages/*/evals; they execute "
+             "live Claude agent sessions and are skipped by default)",
+    )
 
 
 # =============================================================================

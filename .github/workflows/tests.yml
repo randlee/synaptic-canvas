@@ -1,6 +1,8 @@
 name: Python Tests
 
 on:
+  push:
+    branches: [develop, main]
   pull_request:
     branches: [develop, main]
 
@@ -42,5 +44,27 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements-dev.txt
 
+      # pytest.ini sets --import-mode=importlib, so tests/ and
+      # packages/sc-gh-stack/tests (both named "tests") can be collected
+      # together in one invocation. sc-gh-stack's tests drive real git with
+      # bash-based gh stubs, so they're skipped on Windows; Windows runs the
+      # repo tests on their own instead.
       - name: Run tests
+        if: runner.os != 'Windows'
+        run: pytest tests/ packages/sc-gh-stack/tests -v
+
+      - name: Run repo tests (Windows)
+        if: runner.os == 'Windows'
         run: pytest tests/ -v
+
+      # Harness unit tests only. NEVER point CI at test-packages/fixtures/ —
+      # fixture tests (including the generated *-evals ones) execute live
+      # Claude agent sessions and are run manually/by PQA, not in CI.
+      # Skipped on Windows: the harness is POSIX-only by design (HOME-override
+      # isolation, bash setup commands in fixtures, POSIX transcript-path
+      # encoding) and can never execute fixtures on Windows, so Windows
+      # coverage of its unit tests guards nothing real.
+      - name: Run test-harness unit tests
+        if: runner.os != 'Windows'
+        run: pytest harness/tests -v
+        working-directory: test-packages

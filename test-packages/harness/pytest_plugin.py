@@ -931,7 +931,9 @@ class YAMLTestItem(pytest.Item):
             Tuple of (path, line, description)
         """
         source = self.test_config.source_path or Path(str(self.fspath))
-        return source, None, f"{self.fixture_config.name}::{self.test_config.test_id}"
+        # Line 0, not None: pytest's skip/xfail report path asserts a real
+        # line number when building the "skipped at <location>" longrepr.
+        return source, 0, f"{self.fixture_config.name}::{self.test_config.test_id}"
 
 
 # =============================================================================
@@ -1140,21 +1142,40 @@ def pytest_sessionstart(session: pytest.Session) -> None:
     _report_state._session_start = datetime.now()
 
 
+def _is_eval_fixture_path(path: Path) -> bool:
+    """True when a collected YAML test belongs to a *-evals fixture.
+
+    Eval fixtures are generated from packages/<pkg>/evals and execute live
+    Claude agent sessions — they must never run by accident (CI, or a broad
+    `pytest test-packages/fixtures/` sweep); running them requires --run-evals.
+    """
+    return any(part.endswith("-evals") for part in path.parts)
+
+
 def pytest_collection_modifyitems(
     config: Config,
     items: list[pytest.Item],
 ) -> None:
     """Pytest hook to modify collected items.
 
-    Adds the fixture_test marker to all YAML test items.
+    Adds the fixture_test marker to all YAML test items, and skips *-evals
+    fixture tests unless --run-evals was passed (they execute live agent
+    sessions and cost real model usage).
 
     Args:
         config: Pytest configuration
         items: List of collected test items
     """
+    run_evals = config.getoption("--run-evals", default=False)
+    skip_evals = pytest.mark.skip(
+        reason="eval fixture (executes live Claude agent sessions); "
+               "pass --run-evals to execute"
+    )
     for item in items:
         if isinstance(item, YAMLTestItem):
             item.add_marker(pytest.mark.fixture_test)
+            if not run_evals and _is_eval_fixture_path(Path(str(item.fspath))):
+                item.add_marker(skip_evals)
 
 
 def pytest_runtest_makereport(
@@ -1242,10 +1263,22 @@ def pytest_sessionfinish(
     generated_reports: list[Path] = []
 
     for fixture_name in _report_state.fixture_names:
+        # Eval fixtures (generated from packages/<pkg>/evals) publish straight
+        # to the site tree with a date-stamped name — site/reports/evals is the
+        # long-term, GitHub-Pages-viewable record with full history. An
+        # explicit --report-dir still overrides.
+        destination = _eval_report_destination(fixture_name, report_dir)
+        if destination:
+            fixture_report_path, report_basename = destination
+            fixture_report_path.mkdir(parents=True, exist_ok=True)
+        else:
+            fixture_report_path, report_basename = report_path, None
+
         html_path = _generate_fixture_report(
             fixture_name=fixture_name,
-            report_path=report_path,
+            report_path=fixture_report_path,
             project_path=Path(config.rootdir),
+            report_basename=report_basename,
         )
         if html_path:
             generated_reports.append(html_path)
@@ -1423,10 +1456,33 @@ def _find_synaptic_canvas_root(project_path: Path) -> Path | None:
     return None
 
 
+def _eval_report_destination(
+    fixture_name: str,
+    report_dir: str | None,
+) -> tuple[Path, str] | None:
+    """Report destination override for eval fixtures.
+
+    Fixtures generated from packages/<pkg>/evals (named `<pkg>-evals`) publish
+    straight to site/reports/evals/<pkg>/ with a date-stamped basename —
+    the long-term, GitHub-Pages-viewable record with full history. Returns
+    (report_path, basename), or None for non-eval fixtures and when an
+    explicit --report-dir overrides.
+    """
+    if not fixture_name.endswith("-evals") or report_dir:
+        return None
+    from datetime import datetime
+
+    pkg = fixture_name[: -len("-evals")]
+    repo_root = Path(__file__).resolve().parents[2]
+    dest = repo_root / "site" / "reports" / "evals" / pkg
+    return dest, f"{datetime.now().strftime('%Y%m%d-%H%M%S')}-{fixture_name}"
+
+
 def _generate_fixture_report(
     fixture_name: str,
     report_path: Path,
     project_path: Path,
+    report_basename: str | None = None,
 ) -> Path | None:
     """Generate HTML report for a fixture.
 
@@ -1461,6 +1517,10 @@ def _generate_fixture_report(
 
         if not test_results_data:
             return None
+
+        # File/folder stem for the report and its artifacts (eval fixtures get
+        # a date-stamped basename so history accumulates side by side).
+        basename = report_basename or fixture_name
 
         # Build TestResult objects from recorded data
         report_builder = ReportBuilder(project_path)
@@ -1505,7 +1565,7 @@ def _generate_fixture_report(
                     setup_commands=setup_commands,
                     plugin_verification=plugin_verification,
                     reports_dir=report_path,
-                    fixture_name=fixture_name,
+                    fixture_name=basename,
                     allow_warnings=test_config.allow_warnings,
                 )
             else:
@@ -1537,22 +1597,22 @@ def _generate_fixture_report(
             tests=test_results,
             agent_or_skill_path=agent_skill_path,
             fixture_path=fixture_yaml_path,
-            report_path=str(report_path / f"{fixture_name}.html"),
+            report_path=str(report_path / f"{basename}.html"),
         )
 
         # Write HTML report
-        html_path = report_path / f"{fixture_name}.html"
+        html_path = report_path / f"{basename}.html"
         write_html_report(fixture_report, html_path)
 
         # Also write JSON report
         from .reporter import write_json_report
-        json_path = report_path / f"{fixture_name}.json"
+        json_path = report_path / f"{basename}.json"
         write_json_report(fixture_report, json_path)
 
         # Preserve artifacts in folder next to HTML report
         # Result pattern ensures we never fail tests due to artifact errors
         artifact_result = _preserve_artifacts(
-            fixture_name=fixture_name,
+            fixture_name=basename,
             report_path=report_path,
             test_results_data=test_results_data,
             fixture_config=fixture_config,
