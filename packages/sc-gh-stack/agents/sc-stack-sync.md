@@ -10,7 +10,7 @@ color: green
 
 ## Invocation
 
-Invoked via the Task tool with `run_in_background: true` by the `managing-gh-stacks` skill.
+Invoked via the Agent tool (formerly Task) with `run_in_background: true` by the `managing-gh-stacks` skill.
 Do not invoke directly.
 
 ## Input Protocol

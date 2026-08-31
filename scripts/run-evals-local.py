@@ -137,10 +137,19 @@ def run_agent_codex(prompt: str, meta: Dict[str, Any], cwd: Path, model: str,
            "--output-last-message", str(last_file), "--skip-git-repo-check",
            "-c", 'shell_environment_policy.inherit="all"', prompt]
     try:
+        # Codex sessions run slower and more exploratorily than claude -p;
+        # give them double the case's budget rather than failing on variance.
+        # stdin MUST be DEVNULL: with a piped/inherited stdin, codex exec
+        # waits to read it as an appended <stdin> block and hangs forever
+        # ("Reading additional input from stdin...").
         proc = subprocess.run(cmd, cwd=cwd, env=env, capture_output=True, text=True,
-                              timeout=int(meta.get("timeout_seconds", 300)))
-    except subprocess.TimeoutExpired:
-        return Transcript("", [], error="timeout")
+                              stdin=subprocess.DEVNULL,
+                              timeout=2 * int(meta.get("timeout_seconds", 300)))
+    except subprocess.TimeoutExpired as exc:
+        partial = (exc.stdout or b"")
+        if isinstance(partial, bytes):
+            partial = partial.decode("utf-8", "ignore")
+        return Transcript("", [], error=f"timeout (partial events: {partial[-300:]!r})")
     last, calls = "", []
     for line in proc.stdout.splitlines():
         try:

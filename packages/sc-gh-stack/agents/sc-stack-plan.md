@@ -10,7 +10,7 @@ color: purple
 
 ## Invocation
 
-Invoked via the Task tool by the `managing-gh-stacks` skill. Do not invoke directly.
+Invoked via the Agent tool (formerly Task) by the `managing-gh-stacks` skill. Do not invoke directly.
 
 ## Input Protocol
 

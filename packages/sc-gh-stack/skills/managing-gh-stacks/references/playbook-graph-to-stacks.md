@@ -6,7 +6,7 @@ worktrees to create so independent lines of work never touch each other's checko
 
 ## Route — delegate to `sc-stack-plan`
 
-Invoke the agent via the Task tool (read-only; safe to run without preflight):
+Invoke the agent via the Agent tool (formerly Task) (read-only; safe to run without preflight):
 
 ```json
 {

@@ -24,7 +24,7 @@ as deep references and are loaded only when a playbook points to them.
 
 ## Agents
 
-Invoked by the skill via the Task tool (`run_in_background: true`), one per stack:
+Invoked by the skill via the Agent tool (formerly Task) (`run_in_background: true`), one per stack:
 
 - `sc-stack-plan` — read-only: dependency graph → stacks optimized for
   parallelism + exact worktree creation commands; ambiguous order comes back as

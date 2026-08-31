@@ -36,8 +36,10 @@ If `view --json` says a layer needs a rebase, it does — proceed below. Only af
 
 ## Merge-forward repositories
 
-Before recommending any `gh stack rebase`/`sync`, check whether the drift is actually
-*above* the stack's base:
+Before RUNNING or recommending any `gh stack rebase`/`sync` — diagnosis comes first,
+never an exploratory sync "to see what happens" (it will conflict against foreign
+history and, even though all branches restore, the attempt itself is the incident) —
+check whether the drift is actually *above* the stack's base:
 
 ```bash
 git fetch

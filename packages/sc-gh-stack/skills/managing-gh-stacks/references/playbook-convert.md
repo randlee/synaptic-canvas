@@ -12,7 +12,7 @@ stack's top), or try to "fix" order with metadata. Ancestry first.
 
 ## Route A — delegate to `sc-stack-convert` (default)
 
-Determine the layer order (Inputs below), then invoke the agent via the Task tool with
+Determine the layer order (Inputs below), then invoke the agent via the Agent tool (formerly Task) with
 `run_in_background: true`:
 
 ```json

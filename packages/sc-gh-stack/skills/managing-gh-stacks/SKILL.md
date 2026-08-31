@@ -103,7 +103,8 @@ installed — **do not reproduce the rebase chain or preflight checks by hand.**
    layer** of a main-based stack (`main <- develop <- feat...`) is sound — nothing below
    feeds it, and the retarget cascade lands every layer on main
    (`references/playbook-merge.md`, "Release stacks and the carry layer").
-8. Before recommending a rebase, check the drift is not ABOVE the stack's base:
+8. Before RUNNING or recommending any `gh stack rebase`/`sync` — including exploratory
+   probes ("let's see what sync does"): check the drift is not ABOVE the stack's base:
    `git rev-list --count <base>..<upper>` nonzero in a merge-forward-only repo means a
    merge-forward PR, never `gh stack rebase`/`sync` (`references/playbook-rebase.md`).
 
@@ -124,7 +125,7 @@ All stack execution happens in dedicated worktrees, never in the user's checkout
 
 ## Agent Delegation
 
-Delegate convert and sync via the Task tool with `run_in_background: true`; the plan agent is
+Delegate convert and sync via the Agent tool (formerly Task) with `run_in_background: true`; the plan agent is
 read-only and fast, so it may run in the foreground. Background agents complete
 asynchronously — wait for the completion notification rather than assuming a timeout (a
 deliberate departure from the spec's per-task timeouts: background Task agents signal
@@ -135,6 +136,14 @@ stacks, aggregate per the spec: `{ "parallel": true, "concurrency": N, "results"
 "summary": { "all_successful", "failed", "succeeded" } }`, results ordered by
 `correlation_id`, and surface `summary.failed` to the user — never silently drop a failed
 stack:
+
+**Other runtimes (Codex):** delegation there uses the `collaboration.spawn_agent` tool —
+called directly by the model, never from shell. Spawn one agent per concrete bounded
+task, using the agent `.md` file's Purpose/Inputs/Output contract as the task
+specification; the same `<input_json>` fields and fenced-JSON output contract apply.
+Constraints carry over unchanged: never delegate edits to the same files to two agents,
+and the caller owns integration and the final report. If spawn_agent is unavailable,
+use the script route above.
 
 | Situation | Agent | Input (as `<input_json>`) | Returns |
 |---|---|---|---|
