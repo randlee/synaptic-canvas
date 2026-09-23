@@ -130,8 +130,8 @@ def extract_frontmatter(file_path: str) -> Result[Dict[str, Any], ScriptReferenc
     match = re.match(pattern, content, re.DOTALL)
 
     if not match:
-        # No frontmatter is okay for some files
-        return Success(value={}, warnings=["No frontmatter found"])
+        # No frontmatter is valid for files without hooks or metadata.
+        return Success(value={}, warnings=[])
 
     raw_frontmatter = match.group(1)
 

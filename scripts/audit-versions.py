@@ -393,7 +393,7 @@ def audit_version_consistency(
         if (
             not package_dir.is_dir()
             or package_dir.name.startswith(".")
-            or package_dir.name == "shared"
+            or package_dir.name in {"shared", "docs"}
         ):
             continue
 
@@ -493,7 +493,7 @@ def audit_changelogs(repo_root: Path, verbose: bool = False) -> Result[list[Chec
         if (
             not package_dir.is_dir()
             or package_dir.name.startswith(".")
-            or package_dir.name == "shared"
+            or package_dir.name in {"shared", "docs"}
         ):
             continue
 

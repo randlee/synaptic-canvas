@@ -141,7 +141,7 @@ def test_extract_frontmatter_no_frontmatter(temp_dir):
     result = extract_frontmatter(str(file_path))
     assert isinstance(result, Success)
     assert result.value == {}
-    assert "No frontmatter found" in result.warnings[0]
+    assert result.warnings == []
 
 
 def test_extract_frontmatter_missing_file(temp_dir):

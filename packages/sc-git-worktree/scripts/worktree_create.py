@@ -17,8 +17,16 @@ Input JSON:
         "repo_root": "/path/to/repo",  # optional, defaults to cwd
         "tracking_enabled": true,       # optional, defaults to true
         "worktree_base": null,          # optional, derived from repo name
-        "tracking_path": null           # optional, derived from worktree_base
+        "tracking_path": null,          # optional, derived from worktree_base
+        "stack": {                      # optional: cut a gh-stack layer from a PUSHED parent
+            "trunk": "develop",         #   the branch the stack's bottom PR targets
+            "above": null               #   layer currently stacked on `base` (mid-stack insert only)
+        }
     }
+
+Stack mode (`stack` present) cuts `branch` from `origin/<base>` with --no-track,
+records the parent SHA, and returns a `stack_handoff` block for the worktree's
+writer. Plain mode branches from the local base ref when one exists.
 
 Exit Codes:
     0: Worktree created successfully
@@ -27,6 +35,7 @@ Exit Codes:
 
 import json
 import os
+import shlex
 import subprocess
 import sys
 from datetime import datetime, timezone
@@ -45,9 +54,13 @@ try:
         check_branch_exists_remote,
         check_remote_branch_exists,
         create_tracking_branch,
+        find_stack_children,
         get_default_tracking_path,
         get_repo_root,
         get_worktree_status,
+        is_ancestor,
+        load_tracking_jsonl,
+        rev_parse,
         run_git,
     )
 except ImportError:
@@ -59,9 +72,13 @@ except ImportError:
         check_branch_exists_remote,
         check_remote_branch_exists,
         create_tracking_branch,
+        find_stack_children,
         get_default_tracking_path,
         get_repo_root,
         get_worktree_status,
+        is_ancestor,
+        load_tracking_jsonl,
+        rev_parse,
         run_git,
     )
 
@@ -69,6 +86,31 @@ except ImportError:
 # =============================================================================
 # Input Models
 # =============================================================================
+
+
+class StackInput(BaseModel):
+    """Stack-layer inputs: the worktree is a gh-stack layer cut from a pushed parent (`base`)."""
+
+    trunk: str = Field(..., description="Stack trunk: the branch the bottom PR of the stack targets")
+    above: Optional[str] = Field(
+        None,
+        description="Layer currently stacked directly on `base`; set only when inserting mid-stack",
+    )
+
+    @field_validator("trunk")
+    @classmethod
+    def validate_trunk(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("stack.trunk cannot be empty")
+        return v.strip()
+
+    @field_validator("above")
+    @classmethod
+    def validate_above(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return None
+        v = v.strip()
+        return v or None
 
 
 class CreateInput(BaseModel):
@@ -82,6 +124,7 @@ class CreateInput(BaseModel):
     tracking_enabled: bool = Field(True, description="Whether to update tracking doc")
     worktree_base: Optional[str] = Field(None, description="Base directory for worktrees")
     tracking_path: Optional[str] = Field(None, description="Path to tracking document")
+    stack: Optional[StackInput] = Field(None, description="Present when the worktree is a gh-stack layer")
 
     @field_validator("branch")
     @classmethod
@@ -105,6 +148,254 @@ class CreateInput(BaseModel):
         return v.strip()
 
 
+
+
+# =============================================================================
+# Stack layers (gh-stack)
+# =============================================================================
+
+
+def check_stack_preconditions(
+    input_data: CreateInput,
+    repo_root: Path,
+    transcript: Transcript,
+    *,
+    branch_exists_local: bool,
+    branch_exists_remote: bool,
+    tracking_entries: Optional[list] = None,
+) -> tuple:
+    """Validate a stack cut. Returns (stack_info, None) or (None, error Envelope).
+
+    Rules (from the gh-stack field playbook): a layer is always a new branch cut
+    from its parent's PUSHED head; the parent sits on the trunk and is not already
+    landed; when inserting, the layer above must actually be stacked on the parent.
+    """
+    stack = input_data.stack
+    base = input_data.base
+    trunk = stack.trunk
+    above = stack.above
+
+    def fail(code: str, message: str, action: str, **data: Any) -> tuple:
+        transcript.step_failed(step="stack preconditions", error=message)
+        return None, Envelope.error_response(
+            code=code,
+            message=message,
+            recoverable=True,
+            suggested_action=action,
+            data=data or None,
+            transcript=transcript,
+        )
+
+    if branch_exists_local or branch_exists_remote:
+        return fail(
+            ErrorCodes.STACK_LAYER_EXISTS,
+            f"Branch '{input_data.branch}' already exists; a stack layer is always a new branch cut from its parent's pushed head",
+            "Choose a new layer name, or omit `stack` to open a worktree on the existing branch",
+        )
+
+    parent_sha = rev_parse(f"origin/{base}", cwd=repo_root)
+    if not parent_sha:
+        return fail(
+            ErrorCodes.STACK_PARENT_NOT_PUSHED,
+            f"Stack parent '{base}' is not on origin; layers are cut from pushed heads only",
+            f"Push the parent first (git push -u origin {base}) and retry",
+        )
+
+    trunk_sha = rev_parse(f"origin/{trunk}", cwd=repo_root)
+    if not trunk_sha:
+        return fail(
+            ErrorCodes.BRANCH_NOT_FOUND,
+            f"Stack trunk '{trunk}' not found on origin",
+            "Pass the branch the stack's bottom PR targets (for example develop) as stack.trunk",
+        )
+
+    if above is not None and above in (base, input_data.branch):
+        return fail(
+            ErrorCodes.STACK_ABOVE_INVALID,
+            f"stack.above '{above}' must name the layer currently stacked on '{base}', not the parent or the new layer",
+            "Read the layer above the parent from /sc-gh-stack-view and pass that name",
+        )
+
+    parent_behind_trunk = 0
+    if base != trunk:
+        if is_ancestor(f"origin/{base}", f"origin/{trunk}", cwd=repo_root):
+            return fail(
+                ErrorCodes.STACK_PARENT_LANDED,
+                f"Stack parent '{base}' is already contained in trunk '{trunk}'; cutting from it would start the layer behind the trunk",
+                f"Cut from '{trunk}' (bottom layer) or from the current top shown by /sc-gh-stack-view",
+            )
+        mb = run_git(["merge-base", f"origin/{trunk}", f"origin/{base}"], cwd=repo_root, check=False)
+        if mb.returncode != 0:
+            return fail(
+                ErrorCodes.STACK_PARENT_OFF_TRUNK,
+                f"origin/{base} and origin/{trunk} share no history",
+                "Check stack.trunk; the parent must be a layer stacked on that trunk",
+            )
+        if not is_ancestor(f"origin/{trunk}", f"origin/{base}", cwd=repo_root):
+            behind = run_git(["rev-list", "--count", f"origin/{base}..origin/{trunk}"], cwd=repo_root, check=False)
+            parent_behind_trunk = int(behind.stdout.strip() or 0) if behind.returncode == 0 else -1
+            transcript.step_ok(
+                step=f"git merge-base --is-ancestor origin/{trunk} origin/{base}",
+                message=f"parent behind trunk by {parent_behind_trunk} commit(s); allowed (stack bottom note, not a blocker)",
+            )
+
+    if above is not None:
+        above_sha = rev_parse(f"origin/{above}", cwd=repo_root)
+        if not above_sha:
+            return fail(
+                ErrorCodes.STACK_ABOVE_INVALID,
+                f"stack.above '{above}' is not on origin",
+                "Pass the pushed layer that is stacked on the parent, or omit `above` when cutting from the top",
+            )
+        if not is_ancestor(f"origin/{base}", f"origin/{above}", cwd=repo_root):
+            return fail(
+                ErrorCodes.STACK_ABOVE_INVALID,
+                f"origin/{above} does not contain origin/{base}, so it is not stacked on '{base}'",
+                "Read the real layer above the parent from /sc-gh-stack-view, or omit `above`",
+            )
+
+    if above is None and tracking_entries:
+        # Appending: the parent must be the top. A live layer already on it means this cut
+        # would fork the stack (two layers sharing a parent), which cannot be linked linearly.
+        existing = find_stack_children(tracking_entries, base, cwd=repo_root)
+        if existing:
+            return fail(
+                ErrorCodes.STACK_PARENT_HAS_CHILD,
+                f"'{base}' already has live layer(s) on it: {', '.join(existing)}; cutting another from it would fork the stack",
+                f"Cut from the current top ({existing[-1]}) instead, or pass stack.above = '{existing[-1]}' to insert under it",
+                existing_children=existing,
+            )
+
+    local_base_sha = rev_parse(base, cwd=repo_root)
+    if local_base_sha and local_base_sha != parent_sha:
+        transcript.step_ok(
+            step=f"git rev-parse {base}",
+            message=f"local {base} ({local_base_sha[:8]}) differs from origin ({parent_sha[:8]}); cutting from origin",
+        )
+
+    transcript.step_ok(
+        step=f"git rev-parse origin/{base}",
+        message=f"parent_sha={parent_sha}",
+    )
+
+    stack_info = {
+        "trunk": trunk,
+        "parent": base,
+        "parent_sha": parent_sha,
+        "above": above,
+        "position": "insert" if above else "top",
+        "parent_behind_trunk": parent_behind_trunk,
+    }
+    return stack_info, None
+
+
+def build_stack_handoff(
+    branch: str,
+    purpose: str,
+    worktree_path: Path,
+    stack_info: Dict[str, Any],
+    repo_root: Path,
+) -> Dict[str, Any]:
+    """The information needed to stack this layer, split by role.
+
+    `writer` is for the single agent that works in the worktree; `stack_writer` is for
+    the one agent that runs gh stack write commands and opens PRs (never the layer's
+    writer). Everything derives from the gh-stack field playbook (sc-gh-stack).
+    Angle-bracket placeholders are read from /sc-gh-stack-view or gh output.
+    """
+    trunk = stack_info["trunk"]
+    parent = stack_info["parent"]
+    sha = stack_info["parent_sha"]
+    above = stack_info.get("above")
+    chain_check = repo_root / ".claude" / "scripts" / "gh_stack_chain_check.py"
+    chain_check_available = chain_check.exists()
+    wt = shlex.quote(str(worktree_path))
+    bottom = parent == trunk
+    # Layers below the parent, as PR-number and branch-name placeholders. A layer cut
+    # from the trunk is the stack bottom: nothing sits below it.
+    lower_prs = "" if bottom else f"<bottom-pr#> ... <pr# of {parent}> "
+    lower_names = "" if bottom else f"<bottom> ... {parent} "
+
+    pr_base_rule = f"The PR base is {parent}" + ("" if bottom else f", never {trunk}") + "."
+    writer_rules = [
+        f"You are the only writer of {branch}. Never edit, rebase, or force-push any layer below it.",
+        f"Make a WIP commit within minutes and push it; the stack writer opens the PR and links it on that first push, never 'once it is green'. {pr_base_rule}",
+        (
+            f"Rebase at most once per task, at the start, only while this layer has no children: "
+            f"git fetch origin && git rebase --onto origin/{parent} {sha} {branch} && git push --force-with-lease. "
+            f"Between tasks the layer does not move."
+        ),
+        f"Never run gh stack write commands (link, unstack, sync, rebase, merge) or open PRs from this worktree; report to the stack writer.",
+        f"The next layer is cut from origin/{branch} after it is pushed, never from a local ref.",
+    ]
+    writer_commands = [
+        f"git -C {wt} commit --allow-empty -m {shlex.quote('wip: ' + purpose[:60])}   # first WIP commit now; a PR needs at least one",
+        f"git -C {wt} push -u origin {branch}",
+    ]
+
+    pr_body = f"Parent: {parent} @ {sha}\nTask: {purpose}\nFence: <paths this layer may touch>"
+    pr_create = (
+        f"gh pr create --base {parent} --head {branch} --title \"<title>\" --body \"$(cat <<'B'\n"
+        f"Parent: {parent} @ {sha}\nTask: {purpose}\nFence: <paths this layer may touch>\nB\n)\""
+    )
+    stack_writer_commands = [
+        f"# after the writer's first push of {branch}:",
+        pr_create,
+        f"cd {wt} && gh stack checkout <stack#>   # import tracking into this new worktree; skip only when no stack exists yet",
+    ]
+    if above:
+        stack_writer_commands += [
+            f"# every layer above {parent}, bottom to top, carries the layer below it forward with ONE merge commit each",
+            f"# (never a rebase, never a force-push), starting with the writer of {above}:",
+            f"git -C <worktree of {above}> fetch origin && git -C <worktree of {above}> merge --no-ff origin/{branch} && git -C <worktree of {above}> push",
+            f"# then the layer above {above} merges origin/{above}, and so on up to the top",
+            "gh stack unstack <stack#>                       # PRs and branches untouched; confirm with the user first",
+            f"gh pr edit <pr# of {above}> --base {branch}",
+        ]
+        if chain_check_available:
+            stack_writer_commands.append(
+                f"python3 .claude/scripts/gh_stack_chain_check.py --trunk {trunk} {lower_names}{branch} {above} ... <top>   # must print LINKABLE"
+            )
+        stack_writer_commands += [
+            f"gh stack link --base {trunk} {lower_prs}<pr# of {branch}> <pr# of {above}> ... <top-pr#>",
+            "# every other stack worktree: gh stack unstack --local && gh stack checkout <new stack#>",
+            "/sc-gh-stack-view",
+        ]
+    else:
+        if chain_check_available:
+            stack_writer_commands.append(
+                f"python3 .claude/scripts/gh_stack_chain_check.py --trunk {trunk} {lower_names}{branch}   # must print LINKABLE"
+            )
+        stack_writer_commands += [
+            f"gh stack link <stack#> <pr# of {branch}>          # append: only if {parent} is the top row in /sc-gh-stack-view",
+            f"gh stack link --base {trunk} {lower_prs}<pr# of {branch}>   # first link, or full relink",
+            "/sc-gh-stack-view",
+        ]
+
+    return {
+        "position": stack_info["position"],
+        "trunk": trunk,
+        "parent": parent,
+        "parent_sha": sha,
+        "above": above,
+        "pr_base": parent,
+        "pr_body": pr_body,
+        "writer": {
+            "audience": f"the single agent working in {worktree_path}",
+            "rules": writer_rules,
+            "commands": writer_commands,
+        },
+        "stack_writer": {
+            "audience": "the one agent that opens PRs and runs gh stack write commands (not the layer's writer)",
+            "commands": stack_writer_commands,
+        },
+        "chain_check_available": chain_check_available,
+        "reference": (
+            "sc-gh-stack references/recipe-restack.md section 1 (insert)"
+            if above
+            else "sc-gh-stack references/recipe-link.md section A (first push)"
+        ),
+    }
 
 
 # =============================================================================
@@ -237,6 +528,20 @@ def create_worktree_main(input_data: CreateInput) -> Envelope:
             message=f"local={branch_exists_local} remote={branch_exists_remote}",
         )
 
+        # Stack layer: validate the cut before touching anything
+        stack_info: Optional[Dict[str, Any]] = None
+        if input_data.stack is not None:
+            stack_info, stack_error = check_stack_preconditions(
+                input_data,
+                repo_root,
+                transcript,
+                branch_exists_local=branch_exists_local,
+                branch_exists_remote=branch_exists_remote,
+                tracking_entries=load_tracking_jsonl(tracking_path) if tracking_path else None,
+            )
+            if stack_error is not None:
+                return stack_error
+
         # Determine creation strategy
         if branch_exists_local:
             # Branch exists locally, just add worktree
@@ -265,7 +570,14 @@ def create_worktree_main(input_data: CreateInput) -> Envelope:
         else:
             # New branch, create from base
             # Determine the actual base ref to use (local or remote)
-            if base_exists_local:
+            if stack_info is not None:
+                # Stack layers are always cut from the parent's PUSHED head
+                base_ref = f"origin/{input_data.base}"
+                transcript.step_ok(
+                    step="resolve base",
+                    message=f"stack layer: cutting from pushed head {base_ref}",
+                )
+            elif base_exists_local:
                 base_ref = input_data.base
             elif base_exists_remote:
                 base_ref = f"origin/{input_data.base}"
@@ -277,9 +589,15 @@ def create_worktree_main(input_data: CreateInput) -> Envelope:
                 # Neither local nor remote base exists - error handled earlier
                 base_ref = input_data.base
 
-            git_cmd = f"git worktree add -b {input_data.branch} {worktree_path} {base_ref}"
+            # A branch started from a remote-tracking ref must not inherit it as
+            # upstream: otherwise `git push` / `--force-with-lease` target the base.
+            add_args = ["worktree", "add"]
+            if base_ref.startswith("origin/"):
+                add_args.append("--no-track")
+            add_args += ["-b", input_data.branch, str(worktree_path), base_ref]
+            git_cmd = "git " + " ".join(add_args)
             with transcript.timed_step(git_cmd) as t:
-                run_git(["worktree", "add", "-b", input_data.branch, str(worktree_path), base_ref], cwd=repo_root)
+                run_git(add_args, cwd=repo_root)
                 t.message = f"Preparing worktree ({worktree_path})"
             needs_new_branch = True
 
@@ -316,6 +634,11 @@ def create_worktree_main(input_data: CreateInput) -> Envelope:
             remote_exists=remote_exists,
             local_worktree=True,
             remote_ahead=0,  # Just created, local is up to date
+            stack=(
+                {k: stack_info[k] for k in ("trunk", "parent", "parent_sha", "above", "position")}
+                if stack_info
+                else None
+            ),
         )
 
         # Update tracking document (JSONL)
@@ -331,20 +654,23 @@ def create_worktree_main(input_data: CreateInput) -> Envelope:
             transcript.step_skipped(step="update_tracking", message="disabled")
 
         # Build response
-        return Envelope.success_response(
-            data={
-                "action": "create",
-                "branch": input_data.branch,
-                "base": input_data.base,
-                "path": str(worktree_path),
-                "repo_name": repo_name,
-                "status": "clean",
-                "branch_created": needs_new_branch,
-                "tracking_entry": tracking_entry.model_dump(),
-                "tracking_updated": tracking_updated,
-            },
-            transcript=transcript,
-        )
+        data: Dict[str, Any] = {
+            "action": "create",
+            "branch": input_data.branch,
+            "base": input_data.base,
+            "path": str(worktree_path),
+            "repo_name": repo_name,
+            "status": "clean",
+            "branch_created": needs_new_branch,
+            "tracking_entry": tracking_entry.model_dump(),
+            "tracking_updated": tracking_updated,
+        }
+        if stack_info is not None:
+            data["stack"] = tracking_entry.stack
+            data["stack_handoff"] = build_stack_handoff(
+                input_data.branch, input_data.purpose, worktree_path, stack_info, repo_root
+            )
+        return Envelope.success_response(data=data, transcript=transcript)
 
     except subprocess.CalledProcessError as e:
         cmd = " ".join(e.cmd) if isinstance(e.cmd, list) else str(e.cmd)

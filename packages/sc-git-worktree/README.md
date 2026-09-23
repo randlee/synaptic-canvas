@@ -32,6 +32,7 @@ Create, scan, clean up, and abort worktrees using predictable paths and safe def
 ## Usage
 - `/sc-git-worktree --list` or `--status`
 - `/sc-git-worktree --create <branch> <base>`
+- `/sc-git-worktree --create-stacked <layer> <parent> <trunk> [--above <layer>]` (gh-stack layer: cut from the parent's pushed head, returns a `stack_handoff` for the writer)
 - `/sc-git-worktree --cleanup <branch>`
 - `/sc-git-worktree --abort <branch>`
 
@@ -44,6 +45,7 @@ Safety
 - Never delete remote branches that are ahead of local (unpulled commits)
 - Never delete protected branches (main, master, develop)
 - Never modify dirty worktrees without explicit approval
+- Never delete a branch that live stack layers were cut from unless git shows it landed (`STACK.HAS_CHILDREN`)
 
 Shared Settings
 - Protected branches are read from `.sc/shared-settings.yaml` (`git.protected_branches`)
@@ -74,7 +76,8 @@ See [DESIGN.md](DESIGN.md) for detailed requirements including:
 ## Components
 - Command: `commands/sc-git-worktree.md`
 - Skill: `skills/sc-managing-worktrees/SKILL.md`
-- Agents: `sc-worktree-create`, `sc-worktree-scan`, `sc-worktree-cleanup`, `sc-worktree-abort`
+- Agents: `sc-worktree-create`, `sc-worktree-create-stacked`, `sc-worktree-scan`, `sc-worktree-cleanup`, `sc-worktree-abort`, `sc-worktree-update`
+- Stack layers: `skills/sc-git-worktree/references/stack-layers.md` (pairs with the `sc-gh-stack` package)
 
 ## Version & Changelog
 - 0.4.0 — Initial v0.x publication

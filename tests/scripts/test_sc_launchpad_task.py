@@ -3,6 +3,8 @@
 from pathlib import Path
 import importlib.util
 
+import pytest
+
 
 spec = importlib.util.spec_from_file_location(
     "sc_launchpad_task",
@@ -86,6 +88,18 @@ def test_build_command_for_claude():
     ]
 
 
+def test_normalize_fable_model_aliases():
+    for model in ("fable", "claude-fable-5", "claude-fable-5[1m]"):
+        payload = sc_launchpad_task.LaunchpadInput(
+            description="Launch Fable",
+            prompt="Review the diff",
+            tool="claude",
+            model=model,
+            cwd="/tmp",
+        )
+        assert sc_launchpad_task.normalize_tool_model(payload) == "fable"
+
+
 def test_build_command_for_codex():
     payload = sc_launchpad_task.LaunchpadInput(
         description="Launch Codex",
@@ -99,12 +113,61 @@ def test_build_command_for_codex():
     assert command == [
         "codex",
         "exec",
-        "--full-auto",
+        "--yolo",
         "--model",
         "gpt-5.1-codex-max",
         "--skip-git-repo-check",
         "Implement the fix",
     ]
+
+
+@pytest.mark.parametrize(
+    ("alias", "model_id"),
+    [
+        ("sol", "gpt-5.6-sol"),
+        ("terra", "gpt-5.6-terra"),
+        ("luna", "gpt-5.6-luna"),
+        ("codex", "gpt-5.6-terra"),
+    ],
+)
+def test_normalize_codex_model_aliases(alias, model_id):
+    payload = sc_launchpad_task.LaunchpadInput(
+        description="Launch Codex",
+        prompt="Implement the fix",
+        tool="codex",
+        model=alias,
+        cwd="/tmp",
+    )
+    assert sc_launchpad_task.normalize_tool_model(payload) == model_id
+
+
+def test_build_command_for_terra_codex():
+    payload = sc_launchpad_task.LaunchpadInput(
+        description="Launch Terra",
+        prompt="Implement the fix",
+        tool="codex",
+        model="terra",
+        cwd="/tmp",
+    )
+    command = sc_launchpad_task.build_command(payload, "gpt-5.6-terra")
+    assert command == [
+        "codex",
+        "exec",
+        "--yolo",
+        "--model",
+        "gpt-5.6-terra",
+        "Implement the fix",
+    ]
+
+
+def test_codex_defaults_to_terra():
+    payload = sc_launchpad_task.LaunchpadInput(
+        description="Launch Codex",
+        prompt="Implement the fix",
+        tool="codex",
+        cwd="/tmp",
+    )
+    assert sc_launchpad_task.normalize_tool_model(payload) == "gpt-5.6-terra"
 
 
 def test_build_command_for_gemini():
@@ -129,11 +192,11 @@ def test_build_command_for_gemini():
     ]
 
 
-def test_roster_model_uses_tool_name_for_codex():
+def test_roster_model_uses_canonical_alias_for_codex():
     payload = sc_launchpad_task.LaunchpadInput(
         description="Launch Codex",
         prompt="Implement the fix",
         tool="codex",
         cwd="/tmp",
     )
-    assert sc_launchpad_task.roster_model(payload, "gpt-5.2-codex") == "codex"
+    assert sc_launchpad_task.roster_model(payload, "gpt-5.6-terra") == "terra"

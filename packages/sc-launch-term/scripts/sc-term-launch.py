@@ -17,7 +17,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from launch_term_shared import (
-    _IDENTITY_NAMES,
+    _IDENTITY_NAMES,  # noqa: F401 - retained as a module-level identity-pool view
     build_claude_session_record_path,
     build_codex_session_record_path,
     generate_ulid,
@@ -30,10 +30,16 @@ from launch_term_shared import (
 )
 
 
-MAC_TERMINALS = ("iterm2", "ghostty", "wezterm", "warp", "terminal")
+MAC_TERMINALS = ("iterm2", "ghostty", "wezterm", "warp", "cmux", "terminal")
 WINDOWS_TERMINALS = ("wt", "warp")
-CLAUDE_MODELS = ("sonnet", "haiku", "opus")
-TEAM_MEMBER_MODELS = CLAUDE_MODELS + ("codex", "gemini")
+CLAUDE_MODELS = ("sonnet", "haiku", "opus", "fable")
+CODEX_MODELS = ("sol", "terra", "luna", "codex")
+CODEX_MODEL_IDS = {
+    "sol": "gpt-5.6-sol",
+    "terra": "gpt-5.6-terra",
+    "luna": "gpt-5.6-luna",
+}
+TEAM_MEMBER_MODELS = CLAUDE_MODELS + CODEX_MODELS + ("gemini",)
 MACOS_SHELL_SETTLE_DELAY_SECONDS = 0.8
 
 
@@ -73,7 +79,9 @@ def warp_launch_config_dir() -> Path:
     if os.name == "nt":
         appdata = os.environ.get("APPDATA")
         if not appdata:
-            fail("APPDATA is not set; cannot locate Warp launch configuration directory")
+            fail(
+                "APPDATA is not set; cannot locate Warp launch configuration directory"
+            )
         return Path(appdata) / "warp" / "Warp" / "data" / "launch_configurations"
     fail("Warp launch configuration automation is only supported on macOS and Windows")
 
@@ -89,6 +97,8 @@ def available_terminals() -> list[str]:
             available.append("wezterm")
         if detect_macos_app("Warp"):
             available.append("warp")
+        if command_exists("cmux"):
+            available.append("cmux")
         if detect_macos_app("Terminal"):
             available.append("terminal")
         return available
@@ -118,7 +128,9 @@ def resolve_terminal(requested: str | None) -> str:
         "windows-terminal": "wt",
         "terminal.app": "terminal",
     }
-    requested_value = aliases.get((requested or "auto").lower(), (requested or "auto").lower())
+    requested_value = aliases.get(
+        (requested or "auto").lower(), (requested or "auto").lower()
+    )
 
     supported = platform_supported_terminals()
     available = available_terminals()
@@ -295,7 +307,9 @@ def launch_wezterm(shell_command: str, dir_path: str, use_tab: bool) -> None:
     start_cmd.extend(["--cwd", dir_path])
     subprocess.run(start_cmd, check=True)
     time.sleep(0.35)
-    subprocess.run(["wezterm", "cli", "send-text", "--no-paste", shell_command], check=True)
+    subprocess.run(
+        ["wezterm", "cli", "send-text", "--no-paste", shell_command], check=True
+    )
     subprocess.run(["wezterm", "cli", "send-text", "--no-paste", "\n"], check=True)
 
 
@@ -323,7 +337,9 @@ def write_warp_launch_config(command: str, dir_path: str, title: str) -> Path:
 
 def launch_warp(shell_command: str, dir_path: str, use_tab: bool, title: str) -> None:
     if use_tab:
-        fail("Warp automation currently supports new-window launches only; omit --tab or choose another terminal")
+        fail(
+            "Warp automation currently supports new-window launches only; omit --tab or choose another terminal"
+        )
 
     config_path = write_warp_launch_config(shell_command, dir_path, title)
     uri = f"warp://launch/{urllib.parse.quote(str(config_path), safe='')}"
@@ -334,6 +350,26 @@ def launch_warp(shell_command: str, dir_path: str, use_tab: bool, title: str) ->
         os.startfile(uri)  # type: ignore[attr-defined]
         return
     fail("Warp automation is only supported on macOS and Windows")
+
+
+def launch_cmux(shell_command: str, dir_path: str, use_tab: bool, title: str) -> None:
+    """Launch a command in a cmux workspace, which is cmux's tab primitive."""
+    del use_tab  # cmux workspaces are always tab-like targets.
+    subprocess.run(
+        [
+            "cmux",
+            "new-workspace",
+            "--cwd",
+            dir_path,
+            "--name",
+            title,
+            "--command",
+            shell_command,
+            "--focus",
+            "true",
+        ],
+        check=True,
+    )
 
 
 def preferred_windows_shell() -> list[str]:
@@ -353,7 +389,9 @@ def launch_windows_terminal(shell_command: str, dir_path: str, use_tab: bool) ->
     subprocess.run(command, check=True)
 
 
-def run_launch(terminal: str, shell_command: str, dir_path: str, use_tab: bool, title: str) -> None:
+def run_launch(
+    terminal: str, shell_command: str, dir_path: str, use_tab: bool, title: str
+) -> None:
     if terminal == "iterm2":
         launch_iterm2(shell_command, use_tab)
         return
@@ -368,6 +406,9 @@ def run_launch(terminal: str, shell_command: str, dir_path: str, use_tab: bool, 
         return
     if terminal == "warp":
         launch_warp(shell_command, dir_path, use_tab, title)
+        return
+    if terminal == "cmux":
+        launch_cmux(shell_command, dir_path, use_tab, title)
         return
     if terminal == "wt":
         launch_windows_terminal(shell_command, dir_path, use_tab)
@@ -416,10 +457,34 @@ def render_command_argv(command_argv: list[str], terminal: str) -> str:
     return shlex.join(command_argv)
 
 
-def build_claude_argv(model: str, extra_args: list[str], teammate_mode: bool) -> list[str]:
+def build_claude_argv(
+    model: str, extra_args: list[str], teammate_mode: bool
+) -> list[str]:
     command = ["claude", "--model", model, "--dangerously-skip-permissions"]
     if teammate_mode:
         command.extend(["--teammate-mode", "tmux"])
+    command.extend(extra_args)
+    return command
+
+
+def canonical_codex_model(model: str) -> str:
+    """Normalize the deprecated Codex alias to the Terra model identity."""
+    return "terra" if model == "codex" else model
+
+
+def codex_model_id(model: str) -> str:
+    return CODEX_MODEL_IDS[canonical_codex_model(model)]
+
+
+def build_codex_argv(model: str, extra_args: list[str]) -> list[str]:
+    command = [
+        "codex",
+        "--model",
+        codex_model_id(model),
+        "--yolo",
+        "--enable",
+        "hooks",
+    ]
     command.extend(extra_args)
     return command
 
@@ -458,7 +523,9 @@ def apply_atm_env_prefix(
     return apply_env_prefix(command, terminal, env_vars)
 
 
-def wait_for_path(path: Path, timeout_seconds: float = 5.0, interval_seconds: float = 0.25) -> bool:
+def wait_for_path(
+    path: Path, timeout_seconds: float = 5.0, interval_seconds: float = 0.25
+) -> bool:
     deadline = time.monotonic() + timeout_seconds
     while time.monotonic() < deadline:
         if path.exists():
@@ -511,10 +578,122 @@ def session_tracking_for_member_model(
     member_model: str | None,
     dir_path: str,
 ) -> tuple[str, Path] | tuple[None, None]:
-    if member_model == "codex":
+    if member_model in CODEX_MODELS:
         launch_id = generate_ulid()
         return launch_id, build_codex_session_record_path(dir_path, launch_id)
     return None, None
+
+
+def model_session_record_path(tool: str, dir_path: str, launch_id: str) -> Path:
+    if tool == "claude":
+        return build_claude_session_record_path(dir_path, launch_id)
+    if tool == "codex":
+        return build_codex_session_record_path(dir_path, launch_id)
+    fail(f"Unsupported model-launch tool: {tool}")
+
+
+def build_model_argv(
+    tool: str,
+    model: str,
+    extra_args: list[str],
+    teammate_mode: bool,
+) -> list[str]:
+    if tool == "claude":
+        return build_claude_argv(model, extra_args, teammate_mode)
+    if tool == "codex":
+        return build_codex_argv(model, extra_args)
+    fail(f"Unsupported model-launch tool: {tool}")
+
+
+def canonical_model_label(tool: str, model: str) -> str:
+    if tool == "codex":
+        return canonical_codex_model(model)
+    return model
+
+
+def handle_launch_model(args: argparse.Namespace, tool: str) -> None:
+    terminal = resolve_terminal(args.terminal)
+    if args.tmux and not tmux_available():
+        fail("tmux is not available on PATH; omit --tmux or install tmux")
+
+    model = canonical_model_label(tool, args.model)
+    team = resolve_team()
+    identity = resolve_identity(args.identity, model)
+    register_team_member(team, identity, model, args.dir)
+    launch_id = generate_ulid()
+    session_record = model_session_record_path(tool, args.dir, launch_id)
+    extra_args = normalize_passthrough_args(getattr(args, "model_args", []))
+    command = render_command_argv(
+        build_model_argv(tool, model, extra_args, teammate_mode=bool(args.tmux)),
+        terminal,
+    )
+    env_vars = {
+        "SC_LAUNCH_ID": launch_id,
+        "SC_SESSION_RECORD": str(session_record),
+    }
+    if team:
+        env_vars["ATM_TEAM"] = team
+    if identity:
+        env_vars["ATM_IDENTITY"] = identity
+    command = apply_env_prefix(command, terminal, env_vars)
+    shell_command = prepare_shell_command(terminal, command, args.dir, args.tmux)
+    run_launch(terminal, shell_command, args.dir, args.tab, title_from_label(model))
+    result = {
+        "ok": True,
+        "tool": tool,
+        "model": model,
+        "launch_id": launch_id,
+        "session_record": str(session_record),
+        "session_record_found": wait_for_path(session_record),
+    }
+    if tool == "codex":
+        result["model_id"] = codex_model_id(model)
+    emit_json(result)
+
+
+def handle_attach_pane_model(args: argparse.Namespace, tool: str) -> None:
+    terminal = resolve_terminal(args.terminal)
+    if not tmux_available():
+        fail("tmux is not available on PATH; cannot attach to a session")
+
+    model = canonical_model_label(tool, args.model)
+    team = resolve_team()
+    identity = resolve_identity(args.identity, model)
+    register_team_member(team, identity, model, args.cwd)
+    launch_id = generate_ulid()
+    session_record = model_session_record_path(tool, args.cwd, launch_id)
+    extra_args = normalize_passthrough_args(getattr(args, "model_args", []))
+    command = render_command_argv(
+        build_model_argv(tool, model, extra_args, teammate_mode=True),
+        terminal,
+    )
+    env_vars = {
+        "SC_LAUNCH_ID": launch_id,
+        "SC_SESSION_RECORD": str(session_record),
+    }
+    if team:
+        env_vars["ATM_TEAM"] = team
+    if identity:
+        env_vars["ATM_IDENTITY"] = identity
+    command = apply_env_prefix(command, terminal, env_vars)
+    run_launch(
+        terminal,
+        build_tmux_attach_pane(args.session, command),
+        args.cwd,
+        args.tab,
+        f"sc-launch-term pane {model}",
+    )
+    result = {
+        "ok": True,
+        "tool": tool,
+        "model": model,
+        "launch_id": launch_id,
+        "session_record": str(session_record),
+        "session_record_found": wait_for_path(session_record),
+    }
+    if tool == "codex":
+        result["model_id"] = codex_model_id(model)
+    emit_json(result)
 
 
 def handle_launch(args: argparse.Namespace) -> None:
@@ -523,9 +702,16 @@ def handle_launch(args: argparse.Namespace) -> None:
         fail("tmux is not available on PATH; omit --tmux or install tmux")
 
     team = resolve_team()
-    identity = resolve_identity(args.identity, args.member_model)
-    register_team_member(team, identity, args.member_model, args.dir)
-    launch_id, session_record = session_tracking_for_member_model(args.member_model, args.dir)
+    member_model = (
+        canonical_model_label("codex", args.member_model)
+        if args.member_model in CODEX_MODELS
+        else args.member_model
+    )
+    identity = resolve_identity(args.identity, member_model)
+    register_team_member(team, identity, member_model, args.dir)
+    launch_id, session_record = session_tracking_for_member_model(
+        member_model, args.dir
+    )
     env_vars: dict[str, str] = {}
     if launch_id and session_record:
         env_vars["SC_LAUNCH_ID"] = launch_id
@@ -536,12 +722,14 @@ def handle_launch(args: argparse.Namespace) -> None:
         env_vars["ATM_IDENTITY"] = identity
     command = apply_env_prefix(args.command, terminal, env_vars)
     shell_command = prepare_shell_command(terminal, command, args.dir, args.tmux)
-    run_launch(terminal, shell_command, args.dir, args.tab, title_from_command(args.command))
+    run_launch(
+        terminal, shell_command, args.dir, args.tab, title_from_command(args.command)
+    )
     if launch_id and session_record:
         emit_json(
             {
                 "ok": True,
-                "tool": args.member_model,
+                "tool": member_model,
                 "launch_id": launch_id,
                 "session_record": str(session_record),
                 "session_record_found": wait_for_path(session_record),
@@ -569,7 +757,9 @@ def handle_attach_pane(args: argparse.Namespace) -> None:
     team = resolve_team()
     identity = resolve_identity(args.identity, args.member_model)
     register_team_member(team, identity, args.member_model, args.cwd)
-    launch_id, session_record = session_tracking_for_member_model(args.member_model, args.cwd)
+    launch_id, session_record = session_tracking_for_member_model(
+        args.member_model, args.cwd
+    )
     env_vars: dict[str, str] = {}
     if launch_id and session_record:
         env_vars["SC_LAUNCH_ID"] = launch_id
@@ -599,84 +789,19 @@ def handle_attach_pane(args: argparse.Namespace) -> None:
 
 
 def handle_launch_claude_model(args: argparse.Namespace) -> None:
-    terminal = resolve_terminal(args.terminal)
-    if args.tmux and not tmux_available():
-        fail("tmux is not available on PATH; omit --tmux or install tmux")
-
-    team = resolve_team()
-    identity = resolve_identity(args.identity, args.model)
-    register_team_member(team, identity, args.model, args.dir)
-    launch_id = generate_ulid()
-    session_record = build_claude_session_record_path(args.dir, launch_id)
-    extra_args = normalize_passthrough_args(getattr(args, "claude_args", []))
-    command = render_command_argv(
-        build_claude_argv(args.model, extra_args, teammate_mode=bool(args.tmux)),
-        terminal,
-    )
-    env_vars = {
-        "SC_LAUNCH_ID": launch_id,
-        "SC_SESSION_RECORD": str(session_record),
-    }
-    if team:
-        env_vars["ATM_TEAM"] = team
-    if identity:
-        env_vars["ATM_IDENTITY"] = identity
-    command = apply_env_prefix(command, terminal, env_vars)
-    shell_command = prepare_shell_command(terminal, command, args.dir, args.tmux)
-    run_launch(terminal, shell_command, args.dir, args.tab, title_from_label(args.model))
-    emit_json(
-        {
-            "ok": True,
-            "tool": "claude",
-            "model": args.model,
-            "launch_id": launch_id,
-            "session_record": str(session_record),
-            "session_record_found": wait_for_path(session_record),
-        }
-    )
+    handle_launch_model(args, "claude")
 
 
 def handle_attach_pane_claude_model(args: argparse.Namespace) -> None:
-    terminal = resolve_terminal(args.terminal)
-    if not tmux_available():
-        fail("tmux is not available on PATH; cannot attach a pane")
+    handle_attach_pane_model(args, "claude")
 
-    team = resolve_team()
-    identity = resolve_identity(args.identity, args.model)
-    register_team_member(team, identity, args.model, args.cwd)
-    launch_id = generate_ulid()
-    session_record = build_claude_session_record_path(args.cwd, launch_id)
-    extra_args = normalize_passthrough_args(getattr(args, "claude_args", []))
-    command = render_command_argv(
-        build_claude_argv(args.model, extra_args, teammate_mode=True),
-        terminal,
-    )
-    env_vars = {
-        "SC_LAUNCH_ID": launch_id,
-        "SC_SESSION_RECORD": str(session_record),
-    }
-    if team:
-        env_vars["ATM_TEAM"] = team
-    if identity:
-        env_vars["ATM_IDENTITY"] = identity
-    command = apply_env_prefix(command, terminal, env_vars)
-    run_launch(
-        terminal,
-        build_tmux_attach_pane(args.session, command),
-        os.getcwd(),
-        args.tab,
-        f"sc-launch-term pane {args.session}",
-    )
-    emit_json(
-        {
-            "ok": True,
-            "tool": "claude",
-            "model": args.model,
-            "launch_id": launch_id,
-            "session_record": str(session_record),
-            "session_record_found": wait_for_path(session_record),
-        }
-    )
+
+def handle_launch_codex_model(args: argparse.Namespace) -> None:
+    handle_launch_model(args, "codex")
+
+
+def handle_attach_pane_codex_model(args: argparse.Namespace) -> None:
+    handle_attach_pane_model(args, "codex")
 
 
 def split_passthrough_argv(argv: list[str]) -> tuple[list[str], list[str]]:
@@ -715,6 +840,17 @@ def build_parser() -> argparse.ArgumentParser:
     launch_claude_model.add_argument("--tmux")
     launch_claude_model.add_argument("--identity")
 
+    launch_codex_model = subparsers.add_parser(
+        "launch-codex-model",
+        help="Launch a Codex model with the standard wrapper flags",
+    )
+    launch_codex_model.add_argument("model", choices=CODEX_MODELS)
+    launch_codex_model.add_argument("dir")
+    launch_codex_model.add_argument("--terminal")
+    launch_codex_model.add_argument("--tab", action="store_true")
+    launch_codex_model.add_argument("--tmux")
+    launch_codex_model.add_argument("--identity")
+
     attach = subparsers.add_parser("attach", help="Attach to an existing tmux session")
     attach.add_argument("session")
     attach.add_argument("--terminal")
@@ -742,6 +878,17 @@ def build_parser() -> argparse.ArgumentParser:
     attach_pane_claude_model.add_argument("--tab", action="store_true")
     attach_pane_claude_model.add_argument("--identity")
 
+    attach_pane_codex_model = subparsers.add_parser(
+        "attach-pane-codex-model",
+        help="Split a tmux session and launch a Codex model in the new pane",
+    )
+    attach_pane_codex_model.add_argument("session")
+    attach_pane_codex_model.add_argument("model", choices=CODEX_MODELS)
+    attach_pane_codex_model.add_argument("--cwd", default=os.getcwd())
+    attach_pane_codex_model.add_argument("--terminal")
+    attach_pane_codex_model.add_argument("--tab", action="store_true")
+    attach_pane_codex_model.add_argument("--identity")
+
     return parser
 
 
@@ -749,10 +896,17 @@ def main() -> None:
     parser = build_parser()
     argv, passthrough_args = split_passthrough_argv(sys.argv[1:])
     args = parser.parse_args(argv)
-    if args.subcommand in {"launch-claude-model", "attach-pane-claude-model"}:
-        args.claude_args = passthrough_args
+    if args.subcommand in {
+        "launch-claude-model",
+        "attach-pane-claude-model",
+        "launch-codex-model",
+        "attach-pane-codex-model",
+    }:
+        args.model_args = passthrough_args
     elif passthrough_args:
-        parser.error("passthrough args after -- are only supported for Claude model launches")
+        parser.error(
+            "passthrough args after -- are only supported for Claude or Codex model launches"
+        )
 
     if args.subcommand == "detect":
         detect_command()
@@ -766,6 +920,9 @@ def main() -> None:
     if args.subcommand == "launch-claude-model":
         handle_launch_claude_model(args)
         return
+    if args.subcommand == "launch-codex-model":
+        handle_launch_codex_model(args)
+        return
     if args.subcommand == "attach":
         handle_attach(args)
         return
@@ -774,6 +931,9 @@ def main() -> None:
         return
     if args.subcommand == "attach-pane-claude-model":
         handle_attach_pane_claude_model(args)
+        return
+    if args.subcommand == "attach-pane-codex-model":
+        handle_attach_pane_codex_model(args)
         return
     parser.error(f"unknown subcommand: {args.subcommand}")
 

@@ -1,6 +1,6 @@
 ---
 name: launchpad
-version: 0.12.0
+version: 0.13.0
 description: "Use when another workflow must launch Claude, Codex, or Gemini as a separate background sub-agent without opening a terminal. Spawns the `launchpad` agent with fenced JSON input and `run_in_background: true`."
 ---
 
@@ -46,6 +46,8 @@ Optional fields:
 - `model`
 - `atm_identity`
 - `extra_args`
+
+For Claude launches, `model` accepts `sonnet`, `haiku`, `opus`, or `fable`.
 
 ## ATM Rules
 

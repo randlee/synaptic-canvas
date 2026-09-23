@@ -1,6 +1,6 @@
 ---
 name: sc-worktree-abort
-version: 0.12.0
+version: 0.14.0
 description: Abandon a worktree and discard work with protected branch safeguards. Remove worktree; for non-protected branches, delete branch (local/remote) only with explicit approval; for protected branches, never delete branch. Update tracking when enabled.
 model: haiku
 color: red
@@ -34,6 +34,7 @@ Abandon a worktree and discard work safely.
 - **Protected branches:** Remote branch must never be deleted. Remove worktree; local branch may be removed only if explicitly approved for abort. Default is preserve.
 - If dirty and no approval, stop and report.
 - For **non-protected branches**: Only delete branches (local/remote) with explicit approval. If remote delete fails because it doesn't exist, note and continue.
+- **Stack parents**: with `allow_delete_branch`, a branch that live stack layers sit on is always refused with `STACK.HAS_CHILDREN` before anything is removed (a landed parent is cleaned with `--cleanup`, not aborted). Abort the children first, or abort without `allow_delete_branch` to remove only the worktree. The guard reads the tracking file; off with `tracking_enabled: false`.
 - Always update tracking when enabled.
 
 ## Execution

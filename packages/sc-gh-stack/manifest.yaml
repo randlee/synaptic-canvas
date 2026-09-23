@@ -1,0 +1,56 @@
+name: sc-gh-stack
+version: 0.1.1
+description: >
+  Stacked pull requests with the gh-stack GitHub CLI extension, run the way
+  that lands: an append-only, linear stack of frozen layers above a named
+  trunk, one stack writer, QA and CI on the top only, one atomic merge. Ships
+  the sc-gh-stack skill (model, preconditions, recipes, full command guide)
+  and the sc-gh-stack-view skill (one-call coherence, mergeability, CI and
+  landing table). Supersedes the generic gh-stack skill.
+author: randlee
+license: MIT
+tags:
+  - git
+  - github
+  - gh-stack
+  - stacked-prs
+  - workflow
+  - skills
+
+# Files to install (relative to package root)
+artifacts:
+  commands:
+    - commands/sc-gh-stack.md
+    - commands/sc-gh-stack-view.md
+  skills:
+    - skills/sc-gh-stack/SKILL.md
+    - skills/sc-gh-stack/references/model.md
+    - skills/sc-gh-stack/references/workflow.md
+    - skills/sc-gh-stack/references/preconditions.md
+    - skills/sc-gh-stack/references/recipe-cut-layer.md
+    - skills/sc-gh-stack/references/recipe-link.md
+    - skills/sc-gh-stack/references/recipe-restack.md
+    - skills/sc-gh-stack/references/recipe-land.md
+    - skills/sc-gh-stack/references/recipe-stale-tracking.md
+    - skills/sc-gh-stack/references/phase-model-example.md
+    - skills/sc-gh-stack/references/stack-design.md
+    - skills/sc-gh-stack/references/commands.md
+    - skills/sc-gh-stack/references/troubleshooting.md
+    - skills/sc-gh-stack/references/installation-and-troubleshooting.md
+    - skills/sc-gh-stack-view/SKILL.md
+    - skills/sc-gh-stack-view/references/installation-and-troubleshooting.md
+  scripts:
+    - scripts/gh_stack_shared.py
+    - scripts/gh_stack_view.py
+    - scripts/gh_stack_chain_check.py
+
+# Runtime requirements (scripts are stdlib-only Python 3)
+requires:
+  cli:
+    - gh >= 2.0
+    - git >= 2.38
+    - python3 >= 3.9
+  gh_extensions:
+    - github/gh-stack >= 0.1.0   # `gh extension install github/gh-stack`; checked in SKILL.md Step 1
+  optional:
+    - jq   # only in documented shell one-liners, not used by the scripts
