@@ -6,11 +6,10 @@ Commands:
   list
   info <package>
   install <package> --dest <path/to/.claude> [--force] [--no-expand]
-  install <package> --global [--force] [--no-expand]
-  install <package> --local [--force] [--no-expand]
-  install <package> --user [--force] [--no-expand]
-  install <package> --project [--force] [--no-expand]
-  install <package> --codex [--force] [--no-expand]
+  install <package> --global [--claude|--codex] [--force] [--no-expand]
+  install <package> --local [--claude|--codex] [--force] [--no-expand]
+  install <package> --user [--claude|--codex] [--force] [--no-expand]
+  install <package> --project [--claude|--codex] [--force] [--no-expand]
   uninstall <package> --dest <path/to/.claude>
   registry add <name> <url> [--path <path>]
   registry list
@@ -34,6 +33,15 @@ Notes:
 - Uses YAML if PyYAML is installed; otherwise falls back to a simple line parser
   compatible with the existing manifest patterns.
 - Token expansion: replaces {{REPO_NAME}} when variables.REPO_NAME.auto == git-repo-basename
+- Local-install templating: any artifact with a sibling <path>.local.j2 file (any
+  category: commands, skills, agents, scripts, assets, plugin) is rendered via
+  sc-compose (auto-installed on demand) instead of copied verbatim, for any
+  install that isn't --global/--user, and never for the .codex target (Codex
+  has no install-time repo-specific customization).
+- --claude/--codex select which target(s) get installed under the chosen
+  scope (--global/--local/--user/--project): symmetric flags, either alone
+  means only that target, neither means both .claude and .codex are
+  installed. An explicit --dest is always .claude-only.
 - Scripts are made executable on install (artifacts under scripts/*)
 - Config file manages marketplace registries with metadata (url, path, status, added_date)
 - Phase 1: Basic registry commands (add, list, remove) and config persistence
@@ -856,6 +864,29 @@ def cmd_info(pkg: str, registry: Optional[str] = None) -> int:
     return 0
 
 
+def _get_render_template():
+    """Return sc_compose.render_template, auto-installing sc-compose if missing.
+
+    Only called when a package actually ships a `.local.j2` artifact, so the
+    dependency is pulled in lazily/scoped rather than being a hard requirement
+    of sc-install itself.
+    """
+    try:
+        from sc_compose import render_template  # type: ignore
+        return render_template
+    except ImportError:
+        pass
+    try:
+        subprocess.run([sys.executable, "-m", "pip", "install", "sc-compose"], check=True)
+    except subprocess.CalledProcessError as ex:
+        raise RuntimeError(f"failed to install required dependency 'sc-compose': {ex}") from ex
+    try:
+        from sc_compose import render_template  # type: ignore
+        return render_template
+    except ImportError as ex:
+        raise RuntimeError("sc-compose installed but 'render_template' is not importable") from ex
+
+
 def _git_repo_basename(dest_dir: Path) -> str:
     try:
         # Determine toplevel from parent of dest (.claude lives under repo)
@@ -948,43 +979,41 @@ def _parse_frontmatter_simple(md_path: Path) -> Dict[str, Any]:
     return out
 
 
-def _resolve_install_dest(
+def _resolve_install_scope(
     global_flag: bool = False,
     local_flag: bool = False,
     user_flag: bool = False,
     project_flag: bool = False,
-    codex_flag: bool = False,
     dest: Optional[str] = None,
 ) -> Optional[Path]:
-    """Resolve installation destination from --global/--local/--user/--project/--codex/--dest flags.
+    """Resolve the install *scope* (global/user/local/project/dest) to a base path.
 
-    Phase 1: Support for --global, --local, --user, and --project flags
-    Phase 4: Support for --codex (installs into ~/.codex instead of ~/.claude)
+    Phase 1: Support for --global, --local, --user, and --project flags.
+
+    For --global/--user/--local/--project this is the *parent* directory that
+    a `.claude` and/or `.codex` subdirectory is installed into (see
+    `_resolve_install_targets`). For --dest it is the exact, single directory
+    to install into (dest is always claude-only; there is no sibling `.codex`
+    to mirror into, since the path was explicitly chosen by the caller).
 
     Returns:
-        Path to .claude (or .codex) directory, or None if invalid combination
+        Path, or None if invalid combination (an error has already been reported).
     """
-    # Count how many flags are set
-    flags_set = sum(
-        [global_flag, local_flag, user_flag, project_flag, codex_flag, dest is not None]
-    )
+    flags_set = sum([global_flag, local_flag, user_flag, project_flag, dest is not None])
 
     if flags_set == 0:
-        error("Must specify one of: --global, --local, --user, --project, --codex, or --dest")
+        error("Must specify one of: --global, --local, --user, --project, or --dest")
         return None
 
     if flags_set > 1:
-        error("Cannot combine --global, --local, --user, --project, --codex, and --dest flags")
+        error("Cannot combine --global, --local, --user, --project, and --dest flags")
         return None
 
-    if codex_flag:
-        return Path.home() / ".codex"
-
     if global_flag or user_flag:
-        return Path.home() / ".claude"
+        return Path.home()
 
     if local_flag or project_flag:
-        return Path.cwd() / ".claude"
+        return Path.cwd()
 
     # dest flag
     if dest:
@@ -994,6 +1023,25 @@ def _resolve_install_dest(
         return Path(dest).expanduser().resolve()
 
     return None
+
+
+def _resolve_install_targets(
+    claude_flag: bool, codex_flag: bool, *, dest: Optional[str] = None
+) -> List[str]:
+    """Resolve which of "claude"/"codex" to install, mirroring --global/--local
+    symmetry: --claude or --codex alone installs only that target; with
+    neither given, both install. An explicit --dest is always claude-only,
+    since it names one exact directory rather than a `.claude`/`.codex`-suffixed
+    base.
+    """
+    if dest:
+        return ["claude"]
+    targets = []
+    if claude_flag:
+        targets.append("claude")
+    if codex_flag:
+        targets.append("codex")
+    return targets or ["claude", "codex"]
 
 
 def _parse_skill_metadata(skill_md_path: Path) -> Dict[str, Any]:
@@ -1162,10 +1210,11 @@ def cmd_install(
     local_flag: bool = False,
     user_flag: bool = False,
     project_flag: bool = False,
+    claude_flag: bool = False,
     codex_flag: bool = False,
     registry: Optional[str] = None,
 ) -> int:
-    """Install a package to a .claude (or .codex) directory.
+    """Install a package to a .claude and/or .codex directory.
 
     Phase 3 Enhancement: Remote Registry Support
     - Support --registry flag to install from remote registry
@@ -1174,14 +1223,17 @@ def cmd_install(
 
     Args:
         pkg: Package name
-        dest: Explicit destination path
+        dest: Explicit destination path (always .claude-only; no .codex mirror)
         force: Overwrite existing files
         expand: Perform token expansion
-        global_flag: Install to ~/.claude
-        local_flag: Install to ./.claude
+        global_flag: Install under ~/ (i.e. ~/.claude and/or ~/.codex)
+        local_flag: Install under ./ (i.e. ./.claude and/or ./.codex)
         user_flag: Alias for --global
         project_flag: Alias for --local
-        codex_flag: Install to ~/.codex (skills/scripts only; no commands, agents, or registry.yaml)
+        claude_flag: Install the .claude target (default: both, if neither
+            --claude nor --codex is given)
+        codex_flag: Install the .codex target (skills/scripts/assets only;
+            no commands, agents, or registry.yaml)
         registry: Optional registry name to install from
     """
     # Check local package first (backward compatible)
@@ -1224,70 +1276,110 @@ def cmd_install(
         error(f"Package not found: {pkg}")
         return 1
 
-    # Resolve destination (Phase 1: Support --global/--local/--user/--project/--codex)
-    dest_path = _resolve_install_dest(
-        global_flag, local_flag, user_flag, project_flag, codex_flag, dest
-    )
-    if dest_path is None:
+    if dest and codex_flag:
+        error("--dest does not support --codex (an explicit --dest path is always .claude-only)")
         return 1
 
-    # track installed artifact files relative to dest_path
-    installed_artifacts: List[str] = []
-    dest_path.mkdir(parents=True, exist_ok=True)
+    # Resolve scope (Phase 1: --global/--local/--user/--project/--dest) and
+    # targets (--claude/--codex, symmetric: either alone means only that one,
+    # neither means both).
+    base_path = _resolve_install_scope(global_flag, local_flag, user_flag, project_flag, dest)
+    if base_path is None:
+        return 1
+    targets = _resolve_install_targets(claude_flag, codex_flag, dest=dest)
 
     manifest = _parse_manifest(pkg_dir)
 
-    repo_name = ""
-    if expand and manifest.variables.get("REPO_NAME", {}).get("auto") == "git-repo-basename":
-        repo_name = _git_repo_basename(dest_path)
+    # Legacy generic {{TOKEN}} naive-replace mechanism (still supported, unrelated
+    # to .local.j2): only active when the manifest explicitly declares it.
+    declares_repo_name_var = manifest.variables.get("REPO_NAME", {}).get("auto") == "git-repo-basename"
 
-    info(f"Installing {pkg} to {dest_path}")
-    if repo_name:
-        info(f"REPO_NAME={repo_name}")
+    # .local.j2 templating (sc-compose): available for any artifact, in any
+    # category, for any install that isn't --global/--user, and never for
+    # codex (codex has no install-time repo-specific customization).
+    allow_local_templates = not (global_flag or user_flag)
 
-    def install_one(rel_file: str) -> None:
-        src = (pkg_dir / rel_file).resolve()
-        dst = (dest_path / rel_file).resolve()
-        if not src.exists():
-            warn(f"Source not found: {src}")
-            return
-        if dst.exists() and not force:
-            warn(f"Skip (exists): {dst}")
-            return
-        dst.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(src, dst)
-        # executable for scripts/*
-        if rel_file.startswith("scripts/"):
-            _ensure_executable(dst)
-        # track agents and skills for registry
-        if rel_file.startswith("agents/") or rel_file.startswith("skills/"):
-            # store relative to .claude (dest_path)
-            installed_artifacts.append(rel_file)
-        # token expansion
-        if expand and repo_name:
-            try:
-                text = dst.read_text(encoding="utf-8", errors="ignore")
-                text = text.replace("{{REPO_NAME}}", repo_name)
-                dst.write_text(text, encoding="utf-8")
-            except Exception:
-                # Ignore binary/non-text failures
-                pass
-        info(f"Installed: {rel_file}")
+    def install_target(dest_path: Path, is_codex: bool) -> int:
+        dest_path.mkdir(parents=True, exist_ok=True)
+        installed_artifacts: List[str] = []
+        use_local_templates = allow_local_templates and not is_codex
 
-    for rel in _iter_artifacts(manifest, codex=codex_flag):
-        install_one(rel)
+        repo_name = ""
+        if use_local_templates or (expand and declares_repo_name_var):
+            repo_name = _git_repo_basename(dest_path)
 
-    # Codex has no registry.yaml concept (no agents/subagent roster to track)
-    if not codex_flag:
-        rc = _update_registry(
-            dest_path,
-            installed_artifacts,
-            package_version=manifest.version or None,
-        )
+        info(f"Installing {pkg} to {dest_path}")
+        if repo_name:
+            info(f"REPO_NAME={repo_name}")
+
+        def install_one(rel_file: str) -> bool:
+            local_template = pkg_dir / f"{rel_file}.local.j2"
+            use_template = use_local_templates and local_template.exists()
+            src = (local_template if use_template else (pkg_dir / rel_file)).resolve()
+            dst = (dest_path / rel_file).resolve()
+            if not src.exists():
+                warn(f"Source not found: {src}")
+                return True
+            if dst.exists() and not force:
+                warn(f"Skip (exists): {dst}")
+                return True
+            dst.parent.mkdir(parents=True, exist_ok=True)
+
+            if use_template:
+                try:
+                    render_template = _get_render_template()
+                except RuntimeError as ex:
+                    error(f"Cannot install {rel_file}: {ex}")
+                    return False
+                text = local_template.read_text(encoding="utf-8", errors="ignore")
+                rendered = render_template(text, {"REPO_NAME": repo_name})
+                dst.write_text(rendered, encoding="utf-8")
+            else:
+                shutil.copy2(src, dst)
+                # legacy token expansion
+                if expand and declares_repo_name_var and repo_name:
+                    try:
+                        text = dst.read_text(encoding="utf-8", errors="ignore")
+                        text = text.replace("{{REPO_NAME}}", repo_name)
+                        dst.write_text(text, encoding="utf-8")
+                    except Exception:
+                        # Ignore binary/non-text failures
+                        pass
+
+            # executable for scripts/*
+            if rel_file.startswith("scripts/"):
+                _ensure_executable(dst)
+            # track agents and skills for registry
+            if rel_file.startswith("agents/") or rel_file.startswith("skills/"):
+                # store relative to .claude (dest_path)
+                installed_artifacts.append(rel_file)
+            info(f"Installed: {rel_file}")
+            return True
+
+        for rel in _iter_artifacts(manifest, codex=is_codex):
+            if not install_one(rel):
+                return 1
+
+        # Codex has no registry.yaml concept (no agents/subagent roster to track)
+        if not is_codex:
+            rc = _update_registry(
+                dest_path,
+                installed_artifacts,
+                package_version=manifest.version or None,
+            )
+            if rc != 0:
+                return rc
+
+        info(f"Done installing {pkg} to {dest_path}")
+        return 0
+
+    for target in targets:
+        is_codex = target == "codex"
+        target_dest = base_path if dest else (base_path / f".{target}")
+        rc = install_target(target_dest, is_codex)
         if rc != 0:
             return rc
 
-    info(f"Done installing {pkg}")
     return 0
 
 
@@ -1345,7 +1437,10 @@ def build_parser() -> argparse.ArgumentParser:
     dest_group.add_argument("--user", dest="user_flag", action="store_true")
     dest_group.add_argument("--local", dest="local_flag", action="store_true")
     dest_group.add_argument("--project", dest="project_flag", action="store_true")
-    dest_group.add_argument("--codex", dest="codex_flag", action="store_true")
+    # Target flags: independent of scope, symmetric with each other. Neither
+    # given means install both; either alone means only that one.
+    p_install.add_argument("--claude", dest="claude_flag", action="store_true")
+    p_install.add_argument("--codex", dest="codex_flag", action="store_true")
     p_install.add_argument("--force", action="store_true")
     p_install.add_argument("--no-expand", action="store_true")
     p_install.add_argument("--registry", help="Install from remote registry")
@@ -1401,6 +1496,7 @@ def main(argv: Optional[list[str]] = None) -> int:
             local_flag=getattr(args, 'local_flag', False),
             user_flag=getattr(args, 'user_flag', False),
             project_flag=getattr(args, 'project_flag', False),
+            claude_flag=getattr(args, 'claude_flag', False),
             codex_flag=getattr(args, 'codex_flag', False),
             registry=getattr(args, 'registry', None),
         )

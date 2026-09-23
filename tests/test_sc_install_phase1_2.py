@@ -82,6 +82,33 @@ def git_repo(tmp_path):
     return repo_dir
 
 
+@pytest.fixture
+def local_template_pkg(tmp_path, monkeypatch):
+    """Synthetic package shipping a `.local.j2` sibling under `scripts/`.
+
+    Used to prove --codex skips .local.j2 templating exactly like --global.
+    """
+    pkg_root = tmp_path / "pkgs"
+    pkg_dir = pkg_root / "fake-local-template-pkg"
+    (pkg_dir / "scripts").mkdir(parents=True)
+    (pkg_dir / "manifest.yaml").write_text(
+        "name: fake-local-template-pkg\n"
+        "version: 0.1.0\n"
+        "artifacts:\n"
+        "  scripts:\n"
+        "    - scripts/run.sh\n",
+        encoding="utf-8",
+    )
+    (pkg_dir / "scripts" / "run.sh").write_text(
+        "#!/bin/sh\necho generic\n", encoding="utf-8"
+    )
+    (pkg_dir / "scripts" / "run.sh.local.j2").write_text(
+        "#!/bin/sh\necho {{ REPO_NAME }}\n", encoding="utf-8"
+    )
+    monkeypatch.setattr(sc_install, "PACKAGES_DIR", pkg_root)
+    return "fake-local-template-pkg"
+
+
 # ==============================================================================
 # TEST GROUP 1: Global and Local Flags (12 tests)
 # ==============================================================================
@@ -198,18 +225,21 @@ class TestGlobalLocalFlags:
 
 
 class TestCodexFlag:
-    """Test --codex installation flag (skills/scripts only, no commands/agents/registry.yaml)."""
+    """Test --codex installation target (skills/scripts/assets only, no
+    commands/agents/registry.yaml). --claude/--codex are symmetric target
+    flags under a scope (--global/--local/--user/--project): either alone
+    installs only that target; neither installs both."""
 
     def test_install_codex_flag_creates_dir(self, temp_home, capsys):
-        """Test that --codex creates ~/.codex directory."""
-        rc = sc_install.main(["install", "sc-delay-tasks", "--codex"])
+        """Test that --global --codex creates ~/.codex directory."""
+        rc = sc_install.main(["install", "sc-delay-tasks", "--global", "--codex"])
         assert rc == 0
         assert (temp_home / ".codex").exists()
         assert (temp_home / ".codex" / "scripts").exists()
 
     def test_install_codex_flag_uses_home_directory(self, temp_home, capsys):
-        """Test that --codex installs to ~/.codex, not ~/.claude."""
-        rc = sc_install.main(["install", "sc-delay-tasks", "--codex"])
+        """Test that --global --codex installs to ~/.codex, not ~/.claude."""
+        rc = sc_install.main(["install", "sc-delay-tasks", "--global", "--codex"])
         assert rc == 0
         assert not (temp_home / ".claude").exists()
 
@@ -218,7 +248,7 @@ class TestCodexFlag:
 
     def test_install_codex_skips_commands_and_agents(self, temp_home, capsys):
         """Test that --codex installs only skills/scripts, not commands/agents."""
-        rc = sc_install.main(["install", "sc-delay-tasks", "--codex"])
+        rc = sc_install.main(["install", "sc-delay-tasks", "--global", "--codex"])
         assert rc == 0
         assert (temp_home / ".codex" / "skills").exists()
         assert (temp_home / ".codex" / "scripts").exists()
@@ -227,28 +257,42 @@ class TestCodexFlag:
 
     def test_install_codex_skips_registry(self, temp_home, capsys):
         """Test that --codex does not write agents/registry.yaml."""
-        rc = sc_install.main(["install", "sc-delay-tasks", "--codex"])
+        rc = sc_install.main(["install", "sc-delay-tasks", "--global", "--codex"])
         assert rc == 0
         assert not (temp_home / ".codex" / "agents" / "registry.yaml").exists()
 
-    def test_install_codex_and_global_conflict_error(self, capsys):
-        """Test that --codex and --global together produce error."""
-        with pytest.raises(SystemExit) as exc_info:
-            sc_install.main(["install", "sc-delay-tasks", "--codex", "--global"])
+    def test_install_no_target_flags_installs_both(self, temp_home, capsys):
+        """With neither --claude nor --codex given, both targets are installed."""
+        rc = sc_install.main(["install", "sc-delay-tasks", "--global"])
+        assert rc == 0
+        assert (temp_home / ".claude" / "agents" / "sc-delay-once.md").exists()
+        assert (temp_home / ".codex" / "scripts").exists()
+        assert not (temp_home / ".codex" / "commands").exists()
 
-        assert exc_info.value.code != 0
-        err = capsys.readouterr().err
-        assert "not allowed with argument" in err or "mutually exclusive" in err.lower()
+    def test_install_claude_flag_installs_only_claude(self, temp_home, capsys):
+        """--claude alone installs only .claude, symmetric with --codex alone."""
+        rc = sc_install.main(["install", "sc-delay-tasks", "--global", "--claude"])
+        assert rc == 0
+        assert (temp_home / ".claude" / "agents" / "sc-delay-once.md").exists()
+        assert not (temp_home / ".codex").exists()
 
     def test_install_codex_and_dest_conflict_error(self, temp_home, capsys):
-        """Test that --codex and --dest together produce error."""
+        """--dest is always .claude-only; combining it with --codex is an error."""
         dest = temp_home / "custom" / ".claude"
-        with pytest.raises(SystemExit) as exc_info:
-            sc_install.main(["install", "sc-delay-tasks", "--codex", "--dest", str(dest)])
-
-        assert exc_info.value.code != 0
+        rc = sc_install.main(["install", "sc-delay-tasks", "--codex", "--dest", str(dest)])
+        assert rc == 1
         err = capsys.readouterr().err
-        assert "mutually exclusive" in err.lower() or "not allowed" in err.lower()
+        assert "--codex" in err
+
+    def test_install_codex_skips_local_j2_template(self, temp_home, local_template_pkg):
+        """--codex must never consult `.local.j2` siblings, exactly like --global."""
+        rc = sc_install.main(["install", local_template_pkg, "--global", "--codex"])
+        assert rc == 0
+
+        script = temp_home / ".codex" / "scripts" / "run.sh"
+        assert script.exists()
+        content = script.read_text(encoding="utf-8")
+        assert content == "#!/bin/sh\necho generic\n"
 
 
 # ==============================================================================
