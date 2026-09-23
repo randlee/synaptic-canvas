@@ -103,8 +103,8 @@ Wrap the script output in `<output_json>` tags with a fenced JSON block. Do not 
 
 Rows for gh-stack layers carry `tracking_entry.stack` (`trunk`, `parent`, `parent_sha`, `above`, `position`) and may list:
 
-- `stack_parent_advanced: origin/<parent> <old> -> <new>`: the layer's writer rebases once at task start (`git rebase --onto origin/<parent> <parent_sha> <layer>`), only while the layer has no children.
-- `stack_parent_landed: ...`: the parent merged into the trunk or its branch is gone; the PR should now target the trunk (`/sc-gh-stack-view`).
+- `stack_parent_advanced: origin/<parent> <old> -> <new>, not contained in <layer>`: the layer no longer contains the parent's pushed head. The layer's writer rebases once at task start (`git rebase --onto origin/<parent> <parent_sha> <layer>`), only while the layer has no children; the issue clears once the layer contains the parent's head.
+- `stack_parent_landed: ...`: the parent merged into the trunk or its branch is gone; the PR should now target the trunk (`/sc-gh-stack-view`). Diff the layer against `origin/<layer>` before any reset; never force-push over GitHub's retarget.
 
 ## Constraints
 

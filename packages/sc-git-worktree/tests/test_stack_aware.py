@@ -108,12 +108,19 @@ class TestStackCreate:
         }
         handoff = data["stack_handoff"]
         assert handoff["pr_base"] == "l1"
-        assert handoff["commands"][0] == f"git -C {wt} push -u origin l2"
-        assert "--base l1 --head l2" in handoff["commands"][1]
-        assert any(cmd.startswith("gh stack link <stack#> <pr# of l2>") for cmd in handoff["commands"])
-        assert any("gh stack link --base develop <bottom-pr#> ... <pr# of l1> <pr# of l2>" in c for c in handoff["commands"])
-        assert handoff["commands"][-1] == "/sc-gh-stack-view"
-        assert any("rebase --onto origin/l1" in rule for rule in handoff["rules"])
+        writer, stack_writer = handoff["writer"]["commands"], handoff["stack_writer"]["commands"]
+        assert writer[0].startswith(f"git -C {wt} commit --allow-empty -m 'wip: work on l2'")
+        assert writer[1] == f"git -C {wt} push -u origin l2"
+        assert not any("gh " in c for c in writer), "writers never get gh commands"
+        assert any("gh pr create --base l1 --head l2" in c and "<<'B'" in c for c in stack_writer)
+        assert any(c.startswith(f"cd {wt} && gh stack checkout <stack#>") for c in stack_writer)
+        assert any(c.startswith("gh stack link <stack#> <pr# of l2>") for c in stack_writer)
+        assert any("gh stack link --base develop <bottom-pr#> ... <pr# of l1> <pr# of l2>" in c for c in stack_writer)
+        assert stack_writer[-1] == "/sc-gh-stack-view"
+        rules = handoff["writer"]["rules"]
+        assert any("rebase --onto origin/l1" in r for r in rules)
+        assert any("Never run gh stack write commands" in r for r in rules)
+        assert any("The PR base is l1, never develop." in r for r in rules)
         # Tracking row carries the stack metadata
         entries = load_tracking_jsonl(tracking_path(stack_repo))
         assert entries[0].stack["parent_sha"] == data["stack"]["parent_sha"]
@@ -121,17 +128,21 @@ class TestStackCreate:
     def test_bottom_layer_handoff_has_nothing_below(self, stack_repo):
         result = create(stack_repo, "l0", "develop", stack={"trunk": "develop"})
         assert result["success"], result
-        cmds = result["data"]["stack_handoff"]["commands"]
+        handoff = result["data"]["stack_handoff"]
+        cmds = handoff["stack_writer"]["commands"]
         assert "gh stack link --base develop <pr# of l0>   # first link, or full relink" in cmds
         assert not any("pr# of develop" in c for c in cmds)
+        assert any("The PR base is develop." in r for r in handoff["writer"]["rules"])
+        assert not any("never develop" in r for r in handoff["writer"]["rules"])
 
     def test_insert_handoff(self, stack_repo):
         result = create(stack_repo, "l1b", "develop", stack={"trunk": "develop", "above": "l1"})
         assert result["success"], result
         data = result["data"]
         assert data["stack"]["position"] == "insert"
-        cmds = data["stack_handoff"]["commands"]
+        cmds = data["stack_handoff"]["stack_writer"]["commands"]
         assert any("merge --no-ff origin/l1b" in c for c in cmds)
+        assert any("every layer above develop, bottom to top" in c for c in cmds)
         assert "gh pr edit <pr# of l1> --base l1b" in cmds
         assert any(c.startswith("gh stack unstack <stack#>") for c in cmds)
         assert any("gh stack link --base develop <pr# of l1b> <pr# of l1> ... <top-pr#>" in c for c in cmds)
@@ -140,13 +151,18 @@ class TestStackCreate:
     def test_chain_check_command_only_when_installed(self, stack_repo):
         result = create(stack_repo, "l2", "l1", stack={"trunk": "develop"})
         assert not result["data"]["stack_handoff"]["chain_check_available"]
-        assert not any("gh_stack_chain_check" in c for c in result["data"]["stack_handoff"]["commands"])
+        assert not any("gh_stack_chain_check" in c for c in result["data"]["stack_handoff"]["stack_writer"]["commands"])
         (stack_repo / ".claude" / "scripts").mkdir(parents=True)
         (stack_repo / ".claude" / "scripts" / "gh_stack_chain_check.py").write_text("# stub\n")
-        result = create(stack_repo, "l3", "l1", stack={"trunk": "develop"})
+        git("push", "-q", "origin", "l2", cwd=stack_repo)  # l2 is now the top; l3 goes on it
+        result = create(stack_repo, "l3", "l2", stack={"trunk": "develop"})
         handoff = result["data"]["stack_handoff"]
         assert handoff["chain_check_available"]
-        assert any("gh_stack_chain_check.py --trunk develop <bottom> ... l1 l3" in c for c in handoff["commands"])
+        assert any("gh_stack_chain_check.py --trunk develop <bottom> ... l2 l3" in c for c in handoff["stack_writer"]["commands"])
+        # insert mode also carries the chain check, with the new layer in place
+        git("push", "-q", "origin", "l1:l1x", cwd=stack_repo)
+        result = create(stack_repo, "l1y", "develop", stack={"trunk": "develop", "above": "l1x"})
+        assert any("gh_stack_chain_check.py --trunk develop l1y l1x ... <top>" in c for c in result["data"]["stack_handoff"]["stack_writer"]["commands"])
 
     def test_parent_behind_trunk_is_a_note_not_a_block(self, stack_repo):
         # Trunk moves on after l1 was cut: allowed, recorded in the transcript
@@ -201,6 +217,35 @@ class TestStackCreateRefusals:
         result = create(stack_repo, "l2", "l1", stack={"trunk": "develop", "above": "l1"})
         assert result["error"]["code"] == "STACK.ABOVE_INVALID"
 
+    def test_append_onto_parent_with_live_child_is_a_fork(self, stack_repo):
+        create(stack_repo, "l2", "l1", stack={"trunk": "develop"})
+        result = create(stack_repo, "l2b", "l1", stack={"trunk": "develop"})
+        assert result["error"]["code"] == "STACK.PARENT_HAS_CHILD"
+        assert "Cut from the current top (l2)" in result["error"]["suggested_action"]
+        assert result["data"]["existing_children"] == ["l2"]
+        # the same cut as an explicit insert is allowed
+        git("push", "-q", "origin", "l2", cwd=stack_repo)
+        ok = create(stack_repo, "l2c", "l1", stack={"trunk": "develop", "above": "l2"})
+        assert ok["success"], ok
+
+    def test_parent_off_trunk(self, stack_repo):
+        # an orphan branch shares no history with the trunk
+        git("checkout", "-q", "--orphan", "orphan", cwd=stack_repo)
+        git("commit", "-q", "--allow-empty", "-m", "orphan", cwd=stack_repo)
+        git("push", "-q", "origin", "orphan", cwd=stack_repo)
+        git("checkout", "-q", "develop", cwd=stack_repo)
+        result = create(stack_repo, "l2", "orphan", stack={"trunk": "develop"})
+        assert result["error"]["code"] == "STACK.PARENT_OFF_TRUNK"
+
+    def test_purpose_with_quotes_is_shell_safe(self, stack_repo):
+        result = create(stack_repo, "l2", "l1", stack={"trunk": "develop"}, purpose='fix "it" $(now) `x`')
+        assert result["success"], result
+        handoff = result["data"]["stack_handoff"]
+        wip = handoff["writer"]["commands"][0]
+        assert "commit --allow-empty -m 'wip: fix \"it\" $(now) `x`'" in wip
+        pr = next(c for c in handoff["stack_writer"]["commands"] if c.startswith("gh pr create"))
+        assert "<<'B'" in pr and 'Task: fix "it" $(now) `x`' in pr
+
     def test_empty_trunk_rejected_at_input(self, stack_repo):
         result = create(stack_repo, "l2", "l1", stack={"trunk": "  "})
         assert not result["success"]
@@ -237,46 +282,34 @@ class TestTrackingStackField:
         entries = load_tracking_jsonl(p)
         assert entries[0].stack is None
 
-    def test_find_stack_children_only_live(self):
-        def entry(branch, parent=None, local=True, remote=False):
+    def test_find_stack_children_only_live(self, stack_repo):
+        """Liveness is checked against git and the filesystem, not the stored flags."""
+        wt_base = stack_repo.parent / "repo-worktrees"
+        (wt_base / "l2").mkdir(parents=True)
+        (wt_base / "l4").mkdir(parents=True)
+        git("push", "-q", "origin", "develop:l3", cwd=stack_repo)  # l3 exists only on origin
+
+        def entry(branch, parent=None, local=True, remote=False, above=None):
             return TrackingEntry(
-                branch=branch, path="/p", base=parent or "main", owner="o",
+                branch=branch, path=str(wt_base / branch), base=parent or "main", owner="o",
                 created="2024-01-01T00:00:00Z", last_checked="2024-01-01T00:00:00Z",
                 local_worktree=local, remote_exists=remote,
-                stack={"trunk": "main", "parent": parent, "parent_sha": "x", "above": None, "position": "top"} if parent else None,
+                stack={"trunk": "develop", "parent": parent, "parent_sha": "x", "above": above, "position": "top"}
+                if parent else None,
             )
         entries = [
             entry("l1"),
             entry("l2", parent="l1"),
             entry("l3", parent="l1", local=False, remote=True),
-            entry("gone", parent="l1", local=False, remote=False),
+            entry("stale-flag", parent="l1", local=True, remote=True),   # flags say live, git says gone
             entry("l4", parent="l2"),
+            entry("ins", parent="develop", above="l2"),                 # inserted under l2
         ]
-        assert find_stack_children(entries, "l1") == ["l2", "l3"]
-        assert find_stack_children(entries, "l2") == ["l4"]
-        assert find_stack_children(entries, "l4") == []
-
-
-class TestLandedByMerge:
-    def test_empty_branch_on_trunk_is_not_landed(self, stack_repo):
-        git("branch", "-q", "empty", "develop", cwd=stack_repo)
-        assert not is_landed_by_merge("empty", "develop", cwd=stack_repo)
-
-    def test_unmerged_layer_is_not_landed(self, stack_repo):
-        assert not is_landed_by_merge("l1", "develop", cwd=stack_repo)
-
-    def test_merge_commit_landing_is_landed(self, stack_repo):
-        git("merge", "-q", "--no-ff", "-m", "land l1", "l1", cwd=stack_repo)
-        assert is_landed_by_merge("l1", "develop", cwd=stack_repo)
-
-    def test_fast_forward_is_not_landed(self, stack_repo):
-        # A fast-forward puts the layer head on the trunk's first-parent line: indistinguishable
-        # from an empty branch, so it is treated as not landed (fails closed).
-        git("merge", "-q", "--ff-only", "l1", cwd=stack_repo)
-        assert not is_landed_by_merge("l1", "develop", cwd=stack_repo)
-
-    def test_unknown_branch(self, stack_repo):
-        assert not is_landed_by_merge("ghost", "develop", cwd=stack_repo)
+        assert find_stack_children(entries, "l1", cwd=stack_repo) == ["l2", "l3"]
+        assert find_stack_children(entries, "l2", cwd=stack_repo) == ["l4"]
+        assert find_stack_children(entries, "l4", cwd=stack_repo) == []
+        # the inserted layer's own row names the layer above it as a child
+        assert find_stack_children(entries, "ins", cwd=stack_repo) == ["l2"]
 
 
 # =============================================================================
@@ -297,7 +330,7 @@ class TestStackGuards:
             "worktree_abort.py", {"branch": "l1", "allow_delete_branch": True, "repo_root": str(layered)}, cwd=layered
         )
         assert result["error"]["code"] == "STACK.HAS_CHILDREN"
-        assert result["error"]["data"]["stack_children"] == ["l2"] if "data" in result["error"] else True
+        assert result["data"]["stack_children"] == ["l2"]
         assert (layered.parent / "repo-worktrees" / "l1").exists(), "nothing may be mutated before the guard"
         assert git("rev-parse", "--verify", "l1", cwd=layered)
 
@@ -313,6 +346,60 @@ class TestStackGuards:
         assert result["error"]["code"] == "STACK.HAS_CHILDREN"
         assert "gh stack merge" in result["error"]["suggested_action"]
         assert (layered.parent / "repo-worktrees" / "l1").exists()
+
+    def test_abort_refuses_even_when_parent_landed(self, layered):
+        git("merge", "-q", "--no-ff", "-m", "land l1", "l1", cwd=layered)
+        git("push", "-q", "origin", "develop", cwd=layered)
+        result = run_script(
+            "worktree_abort.py", {"branch": "l1", "allow_delete_branch": True, "repo_root": str(layered)}, cwd=layered
+        )
+        assert result["error"]["code"] == "STACK.HAS_CHILDREN"
+        assert "--cleanup" in result["error"]["suggested_action"]
+
+    def test_inserted_layer_is_guarded_by_its_above(self, stack_repo):
+        # l1b inserted under l1: l1's row still says parent=develop, but l1 now sits on l1b
+        create(stack_repo, "l1b", "develop", stack={"trunk": "develop", "above": "l1"})
+        wt = stack_repo.parent / "repo-worktrees" / "l1b"
+        git("commit", "-q", "--allow-empty", "-m", "wip", cwd=wt)
+        git("push", "-q", "-u", "origin", "l1b", cwd=wt)
+        result = run_script(
+            "worktree_abort.py", {"branch": "l1b", "allow_delete_branch": True, "repo_root": str(stack_repo)}, cwd=stack_repo
+        )
+        assert result["error"]["code"] == "STACK.HAS_CHILDREN"
+        assert result["data"]["stack_children"] == ["l1"]
+
+    def test_gone_child_no_longer_blocks(self, layered):
+        # l2's worktree removed outside the skill and never pushed: not live any more
+        import shutil
+        shutil.rmtree(layered.parent / "repo-worktrees" / "l2")
+        git("worktree", "prune", cwd=layered)
+        git("branch", "-q", "-D", "l2", cwd=layered)
+        result = run_script(
+            "worktree_abort.py", {"branch": "l1", "allow_delete_branch": True, "repo_root": str(layered)}, cwd=layered
+        )
+        assert result["success"], result
+
+    def test_guard_off_when_tracking_disabled(self, layered):
+        result = run_script(
+            "worktree_abort.py",
+            {"branch": "l1", "allow_delete_branch": True, "tracking_enabled": False, "repo_root": str(layered)},
+            cwd=layered,
+        )
+        assert result["success"], result
+
+    def test_landing_checked_against_children_trunk(self, layered):
+        # protected list [main, develop] with the stack trunk develop: the landing must be
+        # judged against origin/develop, not the first protected branch
+        git("branch", "-q", "main", "develop", cwd=layered)
+        git("push", "-q", "origin", "main", cwd=layered)
+        (layered / ".sc" / "shared-settings.yaml").write_text("git:\n  protected_branches:\n    - main\n    - develop\n")
+        git("merge", "-q", "--no-ff", "-m", "land l1", "l1", cwd=layered)
+        git("push", "-q", "origin", "develop", cwd=layered)
+        result = run_script(
+            "worktree_cleanup.py", {"branch": "l1", "merged": True, "repo_root": str(layered)}, cwd=layered
+        )
+        assert result["success"], result
+        assert result["data"]["branch_deleted_local"] is True
 
     def test_cleanup_after_real_landing_is_allowed(self, layered):
         git("merge", "-q", "--no-ff", "-m", "land l1", "l1", cwd=layered)
@@ -333,7 +420,9 @@ class TestStackGuards:
         assert "l1" in blocked and blocked["l1"]["stack_children"] == ["l2"]
         assert "l1" not in {c["branch"] for c in result["data"]["cleaned"]}
         assert git("rev-parse", "--verify", "l1", cwd=layered)
-        assert result["data"]["summary"]["stack_blocked"] == 1
+        # l2 is also listed: a fresh layer with no commits is never swept
+        assert "fresh stack layer" in blocked["l2"]["reason"]
+        assert result["data"]["summary"]["stack_blocked"] == 2
 
     def test_batch_cleanup_cleans_parent_landed_by_merge(self, layered):
         git("merge", "-q", "--no-ff", "-m", "land l1", "l1", cwd=layered)
@@ -345,6 +434,14 @@ class TestStackGuards:
         assert not result["data"]["stack_blocked"]
         # l2 has no commits of its own, so once l1 landed it is an empty worktree and is
         # swept by the pre-existing empty-branch rule; nothing stack-specific applies.
+
+    def test_batch_cleanup_never_sweeps_fresh_layer(self, stack_repo):
+        create(stack_repo, "l0", "develop", stack={"trunk": "develop"})
+        result = run_script("worktree_cleanup.py", {"repo_root": str(stack_repo)}, cwd=stack_repo)
+        assert result["success"], result
+        blocked = {b["branch"]: b for b in (result["data"]["stack_blocked"] or [])}
+        assert "l0" in blocked and "fresh stack layer" in blocked["l0"]["reason"]
+        assert (stack_repo.parent / "repo-worktrees" / "l0").exists()
 
     def test_empty_parent_cannot_get_children(self, stack_repo):
         # The scenario the guard would otherwise need: a pushed empty branch as a parent.
@@ -371,6 +468,20 @@ class TestScanStackIssues:
         assert any(i.startswith("stack_parent_advanced: origin/l1") for i in l2["issues"])
         assert l2["tracking_entry"]["stack"]["parent"] == "l1"
         assert any("rebases once at task start" in r for r in result["data"]["recommendations"])
+        # after the writer merges the parent forward the issue clears without touching tracking
+        wt2 = stack_repo.parent / "repo-worktrees" / "l2"
+        git("merge", "-q", "--no-ff", "-m", "carry l1 forward", "origin/l1", cwd=wt2)
+        result = run_script("worktree_scan.py", cwd=stack_repo, args=("--no-cache",))
+        l2 = next(w for w in result["data"]["worktrees"] if w["branch"] == "l2")
+        assert not any(i.startswith("stack_parent_advanced") for i in (l2["issues"] or []))
+
+    def test_parent_branch_deleted(self, stack_repo):
+        create(stack_repo, "l2", "l1", stack={"trunk": "develop"})
+        git("push", "-q", "origin", "--delete", "l1", cwd=stack_repo)
+        git("fetch", "-q", "--prune", "origin", cwd=stack_repo)
+        result = run_script("worktree_scan.py", cwd=stack_repo, args=("--no-cache",))
+        l2 = next(w for w in result["data"]["worktrees"] if w["branch"] == "l2")
+        assert "stack_parent_landed: origin/l1 no longer exists" in l2["issues"]
 
     def test_parent_landed(self, stack_repo):
         create(stack_repo, "l2", "l1", stack={"trunk": "develop"})

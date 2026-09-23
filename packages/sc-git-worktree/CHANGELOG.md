@@ -10,13 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - `sc-worktree-create-stacked` agent and `--create-stacked <layer> <parent> <trunk> [--above <layer>]`: cut a gh-stack layer worktree from the parent's **pushed** head with `--no-track`, validate the cut before any mutation (`STACK.LAYER_EXISTS`, `STACK.PARENT_NOT_PUSHED`, `STACK.PARENT_LANDED`, `STACK.PARENT_OFF_TRUNK`, `STACK.ABOVE_INVALID`), record `parent_sha`, and return a `stack_handoff` block (push, PR base, link or mid-stack insert sequence, writer rules) for the agent that works in the worktree.
 - Tracking entries carry an optional `stack` object (`trunk`, `parent`, `parent_sha`, `above`, `position`); older rows load unchanged.
-- Cleanup and abort refuse to delete a branch that live stack layers were cut from unless git shows it landed in the trunk (`STACK.HAS_CHILDREN`; batch cleanup reports `stack_blocked`).
+- Cleanup refuses to delete a branch that live stack layers sit on unless git shows a merge-commit landing into the children's trunk; abort always refuses (`STACK.HAS_CHILDREN`; batch cleanup reports `stack_blocked` and never sweeps a fresh layer with no commits). `STACK.PARENT_HAS_CHILD` refuses an append that would fork the stack.
 - Scan reports `stack_parent_advanced` and `stack_parent_landed` on layer rows, with recommendations.
 - `references/stack-layers.md`: the worktree side of the stack model and the writer contract.
 
 ### Fixed
 - Plain create from a remote-only base no longer sets that base as the new branch's upstream (`--no-track`), so `git push` / `--force-with-lease` cannot target the base branch.
-- Merge detection now recognises the `+` marker git prints for branches checked out in other worktrees; single-branch cleanup of a merged branch that still has a worktree no longer fails as "unmerged".
+- Merge detection now recognises the `+` marker git prints for branches checked out in other worktrees. Scope: single-branch `--cleanup` of a branch that is merged (or has no unique commits) and still has a worktree used to fail as "unmerged" and needed `merged: true`; it now proceeds and deletes the branch locally and on the remote as the agent contract states. Batch mode already behaved this way.
 
 ## [0.10.0] - 2026-04-18
 

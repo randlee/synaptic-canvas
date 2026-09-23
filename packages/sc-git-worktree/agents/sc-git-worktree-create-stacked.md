@@ -64,9 +64,11 @@ Example input (insert under `sprint-6`):
 The script returns fenced JSON. Forward it verbatim. On success `data` carries two stack fields in addition to the ordinary create fields:
 
 - `stack`: `{trunk, parent, parent_sha, above, position}` (`position` is `top` or `insert`), also stored in the tracking row.
-- `stack_handoff`: `pr_base`, `pr_body`, `rules[]`, `commands[]` (ordered, with `<placeholders>` the writer fills from `gh pr create` and `/sc-gh-stack-view`), `chain_check_available`, `reference`.
+- `stack_handoff`: `pr_base`, `pr_body`, two role blocks, `chain_check_available`, `reference`.
+  - `writer`: `rules[]` and `commands[]` for the single agent that works in the worktree (WIP commit, first push with `-u`, the one rebase at task start, no gh stack write commands, no edits to lower layers).
+  - `stack_writer`: ordered `commands[]` for the one agent that opens PRs and runs gh stack write commands (PR with base = parent, `gh stack checkout` in the new worktree, link on top or the insert sequence: merge-forward by every layer above, unstack, `gh pr edit --base`, chain check, full relink). Angle-bracket placeholders come from `gh pr create` output and `/sc-gh-stack-view`.
 
-The caller pastes `stack_handoff` verbatim into the prompt of whichever agent works in the worktree. It is the writer's contract: first push with `-u`, PR base = parent (never the trunk), stack on the first push, one rebase at task start at most, no edits to lower layers.
+The caller pastes `stack_handoff.writer` verbatim into the worker agent's prompt and `stack_handoff.stack_writer` into the stack writer's prompt (or keeps it for itself when it holds that role). Layer writers never receive the stack-writer block.
 
 **Success example (top):**
 ```json
@@ -82,14 +84,23 @@ The caller pastes `stack_handoff` verbatim into the prompt of whichever agent wo
     "stack": {"trunk": "develop", "parent": "sprint-6", "parent_sha": "3f9c...e1", "above": null, "position": "top"},
     "stack_handoff": {
       "pr_base": "sprint-6",
-      "rules": ["You are the only writer of sprint-7. Never edit, rebase, or force-push any layer below it.", "..."],
-      "commands": [
-        "git -C /path/to/worktrees/sprint-7 push -u origin sprint-7",
-        "gh pr create --base sprint-6 --head sprint-7 --title \"<title>\" --body \"Parent: sprint-6 @ 3f9c...e1\\nTask: sprint 7\\nFence: <paths this layer may touch>\"",
-        "gh stack link <stack#> <pr# of sprint-7>          # append to an existing stack",
-        "gh stack link --base develop <bottom-pr#> ... <pr# of sprint-6> <pr# of sprint-7>   # first link, or full relink",
-        "/sc-gh-stack-view"
-      ]
+      "writer": {
+        "rules": ["You are the only writer of sprint-7. Never edit, rebase, or force-push any layer below it.", "..."],
+        "commands": [
+          "git -C /path/to/worktrees/sprint-7 add -A && git -C /path/to/worktrees/sprint-7 commit -m \"wip: sprint 7\"   # first WIP commit; a PR needs at least one",
+          "git -C /path/to/worktrees/sprint-7 push -u origin sprint-7"
+        ]
+      },
+      "stack_writer": {
+        "commands": [
+          "# after the writer's first push of sprint-7:",
+          "gh pr create --base sprint-6 --head sprint-7 --title \"<title>\" --body \"$(cat <<'B'\nParent: sprint-6 @ 3f9c...e1\nTask: sprint 7\nFence: <paths this layer may touch>\nB\n)\"",
+          "cd /path/to/worktrees/sprint-7 && gh stack checkout <stack#>   # import tracking into this new worktree; skip only when no stack exists yet",
+          "gh stack link <stack#> <pr# of sprint-7>          # append: only if sprint-6 is the top row in /sc-gh-stack-view",
+          "gh stack link --base develop <bottom-pr#> ... <pr# of sprint-6> <pr# of sprint-7>   # first link, or full relink",
+          "/sc-gh-stack-view"
+        ]
+      }
     }
   }
 }
@@ -110,8 +121,12 @@ All stack refusals happen before anything is created; the message says what is w
 | `STACK.PARENT_LANDED` | Parent already contained in the trunk; cut from the trunk or the current top | Yes |
 | `STACK.PARENT_OFF_TRUNK` | Parent and trunk share no history; wrong `stack.trunk` | Yes |
 | `STACK.ABOVE_INVALID` | `above` is not pushed, does not contain the parent, or names the parent/new layer | Yes |
-| `BRANCH.NOT_FOUND` | Trunk not on origin | No |
+| `STACK.PARENT_HAS_CHILD` | A live layer already sits on the parent (tracking); appending would fork the stack. Cut from that layer, or pass it as `above` to insert | Yes |
+| `BRANCH.NOT_FOUND` | Trunk not on origin | Yes |
+| `CONFIG.MISSING` | Input failed validation (for example empty `stack.trunk`) | Yes |
 | `WORKTREE.EXISTS`, `WORKTREE.BRANCH_IN_USE`, `WORKTREE.DIRTY`, `GIT.NOT_REPO`, `GIT.ERROR` | As for `sc-worktree-create` | No |
+
+Fork detection and the cleanup/abort guards read the tracking file; with `tracking_enabled: false` they are off.
 
 ## Constraints
 

@@ -443,7 +443,11 @@ def is_landed_by_merge(branch: str, base: str, cwd: Optional[Path] = None, limit
     result = run_git(["rev-list", "--first-parent", f"-n{limit}", base], cwd=cwd, check=False)
     if result.returncode != 0:
         return False
-    return head not in result.stdout.split()
+    line = result.stdout.split()
+    if head in line:
+        return False
+    # Window exhausted without seeing the head: cannot tell, fail closed
+    return len(line) < limit
 
 
 def check_branch_exists_local(branch: str, cwd: Optional[Path] = None) -> bool:
@@ -863,19 +867,40 @@ class TrackingEntry(BaseModel):
     stack: Optional[Dict[str, Any]] = Field(None, description="Stack layer metadata when the worktree is a gh-stack layer")
 
 
-def find_stack_children(entries: list["TrackingEntry"], branch: str) -> list[str]:
-    """Return branches recorded as stack layers cut from `branch` that are still live.
+def _entry_is_live(entry: "TrackingEntry", cwd: Optional[Path] = None) -> bool:
+    """Liveness checked against git, not the stored flags (which only scan refreshes)."""
+    if entry.local_worktree and Path(entry.path).exists():
+        return True
+    return check_remote_branch_exists(entry.branch, cwd=cwd)
 
-    A child is live while it has a local worktree or a remote branch. Deleting a
+
+def find_stack_children(entries: list["TrackingEntry"], branch: str, cwd: Optional[Path] = None) -> list[str]:
+    """Return live stack layers that sit on `branch`: layers cut from it, plus the layer
+    `branch` was inserted under (its own row's `stack.above`).
+
+    A child is live while its worktree directory or its remote branch exists. Deleting a
     parent under a live child breaks the stack chain (the child PR loses its base).
     """
-    children = []
+    by_name = {e.branch: e for e in entries}
+    candidates: list[str] = []
     for entry in entries:
         stack = entry.stack or {}
-        if stack.get("parent") != branch:
+        if stack.get("parent") == branch and entry.branch not in candidates:
+            candidates.append(entry.branch)
+    own = by_name.get(branch)
+    above = (own.stack or {}).get("above") if own else None
+    if above and above not in candidates:
+        candidates.append(above)
+    children = []
+    for name in candidates:
+        entry = by_name.get(name)
+        if entry is None:
+            # Inserted-under layer without a tracking row: assume live (fail closed)
+            if check_remote_branch_exists(name, cwd=cwd) or run_git(["rev-parse", "--verify", "--quiet", name], cwd=cwd, check=False).returncode == 0:
+                children.append(name)
             continue
-        if entry.local_worktree or entry.remote_exists:
-            children.append(entry.branch)
+        if _entry_is_live(entry, cwd=cwd):
+            children.append(name)
     return children
 
 

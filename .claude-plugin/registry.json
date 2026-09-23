@@ -21,7 +21,7 @@
         "scripts": 0,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T05:51:05.684219+00:00"
+      "lastUpdated": "2026-09-23T06:05:07.118783+00:00"
     },
     {
       "name": "sc-ci-automation",
@@ -38,7 +38,7 @@
         "scripts": 1,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T05:51:05.685441+00:00"
+      "lastUpdated": "2026-09-23T06:05:07.119819+00:00"
     },
     {
       "name": "sc-codex",
@@ -55,7 +55,7 @@
         "scripts": 2,
         "schemas": 2
       },
-      "lastUpdated": "2026-09-23T05:51:05.686459+00:00"
+      "lastUpdated": "2026-09-23T06:05:07.120619+00:00"
     },
     {
       "name": "sc-coding-agent-hardening",
@@ -72,7 +72,7 @@
         "scripts": 0,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T05:51:05.686917+00:00"
+      "lastUpdated": "2026-09-23T06:05:07.121081+00:00"
     },
     {
       "name": "sc-commit-push-pr",
@@ -89,7 +89,7 @@
         "scripts": 9,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T05:51:05.687775+00:00"
+      "lastUpdated": "2026-09-23T06:05:07.121745+00:00"
     },
     {
       "name": "sc-delay-tasks",
@@ -106,7 +106,7 @@
         "scripts": 2,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T05:51:05.688501+00:00"
+      "lastUpdated": "2026-09-23T06:05:07.122357+00:00"
     },
     {
       "name": "sc-docling-pdf",
@@ -123,11 +123,11 @@
         "scripts": 0,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T05:51:05.689432+00:00"
+      "lastUpdated": "2026-09-23T06:05:07.123165+00:00"
     },
     {
       "name": "sc-gh-stack",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "description": "Stacked pull requests with the gh-stack GitHub CLI extension, run the way that lands: an append-only, linear stack of frozen layers above a named trunk, one stack writer, QA and CI on the top only, one atomic merge. Ships the sc-gh-stack skill (model, preconditions, recipes, full command guide) and the sc-gh-stack-view skill (one-call coherence, mergeability, CI and landing table). Supersedes the generic gh-stack skill.\n",
       "author": "randlee",
       "license": "MIT",
@@ -140,7 +140,7 @@
         "scripts": 3,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T05:51:05.690494+00:00"
+      "lastUpdated": "2026-09-23T06:05:07.124081+00:00"
     },
     {
       "name": "sc-git-worktree",
@@ -157,7 +157,7 @@
         "scripts": 7,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T05:51:05.691470+00:00"
+      "lastUpdated": "2026-09-23T06:05:07.125067+00:00"
     },
     {
       "name": "sc-github-issue",
@@ -174,7 +174,7 @@
         "scripts": 1,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T05:51:05.692717+00:00"
+      "lastUpdated": "2026-09-23T06:05:07.126099+00:00"
     },
     {
       "name": "sc-just",
@@ -191,7 +191,7 @@
         "scripts": 0,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T05:51:05.693694+00:00"
+      "lastUpdated": "2026-09-23T06:05:07.127102+00:00"
     },
     {
       "name": "sc-kanban",
@@ -208,7 +208,7 @@
         "scripts": 5,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T05:51:05.694707+00:00"
+      "lastUpdated": "2026-09-23T06:05:07.127868+00:00"
     },
     {
       "name": "sc-launch-term",
@@ -225,7 +225,7 @@
         "scripts": 3,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T05:51:05.695602+00:00"
+      "lastUpdated": "2026-09-23T06:05:07.128494+00:00"
     },
     {
       "name": "sc-launchpad",
@@ -242,7 +242,7 @@
         "scripts": 2,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T05:51:05.696388+00:00"
+      "lastUpdated": "2026-09-23T06:05:07.129165+00:00"
     },
     {
       "name": "sc-manage",
@@ -259,7 +259,7 @@
         "scripts": 8,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T05:51:05.697350+00:00"
+      "lastUpdated": "2026-09-23T06:05:07.129845+00:00"
     },
     {
       "name": "sc-refactory",
@@ -276,7 +276,7 @@
         "scripts": 10,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T05:51:05.698768+00:00"
+      "lastUpdated": "2026-09-23T06:05:07.130913+00:00"
     },
     {
       "name": "sc-repomix-nuget",
@@ -293,7 +293,7 @@
         "scripts": 3,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T05:51:05.699612+00:00"
+      "lastUpdated": "2026-09-23T06:05:07.131556+00:00"
     },
     {
       "name": "sc-roslyn-diff",
@@ -310,7 +310,7 @@
         "scripts": 6,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T05:51:05.700490+00:00"
+      "lastUpdated": "2026-09-23T06:05:07.132277+00:00"
     },
     {
       "name": "sc-rust",
@@ -327,7 +327,7 @@
         "scripts": 0,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T05:51:05.701943+00:00"
+      "lastUpdated": "2026-09-23T06:05:07.133451+00:00"
     },
     {
       "name": "sc-startup",
@@ -344,7 +344,7 @@
         "scripts": 1,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T05:51:05.702888+00:00"
+      "lastUpdated": "2026-09-23T06:05:07.134183+00:00"
     }
   ],
   "metadata": {
@@ -355,6 +355,6 @@
     "totalScripts": 63,
     "totalSchemas": 2
   },
-  "generated": "2026-09-23T05:51:05.702899+00:00",
-  "lastUpdated": "2026-09-23T05:51:05.702900+00:00"
+  "generated": "2026-09-23T06:05:07.134194+00:00",
+  "lastUpdated": "2026-09-23T06:05:07.134195+00:00"
 }

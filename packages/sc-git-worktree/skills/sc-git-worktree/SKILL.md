@@ -52,9 +52,9 @@ To invoke an agent, use the Task tool with the agent prompt and pass parameters 
 
 A stack layer is a worktree whose branch will be a PR in a `gh stack`. The plain create is wrong for it: it branches from the **local** base ref (possibly stale or another writer's unpushed state) and, from a remote ref, would leave the parent as upstream. `sc-worktree-create-stacked` cuts from `origin/<parent>` with `--no-track`, refuses bad cuts before touching anything (parent not pushed, already landed, insert target not stacked on the parent), records the parent SHA in tracking, and returns a `stack_handoff` block.
 
-- Pass `stack_handoff` verbatim to the agent that will work in the worktree. It is the writer's contract: first push with `-u`, PR base = parent, link on the first push, at most one rebase at task start, no edits to lower layers, and for an insert the merge-forward / unstack / `gh pr edit --base` / full relink sequence.
-- Cleanup and abort refuse to delete a branch that live layers were cut from unless git shows it landed in the trunk (`STACK.HAS_CHILDREN`); batch cleanup reports such branches under `stack_blocked`.
-- Scan reports `stack_parent_advanced` (rebase once at task start) and `stack_parent_landed` (PR should now target the trunk) on layer rows.
+- `stack_handoff.writer` goes verbatim to the agent that will work in the worktree (WIP commit, first push with `-u`, at most one rebase at task start, no edits to lower layers, no gh stack write commands). `stack_handoff.stack_writer` goes to the stack writer only (PR with base = parent, `gh stack checkout` in the new worktree, link on top, or the insert sequence: merge-forward by every layer above, unstack, `gh pr edit --base`, full relink).
+- Cleanup refuses to delete a branch that live layers sit on unless git shows a merge-commit landing in the trunk (`STACK.HAS_CHILDREN`; batch cleanup reports `stack_blocked`, and never sweeps a fresh layer with no commits). Abort always refuses. Both read the tracking file.
+- Scan reports `stack_parent_advanced` (layer no longer contains the parent's head) and `stack_parent_landed` (PR should now target the trunk) on layer rows.
 
 Details and the handoff contract: `references/stack-layers.md`. The stack model, recipes and the view tool live in the `sc-gh-stack` package (`/sc-gh-stack`, `/sc-gh-stack-view`); this skill only makes the worktree side of that model safe.
 

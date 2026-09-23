@@ -193,7 +193,7 @@ def abort_worktree_main(input_data: AbortInput) -> Envelope:
                 if input_data.tracking_path
                 else get_default_tracking_path(worktree_base)
             )
-            stack_children = find_stack_children(load_tracking_jsonl(guard_path), input_data.branch)
+            stack_children = find_stack_children(load_tracking_jsonl(guard_path), input_data.branch, cwd=repo_root)
             if stack_children:
                 transcript.step_failed(
                     step="stack guard",
@@ -208,7 +208,8 @@ def abort_worktree_main(input_data: AbortInput) -> Envelope:
                     recoverable=True,
                     suggested_action=(
                         "Abort or clean up the child layers first, or re-run with allow_delete_branch: false "
-                        "to remove only the worktree and keep the branch"
+                        "to remove only the worktree and keep the branch; a landed parent is cleaned with --cleanup, "
+                        "not aborted; if a child is already gone, run --list to reconcile tracking"
                     ),
                     data={"stack_children": stack_children},
                     transcript=transcript,

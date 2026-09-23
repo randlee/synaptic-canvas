@@ -259,8 +259,12 @@ def batch_get_worktree_statuses(worktrees: List[WorktreeInfo]) -> Dict[str, Tupl
 # =============================================================================
 
 
-def stack_issues(stack_meta: Optional[Dict[str, Any]], repo_root: Path) -> List[str]:
-    """Issues for a stack layer: parent landed (gone or merged into trunk) or parent advanced."""
+def stack_issues(stack_meta: Optional[Dict[str, Any]], repo_root: Path, layer: Optional[str] = None) -> List[str]:
+    """Issues for a stack layer: parent landed (gone or merged into trunk) or parent advanced.
+
+    "Advanced" means the layer no longer contains the parent's pushed head; it clears by
+    itself after the writer's one rebase or a merge-forward, without touching tracking.
+    """
     if not stack_meta:
         return []
     parent = stack_meta.get("parent")
@@ -276,8 +280,10 @@ def stack_issues(stack_meta: Optional[Dict[str, Any]], repo_root: Path) -> List[
         return [f"stack_parent_landed: origin/{parent} no longer exists"]
     if is_ancestor(f"origin/{parent}", f"origin/{trunk}", cwd=repo_root):
         return [f"stack_parent_landed: {parent} is contained in {trunk}"]
-    if recorded and current != recorded:
-        return [f"stack_parent_advanced: origin/{parent} {recorded[:8]} -> {current[:8]}"]
+    if layer:
+        head_ref = f"origin/{layer}" if rev_parse(f"origin/{layer}", cwd=repo_root) else layer
+        if not is_ancestor(f"origin/{parent}", head_ref, cwd=repo_root):
+            return [f"stack_parent_advanced: origin/{parent} {recorded[:8]} -> {current[:8]}, not contained in {head_ref}"]
     return []
 
 
@@ -499,7 +505,7 @@ def scan_worktrees(
             issues.append(f"prunable: {wt.prunable_reason or 'worktree may be stale'}")
         if remote_ahead > 0:
             issues.append(f"remote_ahead: {remote_ahead} commit(s)")
-        issues.extend(stack_issues(stack_meta, repo_root))
+        issues.extend(stack_issues(stack_meta, repo_root, layer=wt.branch))
 
         worktree_results.append({
             "branch": wt.branch,
@@ -550,7 +556,8 @@ def scan_worktrees(
         )
     if parent_landed:
         recommendations.append(
-            f"{parent_landed} stack layer(s) whose parent landed: confirm the PR now targets the trunk (/sc-gh-stack-view)"
+            f"{parent_landed} stack layer(s) whose parent landed: confirm the PR now targets the trunk (/sc-gh-stack-view); "
+            f"before touching the layer, git diff --stat HEAD origin/<layer> and reset only if empty; never force-push over GitHub's retarget"
         )
 
     return Envelope.success_response(

@@ -68,7 +68,7 @@ Wrap the script output in `<output_json>` tags with a fenced JSON block. Do not 
 - **Merged + clean**: Auto-cleaned in batch mode
 - **Dirty**: Reported back, requires explicit `require_clean: false` to force
 - **Unmerged**: Never auto-deleted. User must merge first or use `--abort` to discard.
-- **Stack parents**: A branch that live stack layers were cut from (tracking `stack.parent`) is deleted only when git shows it merged into the trunk. Batch mode lists such branches under `stack_blocked`; single mode with `merged: true` refuses with `STACK.HAS_CHILDREN`. Land the stack (`gh stack merge`) or clean the children first.
+- **Stack parents**: A branch that live stack layers sit on (tracking `stack.parent`, or the layer it was inserted under) is deleted only when git shows a merge-commit landing into the children's trunk. Batch mode lists such branches under `stack_blocked`, along with fresh layers that have no commits yet (never swept); single mode refuses with `STACK.HAS_CHILDREN`. Land the stack (`gh stack merge`) or clean the children first; run `--list` if a listed child is already gone. Guards are off with `tracking_enabled: false`.
 
 ## Constraints
 

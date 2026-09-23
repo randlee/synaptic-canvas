@@ -112,7 +112,7 @@ MUST invoke `sc-worktree-create-stacked` with `branch`, `base` (= `<parent>`), `
 
 Before invoking, when `sc-gh-stack` is installed, run `/sc-gh-stack-view` so `<parent>` is the pushed top (or, for an insert, so `--above` names the real layer above the parent). Without it, the script still verifies the cut from git.
 
-Render the `<output_json>` summary **and the full `stack_handoff` block verbatim**. Hand that block, unchanged, to whichever agent will work in the worktree; it contains the push, PR-base, link/insert commands and the writer rules. See `skills/sc-git-worktree/references/stack-layers.md`.
+Render the `<output_json>` summary **and the full `stack_handoff` block verbatim**. Hand `stack_handoff.writer` unchanged to the agent that will work in the worktree, and `stack_handoff.stack_writer` to the stack writer (the one agent that opens PRs and runs gh stack write commands; never the layer's writer). See `skills/sc-git-worktree/references/stack-layers.md`.
 
 ### --update
 MUST invoke `sc-worktree-update` for protected branches only. Render conflicts or success from `<output_json>`.
