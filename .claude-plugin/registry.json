@@ -1,6 +1,6 @@
 {
   "name": "synaptic-canvas",
-  "version": "0.12.0",
+  "version": "0.13.0",
   "description": "A marketplace for Claude Code skills",
   "author": {
     "name": "randlee"
@@ -16,12 +16,12 @@
       "category": "tools",
       "artifacts": {
         "commands": 0,
-        "skills": 23,
+        "skills": 3,
         "agents": 0,
         "scripts": 0,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-22T21:31:48.994429"
+      "lastUpdated": "2026-09-23T04:33:45.555655+00:00"
     },
     {
       "name": "sc-ci-automation",
@@ -38,7 +38,7 @@
         "scripts": 1,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-22T21:31:48.995207"
+      "lastUpdated": "2026-09-23T04:33:45.556630+00:00"
     },
     {
       "name": "sc-codex",
@@ -52,10 +52,10 @@
         "commands": 1,
         "skills": 1,
         "agents": 1,
-        "scripts": 9,
+        "scripts": 2,
         "schemas": 2
       },
-      "lastUpdated": "2026-09-22T21:31:48.996045"
+      "lastUpdated": "2026-09-23T04:33:45.557392+00:00"
     },
     {
       "name": "sc-coding-agent-hardening",
@@ -67,12 +67,12 @@
       "category": "tools",
       "artifacts": {
         "commands": 0,
-        "skills": 5,
+        "skills": 1,
         "agents": 0,
         "scripts": 0,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-22T21:31:48.996489"
+      "lastUpdated": "2026-09-23T04:33:45.557829+00:00"
     },
     {
       "name": "sc-commit-push-pr",
@@ -89,7 +89,7 @@
         "scripts": 9,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-22T21:31:48.997158"
+      "lastUpdated": "2026-09-23T04:33:45.558416+00:00"
     },
     {
       "name": "sc-delay-tasks",
@@ -106,7 +106,7 @@
         "scripts": 2,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-22T21:31:48.997841"
+      "lastUpdated": "2026-09-23T04:33:45.558964+00:00"
     },
     {
       "name": "sc-docling-pdf",
@@ -118,16 +118,16 @@
       "category": "tools",
       "artifacts": {
         "commands": 0,
-        "skills": 12,
+        "skills": 1,
         "agents": 0,
         "scripts": 0,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-22T21:31:48.998733"
+      "lastUpdated": "2026-09-23T04:33:45.559739+00:00"
     },
     {
       "name": "sc-git-worktree",
-      "version": "0.12.0",
+      "version": "0.13.0",
       "description": "Manage git worktrees with optional tracking and protected branch safeguards: create, scan, cleanup, abort, and update worktrees using a standard sibling folder layout with tracking documents. Prevents accidental deletion of protected branches.\n",
       "author": "randlee",
       "license": "MIT",
@@ -140,7 +140,7 @@
         "scripts": 7,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-22T21:31:48.999757"
+      "lastUpdated": "2026-09-23T04:33:45.560629+00:00"
     },
     {
       "name": "sc-github-issue",
@@ -157,7 +157,7 @@
         "scripts": 1,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-22T21:31:49.000940"
+      "lastUpdated": "2026-09-23T04:33:45.561655+00:00"
     },
     {
       "name": "sc-just",
@@ -169,12 +169,12 @@
       "category": "tools",
       "artifacts": {
         "commands": 0,
-        "skills": 4,
+        "skills": 1,
         "agents": 0,
         "scripts": 0,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-22T21:31:49.002082"
+      "lastUpdated": "2026-09-23T04:33:45.562635+00:00"
     },
     {
       "name": "sc-kanban",
@@ -187,11 +187,11 @@
       "artifacts": {
         "commands": 1,
         "skills": 1,
-        "agents": 8,
+        "agents": 4,
         "scripts": 5,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-22T21:31:49.002850"
+      "lastUpdated": "2026-09-23T04:33:45.563342+00:00"
     },
     {
       "name": "sc-launch-term",
@@ -202,13 +202,13 @@
       "keywords": [],
       "category": "tools",
       "artifacts": {
-        "commands": 9,
+        "commands": 0,
         "skills": 0,
         "agents": 0,
         "scripts": 3,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-22T21:31:49.003646"
+      "lastUpdated": "2026-09-23T04:33:45.564051+00:00"
     },
     {
       "name": "sc-launchpad",
@@ -225,7 +225,7 @@
         "scripts": 2,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-22T21:31:49.004336"
+      "lastUpdated": "2026-09-23T04:33:45.564692+00:00"
     },
     {
       "name": "sc-manage",
@@ -242,7 +242,24 @@
         "scripts": 8,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-22T21:31:49.004960"
+      "lastUpdated": "2026-09-23T04:33:45.565348+00:00"
+    },
+    {
+      "name": "sc-refactory",
+      "version": "0.2.0",
+      "description": "Design and install a rule-driven refactoring toolkit with startup policy injection, approved-fix lookup, curated rule authoring, and named-teammate orchestration for large migration campaigns.\n",
+      "author": "synaptic-canvas",
+      "license": "MIT",
+      "keywords": [],
+      "category": "tools",
+      "artifacts": {
+        "commands": 5,
+        "skills": 6,
+        "agents": 6,
+        "scripts": 10,
+        "schemas": 0
+      },
+      "lastUpdated": "2026-09-23T04:33:45.566413+00:00"
     },
     {
       "name": "sc-repomix-nuget",
@@ -254,12 +271,12 @@
       "category": "tools",
       "artifacts": {
         "commands": 1,
-        "skills": 3,
+        "skills": 1,
         "agents": 3,
         "scripts": 3,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-22T21:31:49.006771"
+      "lastUpdated": "2026-09-23T04:33:45.567032+00:00"
     },
     {
       "name": "sc-roslyn-diff",
@@ -276,7 +293,7 @@
         "scripts": 6,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-22T21:31:49.007373"
+      "lastUpdated": "2026-09-23T04:33:45.567695+00:00"
     },
     {
       "name": "sc-rust",
@@ -288,12 +305,12 @@
       "category": "tools",
       "artifacts": {
         "commands": 0,
-        "skills": 25,
+        "skills": 3,
         "agents": 7,
         "scripts": 0,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-22T21:31:49.008431"
+      "lastUpdated": "2026-09-23T04:33:45.568827+00:00"
     },
     {
       "name": "sc-startup",
@@ -306,38 +323,21 @@
       "artifacts": {
         "commands": 1,
         "skills": 1,
-        "agents": 4,
+        "agents": 2,
         "scripts": 1,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-22T21:31:49.009066"
-    },
-    {
-      "name": "sc-refactory",
-      "version": "0.2.0",
-      "description": "Design and install a rule-driven refactoring toolkit with startup policy injection, approved-fix lookup, curated rule authoring, and named-teammate orchestration for large migration campaigns.\n",
-      "author": "synaptic-canvas",
-      "license": "MIT",
-      "keywords": [],
-      "category": "tools",
-      "artifacts": {
-        "commands": 5,
-        "skills": 8,
-        "agents": 7,
-        "scripts": 10,
-        "schemas": 0
-      },
-      "lastUpdated": "2026-09-22T21:31:49.006170"
+      "lastUpdated": "2026-09-23T04:33:45.569490+00:00"
     }
   ],
   "metadata": {
     "totalPackages": 19,
-    "totalCommands": 24,
-    "totalSkills": 91,
-    "totalAgents": 58,
-    "totalScripts": 67,
+    "totalCommands": 15,
+    "totalSkills": 27,
+    "totalAgents": 51,
+    "totalScripts": 60,
     "totalSchemas": 2
   },
-  "generated": "2026-09-22T21:31:49.009078",
-  "lastUpdated": "2026-09-22T21:31:49.009079"
+  "generated": "2026-09-23T04:33:45.569499+00:00",
+  "lastUpdated": "2026-09-23T04:33:45.569500+00:00"
 }
