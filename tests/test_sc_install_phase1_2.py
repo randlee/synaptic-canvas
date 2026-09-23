@@ -197,6 +197,60 @@ class TestGlobalLocalFlags:
         assert "mutually exclusive" in err.lower() or "not allowed" in err.lower()
 
 
+class TestCodexFlag:
+    """Test --codex installation flag (skills/scripts only, no commands/agents/registry.yaml)."""
+
+    def test_install_codex_flag_creates_dir(self, temp_home, capsys):
+        """Test that --codex creates ~/.codex directory."""
+        rc = sc_install.main(["install", "sc-delay-tasks", "--codex"])
+        assert rc == 0
+        assert (temp_home / ".codex").exists()
+        assert (temp_home / ".codex" / "scripts").exists()
+
+    def test_install_codex_flag_uses_home_directory(self, temp_home, capsys):
+        """Test that --codex installs to ~/.codex, not ~/.claude."""
+        rc = sc_install.main(["install", "sc-delay-tasks", "--codex"])
+        assert rc == 0
+        assert not (temp_home / ".claude").exists()
+
+        out = capsys.readouterr().out
+        assert str(temp_home / ".codex") in out
+
+    def test_install_codex_skips_commands_and_agents(self, temp_home, capsys):
+        """Test that --codex installs only skills/scripts, not commands/agents."""
+        rc = sc_install.main(["install", "sc-delay-tasks", "--codex"])
+        assert rc == 0
+        assert (temp_home / ".codex" / "skills").exists()
+        assert (temp_home / ".codex" / "scripts").exists()
+        assert not (temp_home / ".codex" / "commands").exists()
+        assert not (temp_home / ".codex" / "agents").exists()
+
+    def test_install_codex_skips_registry(self, temp_home, capsys):
+        """Test that --codex does not write agents/registry.yaml."""
+        rc = sc_install.main(["install", "sc-delay-tasks", "--codex"])
+        assert rc == 0
+        assert not (temp_home / ".codex" / "agents" / "registry.yaml").exists()
+
+    def test_install_codex_and_global_conflict_error(self, capsys):
+        """Test that --codex and --global together produce error."""
+        with pytest.raises(SystemExit) as exc_info:
+            sc_install.main(["install", "sc-delay-tasks", "--codex", "--global"])
+
+        assert exc_info.value.code != 0
+        err = capsys.readouterr().err
+        assert "not allowed with argument" in err or "mutually exclusive" in err.lower()
+
+    def test_install_codex_and_dest_conflict_error(self, temp_home, capsys):
+        """Test that --codex and --dest together produce error."""
+        dest = temp_home / "custom" / ".claude"
+        with pytest.raises(SystemExit) as exc_info:
+            sc_install.main(["install", "sc-delay-tasks", "--codex", "--dest", str(dest)])
+
+        assert exc_info.value.code != 0
+        err = capsys.readouterr().err
+        assert "mutually exclusive" in err.lower() or "not allowed" in err.lower()
+
+
 # ==============================================================================
 # TEST GROUP 2: Registry Commands (18 tests)
 # ==============================================================================
