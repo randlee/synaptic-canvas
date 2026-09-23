@@ -847,6 +847,11 @@ requires:
   - python3 >= 3.10
 ```
 
+Not a manifest field, but a package may also ship `install.py` at its root
+(Tier 3, discovered by presence rather than declared in manifest.yaml) with
+`prepare()`/`complete()`/`cleanup()` hooks run by sc-install around the copy
+and uninstall steps. See `src/sc_cli/README.md` for the full contract.
+
 ### Package Installation Flow
 
 When a user installs a package:
@@ -859,9 +864,11 @@ When a user installs a package:
    b. Finds package entry
    c. Fetches manifest.yaml from package path
    d. Downloads all artifacts listed in manifest
-   e. Performs token substitution (Tier 1)
-   f. Validates dependencies (Tier 2)
-   g. Copies artifacts to ~/.claude/ or ./.claude/
+   e. Runs the package's install.py prepare() hook, if present (Tier 3)
+   f. Performs token substitution (Tier 1)
+   g. Validates dependencies (Tier 2)
+   h. Copies artifacts to ~/.claude/ or ./.claude/
+   i. Runs the package's install.py complete() hook, if present (Tier 3)
 
 3. Result:
    .claude/

@@ -511,6 +511,63 @@ echo "cache_enabled: true" >> ~/.claude/config.yaml
 
 ---
 
+### Issue 9: "install.py hook failed" or "missing required value"
+
+**Symptoms:**
+- Error: "install.py complete() failed: <reason> -- suggested fix: pass --set KEY=VALUE ..."
+- Installation aborts after files were validated but before/after the copy step
+- Works for `--global`/`--user` but fails for `--local`/`--project` (or vice versa)
+
+**Possible Causes:**
+1. The package ships an optional `install.py` (`prepare()`/`complete()`/`cleanup()`
+   hooks) and one of them needs information `sc-install` has no generic way to
+   know (e.g. a target environment name, a repo-specific value)
+2. The required `--set KEY=VALUE` wasn't passed
+3. The hook itself is buggy (raises an exception, or returns something other
+   than `{"result": "success"}` / `{"result": "fail", "message": "..."}`)
+
+**Solutions:**
+
+**Solution 9A: Read the Failure Message**
+The hook's `message` is required to combine *why it failed* and *what to do
+about it* in one string. Most of the time the fix is right there:
+```
+Error: install.py complete() failed: sc-compose render failed for
+commands/sc-example.md: template requires TARGET_ENV -- suggested fix:
+pass --set TARGET_ENV=<value>
+```
+
+**Solution 9B: Retry with `--set`**
+```bash
+# Add the named key/value and retry
+/marketplace install some-package --local --set TARGET_ENV=staging
+
+# --set is repeatable for hooks that need more than one value
+sc-install install some-package --local --set TARGET_ENV=staging --set REGION=us-east-1
+```
+
+**Solution 9C: Uninstall Cleanup Also Runs Hooks**
+`sc-install uninstall` runs the package's `cleanup()` hook (if it has one)
+after removing the manifest artifacts. If uninstall reports a hook failure,
+the same `--set KEY=VALUE` pattern applies:
+```bash
+sc-install uninstall some-package --dest ~/.claude --set TARGET_ENV=staging
+```
+
+**Solution 9D: If the Message Doesn't Name a Fix**
+That's a bug in the package's `install.py`, not a missing input on your end -
+every hook result must be `{"result": "success"}` or `{"result": "fail",
+"message": "<reason, instructions to fix>"}`. Report it against the package
+(see "Reporting Issues" below) rather than retrying blindly.
+
+**Prevention:**
+- Read the package's own README before installing if it documents required
+  `--set` keys
+- See `src/sc_cli/README.md` in the repository for the full `install.py`
+  hook contract
+
+---
+
 ## Diagnostic Commands
 
 ### Check System Health
