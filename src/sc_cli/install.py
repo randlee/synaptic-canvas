@@ -5,11 +5,11 @@ Python rewrite of tools/sc-install.sh
 Commands:
   list
   info <package>
-  install <package> --dest <path/to/.claude> [--force] [--no-expand]
-  install <package> --global [--claude|--codex] [--force] [--no-expand]
-  install <package> --local [--claude|--codex] [--force] [--no-expand]
-  install <package> --user [--claude|--codex] [--force] [--no-expand]
-  install <package> --project [--claude|--codex] [--force] [--no-expand]
+  install <package> --dest <path/to/.claude> [--force] [--no-expand] [--set K=V ...]
+  install <package> --global [--claude|--codex] [--force] [--no-expand] [--set K=V ...]
+  install <package> --local [--claude|--codex] [--force] [--no-expand] [--set K=V ...]
+  install <package> --user [--claude|--codex] [--force] [--no-expand] [--set K=V ...]
+  install <package> --project [--claude|--codex] [--force] [--no-expand] [--set K=V ...]
   uninstall <package> --dest <path/to/.claude>
   registry add <name> <url> [--path <path>]
   registry list
@@ -894,6 +894,126 @@ def _get_render_template():
         raise RuntimeError("sc-compose installed but 'render_template' is not importable") from ex
 
 
+def _parse_hook_args(raw: List[str]) -> Dict[str, str]:
+    """Parse repeatable --set KEY=VALUE into a dict for options['args'].
+
+    A malformed entry (no '=') is a caller error, so it's reported like any
+    other bad argument rather than silently dropped.
+    """
+    parsed: Dict[str, str] = {}
+    for item in raw:
+        if "=" not in item:
+            raise SystemExit(f"--set expects KEY=VALUE, got: {item!r}")
+        key, value = item.split("=", 1)
+        key = key.strip()
+        if not key:
+            raise SystemExit(f"--set expects KEY=VALUE, got: {item!r}")
+        parsed[key] = value
+    return parsed
+
+
+def _load_install_hook(pkg_dir: Path):
+    """Load a package's optional install.py hook, or None if it ships none.
+
+    A package root may contain an install.py defining prepare(source_path,
+    destination_path, options), complete(source_path, destination_path,
+    options), and/or cleanup(source_path, destination_path, options).
+    prepare() runs right before the artifact copy step, complete() right
+    after it finishes (including the registry update) - both once per
+    install target. cleanup() runs once per target during `sc-install
+    uninstall`, after the standard manifest-artifact removal. Any of the
+    three may do target-specific work sc-install's generic copy/.local.j2
+    mechanism doesn't cover, e.g. shelling out to `sc-compose render` with
+    values only the package knows, or deleting hook-created files that
+    aren't manifest artifacts sc-install would otherwise know to remove.
+
+    Requirements for install.py authors (enforced by convention, not by
+    sc-install - a non-compliant hook can still be written, but every hook
+    that ships in this repo is expected to meet these):
+
+    - Idempotent: running prepare()/complete()/cleanup() twice against the
+      same destination_path (same or re-run install, e.g. after --force;
+      uninstall run twice) must produce the same on-disk result as running
+      it once, not accumulate duplicate or corrupted state.
+    - Self-cleaning across versions, via a cumulative INVENTORY: a package
+      that ships an install.py should keep a module-level `INVENTORY` list
+      in install.py naming every relative artifact/output path it has ever
+      produced, across all released versions (entries are only ever added,
+      never removed, even once a path stops being current). A validator
+      checks each INVENTORY entry against the package's current source
+      tree; an entry whose source file no longer exists (i.e. this version
+      dropped it) fails CI unless complete() contains a matching
+      "delete-if-present" line for that destination-relative path (prepare()
+      runs before the copy step and must not touch the destination at all -
+      the conditional delete belongs in complete(), alongside the rest of
+      the post-copy cleanup work) - the
+      docstring/comment right above INVENTORY should say as much, so a
+      designer (human or agent) editing the list is pointed straight at
+      what to add. destination_path itself already holds the prior
+      release's files (each install runs against the same on-disk
+      location the last one used), so no separate "previous version" data
+      needs to be passed in - the check is source-tree-vs-INVENTORY, not
+      destination-vs-something.
+    """
+    hook_path = pkg_dir / "install.py"
+    if not hook_path.is_file():
+        return None
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location(f"sc_install_hook_{pkg_dir.name}", hook_path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"Cannot load install hook: {hook_path}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def _run_install_hook(
+    hook,
+    fn_name: str,
+    source_path: Path,
+    destination_path: Path,
+    options: Dict[str, Any],
+) -> Optional[str]:
+    """Run an optional prepare()/complete() hook.
+
+    Returns None if the hook is absent or reports success. On failure,
+    returns a single agent-facing error string. The hook's return value must
+    be {"result": "success"} or {"result": "fail", "message": "<fail
+    reason, instructions to fix>"} - a hook that raises, or that fails
+    without a message carrying both the reason and the fix, is itself an
+    sc-install error, since callers need a reason and a fix, not a stack
+    trace.
+    """
+    fn = getattr(hook, fn_name, None) if hook is not None else None
+    if fn is None:
+        return None
+    try:
+        result = fn(str(source_path), str(destination_path), dict(options))
+    except Exception as ex:
+        return (
+            f"install.py {fn_name}() raised {type(ex).__name__}: {ex} "
+            "-- suggested fix: install.py hooks must catch their own errors and "
+            "return {'result': 'fail', 'message': '<reason, instructions to fix>'}"
+        )
+    if not isinstance(result, dict) or "result" not in result:
+        return (
+            f"install.py {fn_name}() returned a malformed result "
+            f"(expected {{'result': 'success'|'fail', ...}}): {result!r} "
+            "-- suggested fix: return the standard result shape"
+        )
+    if result["result"] == "success":
+        return None
+    message = result.get("message")
+    if not message:
+        return (
+            f"install.py {fn_name}() failed without a message "
+            f"(got {result!r}) -- suggested fix: every failure must set "
+            "'message' to the fail reason and instructions to fix it"
+        )
+    return f"install.py {fn_name}() failed: {message}"
+
+
 def _git_repo_basename(dest_dir: Path) -> str:
     try:
         # Determine toplevel from parent of dest (.claude lives under repo)
@@ -1225,6 +1345,7 @@ def cmd_install(
     claude_flag: bool = False,
     codex_flag: bool = False,
     registry: Optional[str] = None,
+    hook_args: Optional[Dict[str, str]] = None,
 ) -> int:
     """Install a package to a .claude and/or .codex directory.
 
@@ -1247,6 +1368,12 @@ def cmd_install(
         codex_flag: Install the .codex target (skills/scripts/assets only;
             no commands, agents, or registry.yaml)
         registry: Optional registry name to install from
+        hook_args: Extra key=value pairs (from repeatable --set) passed through
+            to the package's install.py hooks as options["args"]. Lets a
+            package require info sc-install has no generic way to know (e.g.
+            a target environment name); its prepare()/complete() can fail
+            with a message telling the caller which --set to add, and the
+            agent driving sc-install retries with it supplied.
     """
     # Check local package first (backward compatible)
     pkg_dir = PACKAGES_DIR / pkg
@@ -1311,6 +1438,12 @@ def cmd_install(
     # codex (codex has no install-time repo-specific customization).
     allow_local_templates = not (global_flag or user_flag)
 
+    # Optional package-supplied install.py: prepare() runs right before the
+    # artifact copy step, complete() right after it (registry update
+    # included), once per install target. Lets a package do target-specific
+    # work sc-install's generic copy/.local.j2 mechanism doesn't cover.
+    install_hook = _load_install_hook(pkg_dir)
+
     def install_target(dest_path: Path, is_codex: bool) -> int:
         dest_path.mkdir(parents=True, exist_ok=True)
         installed_artifacts: List[str] = []
@@ -1319,6 +1452,22 @@ def cmd_install(
         repo_name = ""
         if use_local_templates or (expand and declares_repo_name_var):
             repo_name = _git_repo_basename(dest_path)
+
+        hook_options = {
+            "global": global_flag,
+            "local": local_flag,
+            "user": user_flag,
+            "project": project_flag,
+            "codex": is_codex,
+            "force": force,
+            "expand": expand,
+            "args": dict(hook_args or {}),
+        }
+
+        hook_error = _run_install_hook(install_hook, "prepare", pkg_dir, dest_path, hook_options)
+        if hook_error:
+            error(hook_error)
+            return 1
 
         info(f"Installing {pkg} to {dest_path}")
         if repo_name:
@@ -1382,6 +1531,11 @@ def cmd_install(
             if rc != 0:
                 return rc
 
+        hook_error = _run_install_hook(install_hook, "complete", pkg_dir, dest_path, hook_options)
+        if hook_error:
+            error(hook_error)
+            return 1
+
         info(f"Done installing {pkg} to {dest_path}")
         return 0
 
@@ -1395,7 +1549,7 @@ def cmd_install(
     return 0
 
 
-def cmd_uninstall(pkg: str, dest: str) -> int:
+def cmd_uninstall(pkg: str, dest: str, *, hook_args: Optional[Dict[str, str]] = None) -> int:
     pkg_dir = PACKAGES_DIR / pkg
     if not pkg_dir.is_dir():
         error(f"Package not found: {pkg}")
@@ -1415,6 +1569,26 @@ def cmd_uninstall(pkg: str, dest: str) -> int:
                 info(f"Removed: {rel}")
             except Exception:
                 warn(f"Could not remove: {rel}")
+
+    # Optional install.py cleanup(): removes hook-created files (e.g.
+    # rendered .local.j2/.j2 output) that aren't manifest artifacts, so
+    # sc-install's own artifact-list loop above wouldn't know to remove them.
+    install_hook = _load_install_hook(pkg_dir)
+    hook_options: Dict[str, Any] = {
+        "global": False,
+        "local": False,
+        "user": False,
+        "project": False,
+        "codex": False,
+        "force": False,
+        "expand": False,
+        "args": dict(hook_args or {}),
+    }
+    hook_error = _run_install_hook(install_hook, "cleanup", pkg_dir, dest_path, hook_options)
+    if hook_error:
+        error(hook_error)
+        return 1
+
     info(f"Done uninstalling {pkg}")
     return 0
 
@@ -1456,10 +1630,28 @@ def build_parser() -> argparse.ArgumentParser:
     p_install.add_argument("--force", action="store_true")
     p_install.add_argument("--no-expand", action="store_true")
     p_install.add_argument("--registry", help="Install from remote registry")
+    p_install.add_argument(
+        "--set",
+        dest="hook_args",
+        action="append",
+        default=[],
+        metavar="KEY=VALUE",
+        help="Extra key=value passed to the package's install.py hooks "
+        "(options['args']); repeatable. Only a package's own hook interprets these.",
+    )
 
     p_uninstall = sub.add_parser("uninstall")
     p_uninstall.add_argument("package")
     p_uninstall.add_argument("--dest", required=True)
+    p_uninstall.add_argument(
+        "--set",
+        dest="hook_args",
+        action="append",
+        default=[],
+        metavar="KEY=VALUE",
+        help="Extra key=value passed to the package's install.py cleanup() hook "
+        "(options['args']); repeatable.",
+    )
 
     # Phase 1: Registry commands
     p_registry = sub.add_parser("registry")
@@ -1511,10 +1703,15 @@ def main(argv: Optional[list[str]] = None) -> int:
             claude_flag=getattr(args, 'claude_flag', False),
             codex_flag=getattr(args, 'codex_flag', False),
             registry=getattr(args, 'registry', None),
+            hook_args=_parse_hook_args(getattr(args, 'hook_args', []) or []),
         )
     
     if args.cmd == "uninstall":
-        return cmd_uninstall(args.package, args.dest)
+        return cmd_uninstall(
+            args.package,
+            args.dest,
+            hook_args=_parse_hook_args(getattr(args, 'hook_args', []) or []),
+        )
     
     if args.cmd == "registry":
         if args.registry_cmd == "add":
