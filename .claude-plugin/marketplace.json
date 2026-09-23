@@ -144,6 +144,25 @@
       "category": "tools"
     },
     {
+      "name": "sc-gh-stack",
+      "source": "./packages/sc-gh-stack",
+      "category": "tools",
+      "description": "Stacked pull requests with the gh-stack GitHub CLI extension, run the way that lands: an append-only, linear stack of frozen layers above a named trunk, one stack writer, QA and CI on the top only, one atomic merge. Ships the sc-gh-stack skill (model, preconditions, recipes, full command guide) and the sc-gh-stack-view skill (one-call coherence, mergeability, CI and landing table). Supersedes the generic gh-stack skill.\n",
+      "version": "0.1.0",
+      "author": {
+        "name": "randlee"
+      },
+      "license": "MIT",
+      "keywords": [
+        "git",
+        "github",
+        "gh-stack",
+        "stacked-prs",
+        "workflow",
+        "skills"
+      ]
+    },
+    {
       "name": "sc-git-worktree",
       "source": "./packages/sc-git-worktree",
       "description": "Manage git worktrees with optional tracking and protected branch safeguards: create, scan, cleanup, abort, and update worktrees using a standard sibling folder layout with tracking documents. Prevents accidental deletion of protected branches.\n",
