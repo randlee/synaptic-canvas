@@ -1,7 +1,7 @@
 ---
 name: sc-gh-stack
 description: Run stacked PRs with gh-stack the way that lands (append-only layers, one stack writer, QA/CI on the top, one atomic merge). Routes to the sc-gh-stack skill and its recipes.
-version: 0.1.0
+version: 0.1.1
 options:
   - name: --status
     description: Run /sc-gh-stack-view and paste the coherence, mergeability, CI and LANDING table verbatim.

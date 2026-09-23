@@ -3,8 +3,9 @@ name: sc-managing-worktrees
 description:
   Create, manage, scan, update, and clean up git worktrees for parallel development with protected branch safeguards.
   Use when working on multiple branches simultaneously, isolating experiments, updating protected branches (main/develop),
-  or when user mentions "worktree", "parallel branches", "feature isolation", "branch cleanup", "worktree status", or "update main/develop".
-version: 0.12.0
+  cutting a gh-stack layer as a worktree (top or mid-stack insert), or when user mentions "worktree", "parallel branches",
+  "feature isolation", "branch cleanup", "worktree status", "update main/develop", "stack layer worktree", or "stacked worktree".
+version: 0.14.0
 entry_point: /sc-git-worktree
 ---
 
@@ -37,12 +38,25 @@ $INPUT_JSON
 | Operation | Agent | Returns |
 |-----------|-------|---------|
 | Create | `sc-worktree-create` | JSON: success, path, branch, tracking_entry |
+| Create stack layer | `sc-worktree-create-stacked` | JSON: success, path, branch, stack, stack_handoff |
 | Scan | `sc-worktree-scan` | JSON: success, worktrees list, recommendations |
 | Cleanup | `sc-worktree-cleanup` | JSON: success, branch_deleted, tracking_update |
 | Abort | `sc-worktree-abort` | JSON: success, worktree_removed, tracking_update |
 | Update | `sc-worktree-update` | JSON: success, commits_pulled, conflicts (if any) |
 
 To invoke an agent, use the Task tool with the agent prompt and pass parameters exactly as documented in the agent Inputs section.
+
+**Routing rule:** a worktree that is a gh-stack layer (the user says "stack", "layer", "on top of <branch>", "insert under", or the branch will be linked with `gh stack`) goes to `sc-worktree-create-stacked`. Everything else goes to `sc-worktree-create`.
+
+## Stack Layers (gh-stack)
+
+A stack layer is a worktree whose branch will be a PR in a `gh stack`. The plain create is wrong for it: it branches from the **local** base ref (possibly stale or another writer's unpushed state) and, from a remote ref, would leave the parent as upstream. `sc-worktree-create-stacked` cuts from `origin/<parent>` with `--no-track`, refuses bad cuts before touching anything (parent not pushed, already landed, insert target not stacked on the parent), records the parent SHA in tracking, and returns a `stack_handoff` block.
+
+- `stack_handoff.writer` goes verbatim to the agent that will work in the worktree (WIP commit, first push with `-u`, at most one rebase at task start, no edits to lower layers, no gh stack write commands). `stack_handoff.stack_writer` goes to the stack writer only (PR with base = parent, `gh stack checkout` in the new worktree, link on top, or the insert sequence: merge-forward by every layer above, unstack, `gh pr edit --base`, full relink).
+- Cleanup refuses to delete a branch that live layers sit on unless git shows a merge-commit landing in the trunk (`STACK.HAS_CHILDREN`; batch cleanup reports `stack_blocked`, and never sweeps a fresh layer with no commits). Abort always refuses. Both read the tracking file.
+- Scan reports `stack_parent_advanced` (layer no longer contains the parent's head) and `stack_parent_landed` (PR should now target the trunk) on layer rows.
+
+Details and the handoff contract: `references/stack-layers.md`. The stack model, recipes and the view tool live in the `sc-gh-stack` package (`/sc-gh-stack`, `/sc-gh-stack-view`); this skill only makes the worktree side of that model safe.
 
 ## Standards and Paths
 - Repo root: current directory.

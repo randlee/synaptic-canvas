@@ -1,6 +1,6 @@
 ---
 name: sc-worktree-cleanup
-version: 0.12.0
+version: 0.14.0
 description: Clean up a completed/merged worktree with protected branch safeguards. Remove worktree; for non-protected branches, delete branch (local+remote) by default if merged/no unique commits; for protected branches, preserve branch. Update tracking when enabled. Stop on dirty/unmerged without approval.
 model: haiku
 color: orange
@@ -59,6 +59,7 @@ Wrap the script output in `<output_json>` tags with a fenced JSON block. Do not 
 | `WORKTREE.NOT_FOUND` | Worktree path doesn't exist | No |
 | `WORKTREE.DIRTY` | Uncommitted changes (single branch mode) | Yes |
 | `WORKTREE.UNMERGED` | Branch has unmerged commits | Yes |
+| `STACK.HAS_CHILDREN` | Branch is the stack parent of live layer(s) and git does not show it landed in the trunk (single branch mode) | Yes |
 | `GIT.ERROR` | Git command failed | No |
 
 ## Rules
@@ -67,6 +68,7 @@ Wrap the script output in `<output_json>` tags with a fenced JSON block. Do not 
 - **Merged + clean**: Auto-cleaned in batch mode
 - **Dirty**: Reported back, requires explicit `require_clean: false` to force
 - **Unmerged**: Never auto-deleted. User must merge first or use `--abort` to discard.
+- **Stack parents**: A branch that live stack layers sit on (tracking `stack.parent`, or the layer it was inserted under) is deleted only when git shows a merge-commit landing into the children's trunk. Batch mode lists such branches under `stack_blocked`, along with fresh layers that have no commits yet (never swept); single mode refuses with `STACK.HAS_CHILDREN`. Land the stack (`gh stack merge`) or clean the children first; run `--list` if a listed child is already gone. Guards are off with `tracking_enabled: false`.
 
 ## Constraints
 

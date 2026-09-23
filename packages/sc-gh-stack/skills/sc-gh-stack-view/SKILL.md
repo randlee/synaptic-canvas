@@ -1,6 +1,6 @@
 ---
 name: sc-gh-stack-view
-version: 0.1.0
+version: 0.1.1
 description: One-call coherence, mergeability, CI and LANDING table for every open gh stack. Use for any stacked-PR status question, before and after every link, unstack, rebase or merge, or /sc-gh-stack-view. Never check layers one branch at a time.
 entry_point: /sc-gh-stack-view
 ---

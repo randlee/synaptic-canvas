@@ -32,6 +32,8 @@ try:
         get_protected_branches,
         get_repo_name,
         get_repo_root,
+        is_ancestor,
+        rev_parse,
         load_tracking_jsonl,
         reconcile_tracking,
         run_git,
@@ -44,6 +46,8 @@ except ImportError:
         get_protected_branches,
         get_repo_name,
         get_repo_root,
+        is_ancestor,
+        rev_parse,
         load_tracking_jsonl,
         reconcile_tracking,
         run_git,
@@ -255,6 +259,34 @@ def batch_get_worktree_statuses(worktrees: List[WorktreeInfo]) -> Dict[str, Tupl
 # =============================================================================
 
 
+def stack_issues(stack_meta: Optional[Dict[str, Any]], repo_root: Path, layer: Optional[str] = None) -> List[str]:
+    """Issues for a stack layer: parent landed (gone or merged into trunk) or parent advanced.
+
+    "Advanced" means the layer no longer contains the parent's pushed head; it clears by
+    itself after the writer's one rebase or a merge-forward, without touching tracking.
+    """
+    if not stack_meta:
+        return []
+    parent = stack_meta.get("parent")
+    trunk = stack_meta.get("trunk")
+    recorded = stack_meta.get("parent_sha") or ""
+    if not parent or not trunk:
+        return []
+    if parent == trunk:
+        # Bottom layer: the trunk moving is expected and is not a rebase trigger
+        return []
+    current = rev_parse(f"origin/{parent}", cwd=repo_root)
+    if current is None:
+        return [f"stack_parent_landed: origin/{parent} no longer exists"]
+    if is_ancestor(f"origin/{parent}", f"origin/{trunk}", cwd=repo_root):
+        return [f"stack_parent_landed: {parent} is contained in {trunk}"]
+    if layer:
+        head_ref = f"origin/{layer}" if rev_parse(f"origin/{layer}", cwd=repo_root) else layer
+        if not is_ancestor(f"origin/{parent}", head_ref, cwd=repo_root):
+            return [f"stack_parent_advanced: origin/{parent} {recorded[:8]} -> {current[:8]}, not contained in {head_ref}"]
+    return []
+
+
 def scan_worktrees(
     worktree_base: Optional[str] = None,
     tracking_enabled: bool = True,
@@ -440,6 +472,7 @@ def scan_worktrees(
         # Find matching tracking entry
         tracking_entry_data = None
         remote_ahead = 0
+        stack_meta = None
         for entry in tracking_entries:
             if entry.branch == wt.branch:
                 tracking_entry_data = {
@@ -455,8 +488,10 @@ def scan_worktrees(
                     "remote_exists": entry.remote_exists,
                     "local_worktree": entry.local_worktree,
                     "remote_ahead": entry.remote_ahead,
+                    "stack": entry.stack,
                 }
                 remote_ahead = entry.remote_ahead
+                stack_meta = entry.stack
                 break
 
         issues = []
@@ -470,6 +505,7 @@ def scan_worktrees(
             issues.append(f"prunable: {wt.prunable_reason or 'worktree may be stale'}")
         if remote_ahead > 0:
             issues.append(f"remote_ahead: {remote_ahead} commit(s)")
+        issues.extend(stack_issues(stack_meta, repo_root, layer=wt.branch))
 
         worktree_results.append({
             "branch": wt.branch,
@@ -505,6 +541,24 @@ def scan_worktrees(
     remote_ahead_count = sum(1 for wt in worktree_results if wt.get("remote_ahead"))
     if remote_ahead_count > 0:
         recommendations.append(f"pull changes in {remote_ahead_count} branch(es) where remote is ahead")
+
+    # Stack layers whose parent moved or landed
+    parent_advanced = sum(
+        1 for wt in worktree_results if any(i.startswith("stack_parent_advanced") for i in (wt["issues"] or []))
+    )
+    parent_landed = sum(
+        1 for wt in worktree_results if any(i.startswith("stack_parent_landed") for i in (wt["issues"] or []))
+    )
+    if parent_advanced:
+        recommendations.append(
+            f"{parent_advanced} stack layer(s) whose parent advanced: the layer's writer rebases once at task start "
+            f"(git rebase --onto origin/<parent> <parent_sha> <layer>) only while it has no children"
+        )
+    if parent_landed:
+        recommendations.append(
+            f"{parent_landed} stack layer(s) whose parent landed: confirm the PR now targets the trunk (/sc-gh-stack-view); "
+            f"before touching the layer, git diff --stat HEAD origin/<layer> and reset only if empty; never force-push over GitHub's retarget"
+        )
 
     return Envelope.success_response(
         data={

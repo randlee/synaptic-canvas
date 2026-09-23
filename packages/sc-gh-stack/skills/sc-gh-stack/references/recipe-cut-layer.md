@@ -41,10 +41,11 @@ docs or evidence layer. The layer is a new worktree cut from the current
    `push --force-with-lease` targets the parent branch. The first push is
    `git push -u origin <layer>`.
 
-   With `sc-git-worktree` installed: `/sc-git-worktree --create <layer> <top>`
-   after refreshing the local `<top>` ref
-   (`git fetch origin <top> && git update-ref refs/heads/<top> origin/<top>`),
-   because that skill branches from the local ref.
+   With `sc-git-worktree` 0.14.0 or later installed:
+   `/sc-git-worktree --create-stacked <layer> <top> <trunk>` does exactly this
+   cut (from `origin/<top>`, `--no-track`), records the parent SHA in tracking
+   and returns a `stack_handoff` split into writer and stack-writer parts.
+   Its plain `--create` branches from the local ref and is wrong for a layer.
 
 4. Record the parent SHA the layer was cut from
    (`git rev-parse origin/<top>`). It goes in the PR body and any ledger; QA

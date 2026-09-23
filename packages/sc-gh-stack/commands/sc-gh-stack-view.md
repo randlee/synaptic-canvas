@@ -1,7 +1,7 @@
 ---
 name: sc-gh-stack-view
 description: Print the one-call coherence, mergeability, CI and LANDING table for every open gh stack (read-only). Paste the script output verbatim.
-version: 0.1.0
+version: 0.1.1
 options:
   - name: --trunk
     description: Only stacks whose trunk is this branch (e.g. develop, integrate/phase-bc).

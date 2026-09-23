@@ -412,6 +412,44 @@ def resolve_merge_base(
     return None
 
 
+def is_ancestor(ancestor: str, descendant: str, cwd: Optional[Path] = None) -> bool:
+    """True when `ancestor` is reachable from `descendant` (git merge-base --is-ancestor).
+
+    Returns False for unknown refs or unrelated histories instead of raising.
+    """
+    result = run_git(["merge-base", "--is-ancestor", ancestor, descendant], cwd=cwd, check=False)
+    return result.returncode == 0
+
+
+def rev_parse(ref: str, cwd: Optional[Path] = None) -> Optional[str]:
+    """Full SHA of `ref`, or None when it does not resolve."""
+    result = run_git(["rev-parse", "--verify", "--quiet", f"{ref}^{{commit}}"], cwd=cwd, check=False)
+    if result.returncode != 0:
+        return None
+    sha = result.stdout.strip()
+    return sha or None
+
+
+def is_landed_by_merge(branch: str, base: str, cwd: Optional[Path] = None, limit: int = 5000) -> bool:
+    """True when `branch` was merged into `base` with a merge commit.
+
+    A layer landed with `--merge` is reachable from the base but sits off its
+    first-parent line; an empty branch parked on a base commit is on that line.
+    Only the last `limit` first-parent commits of the base are inspected.
+    """
+    head = rev_parse(branch, cwd=cwd)
+    if not head or not is_ancestor(head, base, cwd=cwd):
+        return False
+    result = run_git(["rev-list", "--first-parent", f"-n{limit}", base], cwd=cwd, check=False)
+    if result.returncode != 0:
+        return False
+    line = result.stdout.split()
+    if head in line:
+        return False
+    # Window exhausted without seeing the head: cannot tell, fail closed
+    return len(line) < limit
+
+
 def check_branch_exists_local(branch: str, cwd: Optional[Path] = None) -> bool:
     """Check if a branch exists locally."""
     result = run_git(["branch", "--list", branch], cwd=cwd, check=False)
@@ -465,7 +503,8 @@ def is_branch_merged(branch: str, base: str = "HEAD", cwd: Optional[Path] = None
     result = run_git(["branch", "--merged", base], cwd=cwd, check=False)
     if result.returncode != 0:
         return False
-    merged_branches = [b.strip().lstrip("* ") for b in result.stdout.strip().split("\n")]
+    # "* " marks the current branch, "+ " a branch checked out in another worktree
+    merged_branches = [b.strip().lstrip("*+ ") for b in result.stdout.strip().split("\n")]
     return branch in merged_branches
 
 
@@ -823,6 +862,46 @@ class TrackingEntry(BaseModel):
     remote_exists: bool = Field(False, description="Whether branch exists on remote")
     local_worktree: bool = Field(True, description="Whether local worktree exists")
     remote_ahead: int = Field(0, description="Number of commits remote has that local doesn't")
+    # Stack layer metadata (gh-stack). None for ordinary worktrees. Keys:
+    #   trunk, parent, parent_sha (origin/<parent> at cut time), above (insert only), position
+    stack: Optional[Dict[str, Any]] = Field(None, description="Stack layer metadata when the worktree is a gh-stack layer")
+
+
+def _entry_is_live(entry: "TrackingEntry", cwd: Optional[Path] = None) -> bool:
+    """Liveness checked against git, not the stored flags (which only scan refreshes)."""
+    if entry.local_worktree and Path(entry.path).exists():
+        return True
+    return check_remote_branch_exists(entry.branch, cwd=cwd)
+
+
+def find_stack_children(entries: list["TrackingEntry"], branch: str, cwd: Optional[Path] = None) -> list[str]:
+    """Return live stack layers that sit on `branch`: layers cut from it, plus the layer
+    `branch` was inserted under (its own row's `stack.above`).
+
+    A child is live while its worktree directory or its remote branch exists. Deleting a
+    parent under a live child breaks the stack chain (the child PR loses its base).
+    """
+    by_name = {e.branch: e for e in entries}
+    candidates: list[str] = []
+    for entry in entries:
+        stack = entry.stack or {}
+        if stack.get("parent") == branch and entry.branch not in candidates:
+            candidates.append(entry.branch)
+    own = by_name.get(branch)
+    above = (own.stack or {}).get("above") if own else None
+    if above and above not in candidates:
+        candidates.append(above)
+    children = []
+    for name in candidates:
+        entry = by_name.get(name)
+        if entry is None:
+            # Inserted-under layer without a tracking row: assume live (fail closed)
+            if check_remote_branch_exists(name, cwd=cwd) or run_git(["rev-parse", "--verify", "--quiet", name], cwd=cwd, check=False).returncode == 0:
+                children.append(name)
+            continue
+        if _entry_is_live(entry, cwd=cwd):
+            children.append(name)
+    return children
 
 
 def get_default_tracking_path(worktree_base: Path) -> Path:

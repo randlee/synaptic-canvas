@@ -411,8 +411,8 @@ Examples:
 
     # Determine packages to validate
     if args.package:
-        if args.package == "shared":
-            print("Skipping packages/shared (not a package)")
+        if args.package in {"shared", "docs"}:
+            print(f"Skipping packages/{args.package} (not a package)")
             return 0
         package_dirs = [args.packages_dir / args.package]
     else:
@@ -423,7 +423,7 @@ Examples:
         package_dirs = [
             d
             for d in args.packages_dir.iterdir()
-            if d.is_dir() and not d.name.startswith(".") and d.name != "shared"
+            if d.is_dir() and not d.name.startswith(".") and d.name not in {"shared", "docs"}
         ]
 
     if not package_dirs:
