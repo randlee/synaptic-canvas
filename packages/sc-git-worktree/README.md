@@ -37,8 +37,8 @@ Create, scan, clean up, and abort worktrees using predictable paths and safe def
 - `/sc-git-worktree --abort <branch>`
 
 Defaults
-- Worktree base: `../{{REPO_NAME}}-worktrees/<branch>`
-- Tracking file: `../{{REPO_NAME}}-worktrees/worktree-tracking.jsonl`
+- Worktree base: `../<repo-name>-worktrees/<branch>` where `<repo-name>` is derived at runtime from `basename $(git rev-parse --show-toplevel)`.
+- Tracking file: `../<repo-name>-worktrees/worktree-tracking.jsonl`
 
 Safety
 - Never delete unmerged branches without explicit approval
@@ -71,11 +71,11 @@ See [DESIGN.md](DESIGN.md) for detailed requirements including:
 ## Troubleshooting
 - "Path exists": Ensure `../<repo>-worktrees/<branch>` is not present (or choose a different branch)
 - "Dirty worktree": Commit or stash before cleanup/abort
-- Token expansion: `{{REPO_NAME}}` is auto-detected from the repo toplevel (via git)
+- `<repo-name>` is derived at runtime by the agent (`basename $(git rev-parse --show-toplevel)`), not substituted at install time — this keeps global/user installs safe (see issue #112).
 
 ## Components
 - Command: `commands/sc-git-worktree.md`
-- Skill: `skills/sc-managing-worktrees/SKILL.md`
+- Skill: `skills/sc-git-worktree/SKILL.md`
 - Agents: `sc-worktree-create`, `sc-worktree-create-stacked`, `sc-worktree-scan`, `sc-worktree-cleanup`, `sc-worktree-abort`, `sc-worktree-update`
 - Stack layers: `skills/sc-git-worktree/references/stack-layers.md` (pairs with the `sc-gh-stack` package)
 

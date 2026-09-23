@@ -83,10 +83,40 @@ def git_repo(tmp_path):
 
 
 @pytest.fixture
+def repo_name_token_pkg(tmp_path, monkeypatch):
+    """Synthetic package with a manifest.yaml declaring the REPO_NAME auto variable.
+
+    Used to test the {{REPO_NAME}} token-expansion mechanism in isolation, since
+    no shipped package consumes it anymore (see GitHub issue #112).
+    """
+    pkg_root = tmp_path / "pkgs"
+    pkg_dir = pkg_root / "fake-repo-name-pkg"
+    (pkg_dir / "commands").mkdir(parents=True)
+    (pkg_dir / "manifest.yaml").write_text(
+        "name: fake-repo-name-pkg\n"
+        "version: 0.1.0\n"
+        "variables:\n"
+        "  REPO_NAME:\n"
+        "    auto: git-repo-basename\n"
+        "artifacts:\n"
+        "  commands:\n"
+        "    - commands/cmd.md\n",
+        encoding="utf-8",
+    )
+    (pkg_dir / "commands" / "cmd.md").write_text(
+        "base: ../{{REPO_NAME}}-worktrees\n", encoding="utf-8"
+    )
+    monkeypatch.setattr(sc_install, "PACKAGES_DIR", pkg_root)
+    return "fake-repo-name-pkg"
+
+
+@pytest.fixture
 def local_template_pkg(tmp_path, monkeypatch):
     """Synthetic package shipping a `.local.j2` sibling under `scripts/`.
 
-    Used to prove --codex skips .local.j2 templating exactly like --global.
+    Deliberately not under commands/ or agents/, to prove `.local.j2` detection
+    is generic across every artifact category. Also used to prove --codex
+    skips .local.j2 templating exactly like --global.
     """
     pkg_root = tmp_path / "pkgs"
     pkg_dir = pkg_root / "fake-local-template-pkg"
@@ -99,9 +129,11 @@ def local_template_pkg(tmp_path, monkeypatch):
         "    - scripts/run.sh\n",
         encoding="utf-8",
     )
+    # Plain shipped fallback (used for global/user installs).
     (pkg_dir / "scripts" / "run.sh").write_text(
         "#!/bin/sh\necho generic\n", encoding="utf-8"
     )
+    # Local-install-only template (sc-compose Jinja-style syntax).
     (pkg_dir / "scripts" / "run.sh.local.j2").write_text(
         "#!/bin/sh\necho {{ REPO_NAME }}\n", encoding="utf-8"
     )
@@ -763,30 +795,57 @@ class TestInstallWithRegistries:
         script = temp_cwd / ".claude" / "scripts" / "sc-delay-run.py"
         assert os.access(script, os.X_OK)
 
-    def test_install_global_expands_repo_name_token(self, temp_home, git_repo):
+    def test_install_global_expands_repo_name_token(self, temp_home, git_repo, repo_name_token_pkg):
         """Test that --global expands {{REPO_NAME}} token."""
         # Install to git repo
         dest = git_repo / ".claude"
-        rc = sc_install.main(["install", "sc-git-worktree", "--dest", str(dest)])
+        rc = sc_install.main(["install", repo_name_token_pkg, "--dest", str(dest)])
         assert rc == 0
 
-        cmd_file = dest / "commands" / "sc-git-worktree.md"
+        cmd_file = dest / "commands" / "cmd.md"
         content = cmd_file.read_text(encoding="utf-8")
         assert "{{REPO_NAME}}" not in content
         assert "repo-worktrees" in content
 
-    def test_install_local_expands_repo_name_token(self, temp_cwd, git_repo, monkeypatch):
+    def test_install_local_expands_repo_name_token(self, temp_cwd, git_repo, repo_name_token_pkg, monkeypatch):
         """Test that --local expands {{REPO_NAME}} token."""
         # Change to git repo directory
         monkeypatch.chdir(git_repo)
 
-        rc = sc_install.main(["install", "sc-git-worktree", "--local"])
+        rc = sc_install.main(["install", repo_name_token_pkg, "--local"])
         assert rc == 0
 
-        cmd_file = git_repo / ".claude" / "commands" / "sc-git-worktree.md"
+        cmd_file = git_repo / ".claude" / "commands" / "cmd.md"
         content = cmd_file.read_text(encoding="utf-8")
         assert "{{REPO_NAME}}" not in content
         assert "repo-worktrees" in content
+
+    def test_install_local_renders_local_j2_template_for_any_category(
+        self, temp_cwd, git_repo, local_template_pkg, monkeypatch
+    ):
+        """`.local.j2` is detected/rendered for a scripts/ artifact, not just commands/agents."""
+        monkeypatch.chdir(git_repo)
+
+        rc = sc_install.main(["install", local_template_pkg, "--local"])
+        assert rc == 0
+
+        script = git_repo / ".claude" / "scripts" / "run.sh"
+        assert script.exists()
+        content = script.read_text(encoding="utf-8")
+        assert "{{ REPO_NAME }}" not in content
+        assert git_repo.name in content
+        # Rendering must never leak the .local.j2 suffix into the destination.
+        assert not (git_repo / ".claude" / "scripts" / "run.sh.local.j2").exists()
+
+    def test_install_global_skips_local_j2_template(self, temp_home, local_template_pkg):
+        """--global must never consult `.local.j2` siblings; it installs the plain file."""
+        rc = sc_install.main(["install", local_template_pkg, "--global"])
+        assert rc == 0
+
+        script = temp_home / ".claude" / "scripts" / "run.sh"
+        assert script.exists()
+        content = script.read_text(encoding="utf-8")
+        assert content == "#!/bin/sh\necho generic\n"
 
     def test_install_global_updates_agent_registry(self, temp_home):
         """Test that --global updates agent registry."""
