@@ -28,6 +28,8 @@ try:
         check_remote_branch_exists,
         delete_local_branch,
         delete_remote_branch,
+        find_stack_children,
+        load_tracking_jsonl,
         get_default_tracking_path,
         get_protected_branches,
         get_repo_root,
@@ -42,6 +44,8 @@ except ImportError:
         check_remote_branch_exists,
         delete_local_branch,
         delete_remote_branch,
+        find_stack_children,
+        load_tracking_jsonl,
         get_default_tracking_path,
         get_protected_branches,
         get_repo_root,
@@ -181,6 +185,35 @@ def abort_worktree_main(input_data: AbortInput) -> Envelope:
                 data={"dirty_files": dirty_files},
                 transcript=transcript,
             )
+
+        # Stack guard: never delete a layer that live layers were cut from
+        if input_data.allow_delete_branch and not is_protected and input_data.tracking_enabled:
+            guard_path = (
+                Path(input_data.tracking_path).resolve()
+                if input_data.tracking_path
+                else get_default_tracking_path(worktree_base)
+            )
+            stack_children = find_stack_children(load_tracking_jsonl(guard_path), input_data.branch, cwd=repo_root)
+            if stack_children:
+                transcript.step_failed(
+                    step="stack guard",
+                    error=f"live stack children: {', '.join(stack_children)}",
+                )
+                return Envelope.error_response(
+                    code=ErrorCodes.STACK_HAS_CHILDREN,
+                    message=(
+                        f"Branch '{input_data.branch}' is the stack parent of live layer(s) "
+                        f"{', '.join(stack_children)}; deleting it breaks their PR base"
+                    ),
+                    recoverable=True,
+                    suggested_action=(
+                        "Abort or clean up the child layers first, or re-run with allow_delete_branch: false "
+                        "to remove only the worktree and keep the branch; a landed parent is cleaned with --cleanup, "
+                        "not aborted; if a child is already gone, run --list to reconcile tracking"
+                    ),
+                    data={"stack_children": stack_children},
+                    transcript=transcript,
+                )
 
         # Remove worktree
         force_flag = " --force" if input_data.allow_force else ""

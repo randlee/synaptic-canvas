@@ -112,6 +112,20 @@ Force-remove a worktree, discarding uncommitted changes:
 3. Update JSONL entry (local_worktree=false)
 4. Remote deletion handled by subsequent cleanup
 
+## Stack Layers (gh-stack)
+
+A worktree may be a layer of a `gh stack`. Its tracking entry carries:
+
+```json
+"stack": {"trunk": "develop", "parent": "sprint-6", "parent_sha": "<sha>", "above": null, "position": "top"}
+```
+
+- **Create (stacked)**: cut from `origin/<parent>` with `--no-track`, never from the local ref. Refuse before mutation when the parent is not pushed, is already landed in the trunk, shares no history with it, or (insert) `above` does not contain the parent. Return a `stack_handoff` (push, PR base, link or insert sequence, writer rules).
+- **Cleanup / abort**: a branch with live children (`stack.parent == branch`, child has worktree or remote) is deleted only when git shows it merged into the trunk. Otherwise `STACK.HAS_CHILDREN` / `stack_blocked`.
+- **Scan**: reports `stack_parent_advanced` and `stack_parent_landed` per layer.
+
+The stack model and gh-stack recipes live in the `sc-gh-stack` package; this package never runs `gh`.
+
 ## Safety Guards
 
 ### Protected Branches

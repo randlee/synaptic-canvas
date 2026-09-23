@@ -216,6 +216,16 @@ class TestIsBranchMerged:
         assert result == True
 
     @patch('worktree_shared.run_git')
+    def test_worktree_branch_marker(self, mock_run_git):
+        """Branches checked out in another worktree are listed with a '+' marker."""
+        mock_run_git.return_value = MagicMock(
+            returncode=0,
+            stdout="* develop\n+ feature/in-worktree\n  other-branch\n"
+        )
+
+        assert is_branch_merged("feature/in-worktree") == True
+
+    @patch('worktree_shared.run_git')
     def test_git_error(self, mock_run_git):
         """Test handling of git errors."""
         mock_run_git.return_value = MagicMock(

@@ -1,1 +1,0 @@
-# sc-git-worktree tests

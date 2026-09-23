@@ -5,6 +5,11 @@ All notable changes to the **sc-gh-stack** package will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.1] - 2026-09-23
+
+### Changed
+- `recipe-cut-layer.md` now points to `sc-git-worktree --create-stacked <layer> <top> <trunk>` (0.14.0+), which performs the cut from `origin/<top>` with `--no-track`; the old advice to refresh the local ref and use plain `--create` is gone.
+
 ## [0.1.0] - 2026-09-23
 
 ### Added

@@ -126,7 +126,14 @@ def _parse_manifest(pkg_dir: Path) -> Manifest:
         )
 
     # Fallback: minimal line parser for artifacts sections
-    artifacts: Dict[str, List[str]] = {"commands": [], "skills": [], "agents": [], "scripts": [], "assets": []}
+    artifacts: Dict[str, List[str]] = {
+        "commands": [],
+        "skills": [],
+        "agents": [],
+        "scripts": [],
+        "assets": [],
+        "plugin": [],
+    }
     current: Optional[str] = None
     version = ""
     for line in _read_file(manifest_path).splitlines():
@@ -907,9 +914,14 @@ def _git_repo_basename(dest_dir: Path) -> str:
 
 
 def _iter_artifacts(m: Manifest, *, codex: bool = False) -> Iterable[str]:
-    # Codex has no equivalent of Claude Code's slash-commands or subagents,
-    # and no registry.yaml, so only skills/scripts are meaningful there.
-    order = ["skills", "scripts", "assets"] if codex else ["commands", "skills", "agents", "scripts", "assets"]
+    # Codex has no equivalent of Claude Code's slash-commands, subagents, or
+    # plugin manifests, and no registry.yaml, so only skills/scripts/assets
+    # are meaningful there.
+    order = (
+        ["skills", "scripts", "assets"]
+        if codex
+        else ["commands", "skills", "agents", "scripts", "assets", "plugin"]
+    )
     for key in order:
         for item in m.artifacts.get(key, []):
             yield item
