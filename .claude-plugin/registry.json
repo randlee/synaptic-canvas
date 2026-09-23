@@ -21,7 +21,7 @@
         "scripts": 0,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T05:29:06.711653+00:00"
+      "lastUpdated": "2026-09-23T05:51:05.684219+00:00"
     },
     {
       "name": "sc-ci-automation",
@@ -38,7 +38,7 @@
         "scripts": 1,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T05:29:06.712662+00:00"
+      "lastUpdated": "2026-09-23T05:51:05.685441+00:00"
     },
     {
       "name": "sc-codex",
@@ -55,7 +55,7 @@
         "scripts": 2,
         "schemas": 2
       },
-      "lastUpdated": "2026-09-23T05:29:06.713425+00:00"
+      "lastUpdated": "2026-09-23T05:51:05.686459+00:00"
     },
     {
       "name": "sc-coding-agent-hardening",
@@ -72,7 +72,7 @@
         "scripts": 0,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T05:29:06.713874+00:00"
+      "lastUpdated": "2026-09-23T05:51:05.686917+00:00"
     },
     {
       "name": "sc-commit-push-pr",
@@ -89,7 +89,7 @@
         "scripts": 9,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T05:29:06.714491+00:00"
+      "lastUpdated": "2026-09-23T05:51:05.687775+00:00"
     },
     {
       "name": "sc-delay-tasks",
@@ -106,7 +106,7 @@
         "scripts": 2,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T05:29:06.715065+00:00"
+      "lastUpdated": "2026-09-23T05:51:05.688501+00:00"
     },
     {
       "name": "sc-docling-pdf",
@@ -123,7 +123,7 @@
         "scripts": 0,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T05:29:06.715902+00:00"
+      "lastUpdated": "2026-09-23T05:51:05.689432+00:00"
     },
     {
       "name": "sc-gh-stack",
@@ -140,11 +140,11 @@
         "scripts": 3,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T05:29:06.716818+00:00"
+      "lastUpdated": "2026-09-23T05:51:05.690494+00:00"
     },
     {
       "name": "sc-git-worktree",
-      "version": "0.13.0",
+      "version": "0.14.0",
       "description": "Manage git worktrees with optional tracking and protected branch safeguards: create, scan, cleanup, abort, and update worktrees using a standard sibling folder layout with tracking documents. Prevents accidental deletion of protected branches.\n",
       "author": "randlee",
       "license": "MIT",
@@ -153,11 +153,11 @@
       "artifacts": {
         "commands": 1,
         "skills": 1,
-        "agents": 5,
+        "agents": 6,
         "scripts": 7,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T05:29:06.717743+00:00"
+      "lastUpdated": "2026-09-23T05:51:05.691470+00:00"
     },
     {
       "name": "sc-github-issue",
@@ -174,7 +174,7 @@
         "scripts": 1,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T05:29:06.718745+00:00"
+      "lastUpdated": "2026-09-23T05:51:05.692717+00:00"
     },
     {
       "name": "sc-just",
@@ -191,7 +191,7 @@
         "scripts": 0,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T05:29:06.719756+00:00"
+      "lastUpdated": "2026-09-23T05:51:05.693694+00:00"
     },
     {
       "name": "sc-kanban",
@@ -208,7 +208,7 @@
         "scripts": 5,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T05:29:06.720422+00:00"
+      "lastUpdated": "2026-09-23T05:51:05.694707+00:00"
     },
     {
       "name": "sc-launch-term",
@@ -225,7 +225,7 @@
         "scripts": 3,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T05:29:06.721076+00:00"
+      "lastUpdated": "2026-09-23T05:51:05.695602+00:00"
     },
     {
       "name": "sc-launchpad",
@@ -242,7 +242,7 @@
         "scripts": 2,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T05:29:06.721743+00:00"
+      "lastUpdated": "2026-09-23T05:51:05.696388+00:00"
     },
     {
       "name": "sc-manage",
@@ -259,7 +259,7 @@
         "scripts": 8,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T05:29:06.722385+00:00"
+      "lastUpdated": "2026-09-23T05:51:05.697350+00:00"
     },
     {
       "name": "sc-refactory",
@@ -276,7 +276,7 @@
         "scripts": 10,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T05:29:06.723454+00:00"
+      "lastUpdated": "2026-09-23T05:51:05.698768+00:00"
     },
     {
       "name": "sc-repomix-nuget",
@@ -293,7 +293,7 @@
         "scripts": 3,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T05:29:06.724105+00:00"
+      "lastUpdated": "2026-09-23T05:51:05.699612+00:00"
     },
     {
       "name": "sc-roslyn-diff",
@@ -310,7 +310,7 @@
         "scripts": 6,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T05:29:06.724765+00:00"
+      "lastUpdated": "2026-09-23T05:51:05.700490+00:00"
     },
     {
       "name": "sc-rust",
@@ -327,7 +327,7 @@
         "scripts": 0,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T05:29:06.725868+00:00"
+      "lastUpdated": "2026-09-23T05:51:05.701943+00:00"
     },
     {
       "name": "sc-startup",
@@ -344,17 +344,17 @@
         "scripts": 1,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T05:29:06.726546+00:00"
+      "lastUpdated": "2026-09-23T05:51:05.702888+00:00"
     }
   ],
   "metadata": {
     "totalPackages": 20,
     "totalCommands": 17,
     "totalSkills": 29,
-    "totalAgents": 51,
+    "totalAgents": 52,
     "totalScripts": 63,
     "totalSchemas": 2
   },
-  "generated": "2026-09-23T05:29:06.726555+00:00",
-  "lastUpdated": "2026-09-23T05:29:06.726556+00:00"
+  "generated": "2026-09-23T05:51:05.702899+00:00",
+  "lastUpdated": "2026-09-23T05:51:05.702900+00:00"
 }

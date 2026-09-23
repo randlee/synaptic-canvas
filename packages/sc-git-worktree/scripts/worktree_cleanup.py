@@ -30,6 +30,8 @@ try:
         count_unique_commits,
         delete_local_branch,
         delete_remote_branch,
+        find_stack_children,
+        is_landed_by_merge,
         get_default_tracking_path,
         get_protected_branches,
         get_remote_ahead_count,
@@ -54,6 +56,8 @@ except ImportError:
         count_unique_commits,
         delete_local_branch,
         delete_remote_branch,
+        find_stack_children,
+        is_landed_by_merge,
         get_default_tracking_path,
         get_protected_branches,
         get_remote_ahead_count,
@@ -322,6 +326,7 @@ def cleanup_all_merged(input_data: CleanupInput) -> Envelope:
         cleaned = []
         dirty = []
         unmerged = []
+        stack_blocked: List[Dict[str, Any]] = []
         protected_skipped = []
         orphaned_remotes = []
 
@@ -415,6 +420,24 @@ def cleanup_all_merged(input_data: CleanupInput) -> Envelope:
                     message=f"unmerged: {unique_commits} commit(s)",
                 )
                 continue
+
+            # Stack guard: a layer with live children is deleted only when git shows it
+            # landed with a merge commit (GitHub then retargets the children onto the
+            # trunk). An empty layer parked on a trunk commit is not landed.
+            if not is_landed_by_merge(branch, merge_base, cwd=repo_root):
+                stack_children = find_stack_children(tracking_entries, branch)
+                if stack_children:
+                    stack_blocked.append({
+                        "branch": branch,
+                        "path": str(wt_path),
+                        "stack_children": stack_children,
+                        "reason": "stack parent with live child layers and no verifiable landing",
+                    })
+                    transcript.step_ok(
+                        step="stack guard",
+                        message=f"{branch}: live children {', '.join(stack_children)} - preserved",
+                    )
+                    continue
 
             # Clean + merged → auto-cleanup
             transcript.step_ok(
@@ -510,6 +533,7 @@ def cleanup_all_merged(input_data: CleanupInput) -> Envelope:
                 "cleaned": cleaned,
                 "dirty": dirty,
                 "unmerged": unmerged,
+                "stack_blocked": stack_blocked if stack_blocked else None,
                 "orphaned_remotes": orphaned_remotes if orphaned_remotes else None,
                 "protected_skipped": protected_skipped if protected_skipped else None,
                 "removed_directories": removed_dirs if removed_dirs else None,
@@ -517,6 +541,7 @@ def cleanup_all_merged(input_data: CleanupInput) -> Envelope:
                     "cleaned": len(cleaned),
                     "dirty": len(dirty),
                     "unmerged": len(unmerged),
+                    "stack_blocked": len(stack_blocked),
                     "orphaned_remotes": len(orphaned_remotes),
                     "protected_skipped": len(protected_skipped),
                     "empty_dirs_removed": len(removed_dirs),
@@ -706,6 +731,40 @@ def cleanup_single_branch(input_data: CleanupInput) -> Envelope:
                 data={"unique_commits": unique_commits},
                 transcript=transcript,
             )
+
+        # Stack guard: the branch is about to be deleted unless protected. A merge commit
+        # visible in git is safe (GitHub retargets child PRs onto the trunk); a caller
+        # override (`merged: true`) or an empty layer is not.
+        if (
+            not is_protected
+            and input_data.tracking_enabled
+            and not is_landed_by_merge(input_data.branch, merge_base, cwd=repo_root)
+        ):
+            guard_path = (
+                Path(input_data.tracking_path).resolve()
+                if input_data.tracking_path
+                else get_default_tracking_path(worktree_base)
+            )
+            stack_children = find_stack_children(load_tracking_jsonl(guard_path), input_data.branch)
+            if stack_children:
+                transcript.step_failed(
+                    step="stack guard",
+                    error=f"live stack children: {', '.join(stack_children)}",
+                )
+                return Envelope.error_response(
+                    code=ErrorCodes.STACK_HAS_CHILDREN,
+                    message=(
+                        f"Branch '{input_data.branch}' is the stack parent of live layer(s) "
+                        f"{', '.join(stack_children)} and is not verifiably landed; deleting it breaks their PR base"
+                    ),
+                    recoverable=True,
+                    suggested_action=(
+                        "Land the stack first (gh stack merge) so the merge is visible in git, "
+                        "or clean up / abort the child layers first"
+                    ),
+                    data={"stack_children": stack_children},
+                    transcript=transcript,
+                )
 
         # Remove worktree
         force = not input_data.require_clean

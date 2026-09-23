@@ -1,7 +1,7 @@
 ---
 name: sc-git-worktree
 description: Manage git worktrees for this repo (create, list/status, update, cleanup, abort) while enforcing the repo's worktree/tracking rules and protected branch safeguards.
-version: 0.13.0
+version: 0.14.0
 options:
   - name: --list
     description: List worktrees and show status/notes.
@@ -14,6 +14,20 @@ options:
       - name: base
         description: Base branch to start from (e.g., master, develop, release/x.y, hotfix/...).
     description: Create a worktree (and branch if needed) using the mandated layout and update tracking.
+  - name: --create-stacked
+    args:
+      - name: branch
+        description: New gh-stack layer name (must not exist yet).
+      - name: parent
+        description: Layer to cut from - the current stack top from /sc-gh-stack-view, or the trunk for the bottom layer, or a mid-stack layer when inserting.
+      - name: trunk
+        description: Branch the stack's bottom PR targets (e.g., develop, integrate/phase-x).
+    description: Cut a new stack layer worktree from the parent's PUSHED head (--no-track), validate the cut, record the parent SHA, and return a stack_handoff for the layer's writer. Add `--above <layer>` when inserting under an existing layer.
+  - name: --above
+    args:
+      - name: layer
+        description: With --create-stacked only - the layer currently stacked directly on <parent>, when inserting mid-stack.
+    description: Modifier for --create-stacked; marks the cut as a mid-stack insert and adds the insert steps to the handoff.
   - name: --update
     args:
       - name: branch
@@ -62,7 +76,7 @@ git:
 - If not configured, protected branches are auto-detected from git-flow and cached to `.sc/shared-settings.yaml`
 - **Required**: Operations fail if protected branches cannot be determined
 
-If run with no options or `--help`: print a concise list of options (no git status) and prompt with a numbered choice for list/status, create, cleanup, or abort; then gather required inputs.
+If run with no options or `--help`: print a concise list of options (no git status) and prompt with a numbered choice for list/status, create, create-stacked, cleanup, or abort; then gather required inputs.
 
 ## Behavior
 
@@ -92,6 +106,13 @@ MUST invoke `sc-worktree-scan` and render its `<output_json>` summary and recomm
 
 ### --create
 MUST invoke `sc-worktree-create` with `branch`, `base`, `purpose`, `owner`, and optional tracking inputs. Render the `<output_json>` summary.
+
+### --create-stacked
+MUST invoke `sc-worktree-create-stacked` with `branch`, `base` (= `<parent>`), `stack: {"trunk": "<trunk>", "above": "<layer>" | null}`, `purpose`, `owner`, and optional tracking inputs. Never route a stack layer to `sc-worktree-create`: it branches from the local ref.
+
+Before invoking, when `sc-gh-stack` is installed, run `/sc-gh-stack-view` so `<parent>` is the pushed top (or, for an insert, so `--above` names the real layer above the parent). Without it, the script still verifies the cut from git.
+
+Render the `<output_json>` summary **and the full `stack_handoff` block verbatim**. Hand that block, unchanged, to whichever agent will work in the worktree; it contains the push, PR-base, link/insert commands and the writer rules. See `skills/sc-git-worktree/references/stack-layers.md`.
 
 ### --update
 MUST invoke `sc-worktree-update` for protected branches only. Render conflicts or success from `<output_json>`.
