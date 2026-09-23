@@ -31,50 +31,60 @@ is green". One link command, the full ordered list, `--base` every time.
    match the chain and the top merges clean into the trunk. Fix anything it
    lists before linking.
 
-3. Link. Two forms:
+3. Link. The canonical form, used for the first link, after any unstack, and
+   whenever in doubt, is the full ordered list with `--base`:
 
-   - **Append to an existing stack** (the common case):
+   ```bash
+   gh stack link --base <trunk> <bottom-pr#> ... <top-pr#>
+   ```
 
-     ```bash
-     gh stack link <stack#> <pr#>
-     ```
+   Idempotent: re-run with the whole list whenever a PR is added. Sets every
+   base, pushes branches that are not pushed, creates PRs for branches without
+   one. Confirmed working for 2 to 21 PRs. The chain check prints this
+   command with the numbers filled in.
 
-     Appends on top and retargets that PR onto the current top. `--base` is
-     ignored here.
+   Accepted shortcut when appending exactly one PR to an existing stack:
 
-   - **Full ordered list** (first link, or after any unstack):
+   ```bash
+   gh stack link <stack#> <pr#>
+   ```
 
-     ```bash
-     gh stack link --base <trunk> <bottom-pr#> ... <top-pr#>
-     ```
+   It appends on top and retargets that PR onto the current top; it cannot
+   insert (`recipe-restack.md`), and `--base` is ignored by it.
 
-     Idempotent; re-run with the whole list whenever a PR is added. Sets every
-     base, pushes branches that are not pushed, creates PRs for branches
-     without one. Confirmed working for 2 to 21 PRs.
-
-   Run from a worktree checked out on a stack branch. Pass PR numbers when
-   running from the main checkout (branch names push the *local* ref).
+   Run from a worktree checked out on a stack branch. Pass PR numbers, not
+   branch names, when running from the main checkout: a branch name pushes
+   the *local* ref, which may be another writer's unpushed state.
 
 4. Verify: `/sc-gh-stack-view`. Every base must equal its parent's head
    (`✅` in the rebase column, VERDICT COHERENT). Record the stack number the
    link printed.
 
-## B. Several independent PRs on one trunk
+## B. Several open PRs on one trunk that must land together
 
 When two or more open PRs against the same trunk depend on each other (a fix
-another PR's CI needs, docs describing code in a sibling, evidence for a fix)
-or simply should land together to save CI cycles:
+another PR's CI needs, docs describing code in a sibling, evidence for a fix),
+or should land in one CI cycle instead of three:
 
-1. Order them cleanest-first at the bottom: docs and likely-PASS layers low,
-   code with open findings above, the PR others need lowest.
-2. If a lower one must be *contained* by an upper one, the upper's writer does
-   one plain merge-forward commit; otherwise leave every branch unrebased so
-   each dev keeps pushing to their own head.
-3. `gh stack link --base <trunk> <bottom-pr#> ... <top-pr#>` from a layer
+1. Order them by dependency, cleanest-first at the bottom: the PR the others
+   need lowest, docs and likely-PASS layers low, code with open findings
+   above.
+2. Make the chain linear before linking. For each layer above the bottom, its
+   writer makes **one plain merge-forward commit** of the layer below
+   (`git merge --no-ff origin/<lower>`; never a rebase, never a force-push),
+   pushes, and that layer is then frozen unless it is the top. Independent
+   PRs are never left as a fork: `gh stack merge` refuses a stack whose layers
+   are not linear descendants, and the chain check fails it.
+3. `python3 .claude/scripts/gh_stack_chain_check.py --trunk <trunk> <bottom-pr#> ... <top-pr#>`
+   until it prints LINKABLE.
+4. `gh stack link --base <trunk> <bottom-pr#> ... <top-pr#>` from a layer
    worktree.
-4. Tell every writer and QA that bases changed and nobody rebases; QA reviews
-   each PR's three-dot diff against its pinned base.
-5. `/sc-gh-stack-view`; record the stack number.
+5. From here the stack follows the model: nothing below the top is edited
+   again, QA runs once on the top (a QA already in flight on a lower PR may
+   finish and its verdict carries forward), CI gates the top, and the stack
+   lands once. Tell every writer that bases changed and that only the top
+   moves.
+6. `/sc-gh-stack-view`; record the stack number.
 
 ## Never
 

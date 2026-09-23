@@ -33,8 +33,13 @@ docs or evidence layer. The layer is a new worktree cut from the current
 3. Create the worktree from the pushed head, never from a local ref:
 
    ```bash
-   git worktree add ../<repo>-worktrees/<layer> -b <layer> origin/<top>
+   git worktree add --no-track ../<repo>-worktrees/<layer> -b <layer> origin/<top>
    ```
+
+   `--no-track` matters: without it the new branch's upstream is
+   `origin/<top>`, and the first `git push` or a later
+   `push --force-with-lease` targets the parent branch. The first push is
+   `git push -u origin <layer>`.
 
    With `sc-git-worktree` installed: `/sc-git-worktree --create <layer> <top>`
    after refreshing the local `<top>` ref

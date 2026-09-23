@@ -40,7 +40,7 @@ Every invocation must be shaped so it cannot prompt or open a TUI — a prompt h
 | Check out by stack#/PR#/branch | `gh stack checkout 7` |
 | Link PRs, no local tracking | `gh stack link --base main a b c` |
 | Tear down a stack | `gh stack unstack [7]` |
-| Merge whole/partial stack | `gh stack merge --yes` / `gh stack merge 42 --yes` |
+| Merge whole/partial stack (merge commits) | `gh stack merge <stack#> --yes --merge` / `gh stack merge 42 --yes --merge` |
 
 ## init
 
@@ -88,7 +88,7 @@ Order: fetch → reconcile GitHub's stack (pulls remotely-added branches; non-in
 
 `gh stack rebase [flags] [branch]` — `--upstack`, `--downstack`, `--no-trunk` (skip fetch/trunk), `--continue`, `--abort`, `--remote <name>`, `--committer-date-is-author-date`/`--preserve-dates`.
 
-Use `--upstack` after editing a lower layer, or when `sync` reports a conflict. Squash-merged parents detected and replayed via `--onto` automatically. `rerere` (enabled by `init`) auto-resolves previously-seen conflicts. Starting while one is in progress exits **7**.
+**Not used in this model** (lower layers are frozen; a fix is a new top layer, `recipe-cut-layer.md`). Upstream: use `--upstack` after editing a lower layer, or when `sync` reports a conflict. Squash-merged parents detected and replayed via `--onto` automatically. `rerere` (enabled by `init`) auto-resolves previously-seen conflicts. Starting while one is in progress exits **7**.
 
 ## view
 
@@ -133,12 +133,12 @@ No arg → current stack; PR# → that PR + everything below; stack# → every u
 
 **Field note:** `gh pr merge` on a stacked PR: `must be merged using the asynchronous merge REST API`. Working fallback (poll until `"merged"`; an abbreviated SHA fails with the misleading `Pull request head branch was modified` — always pass the full 40-char `headRefOid`):
 ```bash
-gh api -X PUT repos/{o}/{r}/pulls/{n}/merge-async -f merge_method=merge -f sha=<FULL headRefOid>
-gh api repos/{o}/{r}/pulls/{n}/merge-async/<uuid>   # poll
+gh api -X PUT repos/{owner}/{repo}/pulls/{n}/merge-async -f merge_method=merge -f sha=<FULL headRefOid>
+gh api repos/{owner}/{repo}/pulls/{n}/merge-async/<uuid>   # poll
 ```
 After the parent merges, GitHub retargets/rebases the child branch within ~30s; once trees are confirmed identical, `git fetch && git reset --hard origin/<child>` — never force-push over it.
 
-**Field note:** to check whether a PR's base was ever silently retargeted, filter `/events` (not `/timeline`, which misses it): `gh api repos/{o}/{r}/issues/{n}/events | jq '.[] | select(.event=="base_ref_changed")'`.
+**Field note:** to check whether a PR's base was ever silently retargeted, filter `/events` (not `/timeline`, which misses it): `gh api repos/{owner}/{repo}/issues/{n}/events | jq '.[] | select(.event=="base_ref_changed")'`.
 
 ## Output conventions
 

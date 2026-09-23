@@ -171,8 +171,10 @@ def evaluate(trunk: str, layers: list[str], by_branch: dict[str, dict], *, fetch
         else:
             landing = {"clean": False, "reason": f"top {rows[-1]['branch']} conflicts with {trunk}; resolve on a new top layer, never on a frozen one"}
             problems.append(f"top {rows[-1]['branch']}: merge into {trunk} conflicts")
-    return {"trunk": trunk, "trunk_origin": trunk_sha, "rows": rows, "problems": problems,
-            "notes": notes, "landing": landing, "linkable": not problems}
+    report = {"trunk": trunk, "trunk_origin": trunk_sha, "rows": rows, "problems": problems,
+              "notes": notes, "landing": landing, "linkable": not problems}
+    report["link_command"] = link_command(report) if report["linkable"] and rows else None
+    return report
 
 
 def icon(value: bool | None) -> str:
@@ -199,10 +201,20 @@ def render(report: dict) -> str:
     land = report["landing"]
     lines.append(f"MERGE INTO TRUNK: {icon(land['clean'])} {land['reason']}")
     lines.extend(f"- note: {n}" for n in report["notes"])
-    lines.append("")
-    lines.append(f"next: gh stack link --base {report['trunk']} " + " ".join(
-        f"#{r['pr']}" if r["pr"] else r["branch"] for r in report["rows"]) + "   (run from a worktree on a stack branch)")
+    if report["linkable"] and report["rows"]:
+        lines.append("")
+        lines.append("next: " + link_command(report))
+        if any(not r["pr"] for r in report["rows"]):
+            lines.append("      (a bare branch name pushes the LOCAL ref: run it from that layer's own worktree, or open its PR first and re-run the check)")
+        else:
+            lines.append("      (run from a worktree checked out on a stack branch)")
     return "\n".join(lines)
+
+
+def link_command(report: dict) -> str:
+    """Shell-safe: bare PR numbers, never `#N` (a `#` starts a comment in bash)."""
+    return f"gh stack link --base {report['trunk']} " + " ".join(
+        str(r["pr"]) if r["pr"] else r["branch"] for r in report["rows"])
 
 
 def preflight(*, need_gh: bool) -> None:
@@ -229,10 +241,13 @@ def main() -> int:
 def run_check(args: argparse.Namespace) -> int:
     preflight(need_gh=not args.no_pr)
     if not args.no_fetch:
-        fetch = run(["git", "fetch", "--quiet", "origin"], check=False)
-        if fetch.returncode != 0:
-            tail = (fetch.stderr or fetch.stdout).strip().splitlines()
-            sys.stderr.write(f"gh-stack-chain-check: warning: git fetch origin failed ({tail[-1] if tail else 'no output'}); comparing against cached origin/* refs\n")
+        try:
+            fetch = run(["git", "fetch", "--quiet", "origin"], check=False)
+            why = None if fetch.returncode == 0 else ((fetch.stderr or fetch.stdout).strip().splitlines() or ["no output"])[-1]
+        except ToolError as exc:  # timeout
+            why = str(exc)
+        if why:
+            sys.stderr.write(f"gh-stack-chain-check: warning: git fetch origin failed ({why}); comparing against cached origin/* refs\n")
     prs = [] if args.no_pr else list_prs()
     by_number, by_branch = index_prs(prs)
     layers = resolve_layers(args.layers, by_number, by_branch)

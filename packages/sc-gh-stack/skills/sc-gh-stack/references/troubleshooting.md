@@ -24,7 +24,7 @@ gh stack rebase --abort        # restores every branch in the stack
 
 ## Squash-merge recovery
 
-A squash-merged PR's original commits no longer exist in trunk history. `gh stack sync` detects this and rebases with `git rebase --onto` to replay the remaining commits correctly, skipping the merged branch:
+**Not applicable in this model** (merge commits only, never `--squash`); kept for repositories that squash. A squash-merged PR's original commits no longer exist in trunk history. `gh stack sync` detects this and rebases with `git rebase --onto` to replay the remaining commits correctly, skipping the merged branch:
 
 ```bash
 gh stack sync

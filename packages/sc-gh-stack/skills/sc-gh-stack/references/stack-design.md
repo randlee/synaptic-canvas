@@ -41,7 +41,7 @@ Multiple commits per branch are fine — what matters is that every commit in a 
 
 ## When to create a new branch
 
-Create a new branch (`gh stack add`) when starting a different concern that depends on what's already built. Signals:
+Cut a new layer (`recipe-cut-layer.md`; upstream: `gh stack add`) when starting a different concern that depends on what's already built. Signals:
 
 - Switching from backend to frontend work
 - Moving from core logic to tests or documentation
@@ -56,11 +56,11 @@ Think of a stack from the reviewer's perspective: it should tell a cohesive stor
 
 **Use a single stack** when every branch serves the same feature or project, even if it spans multiple concerns (models, API, frontend).
 
-**Use a separate stack** for work that's unrelated to the current effort — a different feature, an unrelated bug fix, an independent refactor. Don't mix unrelated work into one stack just because you happen to be touching both. Start a new stack with `gh stack init`, or switch with `gh stack checkout` for each distinct effort. A trivial incidental fix (e.g. a typo you noticed) can ride along in the current stack; once it grows into its own project, it deserves its own stack.
+**Use a separate stack** for work that's unrelated to the current effort — a different feature, an unrelated bug fix, an independent refactor. Don't mix unrelated work into one stack just because you happen to be touching both. Start a separate stack (its own first layer cut from the trunk, its own `gh stack link --base`) for each distinct effort. A trivial incidental fix (e.g. a typo you noticed) can ride along in the current stack; once it grows into its own project, it deserves its own stack.
 
 ## Field-verified
 
 - **Cut layers on crate/module boundaries** — e.g. storage → runtime → CLI → docs — not on vertical slices that touch every module in every layer. A vertical-slice cut is what makes every layer conflict with its neighbor on rebase and forces constant merge-forwards; a module-boundary cut keeps each layer's diff isolated to the files that layer owns.
 - **A re-export facade lands on the layer of its first consumer**, not on the frozen-types layer below it. Putting a facade on the types layer just because it re-exports types creates a false dependency and drags unrelated consumer churn into that PR.
-- **Treat a blown budget as a signal to stop and re-cut, not push through.** A stack planned at N layers that reaches 2N with nothing merged, or any single layer that needs a third fix round, has failed its plan — stop appending new layers and restructure (`unstack` + re-`init`) instead of continuing to pile on.
+- **Treat a blown budget as a signal to stop and re-cut, not push through.** A stack planned at N layers that reaches 2N with nothing merged, or any single layer that needs a third fix round, has failed its plan — stop appending new layers and re-cut the plan by layer (`recipe-restack.md` for the mechanics of dropping or reordering layers) instead of continuing to pile on.
 - **Small fixes don't need a stack.** One owner, well under a few hundred lines, fix and its tests together — that's one ordinary PR off trunk, no stack at all.

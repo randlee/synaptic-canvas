@@ -72,7 +72,8 @@ before dispatching anyone to a layer. Paste its output verbatim. Never fan out
 | Starting a new sprint, fix round, docs or evidence layer | `references/recipe-cut-layer.md` |
 | First push of a layer landed; it needs a PR and a stack link | `references/recipe-link.md` |
 | Several open PRs on one trunk depend on each other | `references/recipe-link.md` (full ordered link) |
-| Starting a task on an existing layer | `references/workflow.md` (rebase at task start) |
+| Fixing a finding on a frozen layer, or on any layer that has children | `references/recipe-cut-layer.md` (new layer on top; never edit below the top) |
+| Starting a task on the live top layer (no children, not frozen) | `references/workflow.md` step 4 (rebase at task start) |
 | Insert a layer mid-stack, remove a red layer whose fix is above, collapse a passing bottom | `references/recipe-restack.md` |
 | Everything frozen, top green and QA PASS: land it | `references/recipe-land.md` |
 | `gh stack merge` refused, `gh pr merge` refused, non-linear stack | `references/recipe-land.md` (fallbacks A and B) |
@@ -87,9 +88,12 @@ the current stack number (each unstack mints a new one).
 
 ## Hard preconditions (details and incidents in `references/preconditions.md`)
 
-1. `gh stack link` always carries `--base <trunk>` and the **full ordered list**
-   bottom to top, run from a worktree on a stack branch. Without `--base` the
-   bottom PR is retargeted to the default branch and locked there.
+1. Creating or re-creating a stack is ONE `gh stack link --base <trunk>
+   <bottom-pr#> ... <top-pr#>`: the full ordered list, from a worktree on a
+   stack branch. Without `--base` the bottom PR is retargeted to the default
+   branch and locked there. Appending one PR to an existing stack may use
+   `gh stack link <stack#> <pr#>`, which appends on top only and cannot
+   insert. Either way, verify every base with `/sc-gh-stack-view` afterwards.
 2. Cut a new layer only from a **pushed** head that contains every lower
    layer's head (`git merge-base --is-ancestor`). Two layers cut from the same
    head must declare at cut time which one merges the other forward.
@@ -98,12 +102,16 @@ the current stack number (each unstack mints a new one).
 4. Freeze the trunk from the final sync until the landing is confirmed:
    explicit FREEZE to every trunk writer, acked. One stray push restarts every
    layer's CI.
-5. Never merge a red bottom layer alone when its fix lives above; land the pair
-   together or remove the red layer first (`recipe-restack.md`).
+5. Never merge a red layer, and never merge a red bottom layer alone when its
+   fix lives above (that puts the red on the trunk). Remove the red layer from
+   the stack so the fixing layer above carries its commits
+   (`recipe-restack.md`, section 2).
 6. Before any scoped `gh stack merge <pr>`, read the full `branches[]` from
    `gh stack view --json`; an upper empty draft gets swept in and its branch
    deleted.
-7. Merge commits only: `gh stack merge --yes --merge`. Never `--squash`.
+7. Land with `gh stack merge <stack#> --yes --merge` (merge commits only, by
+   stack number so stale local tracking cannot pick the wrong stack). Never
+   `--squash`.
 8. Mergeability is `git merge-tree --write-tree A B` (exit code) or a real
    `git merge --no-commit` in a scratch worktree. Never the legacy 3-arg
    `merge-tree`; it prints diff3 hunks on clean merges.
@@ -120,9 +128,10 @@ the current stack number (each unstack mints a new one).
 | `gh_stack_view.py` | Coherence, mergeability, CI and LANDING table for every open stack | no |
 | `gh_stack_chain_check.py --trunk <trunk> <bottom> ... <top>` | Pre-link check: every head pushed, linear ancestry, PR bases as expected, top merges clean into trunk | no |
 
-If a script is not at `.claude/scripts/`, locate it with
-`find .claude ~/.claude -name 'gh_stack_*.py'` and use that path. Never
-reproduce the checks by hand.
+If `CLAUDE_PLUGIN_ROOT` is set (plugin install), the scripts are at
+`$CLAUDE_PLUGIN_ROOT/scripts/`. Otherwise, if a script is not at
+`.claude/scripts/`, locate it with `find .claude ~/.claude -name 'gh_stack_*.py'`
+and use the newest match. Never reproduce the checks by hand.
 
 ## Storage
 

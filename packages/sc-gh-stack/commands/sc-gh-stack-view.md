@@ -21,7 +21,7 @@ options:
 
 # /sc-gh-stack-view command
 
-Read-only status table for one or more `gh stack`s. Runs:
+Read-only status table for one or more `gh stack`s (under a plugin install substitute `$CLAUDE_PLUGIN_ROOT/scripts/` for `.claude/scripts/`). Runs:
 
 ```bash
 python3 .claude/scripts/gh_stack_view.py <args>

@@ -37,7 +37,7 @@ Delegates to the `sc-gh-stack` skill. For `--cut`, `--link`, `--restack` and
 
 | Option | Reference in `skills/sc-gh-stack/references/` |
 |--------|-----------------------------------------------|
-| `--status` | run `python3 .claude/scripts/gh_stack_view.py [--trunk <t>]`, paste stdout verbatim and unfenced |
+| `--status` | run `python3 .claude/scripts/gh_stack_view.py [--trunk <t>]` (or `$CLAUDE_PLUGIN_ROOT/scripts/...` under a plugin install), paste stdout verbatim and unfenced |
 | `--check <trunk> <layers...>` | run `python3 .claude/scripts/gh_stack_chain_check.py --trunk <trunk> <layers...>`, paste stdout verbatim |
 | `--cut <layer>` | `recipe-cut-layer.md`, then `recipe-link.md` |
 | `--link` | `recipe-link.md` |
@@ -50,8 +50,9 @@ Rules the command enforces regardless of option:
 - Every `gh stack` write command (`link`, `unstack`, `sync`, `rebase`,
   `merge`) is run only by the stack writer, only after `/sc-gh-stack-view`,
   and is followed by `/sc-gh-stack-view` again.
-- `gh stack link` always carries `--base <trunk>` when creating or
-  re-creating a stack. Merges are `--merge`, never `--squash`.
+- Creating or re-creating a stack is one `gh stack link --base <trunk>` with
+  the full ordered list; `gh stack link <stack#> <pr#>` only appends on top.
+  Landing is `gh stack merge <stack#> --yes --merge`, never `--squash`.
 - Landing, closing PRs and unstacking are confirmed with the user unless the
   user already directed that exact action.
 - No tool traces in the reply: the pasted script output, the verdict, and

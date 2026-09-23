@@ -32,9 +32,9 @@ five hours with ten layers and three fix rounds per sprint.
 
 1. `bc.1` worktree cut from `origin/integrate/phase-bc`. First push within
    minutes; the lead opened PR #1547 (base `integrate/phase-bc`, body with the
-   parent SHA and the fence) and linked: `gh stack link --base
-   integrate/phase-bc 1547` is a one-PR stack, so linking started at the
-   second PR.
+   parent SHA and the fence). A stack needs two PRs, so the first
+   `gh stack link --base integrate/phase-bc 1547 <second-pr>` ran the moment
+   the second layer's PR opened.
 2. As soon as `bc.1`'s types and core paths were pushed ("could `bc.2`
    compile against this head?"), the `bc.2` worktree was cut from
    `origin/feature/bc1-...` and its dev deployed. `bc.1` continued its QA and

@@ -25,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `gh stack link --base` command to run next.
 - `/sc-gh-stack` and `/sc-gh-stack-view` commands.
 - `gh_stack_shared.py`: the stdlib subprocess and git lookup helpers both scripts share.
-- Unit tests for both scripts (31 cases).
+- Unit tests for the scripts (real-git and mocked; every exit path).
 
 ### Notes
 - Written against gh-stack extension v0.1.0. Re-verify `unstack --local`,

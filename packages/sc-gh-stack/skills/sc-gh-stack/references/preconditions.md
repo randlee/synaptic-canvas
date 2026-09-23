@@ -16,7 +16,7 @@ repository default branch and GitHub then refuses `gh pr edit --base` on a
 stacked PR (PR #1400, 2026-09-11; PR #1253 sat on `main` for 50 seconds).
 **Recovery:** `gh stack unstack <n>`, `gh pr edit <pr> --base <trunk>`,
 re-link with `--base`. Confirm with
-`gh api repos/{o}/{r}/issues/<pr>/events` filtered on `base_ref_changed`;
+`gh api repos/{owner}/{repo}/issues/<pr>/events` filtered on `base_ref_changed`;
 `/timeline` does not show it.
 
 **Check:** pass PR numbers, not branch names, when linking from the main
@@ -92,10 +92,12 @@ rewrite history for every child.
 **Check:** the layer is green **by itself**, not merely "its red is fixed on
 the layer above". **Failure:** merging #1492 alone, whose known-red test was
 fixed by #1493 above it, put the red on `develop`; an unrelated PR then failed
-on it and had to hold its push (2026-09-13). **Rule:** land the pair together
-in one continuous action, or remove the red layer from the stack first
-(`recipe-restack.md`). If a gap is unavoidable, treat the trunk as frozen for
-that window: no cuts, no merges.
+on it and had to hold its push (2026-09-13). **Rule:** remove the red layer
+from the stack first so the fixing layer above carries its commits
+(`recipe-restack.md`, section 2); required status checks block a red PR from
+merging inside a stack merge anyway (phase-bc, 2026-09-23). If a red layer
+ever reaches the trunk, treat the trunk as frozen until the fix lands: no
+cuts, no merges.
 
 ## Before trusting the view tool
 

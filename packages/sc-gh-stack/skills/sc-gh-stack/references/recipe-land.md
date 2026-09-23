@@ -23,9 +23,11 @@ unless the user directed it.
 ## Primary: one atomic stack merge
 
 ```bash
-gh stack merge --yes --merge            # from a worktree on the stack
-gh stack merge <stack#> --yes --merge   # from anywhere
+gh stack merge <stack#> --yes --merge   # by stack number, from anywhere
 ```
+
+Always by stack number: a worktree's local tracking can be stale
+(`recipe-stale-tracking.md`) and would land the wrong list.
 
 All-or-nothing, bottom to top. Only open, non-draft state is checked; the
 ruleset's required checks are satisfied because the top head carried CI
@@ -37,7 +39,7 @@ Refusals and what they mean:
 
 | Message | Cause | Go to |
 |---------|-------|-------|
-| "stack is out-of-date with its base branch" | Someone pushed to the trunk after the final sync | Freeze, then fallback A or one `gh stack sync` and retry |
+| "stack is out-of-date with its base branch" | Someone pushed to the trunk after the stack's bases were computed | Freeze the trunk, then land through fallback B mechanics (unstack, retarget the top, merge the top). Never `gh stack sync`: it rebases and force-pushes every frozen layer and restarts CI everywhere |
 | "PR #X's branch is not a linear descendant of PR #Y's branch" | A lower layer was rewritten after children branched | Fallback B |
 | Draft PR listed | A layer is still a draft | `gh pr ready <pr#>`, retry |
 
@@ -82,8 +84,12 @@ gh pr edit <top-pr#> --base <trunk>
 gh pr merge <top-pr#> --merge          # top head already carried CI on this SHA
 ```
 
-Verify every lower head is an ancestor of the new trunk head; GitHub marks the
-lower PRs MERGED by itself and the merge commit carries the whole history.
+The top must merge clean into the trunk (`git merge-tree --write-tree
+origin/<trunk> origin/<top>`, exit 0); if the trunk moved and it conflicts,
+resolve on a new top layer, never on a frozen one. Verify every lower head is
+an ancestor of the new trunk head; GitHub marks the lower PRs MERGED by
+itself and the merge commit carries the whole history. Then
+`recipe-stale-tracking.md`: the unstack left every worktree's tracking stale.
 
 ```bash
 git fetch origin

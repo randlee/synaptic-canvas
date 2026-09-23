@@ -16,9 +16,14 @@ the user directed the exact operation.
 `HTTP 422 PullRequest.base is invalid` and then "new PRs must be added to the
 top of the existing stack". Confirmed three times.
 
+The layer above the insertion point must already contain the new branch's
+head (its writer merges it forward with one merge commit first), or the
+result is non-linear and cannot land. Then:
+
 ```bash
 gh stack unstack <n>                                   # PRs untouched
 gh pr edit <pr-above> --base <new-branch>              # direct edit succeeds once unstacked
+python3 .claude/scripts/gh_stack_chain_check.py --trunk <trunk> <bottom> ... <new> <above> ... <top>   # must print LINKABLE
 gh stack link --base <trunk> <bottom-pr#> ... <new-pr#> <pr-above#> ... <top-pr#>
 ```
 
@@ -63,8 +68,8 @@ matching reality.
 2. Read `branches[]` from `gh stack view --json`; confirm the layer above the
    run has unique commits (an empty draft would be swept in and deleted).
 3. If the bottom's own CI is red for a reason fixed above it, do **not** merge
-   it alone: extend the run to include the fixing layer, or remove the red
-   layer first (section 2). Merging #1492 alone put its red on `develop`.
+   it: remove the red layer first (section 2) so the fixing layer carries its
+   commits, then collapse. Merging #1492 alone put its red on `develop`.
 4. Freeze the trunk (`preconditions.md`), then:
 
    ```bash
@@ -72,10 +77,20 @@ matching reality.
    ```
 
    Merges everything up to and including that PR, bottom to top, atomically.
-5. `/sc-gh-stack-view`. GitHub retargets the next layer onto the trunk within
-   about 30 seconds; its `base` may now read as "behind trunk", which is a
-   note, not a rebase order. Lift the freeze; the next unit of work is cut
-   from the new trunk head.
+5. GitHub retargets the next layer onto the trunk within about 30 seconds
+   and may rebase its branch (same tree, new committer dates). In that
+   layer's worktree:
+
+   ```bash
+   git fetch origin
+   git diff --stat HEAD origin/<child>      # must be empty: identical trees
+   git reset --hard origin/<child>          # ONLY if the diff was empty; otherwise stop and report
+   ```
+
+   Never force-push the local branch over GitHub's rebase.
+6. `/sc-gh-stack-view`. The next layer's `base` may now read as "behind
+   trunk", which is a note, not a rebase order. Lift the freeze; the next unit
+   of work is cut from the new trunk head.
 
 ## Finish
 

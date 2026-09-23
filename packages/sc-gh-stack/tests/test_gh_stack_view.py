@@ -170,7 +170,7 @@ class MergedBottomLayerTests(unittest.TestCase):
         self.assertEqual(len(notes), 1)
         self.assertIn("L2 fix/middle: behind trunk", notes[0])
         self.assertEqual(gsv.sync_icon(rows[0]), gsv.ICON_MERGE["MERGED"])
-        self.assertEqual(gsv.sync_icon(rows[1]), gsv.ICON_SYNC["rebase"], "behind trunk still shows the rebase icon")
+        self.assertEqual(gsv.sync_icon(rows[1]), gsv.ICON_SYNC["behind"], "behind a moved trunk is its own icon, not a rebase order")
         self.assertEqual(gsv.sync_icon(rows[2]), gsv.ICON_SYNC["ok"])
         self.assertEqual(rows[1]["expected_base"], T1, "expected base is the trunk head, not the merged layer's head")
 
@@ -311,7 +311,7 @@ class ErrorConditionTests(unittest.TestCase):
              mock.patch.object(gsv.sys, "stderr", new=io.StringIO()) as err:
             prs = gsv.pr_details([1, 2])
         self.assertEqual(prs[1]["headRefOid"], A1)
-        self.assertEqual(prs[2]["ci"], "NONE")
+        self.assertEqual(prs[2], {}, "unresolved PR is falsy so rows render as unknown")
         self.assertIn("warning: GraphQL reported", err.getvalue())
 
     def test_pr_details_rejects_non_int_numbers(self) -> None:
@@ -325,3 +325,62 @@ class ErrorConditionTests(unittest.TestCase):
         with mock.patch.object(gsv.sys, "stderr", new=io.StringIO()) as err:
             self.assertEqual(gsv.guarded("gh-stack-view", lambda: (_ for _ in ()).throw(KeyError("pr"))), 2)
         self.assertTrue(err.getvalue().startswith("gh-stack-view: unexpected KeyError"))
+
+
+class ReviewRegressionTests(unittest.TestCase):
+    def setUp(self) -> None:
+        gsv.SKIPPED.clear()
+        self.addCleanup(gsv.SKIPPED.clear)
+
+    def test_unresolved_pr_row_is_unknown_not_stale(self) -> None:
+        stack = {"trunk": TRUNK, "currentBranch": "l1", "branches": [layer("l1", 1, head=A1, base=T0)]}
+        with mock.patch.object(gsv, "origin_sha", side_effect=lambda ref: {TRUNK: T0, "l1": A1}.get(ref)), \
+             mock.patch.object(gsv, "is_ancestor", return_value=False):
+            rows, problems, notes = gsv.build_rows(stack, {1: {}}, fetched=True)
+        self.assertEqual(problems, [])
+        self.assertTrue(any("PR #1 could not be resolved" in n for n in notes))
+        self.assertEqual(gsv.sync_icon(rows[0]), gsv.ICON_SYNC["unknown"])
+        self.assertEqual(gsv.merge_icon(rows[0]), gsv.ICON_SYNC["unknown"])
+        self.assertEqual(gsv.ci_icon(rows[0]), gsv.ICON_SYNC["unknown"])
+
+    def test_needs_rebase_on_behind_trunk_bottom_is_a_note(self) -> None:
+        stack = {"trunk": TRUNK, "currentBranch": "l1", "branches": [layer("l1", 1, head=A1, base=OLD, needs_rebase=True)]}
+        with mock.patch.object(gsv, "origin_sha", side_effect=lambda ref: {TRUNK: T0, "l1": A1}.get(ref)), \
+             mock.patch.object(gsv, "is_ancestor", side_effect=lambda a, b: (a, b) == (OLD, T0)):
+            rows, problems, notes = gsv.build_rows(stack, {1: pr(A1, TRUNK)}, fetched=True)
+        self.assertEqual(problems, [])
+        self.assertTrue(any("needsRebase, but only against a trunk that moved" in n for n in notes))
+        self.assertEqual(gsv.sync_icon(rows[0]), gsv.ICON_SYNC["behind"])
+
+    def test_skipped_worktree_makes_report_exit_1_and_landing_unjudged(self) -> None:
+        import io, subprocess
+        stack = {"trunk": TRUNK, "currentBranch": "l1", "worktree": "/wt/l1",
+                 "branches": [layer("l1", 1, head=A1, base=T0)]}
+        gsv.SKIPPED.append("/wt/top: gh stack view exit 8: locked")
+        args = gsv.argparse.Namespace(trunk=None, phase=None, all=False, no_fetch=True, no_pr=True, json=True)
+        with mock.patch.object(gsv, "preflight"), \
+             mock.patch.object(gsv, "discover_stacks", return_value=([stack], 0)), \
+             mock.patch.object(gsv, "origin_sha", return_value=None), \
+             mock.patch("builtins.print") as out, \
+             mock.patch.object(gsv.sys, "stderr", new=io.StringIO()) as err:
+            rc = gsv.run_report(args, None)
+        self.assertEqual(rc, 1)
+        payload = __import__("json").loads(out.call_args[0][0])
+        self.assertFalse(payload["coherent"])
+        self.assertIn("discovery incomplete", payload["stacks"][0]["problems"][0])
+        self.assertIsNone(payload["stacks"][0]["landing"]["landable"])
+        self.assertIn("skipped worktree /wt/top", err.getvalue())
+
+    def test_fetch_timeout_degrades_to_unknown(self) -> None:
+        import io
+        stack = {"trunk": TRUNK, "currentBranch": "l1", "worktree": "/wt/l1",
+                 "branches": [layer("l1", 1, head=A1, base=T0)]}
+        args = gsv.argparse.Namespace(trunk=None, phase=None, all=False, no_fetch=False, no_pr=True, json=False)
+        with mock.patch.object(gsv, "preflight"), \
+             mock.patch.object(gsv, "discover_stacks", return_value=([stack], 0)), \
+             mock.patch.object(gsv, "run", side_effect=gsv.ToolError("git fetch timed out after 60s")), \
+             mock.patch("builtins.print"), \
+             mock.patch.object(gsv.sys, "stderr", new=io.StringIO()) as err:
+            rc = gsv.run_report(args, None)
+        self.assertEqual(rc, 0)
+        self.assertIn("git fetch origin failed (git fetch timed out", err.getvalue())

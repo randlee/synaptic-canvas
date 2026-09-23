@@ -17,7 +17,7 @@ incident, not a preference.
 | **stack writer** | The single agent (lead, orchestrator) allowed to run any `gh stack` write command: `link`, `unstack`, `sync`, `rebase`, `merge`. |
 | **frozen** | A layer whose task has closed. Nobody touches it again, ever. |
 | **landing head** | The pushed head of the top layer; the only tree that reaches the trunk. |
-| **stack number** | GitHub's identifier for the stack (`gh stack view --json` does not show it; `gh stack link` and `unstack` print it). Every unstack + re-link mints a new one. |
+| **stack number** | GitHub's identifier for the stack. `gh stack link` prints it and the PR page shows it in the stack panel; `gh stack view --json` does not. Record it after every link. If it was lost, `gh stack checkout <pr#>` from a worktree without stale tracking resolves the stack by PR number and imports it. Every unstack + re-link mints a new one. |
 
 ## Rule 1 — The stack is append-only and linear
 
@@ -108,7 +108,7 @@ turned the trunk red.
 | Shape | Trunk | Use |
 |-------|-------|-----|
 | Phase stack | `integrate/phase-N` (or any integration branch) | Several sprints and fix rounds from several devs that must land as one unit. The phase closes with one PR trunk → `develop`. Worked example: `phase-model-example.md`. |
-| Develop stack | `develop` | Several independent fix or feature PRs already targeting `develop`: link them, leave the branches unrebased so each dev keeps pushing to their own head, merge them together once when every layer is QA PASS and CI green. Evidence-only PRs may merge alone. |
+| Develop stack | `develop` | Several open fix or feature PRs already targeting `develop` that must land together: chain them (one merge-forward commit per upper layer), link with `--base develop`, freeze everything below the top, QA and CI on the top, merge once. Evidence-only PRs may merge alone. `recipe-link.md` section B. |
 
 *Why (develop stack):* "do not wait 5 hours for CI to re-run after every PR";
 three independent PRs onto an integration branch cost three CI cycles and two

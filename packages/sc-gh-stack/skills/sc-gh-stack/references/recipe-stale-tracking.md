@@ -19,7 +19,7 @@ longer, obsolete list and the report shows a false NOT COHERENT.
 1. Find the worktrees that carry tracking:
 
    ```bash
-   for wt in $(git worktree list --porcelain | awk '/^worktree /{print $2}'); do
+   git worktree list --porcelain | sed -n 's/^worktree //p' | while IFS= read -r wt; do
      out=$(cd "$wt" && gh stack view --json 2>/dev/null) || continue
      printf '%s: ' "$wt"
      printf '%s' "$out" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d["trunk"], "->", [b["name"] for b in d["branches"]])'
@@ -39,6 +39,7 @@ longer, obsolete list and the report shows a false NOT COHERENT.
 
    ```bash
    gh stack checkout <new-stack#>      # imports tracking; "Already on <branch>" is fine
+   gh stack checkout <any-pr#-in-the-stack>   # same effect when the stack number was not recorded
    ```
 
    If the local and remote compositions differ, `checkout` opens an

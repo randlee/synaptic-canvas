@@ -43,7 +43,10 @@ class EvaluateTests(unittest.TestCase):
         self.assertTrue(report["linkable"], report["problems"])
         self.assertEqual(report["notes"], [])
         self.assertTrue(report["landing"]["clean"])
-        self.assertIn("next: gh stack link --base develop #1 #2 #3", gcc.render(report))
+        text = gcc.render(report)
+        self.assertIn("next: gh stack link --base develop 1 2 3", text)
+        self.assertNotIn("#1", text.split("next:")[1], "a `#` would start a shell comment")
+        self.assertEqual(report["link_command"], "gh stack link --base develop 1 2 3")
 
     def test_unpushed_layer_is_a_problem(self) -> None:
         self.origins.pop("l2")
@@ -94,7 +97,9 @@ class EvaluateTests(unittest.TestCase):
         report = gcc.evaluate(TRUNK, ["l1", "l2", "l3"], self.prs, fetched=True, use_pr=True)
         self.assertTrue(report["linkable"])
         self.assertTrue(any("l3: no PR yet" in n and "base l2" in n for n in report["notes"]))
-        self.assertIn("#1 #2 l3", gcc.render(report))
+        text = gcc.render(report)
+        self.assertIn("next: gh stack link --base develop 1 2 l3", text)
+        self.assertIn("bare branch name pushes the LOCAL ref", text)
 
     def test_top_conflicts_with_trunk(self) -> None:
         self.merge = False
@@ -224,3 +229,73 @@ class ErrorConditionTests(unittest.TestCase):
         self.assertIn("rate limit", shared.hint_for("HTTP 403: API rate limit exceeded"))
         self.assertIn("gh auth", shared.hint_for("gh: Not logged in (HTTP 401)"))
         self.assertEqual(shared.hint_for("something else"), "")
+
+
+class NextLineTests(unittest.TestCase):
+    def test_no_next_line_when_not_linkable(self) -> None:
+        report = {"trunk": TRUNK, "trunk_origin": T0, "rows": [{"layer": 1, "branch": "l1", "pr": 1, "pushed": False,
+                  "contains_parent": None, "pr_base_ok": True, "pr_head_ok": True, "draft": False}],
+                  "problems": ["L1 l1: not on origin"], "notes": [], "landing": {"clean": None, "reason": "x"}, "linkable": False}
+        self.assertNotIn("next:", gcc.render(report))
+
+    def test_link_command_survives_a_shell(self) -> None:
+        import shlex, subprocess
+        report = {"trunk": "develop", "rows": [{"branch": "l1", "pr": 1547}, {"branch": "l2", "pr": 1548}], "linkable": True}
+        cmd = gcc.link_command(report)
+        echoed = subprocess.run(["sh", "-c", "echo " + cmd], text=True, capture_output=True).stdout.strip()
+        self.assertEqual(echoed, cmd)
+        self.assertEqual(shlex.split(cmd)[-2:], ["1547", "1548"])
+
+
+class RealGitTests(unittest.TestCase):
+    """Prove the git semantics the chain logic assumes, against a real temporary repository."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        import shutil, subprocess, tempfile, os
+        if shutil.which("git") is None:
+            raise unittest.SkipTest("git not installed")
+        cls.tmp = tempfile.mkdtemp()
+        cls.cwd = os.getcwd()
+        os.chdir(cls.tmp)
+        env = {"GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@x", "GIT_COMMITTER_NAME": "t", "GIT_COMMITTER_EMAIL": "t@x", "PATH": os.environ["PATH"], "HOME": cls.tmp}
+        def git(*a): return subprocess.run(["git", *a], check=True, text=True, capture_output=True, env=env).stdout.strip()
+        cls.git = staticmethod(git)
+        git("init", "-q", "-b", "develop")
+        Path("a.txt").write_text("a\n"); git("add", "."); git("commit", "-qm", "base")
+        git("checkout", "-qb", "l1"); Path("a.txt").write_text("l1\n"); Path("b.txt").write_text("b\n"); git("add", "."); git("commit", "-qm", "l1")
+        git("checkout", "-qb", "l2"); Path("c.txt").write_text("c\n"); git("add", "."); git("commit", "-qm", "l2")
+        git("checkout", "-q", "develop"); git("checkout", "-qb", "fork"); Path("a.txt").write_text("conflict\n"); git("add", "."); git("commit", "-qm", "fork")
+        git("checkout", "-q", "develop")
+        # simulate origin/* by pointing remote-tracking refs at the local branches
+        for b in ("develop", "l1", "l2", "fork"):
+            git("update-ref", f"refs/remotes/origin/{b}", b)
+        cls.sha = {b: git("rev-parse", b) for b in ("develop", "l1", "l2", "fork")}
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        import os, shutil
+        os.chdir(cls.cwd)
+        shutil.rmtree(cls.tmp, ignore_errors=True)
+
+    def test_origin_sha_and_is_ancestor(self) -> None:
+        self.assertEqual(gcc.origin_sha("l1"), self.sha["l1"])
+        self.assertIsNone(gcc.origin_sha("nope"))
+        self.assertTrue(gcc.is_ancestor(self.sha["l1"], self.sha["l2"]))
+        self.assertFalse(gcc.is_ancestor(self.sha["l2"], self.sha["l1"]))
+
+    def test_merge_clean_detects_conflict_and_clean_merge(self) -> None:
+        clean = gcc.merge_clean(self.sha["develop"], self.sha["l2"])
+        conflict = gcc.merge_clean(self.sha["l1"], self.sha["fork"])
+        if clean is None:
+            self.skipTest("git < 2.38: merge-tree --write-tree unavailable (reported as unknown, as designed)")
+        self.assertTrue(clean)
+        self.assertFalse(conflict)
+
+    def test_evaluate_end_to_end_on_real_refs(self) -> None:
+        with mock.patch.object(gcc, "merge_clean", wraps=gcc.merge_clean):
+            good = gcc.evaluate("develop", ["l1", "l2"], {}, fetched=True, use_pr=False)
+            bad = gcc.evaluate("develop", ["l1", "fork"], {}, fetched=True, use_pr=False)
+        self.assertTrue(good["linkable"], good["problems"])
+        self.assertFalse(bad["linkable"])
+        self.assertTrue(any("fork: does not contain parent l1" in p for p in bad["problems"]))

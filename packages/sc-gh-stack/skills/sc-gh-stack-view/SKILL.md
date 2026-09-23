@@ -27,10 +27,11 @@ caught before anyone runs `gh stack sync` on top of it.
 Before running the script, confirm the toolchain is present:
 
 ```bash
-which gh && gh --version
-gh extension list | grep stack
-which git && git --version
-python3 --version
+which gh && gh --version            # >= 2.0
+gh extension list | grep -i stack && gh stack --version   # github/gh-stack v0.1.0
+which git && git --version          # >= 2.38
+python3 --version                   # >= 3.9
+gh auth status                      # needed unless --no-pr
 ```
 
 If any is missing, probe the usual off-PATH locations first (Claude Code's
@@ -69,8 +70,9 @@ merged/closed stacks. Hidden stacks are counted on a `hidden:` line.
 python3 .claude/scripts/gh_stack_view.py --trunk develop
 ```
 
-If the script is not found at that path, locate it with
-`find .claude ~/.claude -name gh_stack_view.py` and use that path instead.
+Under a plugin install the script is at `$CLAUDE_PLUGIN_ROOT/scripts/gh_stack_view.py`.
+If it is at neither path, locate it with `find .claude ~/.claude -name gh_stack_view.py`
+and use the newest match.
 
 Exit codes:
 

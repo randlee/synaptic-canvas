@@ -127,7 +127,7 @@ def discover_stacks(trunk_filter: str | None, *, include_all: bool) -> tuple[lis
     ``select_stacks``. Returns (stacks, hidden_count).
     """
     paths = worktree_paths()
-    with ThreadPoolExecutor(max_workers=8) as pool:
+    with ThreadPoolExecutor(max_workers=4) as pool:  # one gh call per worktree; keep bursts small (secondary rate limit)
         results = list(pool.map(stack_json_at, paths))
     found: list[dict] = []
     for path, data in zip(paths, results):
@@ -187,9 +187,13 @@ def pr_details(numbers: list[int]) -> dict[int, dict]:
         raise ToolError("GraphQL returned no repository data; run `gh auth status` or use --no-pr")
     out: dict[int, dict] = {}
     for n in numbers:
-        pr = data.get(f"pr{n}") or {}
-        nodes = ((pr.get("commits") or {}).get("nodes") or [{}])
-        rollup = ((nodes[0].get("commit") or {}).get("statusCheckRollup") or {}).get("state")
+        pr = data.get(f"pr{n}")
+        if not isinstance(pr, dict):
+            out[n] = {}  # unresolved on GitHub: falsy, rendered as unknown
+            continue
+        nodes = ((pr.get("commits") or {}).get("nodes") or [None])
+        first = nodes[0] if isinstance(nodes[0], dict) else {}
+        rollup = ((first.get("commit") or {}).get("statusCheckRollup") or {}).get("state")
         pr["ci"] = rollup or "NONE"
         out[n] = pr
     return out
@@ -258,6 +262,8 @@ def build_rows(stack: dict, prs: dict[int, dict], *, fetched: bool) -> tuple[lis
         head = br.get("head")
         base = br.get("base")
         origin = origin_sha(name) if fetched else None
+        if (br.get("pr") or {}).get("number") is not None and prs and not pr:
+            notes.append(f"L{idx} {name}: PR #{(br.get('pr') or {}).get('number')} could not be resolved on GitHub (deleted, or no access); merge and CI shown as unknown")
         base_ok = (base == expected_base) if (expected_base and base) else None
         origin_ok = None
         if origin:
@@ -289,6 +295,8 @@ def build_rows(stack: dict, prs: dict[int, dict], *, fetched: bool) -> tuple[lis
             "merge_state": pr.get("mergeStateStatus"),
             "ci": pr.get("ci"),
             "pr_base": pr.get("baseRefName"),
+            "behind_trunk": False,
+            "pr_unresolved": bool((br.get("pr") or {}).get("number") is not None and prs and not pr),
         }
         parent_is_trunk = parent == trunk
         if pr and pr.get("baseRefName") not in (None, parent):
@@ -298,6 +306,7 @@ def build_rows(stack: dict, prs: dict[int, dict], *, fetched: bool) -> tuple[lis
             # all merged) may sit on an older trunk commit: that is a note, not
             # a rebase order.  Against an open parent it is a real mismatch.
             if parent_is_trunk and is_ancestor(base or "", expected_base):
+                row["behind_trunk"] = True
                 notes.append(f"L{idx} {name}: behind trunk ({short(base)} < {short(expected_base)}); fine unless CONFLICTING, do not restart CI just to catch up")
             else:
                 problems.append(f"L{idx} {name}: base {short(base)} != parent head {short(expected_base)} -> needs rebase")
@@ -307,7 +316,10 @@ def build_rows(stack: dict, prs: dict[int, dict], *, fetched: bool) -> tuple[lis
                 " -> local tracking stale or unpushed; owner must fetch+reset or push"
             )
         if br.get("needsRebase"):
-            problems.append(f"L{idx} {name}: gh stack reports needsRebase")
+            if row["behind_trunk"]:
+                notes.append(f"L{idx} {name}: gh stack reports needsRebase, but only against a trunk that moved; no action while its CI can go green")
+            else:
+                problems.append(f"L{idx} {name}: gh stack reports needsRebase")
         if pr.get("mergeable") == "CONFLICTING":
             problems.append(f"L{idx} {name}: PR #{row['pr']} CONFLICTING")
         if pr.get("isDraft"):
@@ -319,7 +331,7 @@ def build_rows(stack: dict, prs: dict[int, dict], *, fetched: bool) -> tuple[lis
     return rows, problems, notes
 
 
-ICON_SYNC = {"ok": "✅", "stale": "🔄", "rebase": "⚠️", "unknown": "❓"}
+ICON_SYNC = {"ok": "✅", "stale": "🔄", "rebase": "⚠️", "behind": "⏳", "unknown": "❓"}
 ICON_MERGE = {"MERGED": "\U0001f3c1", "OK": "✅", "BLOCKED": "\U0001f6a7"}
 ICON_CI = {"SUCCESS": "✅", "FAILURE": "⛔", "ERROR": "⛔", "PENDING": "\U0001f300",
            "EXPECTED": "\U0001f300", "NONE": "—"}
@@ -330,6 +342,10 @@ def sync_icon(r: dict) -> str:
         return ICON_MERGE["MERGED"]
     if r["origin_ok"] is False:
         return ICON_SYNC["stale"]
+    if r.get("behind_trunk"):
+        return ICON_SYNC["behind"]
+    if r.get("pr_unresolved"):
+        return ICON_SYNC["unknown"]
     if r["base_ok"] is False or r["needs_rebase"]:
         return ICON_SYNC["rebase"]
     if r["base_ok"] is None or r["origin_ok"] is None:
@@ -341,12 +357,16 @@ def merge_icon(r: dict) -> str:
     """✅ only when GitHub says the PR can merge now; anything else is 🚧."""
     if r["merged"]:
         return ICON_MERGE["MERGED"]
+    if r.get("pr_unresolved"):
+        return ICON_SYNC["unknown"]
     if r["draft"] or r["queued"] or r["mergeable"] != "MERGEABLE":
         return ICON_MERGE["BLOCKED"]
     return ICON_MERGE["OK"] if r["merge_state"] in ("CLEAN", "HAS_HOOKS", "UNSTABLE") else ICON_MERGE["BLOCKED"]
 
 
 def ci_icon(r: dict) -> str:
+    if r.get("pr_unresolved"):
+        return ICON_SYNC["unknown"]
     return ICON_CI.get(r["ci"] or "NONE", ICON_CI["NONE"])
 
 
@@ -381,7 +401,7 @@ def render_table(stack: dict, rows: list[dict], problems: list[str], notes: list
 
 def legend() -> str:
     lines = []
-    lines.append("rebase: ✅ not needed (base==parent head, local==origin==PR)  ⚠️ needed  🔄 local tracking stale: fetch+reset before any sync  ❓ unknown (--no-fetch)  🏁 merged")
+    lines.append("rebase: ✅ not needed (base==parent head, local==origin==PR)  ⚠️ needed  ⏳ behind a moved trunk, no action  🔄 local tracking stale: fetch+reset before any sync  ❓ unknown (--no-fetch, or PR unresolved)  🏁 merged")
     lines.append("merge: ✅ mergeable now  🚧 blocked (conflicting, behind, draft, queued, required checks, or still computing)  🏁 merged")
     lines.append("CI: ✅ green  🌀 running  ⛔ failed, do not enter  — none")
     return "\n".join(lines)
@@ -418,16 +438,22 @@ def run_report(args: argparse.Namespace, trunk_filter: str | None) -> int:
         where = f" with trunk {trunk_filter}" if trunk_filter else ""
         hint = f" ({hidden} merged/closed/other-trunk stack(s) hidden; --all to show)" if hidden else ""
         sys.stderr.write(
-            f"no open gh stack found{where}{hint}. Stacks are discovered through `git worktree list`; a stack "
+            f"gh-stack-view: no open gh stack found{where}{hint}. Stacks are discovered through `git worktree list`; a stack "
             "needs at least one of its layers checked out in a worktree (never `git checkout` in the main repo).\n"
         )
+        for line in SKIPPED:
+            sys.stderr.write(f"gh-stack-view: warning: skipped worktree {line}\n")
         return 2
     fetched = not args.no_fetch
     if fetched:
-        fetch = run(["git", "fetch", "--quiet", "origin"], check=False)
-        if fetch.returncode != 0:
+        try:
+            fetch = run(["git", "fetch", "--quiet", "origin"], check=False)
+            why = None if fetch.returncode == 0 else ((fetch.stderr or fetch.stdout).strip().splitlines() or ["no output"])[-1]
+        except ToolError as exc:  # timeout
+            why = str(exc)
+        if why:
             fetched = False
-            sys.stderr.write("gh-stack-view: git fetch origin failed; rebase column reported as unknown (❓)\n")
+            sys.stderr.write(f"gh-stack-view: warning: git fetch origin failed ({why}); rebase column reported as unknown (❓)\n")
     numbers = sorted({(b.get("pr") or {}).get("number") for st in stacks for b in st["branches"] if (b.get("pr") or {}).get("number") is not None})
     prs = {} if args.no_pr else pr_details(numbers)
 
@@ -439,8 +465,15 @@ def run_report(args: argparse.Namespace, trunk_filter: str | None) -> int:
         trunk_origin = origin_sha(st["trunk"]) if fetched else None
         if fetched and trunk_origin is None:
             notes.append(f"trunk {st['trunk']} is not on origin; base coherence for L1 and LANDING cannot be judged (push the trunk or check its name)")
+        if SKIPPED:
+            # A skipped worktree may have held the longest (true) view of this stack: the table
+            # could be a truncated prefix, so neither coherence nor landing can be trusted.
+            problems.append(f"discovery incomplete: {len(SKIPPED)} worktree(s) unreadable (see warnings); fix them and re-run before trusting this stack's shape")
         any_problem |= bool(problems)
         landing = landing_verdict(st, rows, trunk_origin)
+        if SKIPPED:
+            landing = {"landable": None, "top": landing.get("top"), "top_sha": landing.get("top_sha"),
+                       "reason": "not judged while a worktree is unreadable"}
         report.append({"trunk": st["trunk"], "trunk_origin": trunk_origin, "worktree": st["worktree"],
                        "rows": rows, "problems": problems, "notes": notes, "coherent": not problems,
                        "landing": landing})
