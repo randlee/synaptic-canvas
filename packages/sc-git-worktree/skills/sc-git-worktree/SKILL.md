@@ -1,5 +1,5 @@
 ---
-name: sc-managing-worktrees
+name: sc-git-worktree
 description:
   Create, manage, scan, update, and clean up git worktrees for parallel development with protected branch safeguards.
   Use when working on multiple branches simultaneously, isolating experiments, updating protected branches (main/develop),

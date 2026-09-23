@@ -33,6 +33,10 @@ Notes:
 - Uses YAML if PyYAML is installed; otherwise falls back to a simple line parser
   compatible with the existing manifest patterns.
 - Token expansion: replaces {{REPO_NAME}} when variables.REPO_NAME.auto == git-repo-basename
+- Local-install templating: any artifact with a sibling <path>.local.j2 file (any
+  category: commands, skills, agents, scripts, assets, plugin) is rendered via
+  sc-compose (auto-installed on demand) instead of copied verbatim, for any
+  install that isn't --global/--user. Never used for global/user installs.
 - Scripts are made executable on install (artifacts under scripts/*)
 - Config file manages marketplace registries with metadata (url, path, status, added_date)
 - Phase 1: Basic registry commands (add, list, remove) and config persistence
@@ -862,6 +866,29 @@ def cmd_info(pkg: str, registry: Optional[str] = None) -> int:
     return 0
 
 
+def _get_render_template():
+    """Return sc_compose.render_template, auto-installing sc-compose if missing.
+
+    Only called when a package actually ships a `.local.j2` artifact, so the
+    dependency is pulled in lazily/scoped rather than being a hard requirement
+    of sc-install itself.
+    """
+    try:
+        from sc_compose import render_template  # type: ignore
+        return render_template
+    except ImportError:
+        pass
+    try:
+        subprocess.run([sys.executable, "-m", "pip", "install", "sc-compose"], check=True)
+    except subprocess.CalledProcessError as ex:
+        raise RuntimeError(f"failed to install required dependency 'sc-compose': {ex}") from ex
+    try:
+        from sc_compose import render_template  # type: ignore
+        return render_template
+    except ImportError as ex:
+        raise RuntimeError("sc-compose installed but 'render_template' is not importable") from ex
+
+
 def _git_repo_basename(dest_dir: Path) -> str:
     try:
         # Determine toplevel from parent of dest (.claude lives under repo)
@@ -1230,25 +1257,58 @@ def cmd_install(
 
     manifest = _parse_manifest(pkg_dir)
 
+    # Legacy generic {{TOKEN}} naive-replace mechanism (still supported, unrelated
+    # to .local.j2): only active when the manifest explicitly declares it.
+    declares_repo_name_var = manifest.variables.get("REPO_NAME", {}).get("auto") == "git-repo-basename"
+
+    # .local.j2 templating (sc-compose): available for any artifact, in any
+    # category, for any install that isn't --global/--user. Never consulted
+    # for global/user installs, since the plugin marketplace can't run
+    # install-time templating there.
+    use_local_templates = not (global_flag or user_flag)
+
     repo_name = ""
-    if expand and manifest.variables.get("REPO_NAME", {}).get("auto") == "git-repo-basename":
+    if use_local_templates or (expand and declares_repo_name_var):
         repo_name = _git_repo_basename(dest_path)
 
     info(f"Installing {pkg} to {dest_path}")
     if repo_name:
         info(f"REPO_NAME={repo_name}")
 
-    def install_one(rel_file: str) -> None:
-        src = (pkg_dir / rel_file).resolve()
+    def install_one(rel_file: str) -> bool:
+        local_template = pkg_dir / f"{rel_file}.local.j2"
+        use_template = use_local_templates and local_template.exists()
+        src = (local_template if use_template else (pkg_dir / rel_file)).resolve()
         dst = (dest_path / rel_file).resolve()
         if not src.exists():
             warn(f"Source not found: {src}")
-            return
+            return True
         if dst.exists() and not force:
             warn(f"Skip (exists): {dst}")
-            return
+            return True
         dst.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(src, dst)
+
+        if use_template:
+            try:
+                render_template = _get_render_template()
+            except RuntimeError as ex:
+                error(f"Cannot install {rel_file}: {ex}")
+                return False
+            text = local_template.read_text(encoding="utf-8", errors="ignore")
+            rendered = render_template(text, {"REPO_NAME": repo_name})
+            dst.write_text(rendered, encoding="utf-8")
+        else:
+            shutil.copy2(src, dst)
+            # legacy token expansion
+            if expand and declares_repo_name_var and repo_name:
+                try:
+                    text = dst.read_text(encoding="utf-8", errors="ignore")
+                    text = text.replace("{{REPO_NAME}}", repo_name)
+                    dst.write_text(text, encoding="utf-8")
+                except Exception:
+                    # Ignore binary/non-text failures
+                    pass
+
         # executable for scripts/*
         if rel_file.startswith("scripts/"):
             _ensure_executable(dst)
@@ -1256,19 +1316,12 @@ def cmd_install(
         if rel_file.startswith("agents/") or rel_file.startswith("skills/"):
             # store relative to .claude (dest_path)
             installed_artifacts.append(rel_file)
-        # token expansion
-        if expand and repo_name:
-            try:
-                text = dst.read_text(encoding="utf-8", errors="ignore")
-                text = text.replace("{{REPO_NAME}}", repo_name)
-                dst.write_text(text, encoding="utf-8")
-            except Exception:
-                # Ignore binary/non-text failures
-                pass
         info(f"Installed: {rel_file}")
+        return True
 
     for rel in _iter_artifacts(manifest):
-        install_one(rel)
+        if not install_one(rel):
+            return 1
 
     # Update registry.yaml (agents and skills)
     rc = _update_registry(
