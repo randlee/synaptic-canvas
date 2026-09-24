@@ -509,6 +509,63 @@ Issue resolved ✓
 
 ---
 
+## Use Case 7b: Install a Package That Requires Hook-Based Customization
+
+**Scenario**: A package ships an optional `install.py` with `prepare()`/
+`complete()`/`cleanup()` hooks, and one of them needs a value `sc-install`
+has no generic way to know (for example, a target environment name).
+
+**Goal**: Successfully install the package by supplying the missing value
+via `--set KEY=VALUE`, without needing to understand the package's internals.
+
+### Steps
+
+1. **Attempt a normal install:**
+   ```
+   /marketplace install some-package --local
+   ```
+
+2. **The hook fails with a message naming what's missing:**
+   ```
+   Error: install.py complete() failed: sc-compose render failed for
+   commands/sc-example.md: template requires TARGET_ENV -- suggested fix:
+   pass --set TARGET_ENV=<value>
+   ```
+
+3. **Retry with the named value:**
+   ```
+   /marketplace install some-package --local --set TARGET_ENV=staging
+   ```
+
+4. **`--set` is repeatable if more than one value is required:**
+   ```
+   sc-install install some-package --local --set TARGET_ENV=staging --set REGION=us-east-1
+   ```
+
+5. **The same pattern applies to uninstall**, since `cleanup()` hooks
+   receive `--set` the same way:
+   ```
+   sc-install uninstall some-package --dest ~/.claude --set TARGET_ENV=staging
+   ```
+
+### Expected Outcome
+
+- Installation succeeds once the required value is supplied
+- No need to read the package's `install.py` source to know what to pass -
+  the failure message names it
+- Understanding that `sc-install` itself never interprets `--set` values;
+  only the package's own hook does
+
+### Variations
+
+- **Package needs no hook values**: most packages have no `install.py` at
+  all, or one that derives everything it needs automatically (e.g.
+  `sc-git-worktree` infers the repo name); these steps are simply skipped
+- **Hook fails without naming a fix**: that's a bug in the package, not a
+  missing input - see Use Case 7 (Troubleshoot Package Issues)
+
+---
+
 ## Advanced Use Cases
 
 ### Use Case 8: Create Custom Registry for Team Packages

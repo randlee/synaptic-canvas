@@ -23,7 +23,7 @@ Safely update protected branches (main, develop, master) in their worktrees by p
 ## Inputs (required unless noted)
 - branch: protected branch name to update (optional; if omitted, update all protected branches that have worktrees)
 - path: worktree path (default `<worktree_base>/<branch>`)
-- worktree_base (optional): defaults to `../<repo-name>-worktrees` where `<repo-name>` is derived at runtime from `basename $(git rev-parse --show-toplevel)`
+- worktree_base (optional): defaults to `../{{ REPO_NAME }}-worktrees`
 - protected_branches: list of protected branch names (required for validation)
 - tracking_enabled: true/false (default true)
 - tracking_path (optional): defaults to `<worktree_base>/worktree-tracking.jsonl` when tracking is enabled

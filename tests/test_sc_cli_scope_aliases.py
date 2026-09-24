@@ -4,14 +4,14 @@ from sc_cli import install as sc_install
 from sc_cli import skill_integration
 
 
-def test_resolve_install_dest_supports_user_and_project(tmp_path, monkeypatch):
+def test_resolve_install_scope_supports_user_and_project(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(sc_install.Path, "home", lambda: tmp_path / "home")
 
-    assert sc_install._resolve_install_dest(local_flag=True) == tmp_path / ".claude"
-    assert sc_install._resolve_install_dest(project_flag=True) == tmp_path / ".claude"
-    assert sc_install._resolve_install_dest(global_flag=True) == tmp_path / "home" / ".claude"
-    assert sc_install._resolve_install_dest(user_flag=True) == tmp_path / "home" / ".claude"
+    assert sc_install._resolve_install_scope(local_flag=True) == tmp_path
+    assert sc_install._resolve_install_scope(project_flag=True) == tmp_path
+    assert sc_install._resolve_install_scope(global_flag=True) == tmp_path / "home"
+    assert sc_install._resolve_install_scope(user_flag=True) == tmp_path / "home"
 
 
 def test_install_marketplace_scope_aliases(tmp_path, monkeypatch):
