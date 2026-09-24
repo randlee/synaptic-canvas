@@ -837,6 +837,19 @@ class TestInstallWithRegistries:
         # Rendering must never leak the .local.j2 suffix into the destination.
         assert not (git_repo / ".claude" / "scripts" / "run.sh.local.j2").exists()
 
+    def test_install_local_skips_local_j2_template_when_no_repo_found(
+        self, temp_cwd, local_template_pkg
+    ):
+        """--local outside a git repo must fall back to the plain file, not
+        render `.local.j2` with an empty REPO_NAME."""
+        rc = sc_install.main(["install", local_template_pkg, "--local"])
+        assert rc == 0
+
+        script = temp_cwd / ".claude" / "scripts" / "run.sh"
+        assert script.exists()
+        content = script.read_text(encoding="utf-8")
+        assert content == "#!/bin/sh\necho generic\n"
+
     def test_install_global_skips_local_j2_template(self, temp_home, local_template_pkg):
         """--global must never consult `.local.j2` siblings; it installs the plain file."""
         rc = sc_install.main(["install", local_template_pkg, "--global"])

@@ -1475,7 +1475,7 @@ def cmd_install(
 
         def install_one(rel_file: str) -> bool:
             local_template = pkg_dir / f"{rel_file}.local.j2"
-            use_template = use_local_templates and local_template.exists()
+            use_template = use_local_templates and bool(repo_name) and local_template.exists()
             src = (local_template if use_template else (pkg_dir / rel_file)).resolve()
             dst = (dest_path / rel_file).resolve()
             if not src.exists():

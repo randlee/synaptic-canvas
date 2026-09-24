@@ -220,14 +220,22 @@ hook shipped in this repo is expected to meet these:
    ]
    ```
 
-### Example: `packages/sc-git-worktree/install.py`
+### Example: `packages/sc-git-worktree/*.local.j2`
 
-Renders `.j2` templates (e.g. `commands/sc-git-worktree.md.j2`) with the
-consuming repo's name for `--local`/`--project` installs, only when a repo
-is actually found by walking up from `destination_path`; a no-op for
-`--global`/`--user` installs or when no repo is found (the plain, already-
-copied artifact is left as-is in both cases - see `complete()` there for the
-concrete pattern).
+`sc-git-worktree` is the package this generic mechanism was built for: its
+manifest docs describe a `worktree_base` default of `../<repo-name>-worktrees`,
+and that repo name should be baked in for a local install rather than left as
+a runtime-derivation instruction. It ships three `.local.j2` siblings -
+`commands/sc-git-worktree.md.local.j2`, `skills/sc-git-worktree/SKILL.md.local.j2`,
+and `agents/sc-git-worktree-update.md.local.j2` - each identical to its plain
+`.md` counterpart except that the `basename $(git rev-parse --show-toplevel)`
+runtime-derivation sentence is replaced with the literal `{{ REPO_NAME }}`
+value. For `--local`/`--project` installs where `repo_name` is non-empty,
+`install_one()` renders the `.local.j2` and writes that instead of the plain
+file; for `--global`/`--user` installs, `--codex` targets, or any install
+where no repo is detected, the plain `.md` (with the runtime-derivation
+instructions) is copied unchanged. `sc-git-worktree` has no `install.py` -
+this substitution needs nothing beyond the generic mechanism.
 
 ## Uninstall
 
