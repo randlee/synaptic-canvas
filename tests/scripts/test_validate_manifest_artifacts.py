@@ -327,6 +327,20 @@ def test_get_disk_files_ignores_directories(temp_dir):
     assert "commands/subdir" not in files
 
 
+def test_get_disk_files_excludes_local_j2_siblings(temp_dir):
+    """Test that .local.j2 sibling files are excluded from disk files."""
+    package_dir = temp_dir / "local-j2-package"
+    package_dir.mkdir()
+
+    (package_dir / "commands").mkdir()
+    (package_dir / "commands" / "cmd.md").write_text("# Command")
+    (package_dir / "commands" / "cmd.md.local.j2").write_text("# Command {{ REPO_NAME }}")
+
+    files = get_disk_files(package_dir)
+    assert files == ["commands/cmd.md"]
+    assert "commands/cmd.md.local.j2" not in files
+
+
 # ============================================================================
 # validate_script_file Tests
 # ============================================================================

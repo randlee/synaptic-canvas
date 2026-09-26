@@ -21,6 +21,8 @@ This agent handles package installation from marketplace registries, including s
 - Copy package artifacts (commands, skills, agents, scripts)
 - Set correct file permissions (especially for scripts)
 - Update registry.yaml with installed agents
+- Run a package's optional `install.py` hooks (`prepare`/`complete`/`cleanup`) around the copy and uninstall steps
+- Pass package-specific `--set KEY=VALUE` args through to those hooks when a package's hook requires them
 - Verify installation success
 - Provide detailed installation feedback
 
@@ -43,6 +45,7 @@ Use this agent when the user wants to:
 - `registry`: Specific registry to use (default: auto-detect)
 - `force`: Overwrite existing files (default: false)
 - `no_expand`: Skip token expansion (default: false)
+- `set_args`: Extra `KEY=VALUE` pairs (repeatable) forwarded to the package's `install.py` hooks as `options["args"]`, only needed when a package's hook reports a missing required value
 
 ## Outputs
 
@@ -132,11 +135,15 @@ result = install_marketplace_package(
 **Installation steps:**
 1. Validate package and scope
 2. Create destination directories
-3. Copy artifacts (commands, skills, agents, scripts)
-4. Set executable permissions on scripts
-5. Perform token expansion (if enabled)
-6. Update ~/.claude/agents/registry.yaml
-7. Verify all files copied successfully
+3. If the package ships an `install.py`, run its `prepare(source_path, destination_path, options)` hook (per install target: `.claude`, and `.codex` when both are installed) — a failing `prepare()` stops the install for that target before anything is copied
+4. Copy artifacts (commands, skills, agents, scripts)
+5. Set executable permissions on scripts
+6. Perform token expansion (if enabled)
+7. Update ~/.claude/agents/registry.yaml
+8. If the package ships an `install.py`, run its `complete(source_path, destination_path, options)` hook — this is where a package renders repo-specific output (e.g. via `sc-compose render`) or does its own version-to-version cleanup; a failure here is also reported and stops that target
+9. Verify all files copied successfully
+
+`options` passed to every hook: `global`, `local`, `user`, `project`, `codex`, `force`, `expand`, plus `args` (the `set_args` dict, empty unless the caller supplied `--set`). A hook's result is `{"result": "success"}` or `{"result": "fail", "message": "<reason, how to fix>"}` — surface that `message` directly to the user/caller rather than a generic failure.
 
 ### 5. Verify Installation
 
@@ -249,6 +256,26 @@ Troubleshooting:
 2. Verify registry URL: /marketplace registry list
 3. Try different registry
 4. Wait and retry if registry server is down
+```
+
+### install.py Hook Failure
+
+A package's `prepare()`, `complete()`, or (on uninstall) `cleanup()` hook can
+fail with `{"result": "fail", "message": "<reason, how to fix>"}`. Relay that
+`message` verbatim — it's written to carry both the reason and the fix. If it
+names a missing value, retry the install with the matching `--set KEY=VALUE`:
+
+```
+Error: install.py complete() failed: sc-compose render failed for
+commands/sc-git-worktree.md: template requires REPO_NAME
+-- suggested fix: pass --set REPO_NAME=<name> or run from inside a git repo
+
+Troubleshooting:
+1. Follow the fix instructions in the message above
+2. Retry with the suggested flag, e.g.:
+   /marketplace install <package> --local --set REPO_NAME=my-project
+3. If the hook itself raised an unhandled exception, treat it as a bug in
+   the package (not a user-fixable input problem) and report it
 ```
 
 ## Integration with CLI

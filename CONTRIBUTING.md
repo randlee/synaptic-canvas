@@ -266,6 +266,18 @@ requires:
 - Optionally specify version constraints
 - Document installation instructions in README
 
+### install.py (Tier 3: install-time hooks)
+
+Not a manifest field - a package that needs more than token substitution or
+runtime-dependency checks may ship `packages/<pkg>/install.py`, discovered by
+convention (sc-install checks for the file's presence, nothing declares it
+in manifest.yaml). It defines any of `prepare()`, `complete()`, `cleanup()`,
+run around the artifact copy step and around uninstall, and can require
+extra `--set KEY=VALUE` info from the caller by failing with an actionable
+message when it's missing. Full contract, the result shape, and the
+idempotency/cleanup requirements every `install.py` must meet: see
+`src/sc_cli/README.md`.
+
 ## Version Management
 
 ### Three-Layer Versioning System

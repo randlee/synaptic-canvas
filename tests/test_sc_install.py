@@ -5,6 +5,7 @@ import subprocess
 from pathlib import Path
 
 from sc_cli import sc_install
+from sc_cli import install as _install_mod
 
 def _init_git_repo(path: Path) -> None:
     subprocess.run(["git", "init", "-q", str(path)], check=True)
@@ -46,14 +47,36 @@ def test_install_and_uninstall_delay_tasks(tmp_path: Path):
     assert not (dest / "agents/sc-delay-once.md").exists()
 
 
-def test_token_expansion_repo_name(tmp_path: Path):
+def test_token_expansion_repo_name(tmp_path: Path, monkeypatch):
+    """Test the {{REPO_NAME}} token-expansion mechanism in isolation via a
+    synthetic package, since no shipped package consumes it anymore (see
+    GitHub issue #112)."""
+    pkg_root = tmp_path / "pkgs"
+    pkg_dir = pkg_root / "fake-repo-name-pkg"
+    (pkg_dir / "commands").mkdir(parents=True)
+    (pkg_dir / "manifest.yaml").write_text(
+        "name: fake-repo-name-pkg\n"
+        "version: 0.1.0\n"
+        "variables:\n"
+        "  REPO_NAME:\n"
+        "    auto: git-repo-basename\n"
+        "artifacts:\n"
+        "  commands:\n"
+        "    - commands/cmd.md\n",
+        encoding="utf-8",
+    )
+    (pkg_dir / "commands" / "cmd.md").write_text(
+        "base: ../{{REPO_NAME}}-worktrees\n", encoding="utf-8"
+    )
+    monkeypatch.setattr(_install_mod, "PACKAGES_DIR", pkg_root)
+
     repo = tmp_path / "myrepo"
     repo.mkdir()
     _init_git_repo(repo)
     dest = repo / ".claude"
-    rc = sc_install.main(["install", "sc-git-worktree", "--dest", str(dest)])
+    rc = sc_install.main(["install", "fake-repo-name-pkg", "--dest", str(dest)])
     assert rc == 0
-    f = dest / "commands/sc-git-worktree.md"
+    f = dest / "commands/cmd.md"
     assert f.exists()
     content = f.read_text(encoding="utf-8")
     assert f"../{repo.name}-worktrees" in content

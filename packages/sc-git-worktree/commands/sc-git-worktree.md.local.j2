@@ -53,8 +53,8 @@ Use this command to manage worktrees following the repo's layout and tracking ru
 
 Defaults:
 - Repo root: current directory.
-- Worktree base: `../<repo-name>-worktrees/<branch>` where `<repo-name>` is derived at runtime from `basename $(git rev-parse --show-toplevel)`.
-- Tracking file: `../<repo-name>-worktrees/worktree-tracking.jsonl` (disable or override if tracking is not used).
+- Worktree base: `../{{ REPO_NAME }}-worktrees/<branch>`.
+- Tracking file: `../{{ REPO_NAME }}-worktrees/worktree-tracking.jsonl` (disable or override if tracking is not used).
 
 ## Protected Branches Configuration
 

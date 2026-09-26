@@ -193,10 +193,20 @@ When you view package details, you'll see:
 
 1. **Validation**: Checks package exists and is accessible
 2. **Dependency Check**: Verifies required dependencies
-3. **File Copy**: Installs commands, skills, agents, and scripts
-4. **Configuration**: Updates registry and config files
-5. **Verification**: Confirms all files installed correctly
-6. **Feedback**: Shows installation summary
+3. **Prepare Hook**: Runs the package's `install.py` `prepare()`, if it ships one (before anything is copied)
+4. **File Copy**: Installs commands, skills, agents, and scripts
+5. **Configuration**: Updates registry and config files
+6. **Complete Hook**: Runs the package's `install.py` `complete()`, if it ships one
+7. **Verification**: Confirms all files installed correctly
+8. **Feedback**: Shows installation summary
+
+Most packages have no `install.py` and these hook steps are simply skipped.
+A package that does ship one may need extra info sc-install has no generic
+way to know; if a hook fails for that reason, it reports a message naming
+what's missing, and you retry with the named flag, e.g.:
+```bash
+/marketplace install some-package --local --set TARGET_ENV=staging
+```
 
 ## Registry Management
 
