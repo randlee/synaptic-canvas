@@ -40,8 +40,8 @@ def test_model_catalog_consistent_with_schema_and_pydantic() -> None:
     schema = json.loads(schema_path.read_text(encoding="utf-8"))
     props = schema["properties"]
     expected_models = set(task_runner.CLAUDE_MODELS) | set(task_runner.CODEX_MODEL_NAMES)
-    assert set(props["model"]["enum"]) == expected_models
-    assert props["reasoning_effort"]["enum"] == list(task_runner.REASONING_EFFORTS)
+    assert set(props["model"]["enum"]) - {None} == expected_models
+    assert [e for e in props["reasoning_effort"]["enum"] if e is not None] == list(task_runner.REASONING_EFFORTS)
 
     generated = task_runner.TaskToolInput.model_json_schema()["properties"]
     generated_models = set()
@@ -50,6 +50,25 @@ def test_model_catalog_consistent_with_schema_and_pydantic() -> None:
     assert generated_models == expected_models
     effort_enum = [o for o in generated["reasoning_effort"]["anyOf"] if "enum" in o][0]["enum"]
     assert effort_enum == list(task_runner.REASONING_EFFORTS)
+
+    # Nullability parity: optional pydantic fields that accept None must accept null in the JSON schema.
+    for name, field in task_runner.TaskToolInput.model_fields.items():
+        if field.is_required():
+            continue
+        pyd_nullable = any(o.get("type") == "null" for o in generated[name].get("anyOf", []))
+        types = props[name]["type"]
+        json_nullable = "null" in (types if isinstance(types, list) else [types])
+        assert pyd_nullable == json_nullable, name
+        if json_nullable and "enum" in props[name]:
+            assert None in props[name]["enum"], name
+
+    base = {"description": "d", "prompt": "p", "subagent_type": "s"}
+    for extra in ({"reasoning_effort": None}, {"reasoning_effort": "low"}, {"model": None}, {"model": "sol"}):
+        instance = {**base, **extra}
+        task_runner.TaskToolInput.model_validate(instance)
+        validate_schema(instance=instance, schema=schema)
+    with pytest.raises(SchemaValidationError):
+        validate_schema(instance={**base, "reasoning_effort": "minimal"}, schema=schema)
 
     # Every alias targets a known slug; every slug has an effort table.
     assert set(task_runner.CODEX_MODEL_ALIASES.values()) <= set(task_runner.CODEX_MODEL_SLUGS)
@@ -226,6 +245,22 @@ def test_sc_codex_task_payload_effort_used_without_flag(monkeypatch: pytest.Monk
     got = _run_sc_codex_task(monkeypatch, ["--json", payload])
     assert got["model"] == "gpt-5.6-terra"
     assert got["payload"].reasoning_effort == "max"
+
+
+def test_sc_codex_task_cli_overrides_invalid_payload_values(monkeypatch: pytest.MonkeyPatch) -> None:
+    payload = json.dumps(
+        {"description": "d", "prompt": "p", "model": "mini", "reasoning_effort": "extreme"}
+    )
+    got = _run_sc_codex_task(monkeypatch, ["--model", "sol", "--effort", "low", "--json", payload])
+    assert got["model"] == "gpt-6-sol"
+    # Persisted payload carries the resolved override, so background runs/logs reflect it.
+    assert got["payload"].model == "gpt-6-sol"
+    assert got["payload"].reasoning_effort == "low"
+
+
+def test_sc_codex_task_rejects_unknown_cli_model(monkeypatch: pytest.MonkeyPatch) -> None:
+    with pytest.raises(SystemExit, match="Valid aliases"):
+        _run_sc_codex_task(monkeypatch, ["--model", "mini", "hello"])
 
 
 def test_sc_codex_task_rejects_unsupported_effort(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -449,3 +484,69 @@ def test_run_pretool_hooks_failure(tmp_path: Path) -> None:
     )
     with pytest.raises(RuntimeError):
         task_runner.run_pretool_hooks(agent_file, payload)
+
+
+def _run_ai_cli(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, payload: dict, argv: list[str]):
+    import sys
+
+    from ai_cli import cli
+
+    input_file = tmp_path / "input.json"
+    input_file.write_text(json.dumps(payload), encoding="utf-8")
+    captured: dict = {}
+
+    def fake_run_task(payload, runner, model, run_in_background, output_dir=None, raise_on_error=True):
+        # Exercise real validation, but never launch a process.
+        if runner == "codex":
+            task_runner.resolve_reasoning_effort(model, payload.reasoning_effort)
+        captured.update(payload=payload, runner=runner, model=model, background=run_in_background)
+        return task_runner.TaskToolOutputForeground(output="ok", agentId="a")
+
+    monkeypatch.setattr(cli, "resolve_runner", lambda preferred: preferred or "codex")
+    monkeypatch.setattr(cli, "run_task", fake_run_task)
+    monkeypatch.setattr(cli, "write_log", lambda event: None)
+    monkeypatch.setattr(sys, "argv", ["ai_cli", "run", "--runner", "codex", "--file", str(input_file), *argv])
+    return cli.main(), captured
+
+
+_BASE_PAYLOAD = {"description": "d", "prompt": "p", "subagent_type": "sc-codex"}
+
+
+def test_ai_cli_run_effort_override(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    rc, got = _run_ai_cli(
+        monkeypatch, tmp_path, {**_BASE_PAYLOAD, "reasoning_effort": "high"}, ["--model", "sol", "--effort", "low"]
+    )
+    assert rc == 0
+    assert got["model"] == "gpt-6-sol"
+    assert got["payload"].model == "gpt-6-sol"
+    assert got["payload"].reasoning_effort == "low"
+    assert got["background"] is False  # ai_cli run defaults to blocking
+
+
+def test_ai_cli_run_rejects_unsupported_effort(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, capsys: pytest.CaptureFixture
+) -> None:
+    rc, got = _run_ai_cli(monkeypatch, tmp_path, _BASE_PAYLOAD, ["--model", "luna", "--effort", "ultra"])
+    assert rc != 0
+    assert got == {}
+    assert "not supported by gpt-6-luna" in capsys.readouterr().err
+
+
+def test_ai_cli_run_overrides_invalid_payload_values(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    rc, got = _run_ai_cli(
+        monkeypatch,
+        tmp_path,
+        {**_BASE_PAYLOAD, "model": "mini", "reasoning_effort": "extreme"},
+        ["--model", "sol", "--effort", "low"],
+    )
+    assert rc == 0
+    assert got["payload"].model == "gpt-6-sol"
+    assert got["payload"].reasoning_effort == "low"
+
+
+def test_ai_cli_run_invalid_payload_without_override_fails(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    rc, got = _run_ai_cli(monkeypatch, tmp_path, {**_BASE_PAYLOAD, "model": "mini"}, [])
+    assert rc != 0
+    assert got == {}

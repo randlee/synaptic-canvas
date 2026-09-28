@@ -106,6 +106,24 @@ def resolve_model(runner: RunnerType, model: Optional[str]) -> str:
     return resolved
 
 
+def apply_cli_overrides(
+    data: dict, runner: RunnerType, model: Optional[str] = None, effort: Optional[str] = None
+) -> dict:
+    """Apply command-line ``--model`` / ``--effort`` to a raw payload dict.
+
+    Runs *before* pydantic validation so a CLI override wins even when the
+    payload's own value is invalid (e.g. a removed legacy alias). The model is
+    stored resolved (full slug), so the persisted/background payload and logs
+    reflect what actually runs.
+    """
+    data = dict(data)
+    if model is not None:
+        data["model"] = resolve_model(runner, model)
+    if effort is not None:
+        data["reasoning_effort"] = effort
+    return data
+
+
 def resolve_reasoning_effort(model: str, effort: Optional[str]) -> Optional[str]:
     """Validate ``effort`` for a resolved Codex model slug.
 

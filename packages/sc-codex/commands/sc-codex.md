@@ -55,6 +55,8 @@ Models and effort:
 | — | `gpt-5.6-luna` | low, medium, high, xhigh, max |
 | — | `gpt-5.5` | low, medium, high, xhigh |
 
+`minimal` effort is not supported: no current model accepts it (all start at `low`), so it is rejected.
+
 Legacy aliases (`gpt-5.2-codex`, `codex-max`/`max`, `codex-mini`/`mini`, `gpt-5`, `gpt-5.2`, `gtp-5`)
 were removed in 0.14.0 and are rejected with an error listing the valid names.
 An effort level the chosen model does not support is also rejected.
@@ -65,9 +67,13 @@ Use the `codex-agent` skill to launch a Codex task **in background mode**.
 
 Interpret arguments as follows:
 - `--help`: print usage (with flags) and stop.
-- `--model <alias|slug>`: set `model` in the Task Tool JSON (or pass `--model` before `--json`).
-- `--effort <level>`: set `reasoning_effort` in the Task Tool JSON (or pass `--effort` before `--json`).
+- `--model <alias|slug>`: set `model` in the Task Tool JSON (or pass `--model` alongside `--json`).
+- `--effort <level>`: set `reasoning_effort` in the Task Tool JSON (or pass `--effort` alongside `--json`).
   Natural language such as "use sc-codex with sol low" means `--model sol --effort low`.
+- Disambiguation: `low`, `medium`, `high`, `xhigh`, `max`, `ultra` are always effort levels, never
+  models. `max` was a model alias before 0.14.0 and no longer is ("codex max" means
+  `--effort max` on the default model). A bare level with no model (e.g. "sc-codex high") means the
+  default model (`gpt-6-astra`) with that effort.
 - `--background`: force background mode (default for this command).
 - `--no-background`: force blocking mode (explicit override).
 - `--json <object>`: treat the remaining arguments as Task Tool JSON and pass through unchanged.
@@ -83,7 +89,7 @@ When running:
    Omit `reasoning_effort` when the user did not ask for one.
 2) Call the codex-agent runner as a Bash tool call using `--json`.
    Always use `python3 .claude/scripts/sc_codex_task.py --json '{...}'` (do not call other runner scripts).
-   `--model`/`--effort` flags placed before `--json` override the matching JSON fields.
+   `--model`/`--effort` flags given alongside `--json` override payload fields.
    Do not invent flags like `--run_in_background`, `--description`, `--prompt`, or `--subagent_type`.
 3) Poll the `output_file` for up to 8 seconds using Python (avoid `tail -f` and avoid `timeout`, which may be missing on macOS):
 

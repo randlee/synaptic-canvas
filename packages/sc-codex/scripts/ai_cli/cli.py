@@ -12,6 +12,7 @@ from pydantic import TypeAdapter, ValidationError as SchemaValidationError
 from ai_cli.logging import write_log
 from ai_cli.task_runner import (
     REASONING_EFFORTS,
+    apply_cli_overrides,
     effort_help,
     run_background_child_with_payload,
     resolve_runner,
@@ -44,11 +45,11 @@ def cmd_validate(args: argparse.Namespace) -> int:
 
 def cmd_run(args: argparse.Namespace) -> int:
     data = _read_json(args.file)
-    payload = TaskToolInput.model_validate(data)
-    if args.effort:
-        payload = payload.model_copy(update={"reasoning_effort": args.effort})
     runner = resolve_runner(args.runner)
-    model = resolve_model(runner, args.model or payload.model)
+    # CLI flags override payload fields before validation.
+    data = apply_cli_overrides(data, runner, args.model, args.effort)
+    payload = TaskToolInput.model_validate(data)
+    model = resolve_model(runner, payload.model)
     if args.background is None:
         run_in_background = bool(payload.run_in_background)
     else:

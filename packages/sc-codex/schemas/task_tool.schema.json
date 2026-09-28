@@ -21,7 +21,10 @@
       "description": "The type of specialized agent to use for this task"
     },
     "model": {
-      "type": "string",
+      "type": [
+        "string",
+        "null"
+      ],
       "enum": [
         "sonnet",
         "opus",
@@ -37,34 +40,48 @@
         "gpt-5.6-sol",
         "gpt-5.6-terra",
         "gpt-5.6-luna",
-        "gpt-5.5"
+        "gpt-5.5",
+        null
       ],
       "description": "Optional model to use for this agent. If not specified, inherits from parent. Claude models: sonnet, opus, haiku. Codex aliases: sol, astra, luna, terra, codex (default, gpt-6-astra). Codex slugs: gpt-6-sol, gpt-6-astra, gpt-6-luna, gpt-5.6-sol, gpt-5.6-terra, gpt-5.6-luna, gpt-5.5."
     },
     "reasoning_effort": {
-      "type": "string",
+      "type": [
+        "string",
+        "null"
+      ],
       "enum": [
         "low",
         "medium",
         "high",
         "xhigh",
         "max",
-        "ultra"
+        "ultra",
+        null
       ],
       "description": "Optional Codex reasoning effort: low, medium, high, xhigh, max, ultra (supported levels vary by model). When omitted, no effort override is passed and the Codex CLI config (~/.codex/config.toml) applies. Ignored by the Claude runner."
     },
     "run_in_background": {
-      "type": "boolean",
+      "type": [
+        "boolean",
+        "null"
+      ],
       "description": "Set to true to run this agent in the background. The tool result will include an output_file path - use Read tool or Bash tail to check on output."
     },
     "max_turns": {
-      "type": "integer",
+      "type": [
+        "integer",
+        "null"
+      ],
       "exclusiveMinimum": 0,
       "maximum": 9007199254740991,
       "description": "Maximum number of agentic turns (API round-trips) before stopping. Used internally for warmup."
     },
     "resume": {
-      "type": "string",
+      "type": [
+        "string",
+        "null"
+      ],
       "description": "Optional agent ID to resume from. If provided, the agent will continue from the previous execution transcript."
     }
   },

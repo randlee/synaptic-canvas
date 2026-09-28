@@ -20,7 +20,7 @@ Background output (run_in_background: true):
 {
   "description": "Summarize issue",
   "prompt": "Summarize the latest GitHub issue thread",
-  "subagent_type": "issue-summary",
+  "subagent_type": "sc-codex",
   "model": "sol",
   "reasoning_effort": "low",
   "run_in_background": false,
@@ -68,10 +68,11 @@ Validate input from file:
 PYTHONPATH=packages/sc-codex/scripts python3 -m ai_cli validate --file /path/to/input.json
 ```
 
-Run a task (blocking by default, runner auto-selects based on availability):
+Run a task (blocking by default). Without `--runner`, the runner auto-selects (Claude first if
+installed), so pass `--runner codex` for Codex models such as `sol`:
 
 ```bash
-PYTHONPATH=packages/sc-codex/scripts python3 -m ai_cli run --file /path/to/input.json
+PYTHONPATH=packages/sc-codex/scripts python3 -m ai_cli run --runner codex --file /path/to/input.json
 ```
 
 Run in background with Codex and custom output directory:
@@ -87,7 +88,7 @@ Override model and reasoning effort from the command line (flags override the JS
 
 ```bash
 PYTHONPATH=packages/sc-codex/scripts python3 -m ai_cli run --runner codex --model sol --effort low --file /path/to/input.json
-# -> codex exec --yolo --model gpt-6-sol -c model_reasoning_effort="low" <prompt>
+# -> codex exec --yolo --model gpt-6-sol -c 'model_reasoning_effort="low"' <prompt>
 ```
 
 Model defaults:
@@ -106,6 +107,8 @@ Codex models (the catalog is defined once in `ai_cli/task_tool.py`; `CODEX_MODEL
 | `terra` | `gpt-5.6-terra` | low, medium, high, xhigh, max, ultra |
 | — | `gpt-5.6-luna` | low, medium, high, xhigh, max |
 | — | `gpt-5.5` | low, medium, high, xhigh |
+
+`minimal` effort is not supported: no current model accepts it (all start at `low`), so it is rejected.
 
 Full slugs are accepted as-is; unknown names raise an error listing valid aliases and slugs.
 

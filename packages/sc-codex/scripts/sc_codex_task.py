@@ -15,6 +15,7 @@ from ai_cli.task_runner import (  # noqa: E402
     REASONING_EFFORTS,
     codex_model_help,
     effort_help,
+    apply_cli_overrides,
     resolve_model,
     resolve_reasoning_effort,
     resolve_runner,
@@ -31,12 +32,12 @@ def _load_json(text: str) -> dict:
         raise SystemExit(f"Invalid JSON: {exc}") from exc
 
 
-def _build_payload(prompt: str, subagent_type: str) -> TaskToolInput:
-    return TaskToolInput(
-        description="Codex task",
-        prompt=prompt,
-        subagent_type=subagent_type,
-    )
+def _build_payload(prompt: str, subagent_type: str) -> dict:
+    return {
+        "description": "Codex task",
+        "prompt": prompt,
+        "subagent_type": subagent_type,
+    }
 
 
 def main() -> int:
@@ -60,20 +61,18 @@ def main() -> int:
         data = _load_json(raw)
         if "subagent_type" not in data:
             data["subagent_type"] = "sc-codex"
-        try:
-            payload = TaskToolInput.model_validate(data)
-        except ValidationError as exc:
-            raise SystemExit(f"Invalid Task Tool input: {exc}") from exc
     else:
-        payload = _build_payload(raw, "sc-codex")
-
-    if args.effort:
-        payload = payload.model_copy(update={"reasoning_effort": args.effort})
+        data = _build_payload(raw, "sc-codex")
 
     runner = resolve_runner("codex")
     try:
-        model = resolve_model(runner, args.model or payload.model)
+        # CLI flags override payload fields before validation.
+        data = apply_cli_overrides(data, runner, args.model, args.effort)
+        payload = TaskToolInput.model_validate(data)
+        model = resolve_model(runner, payload.model)
         resolve_reasoning_effort(model, payload.reasoning_effort)
+    except ValidationError as exc:
+        raise SystemExit(f"Invalid Task Tool input: {exc}") from exc
     except ValueError as exc:
         raise SystemExit(str(exc)) from exc
     if args.background is None:

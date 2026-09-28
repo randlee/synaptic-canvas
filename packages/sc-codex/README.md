@@ -44,7 +44,10 @@ Models (`--model` or JSON `model`; default `gpt-6-astra`):
 | — | `gpt-5.6-luna` | low, medium, high, xhigh, max |
 | — | `gpt-5.5` | low, medium, high, xhigh |
 
-- Reasoning effort: `--effort` or JSON `reasoning_effort`. When omitted, no override is passed and
+`minimal` effort is not supported: no current model accepts it (all start at `low`), so it is rejected.
+
+- Reasoning effort: `--effort` or JSON `reasoning_effort`, passed to Codex as
+  `-c 'model_reasoning_effort="<level>"'`. When omitted, no override is passed and
   your `~/.codex/config.toml` applies. Unsupported model/effort combinations are rejected.
 - Command-line flags override the JSON payload.
 - Breaking in 0.14.0: legacy aliases (`gpt-5.2-codex`, `codex-max`/`max`, `codex-mini`/`mini`,

@@ -43,6 +43,8 @@ Provide Task Tool input JSON with:
 | — | `gpt-5.6-luna` | low, medium, high, xhigh, max |
 | — | `gpt-5.5` | low, medium, high, xhigh |
 
+`minimal` effort is not supported: no current model accepts it (all start at `low`), so it is rejected.
+
 - Default model (no `model`, or `codex`): `gpt-6-astra`.
 - Full slugs are accepted as-is. Unknown models (including the removed legacy aliases
   `gpt-5.2-codex`, `codex-max`/`max`, `codex-mini`/`mini`, `gpt-5`, `gpt-5.2`, `gtp-5`) are rejected.
@@ -51,7 +53,11 @@ Provide Task Tool input JSON with:
 - Map natural-language requests to flags or JSON fields: "use sc-codex with sol low" means
   `--model sol --effort low` (or `"model":"sol","reasoning_effort":"low"` in the JSON payload);
   "luna high" means `--model luna --effort high`.
-- `--model` / `--effort` flags given before `--json` override the JSON fields.
+- Disambiguation: `low`, `medium`, `high`, `xhigh`, `max`, `ultra` are always effort levels, never
+  models. `max` was a model alias before 0.14.0 and no longer is ("codex max" means
+  `--effort max` on the default model). A bare level with no model (e.g. "sc-codex high") means the
+  default model (`gpt-6-astra`) with that effort.
+- `--model` / `--effort` flags given alongside `--json` override payload fields.
 
 ## Notes
 

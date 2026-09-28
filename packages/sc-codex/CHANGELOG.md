@@ -14,7 +14,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   `-c model_reasoning_effort="<level>"`; omitted when unset so `~/.codex/config.toml` applies.
   Levels are validated per model. Effort is carried in the payload (background runs keep it)
   and logged as a top-level `reasoning_effort` field. Ignored by the Claude runner.
-- Command-line `--model` / `--effort` override the JSON payload.
+- Command-line `--model` / `--effort` override the JSON payload (applied before validation, and
+  the resolved model is persisted in the payload for background runs).
 - `sc-codex` agent added to `.claude/agents/registry.yaml`.
 
 ### Changed
@@ -28,9 +29,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Removed (breaking)
 - Legacy model aliases `gpt-5.2-codex`, `codex-max`/`max`, `codex-mini`/`mini`, `gpt-5`,
   `gpt-5.2`, `gtp-5`. Unknown models now fail with an error listing valid aliases and slugs.
+  `max` is now only an effort level.
 
-## [0.8.0 - 0.13.0]
-- Intermediate versions (repo-wide version bumps) were not recorded in this changelog.
+### Notes
+- Versions 0.8.0–0.13.0 were released without changelog entries.
 
 ## [0.7.0] - 2026-01-20
 ### Added
