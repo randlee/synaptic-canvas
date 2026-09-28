@@ -1,7 +1,7 @@
 {
   "$schema": "https://yourcompany.github.io/schemas/package-registry.schema.json",
   "version": "2.0.0",
-  "generated": "2026-09-23T06:05:07Z",
+  "generated": "2026-09-28T03:32:40Z",
   "repo": "randlee/synaptic-canvas",
   "marketplace": {
     "name": "Synaptic Canvas",
@@ -45,12 +45,12 @@
         "pydantic"
       ],
       "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-ci-automation/CHANGELOG.md",
-      "lastUpdated": "2026-09-23",
+      "lastUpdated": "2026-09-28",
       "dependents": []
     },
     "sc-codex": {
       "name": "sc-codex",
-      "version": "0.13.0",
+      "version": "0.14.0",
       "status": "beta",
       "tier": 0,
       "description": "Run Codex agents via a Task Tool-compatible runner, with hooks emulation and background execution support.\n",
@@ -82,7 +82,7 @@
         "pyyaml"
       ],
       "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-codex/CHANGELOG.md",
-      "lastUpdated": "2026-09-23",
+      "lastUpdated": "2026-09-28",
       "dependents": []
     },
     "sc-delay-tasks": {
@@ -119,7 +119,7 @@
         "pydantic"
       ],
       "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-delay-tasks/CHANGELOG.md",
-      "lastUpdated": "2026-09-23",
+      "lastUpdated": "2026-09-28",
       "dependents": []
     },
     "sc-docling-pdf": {
@@ -162,7 +162,7 @@
         "transformers < 5.5"
       ],
       "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-docling-pdf/CHANGELOG.md",
-      "lastUpdated": "2026-09-23",
+      "lastUpdated": "2026-09-28",
       "dependents": []
     },
     "sc-git-worktree": {
@@ -206,7 +206,7 @@
         "git >= 2.20"
       ],
       "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-git-worktree/CHANGELOG.md",
-      "lastUpdated": "2026-09-23",
+      "lastUpdated": "2026-09-28",
       "dependents": [
         "sc-github-issue"
       ]
@@ -246,7 +246,7 @@
         "pydantic"
       ],
       "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-github-issue/CHANGELOG.md",
-      "lastUpdated": "2026-09-23",
+      "lastUpdated": "2026-09-28",
       "dependents": []
     },
     "sc-launch-term": {
@@ -289,7 +289,7 @@
         "Python 3 launcher on PATH (`python3`, `py -3`, or `python`)"
       ],
       "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-launch-term/CHANGELOG.md",
-      "lastUpdated": "2026-09-23",
+      "lastUpdated": "2026-09-28",
       "dependents": []
     },
     "sc-kanban": {
@@ -328,7 +328,7 @@
         "sc-git-worktree>=0.5.2"
       ],
       "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-kanban/CHANGELOG.md",
-      "lastUpdated": "2026-09-23",
+      "lastUpdated": "2026-09-28",
       "dependents": []
     },
     "sc-launchpad": {
@@ -369,7 +369,7 @@
         "gemini",
         "pydantic"
       ],
-      "lastUpdated": "2026-09-23",
+      "lastUpdated": "2026-09-28",
       "dependents": [],
       "readme": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-launchpad/README.md",
       "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-launchpad/CHANGELOG.md"
@@ -407,7 +407,7 @@
         "pydantic"
       ],
       "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-manage/CHANGELOG.md",
-      "lastUpdated": "2026-09-23",
+      "lastUpdated": "2026-09-28",
       "dependents": []
     },
     "sc-repomix-nuget": {
@@ -450,7 +450,7 @@
         "pydantic"
       ],
       "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-repomix-nuget/CHANGELOG.md",
-      "lastUpdated": "2026-09-23",
+      "lastUpdated": "2026-09-28",
       "dependents": []
     },
     "sc-roslyn-diff": {
@@ -491,7 +491,7 @@
         "pydantic"
       ],
       "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-roslyn-diff/CHANGELOG.md",
-      "lastUpdated": "2026-09-23",
+      "lastUpdated": "2026-09-28",
       "dependents": []
     },
     "sc-startup": {
@@ -530,7 +530,7 @@
         "pydantic"
       ],
       "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-startup/CHANGELOG.md",
-      "lastUpdated": "2026-09-23",
+      "lastUpdated": "2026-09-28",
       "dependents": []
     },
     "sc-commit-push-pr": {
@@ -569,7 +569,7 @@
         "gh"
       ],
       "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-commit-push-pr/CHANGELOG.md",
-      "lastUpdated": "2026-09-23",
+      "lastUpdated": "2026-09-28",
       "dependents": []
     },
     "sc-rust": {
@@ -610,7 +610,7 @@
         "sc-compose"
       ],
       "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-rust/CHANGELOG.md",
-      "lastUpdated": "2026-09-23",
+      "lastUpdated": "2026-09-28",
       "dependents": []
     },
     "sc-ai-cli": {
@@ -645,7 +645,7 @@
       },
       "dependencies": [],
       "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-ai-cli/CHANGELOG.md",
-      "lastUpdated": "2026-09-23",
+      "lastUpdated": "2026-09-28",
       "dependents": []
     },
     "sc-coding-agent-hardening": {
@@ -680,7 +680,7 @@
         "schemas": 0
       },
       "dependencies": [],
-      "lastUpdated": "2026-09-23"
+      "lastUpdated": "2026-09-28"
     },
     "sc-just": {
       "name": "sc-just",
@@ -716,7 +716,7 @@
         "just >= 1.0",
         "python3 >= 3.11"
       ],
-      "lastUpdated": "2026-09-23"
+      "lastUpdated": "2026-09-28"
     },
     "sc-gh-stack": {
       "name": "sc-gh-stack",
@@ -756,7 +756,7 @@
         "github/gh-stack >= 0.1.0",
         "jq"
       ],
-      "lastUpdated": "2026-09-23"
+      "lastUpdated": "2026-09-28"
     },
     "sc-refactory": {
       "name": "sc-refactory",
@@ -797,7 +797,7 @@
         "PyYAML",
         "pydantic"
       ],
-      "lastUpdated": "2026-09-23"
+      "lastUpdated": "2026-09-28"
     }
   },
   "metadata": {

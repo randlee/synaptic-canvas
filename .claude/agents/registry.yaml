@@ -92,6 +92,9 @@ agents:
   rust-service-hardening-agent:
     path: packages/sc-rust/agents/rust-service-hardening-agent.md
     version: 0.13.0
+  sc-codex:
+    path: packages/sc-codex/agents/sc-codex.md
+    version: 0.14.0
 skills:
   ci-automation:
     depends_on:
