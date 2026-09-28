@@ -2,7 +2,11 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
   "additionalProperties": false,
-  "required": ["description", "prompt", "subagent_type"],
+  "required": [
+    "description",
+    "prompt",
+    "subagent_type"
+  ],
   "properties": {
     "description": {
       "type": "string",
@@ -23,18 +27,31 @@
         "opus",
         "haiku",
         "codex",
-        "gpt-5.2-codex",
-        "codex-max",
-        "max",
-        "gpt-5.1-codex-max",
-        "codex-mini",
-        "mini",
-        "gpt-5.1-codex-mini",
-        "gpt-5",
-        "gpt-5.2",
-        "gtp-5"
+        "sol",
+        "astra",
+        "luna",
+        "terra",
+        "gpt-6-sol",
+        "gpt-6-astra",
+        "gpt-6-luna",
+        "gpt-5.6-sol",
+        "gpt-5.6-terra",
+        "gpt-5.6-luna",
+        "gpt-5.5"
       ],
-      "description": "Optional model to use for this agent. If not specified, inherits from parent. Claude models: sonnet, opus, haiku. Codex models: codex, max/codex-max, mini/codex-mini, gpt-5, or full model names."
+      "description": "Optional model to use for this agent. If not specified, inherits from parent. Claude models: sonnet, opus, haiku. Codex aliases: sol, astra, luna, terra, codex (default, gpt-6-astra). Codex slugs: gpt-6-sol, gpt-6-astra, gpt-6-luna, gpt-5.6-sol, gpt-5.6-terra, gpt-5.6-luna, gpt-5.5."
+    },
+    "reasoning_effort": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+        "max",
+        "ultra"
+      ],
+      "description": "Optional Codex reasoning effort: low, medium, high, xhigh, max, ultra (supported levels vary by model). When omitted, no effort override is passed and the Codex CLI config (~/.codex/config.toml) applies. Ignored by the Claude runner."
     },
     "run_in_background": {
       "type": "boolean",

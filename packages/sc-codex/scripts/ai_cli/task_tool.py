@@ -15,20 +15,56 @@ from typing import Literal, Optional, Union
 from pydantic import BaseModel, Field
 
 
-CodexModel = Literal[
-    "codex",
-    "gpt-5.2-codex",
-    "codex-max",
-    "max",
-    "gpt-5.1-codex-max",
-    "codex-mini",
-    "mini",
-    "gpt-5.1-codex-mini",
-    "gpt-5",
-    "gpt-5.2",
-    "gtp-5",
-]
-ClaudeModel = Literal["sonnet", "opus", "haiku"]
+# ---------------------------------------------------------------------------
+# Model / effort catalog -- the single source of truth.
+#
+# These constants live here (rather than in task_runner.py) because
+# task_runner imports this module; defining them here avoids a circular
+# import. task_runner re-exports them, and argparse help, pydantic Literals
+# and resolution logic are all derived from them. tests/ assert that
+# schemas/task_tool.schema.json stays in sync.
+# ---------------------------------------------------------------------------
+
+#: Reasoning effort levels, lowest to highest.
+REASONING_EFFORTS: tuple[str, ...] = ("low", "medium", "high", "xhigh", "max", "ultra")
+
+
+def _efforts_up_to(highest: str) -> tuple[str, ...]:
+    return REASONING_EFFORTS[: REASONING_EFFORTS.index(highest) + 1]
+
+
+#: Full Codex model slugs -> supported reasoning effort levels.
+CODEX_MODEL_EFFORTS: dict[str, tuple[str, ...]] = {
+    "gpt-6-sol": _efforts_up_to("ultra"),
+    "gpt-6-astra": _efforts_up_to("ultra"),
+    "gpt-6-luna": _efforts_up_to("max"),
+    "gpt-5.6-sol": _efforts_up_to("ultra"),
+    "gpt-5.6-terra": _efforts_up_to("ultra"),
+    "gpt-5.6-luna": _efforts_up_to("max"),
+    "gpt-5.5": _efforts_up_to("xhigh"),
+}
+CODEX_MODEL_SLUGS: tuple[str, ...] = tuple(CODEX_MODEL_EFFORTS)
+
+#: Model used when no model is given (or the `codex` alias is used).
+CODEX_DEFAULT_MODEL = "gpt-6-astra"
+
+#: Short aliases -> full slugs. Full slugs are also accepted as-is.
+CODEX_MODEL_ALIASES: dict[str, str] = {
+    "codex": CODEX_DEFAULT_MODEL,
+    "sol": "gpt-6-sol",
+    "astra": "gpt-6-astra",
+    "luna": "gpt-6-luna",
+    "terra": "gpt-5.6-terra",
+}
+
+#: Every accepted Codex model name (aliases first, then slugs).
+CODEX_MODEL_NAMES: tuple[str, ...] = tuple(CODEX_MODEL_ALIASES) + CODEX_MODEL_SLUGS
+
+CLAUDE_MODELS: tuple[str, ...] = ("sonnet", "opus", "haiku")
+
+CodexModel = Literal[CODEX_MODEL_NAMES]  # type: ignore[valid-type]
+ClaudeModel = Literal[CLAUDE_MODELS]  # type: ignore[valid-type]
+ReasoningEffort = Literal[REASONING_EFFORTS]  # type: ignore[valid-type]
 ModelName = Union[CodexModel, ClaudeModel]
 
 
@@ -49,8 +85,17 @@ class TaskToolInput(BaseModel):
         default=None,
         description=(
             "Optional model to use for this agent. If not specified, inherits from parent. "
-            "Claude models: sonnet, opus, haiku. Codex models: codex, max/codex-max, "
-            "mini/codex-mini, gpt-5, or full model names."
+            "Claude models: sonnet, opus, haiku. Codex aliases: sol, astra, luna, terra, "
+            "codex (default, gpt-6-astra). Codex slugs: gpt-6-sol, gpt-6-astra, gpt-6-luna, "
+            "gpt-5.6-sol, gpt-5.6-terra, gpt-5.6-luna, gpt-5.5."
+        ),
+    )
+    reasoning_effort: Optional[ReasoningEffort] = Field(
+        default=None,
+        description=(
+            "Optional Codex reasoning effort: low, medium, high, xhigh, max, ultra "
+            "(supported levels vary by model). When omitted, no effort override is passed "
+            "and the Codex CLI config (~/.codex/config.toml) applies. Ignored by the Claude runner."
         ),
     )
     run_in_background: Optional[bool] = Field(
