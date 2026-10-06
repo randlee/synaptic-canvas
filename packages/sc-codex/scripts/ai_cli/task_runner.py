@@ -24,31 +24,42 @@ from typing import Literal, Optional
 import yaml
 
 from ai_cli.logging import write_log
-from ai_cli.task_tool import TaskToolInput, TaskToolOutputBackground, TaskToolOutputForeground
+from ai_cli.task_tool import (  # noqa: F401  (catalog names re-exported)
+    CLAUDE_MODELS,
+    CODEX_DEFAULT_MODEL,
+    CODEX_MODEL_ALIASES,
+    CODEX_MODEL_EFFORTS,
+    CODEX_MODEL_NAMES,
+    CODEX_MODEL_SLUGS,
+    REASONING_EFFORTS,
+    TaskToolInput,
+    TaskToolOutputBackground,
+    TaskToolOutputForeground,
+)
 
 RunnerType = Literal["claude", "codex"]
 
-_CODEX_MODEL_MAP = {
-    "codex": "gpt-5.2-codex",
-    "gpt-5.2-codex": "gpt-5.2-codex",
-    "codex-max": "gpt-5.1-codex-max",
-    "max": "gpt-5.1-codex-max",
-    "gpt-5.1-codex-max": "gpt-5.1-codex-max",
-    "codex-mini": "gpt-5.1-codex-mini",
-    "mini": "gpt-5.1-codex-mini",
-    "gpt-5.1-codex-mini": "gpt-5.1-codex-mini",
-    "gpt-5": "gpt-5.2",
-    "gpt-5.2": "gpt-5.2",
-    "gtp-5": "gpt-5.2",
-}
+# Model/effort catalog is defined once in ai_cli.task_tool (see note there);
+# these names are re-exported for callers and tests.
+_CLAUDE_MODELS = set(CLAUDE_MODELS)
 
-_CLAUDE_MODELS = {"haiku", "sonnet", "opus"}
-_CODEX_ACCOUNT_FALLBACK = "gpt-5.2"
-_CODEX_NATIVE_MODELS = {
-    "gpt-5.2-codex",
-    "gpt-5.1-codex-max",
-    "gpt-5.1-codex-mini",
-}
+#: Fallback model when Codex rejects the requested model for a ChatGPT
+#: account. Only triggered by that specific CLI error message.
+_CODEX_ACCOUNT_FALLBACK = "gpt-5.5"
+_CHATGPT_ACCOUNT_ERROR = "not supported when using codex with a chatgpt account"
+
+
+def codex_model_help() -> str:
+    aliases = ", ".join(f"{k}={v}" for k, v in CODEX_MODEL_ALIASES.items())
+    return f"Codex model alias ({aliases}) or full slug ({', '.join(CODEX_MODEL_SLUGS)})"
+
+
+def effort_help() -> str:
+    per_model = "; ".join(f"{m}: {e[0]}..{e[-1]}" for m, e in CODEX_MODEL_EFFORTS.items())
+    return (
+        "Codex reasoning effort. When omitted, no override is passed and ~/.codex/config.toml "
+        f"applies. Supported per model: {per_model}. Ignored by the Claude runner."
+    )
 
 
 @lru_cache(maxsize=None)
@@ -82,11 +93,56 @@ def resolve_model(runner: RunnerType, model: Optional[str]) -> str:
             raise ValueError(f"Unsupported Claude model: {model}")
         return model
     if model is None:
-        return "gpt-5.2-codex"
-    resolved = _CODEX_MODEL_MAP.get(model)
+        return CODEX_DEFAULT_MODEL
+    if model in CODEX_MODEL_EFFORTS:
+        return model
+    resolved = CODEX_MODEL_ALIASES.get(model)
     if resolved is None:
-        raise ValueError(f"Unsupported Codex model: {model}")
+        raise ValueError(
+            f"Unsupported Codex model: {model!r}. "
+            f"Valid aliases: {', '.join(CODEX_MODEL_ALIASES)}. "
+            f"Valid slugs: {', '.join(CODEX_MODEL_SLUGS)}."
+        )
     return resolved
+
+
+def apply_cli_overrides(
+    data: dict, runner: RunnerType, model: Optional[str] = None, effort: Optional[str] = None
+) -> dict:
+    """Apply command-line ``--model`` / ``--effort`` to a raw payload dict.
+
+    Runs *before* pydantic validation so a CLI override wins even when the
+    payload's own value is invalid (e.g. a removed legacy alias). The model is
+    stored resolved (full slug), so the persisted/background payload and logs
+    reflect what actually runs.
+    """
+    data = dict(data)
+    if model is not None:
+        data["model"] = resolve_model(runner, model)
+    if effort is not None:
+        data["reasoning_effort"] = effort
+    return data
+
+
+def resolve_reasoning_effort(model: str, effort: Optional[str]) -> Optional[str]:
+    """Validate ``effort`` for a resolved Codex model slug.
+
+    Returns ``None`` when no effort was requested, so the caller omits the
+    ``-c model_reasoning_effort`` override and the user's Codex config applies.
+    """
+    if effort is None:
+        return None
+    if effort not in REASONING_EFFORTS:
+        raise ValueError(
+            f"Unsupported reasoning effort: {effort!r}. Valid levels: {', '.join(REASONING_EFFORTS)}."
+        )
+    supported = CODEX_MODEL_EFFORTS.get(model, REASONING_EFFORTS)
+    if effort not in supported:
+        raise ValueError(
+            f"Reasoning effort {effort!r} is not supported by {model}. "
+            f"Supported levels: {', '.join(supported)}."
+        )
+    return effort
 
 
 def _resume_context(payload: TaskToolInput, runner: RunnerType) -> Optional[str]:
@@ -155,19 +211,49 @@ def _preview(text: str, limit: int = 200) -> str:
     return cleaned[: limit - 1] + "…"
 
 
-def run_sync(runner: RunnerType, model: str, prompt: str) -> str:
+def _codex_cmd(model: str, effort: Optional[str], prompt: str) -> list[str]:
+    cmd = ["codex", "exec", "--yolo", "--model", model]
+    if effort is not None:
+        cmd.extend(["-c", f'model_reasoning_effort="{effort}"'])
+    cmd.append(prompt)
+    return cmd
+
+
+def run_sync(
+    runner: RunnerType,
+    model: str,
+    prompt: str,
+    reasoning_effort: Optional[str] = None,
+) -> str:
+    """Run a single prompt synchronously.
+
+    ``reasoning_effort`` applies to the Codex runner only; the Claude runner
+    ignores it (claude --print has no equivalent flag).
+    """
     _check_runner_available(runner)
     attempted_model = model
     if runner == "codex":
+        effort = resolve_reasoning_effort(attempted_model, reasoning_effort)
         res = subprocess.run(
-            ["codex", "exec", "--yolo", "--model", attempted_model, prompt],
+            _codex_cmd(attempted_model, effort, prompt),
             text=True,
             capture_output=True,
         )
         if res.returncode != 0 and _should_fallback_codex_model(attempted_model, res.stderr):
             attempted_model = _CODEX_ACCOUNT_FALLBACK
+            effort = _fallback_effort(effort)
+            write_log(
+                {
+                    "component": "ai_cli",
+                    "event": "model_fallback",
+                    "runner": runner,
+                    "model": model,
+                    "fallback_model": attempted_model,
+                    "reasoning_effort": effort,
+                }
+            )
             res = subprocess.run(
-                ["codex", "exec", "--yolo", "--model", attempted_model, prompt],
+                _codex_cmd(attempted_model, effort, prompt),
                 text=True,
                 capture_output=True,
             )
@@ -184,10 +270,22 @@ def run_sync(runner: RunnerType, model: str, prompt: str) -> str:
 
 
 def _should_fallback_codex_model(model: str, stderr: str) -> bool:
-    if model not in _CODEX_NATIVE_MODELS:
+    """True when Codex rejected ``model`` for a ChatGPT-account login.
+
+    Applies to any model except the fallback itself (so gpt-6/gpt-5.6 models
+    are retried once on gpt-5.5, and gpt-5.5 never loops).
+    """
+    if model == _CODEX_ACCOUNT_FALLBACK:
         return False
-    lowered = (stderr or "").lower()
-    return "not supported when using codex with a chatgpt account" in lowered
+    return _CHATGPT_ACCOUNT_ERROR in (stderr or "").lower()
+
+
+def _fallback_effort(effort: Optional[str]) -> Optional[str]:
+    """Clamp ``effort`` to the highest level the fallback model supports."""
+    supported = CODEX_MODEL_EFFORTS[_CODEX_ACCOUNT_FALLBACK]
+    if effort is None or effort in supported:
+        return effort
+    return supported[-1]
 
 
 def _timestamp() -> str:
@@ -336,6 +434,11 @@ def run_pretool_hooks(agent_path: Optional[Path], payload: TaskToolInput) -> Non
             )
 
 
+def _effort_for(payload: TaskToolInput, runner: RunnerType) -> Optional[str]:
+    """Effort that applies to this run (None for the Claude runner, which ignores it)."""
+    return payload.reasoning_effort if runner == "codex" else None
+
+
 def run_background(payload: TaskToolInput, runner: RunnerType, model: str, output_dir: Path) -> TaskToolOutputBackground:
     _check_runner_available(runner)
     agent_id = str(uuid.uuid4())
@@ -357,6 +460,7 @@ def run_background(payload: TaskToolInput, runner: RunnerType, model: str, outpu
                 "mode": "background",
                 "runner": runner,
                 "model": model,
+                "reasoning_effort": _effort_for(payload, runner),
                 "agentId": agent_id,
                 "error": str(exc),
             }
@@ -369,6 +473,7 @@ def run_background(payload: TaskToolInput, runner: RunnerType, model: str, outpu
             "mode": "background",
             "runner": runner,
             "model": model,
+            "reasoning_effort": _effort_for(payload, runner),
             "agentId": agent_id,
             "output_file": str(output_file),
             "prompt_preview": _preview(payload.prompt),
@@ -426,7 +531,7 @@ def run_background_child_with_payload(
     try:
         agent_path = resolve_agent_path(payload.subagent_type, runner)
         run_pretool_hooks(agent_path, payload)
-        output = run_sync(runner, model, build_prompt(payload, runner))
+        output = run_sync(runner, model, build_prompt(payload, runner), _effort_for(payload, runner))
         assistant_entry = _jsonl_entry(agent_id, "assistant", output, None)
         write_log(
             {
@@ -435,6 +540,7 @@ def run_background_child_with_payload(
                 "mode": "background",
                 "runner": runner,
                 "model": model,
+                "reasoning_effort": _effort_for(payload, runner),
                 "agentId": agent_id,
                 "output_file": str(output_file),
                 "status": "success",
@@ -451,6 +557,7 @@ def run_background_child_with_payload(
                 "mode": "background",
                 "runner": runner,
                 "model": model,
+                "reasoning_effort": _effort_for(payload, runner),
                 "agentId": agent_id,
                 "output_file": str(output_file),
                 "status": "error",
@@ -470,6 +577,9 @@ def run_task(
     output_dir: Optional[Path] = None,
     raise_on_error: bool = True,
 ) -> TaskToolOutputForeground | TaskToolOutputBackground:
+    if runner == "codex":
+        # Validate up front so bad model/effort combos fail before any launch.
+        resolve_reasoning_effort(model, payload.reasoning_effort)
     if run_in_background:
         return run_background(payload, runner, model, output_dir or _default_output_dir(runner))
     agent_id = str(uuid.uuid4())
@@ -480,6 +590,7 @@ def run_task(
             "mode": "blocking",
             "runner": runner,
             "model": model,
+            "reasoning_effort": _effort_for(payload, runner),
             "agentId": agent_id,
             "prompt_preview": _preview(payload.prompt),
             "params": payload.model_dump(),
@@ -489,7 +600,7 @@ def run_task(
     try:
         agent_path = resolve_agent_path(payload.subagent_type, runner)
         run_pretool_hooks(agent_path, payload)
-        output = run_sync(runner, model, build_prompt(payload, runner))
+        output = run_sync(runner, model, build_prompt(payload, runner), _effort_for(payload, runner))
         write_log(
             {
                 "component": "ai_cli",
@@ -497,6 +608,7 @@ def run_task(
                 "mode": "blocking",
                 "runner": runner,
                 "model": model,
+                "reasoning_effort": _effort_for(payload, runner),
                 "agentId": agent_id,
                 "status": "success",
                 "duration_ms": int((time.monotonic() - start) * 1000),
@@ -511,6 +623,7 @@ def run_task(
                 "mode": "blocking",
                 "runner": runner,
                 "model": model,
+                "reasoning_effort": _effort_for(payload, runner),
                 "agentId": agent_id,
                 "status": "error",
                 "error": str(exc),

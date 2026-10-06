@@ -20,8 +20,9 @@ Background output (run_in_background: true):
 {
   "description": "Summarize issue",
   "prompt": "Summarize the latest GitHub issue thread",
-  "subagent_type": "issue-summary",
-  "model": "haiku",
+  "subagent_type": "sc-codex",
+  "model": "sol",
+  "reasoning_effort": "low",
   "run_in_background": false,
   "max_turns": 10
 }
@@ -67,10 +68,11 @@ Validate input from file:
 PYTHONPATH=packages/sc-codex/scripts python3 -m ai_cli validate --file /path/to/input.json
 ```
 
-Run a task (blocking by default, runner auto-selects based on availability):
+Run a task (blocking by default). Without `--runner`, the runner auto-selects (Claude first if
+installed), so pass `--runner codex` for Codex models such as `sol`:
 
 ```bash
-PYTHONPATH=packages/sc-codex/scripts python3 -m ai_cli run --file /path/to/input.json
+PYTHONPATH=packages/sc-codex/scripts python3 -m ai_cli run --runner codex --file /path/to/input.json
 ```
 
 Run in background with Codex and custom output directory:
@@ -82,22 +84,50 @@ PYTHONPATH=packages/sc-codex/scripts python3 -m ai_cli run --runner codex --back
 Background outputs default to `.sc/sessions` (gitignored). For Codex, if `CODEX_HOME` is set,
 the default becomes `$CODEX_HOME/sessions`. Use `--output-dir` to override.
 
+Override model and reasoning effort from the command line (flags override the JSON payload):
+
+```bash
+PYTHONPATH=packages/sc-codex/scripts python3 -m ai_cli run --runner codex --model sol --effort low --file /path/to/input.json
+# -> codex exec --yolo --model gpt-6-sol -c 'model_reasoning_effort="low"' <prompt>
+```
+
 Model defaults:
 - Claude defaults to `sonnet`
-- Codex defaults to `gpt-5.2-codex`
+- Codex defaults to `gpt-6-astra`
 
-Codex model aliases:
-- `codex` -> `gpt-5.2-codex`
-- `codex-max` or `max` -> `gpt-5.1-codex-max`
-- `codex-mini` or `mini` -> `gpt-5.1-codex-mini`
-- `gpt-5` or `gtp-5` -> `gpt-5.2`
+Codex models (the catalog is defined once in `ai_cli/task_tool.py`; `CODEX_MODEL_ALIASES`,
+`CODEX_MODEL_EFFORTS`, `REASONING_EFFORTS`):
+
+| Alias | Model slug | Supported `--effort` levels |
+|-------|------------|-----------------------------|
+| `sol` | `gpt-6-sol` | low, medium, high, xhigh, max, ultra |
+| `astra` (default; also `codex`) | `gpt-6-astra` | low, medium, high, xhigh, max, ultra |
+| `luna` | `gpt-6-luna` | low, medium, high, xhigh, max |
+| — | `gpt-5.6-sol` | low, medium, high, xhigh, max, ultra |
+| `terra` | `gpt-5.6-terra` | low, medium, high, xhigh, max, ultra |
+| — | `gpt-5.6-luna` | low, medium, high, xhigh, max |
+| — | `gpt-5.5` | low, medium, high, xhigh |
+
+`minimal` effort is not supported: no current model accepts it (all start at `low`), so it is rejected.
+
+Full slugs are accepted as-is; unknown names raise an error listing valid aliases and slugs.
+
+Reasoning effort (`reasoning_effort` in JSON, `--effort` on the CLI):
+- Levels: `low`, `medium`, `high`, `xhigh`, `max`, `ultra`; unsupported levels for the model are rejected.
+- When unset, no `-c model_reasoning_effort` override is passed, so `~/.codex/config.toml` applies.
+- Carried in the payload, so background runs keep it.
+- Ignored by the Claude runner (`claude --print` has no equivalent).
+
+ChatGPT-account fallback: if Codex reports the model is "not supported when using Codex with a
+ChatGPT account", the runner retries once with `gpt-5.5` (effort clamped to `xhigh` if higher)
+and logs a `model_fallback` event.
 
 ## Logs
 
 Errors and schema validation failures are logged to:
 - `.claude/state/logs/<package-name>/` (derived from the runner script path)
 
-Task start/end events are also logged with `agentId`, `runner`, `model`, and parameters.
+Task start/end events are also logged with `agentId`, `runner`, `model`, `reasoning_effort`, and parameters.
 Logs include `prompt_preview` and `duration_ms`.
 
 ## Hook emulation

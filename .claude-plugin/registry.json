@@ -21,7 +21,7 @@
         "scripts": 0,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T06:05:07.118783+00:00"
+      "lastUpdated": "2026-09-28T03:32:40.641476+00:00"
     },
     {
       "name": "sc-ci-automation",
@@ -38,11 +38,11 @@
         "scripts": 1,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T06:05:07.119819+00:00"
+      "lastUpdated": "2026-09-28T03:32:40.642386+00:00"
     },
     {
       "name": "sc-codex",
-      "version": "0.13.0",
+      "version": "0.14.0",
       "description": "Run Codex agents via a Task Tool-compatible runner, with hooks emulation and background execution support.\n",
       "author": "synaptic-canvas",
       "license": "MIT",
@@ -55,7 +55,7 @@
         "scripts": 2,
         "schemas": 2
       },
-      "lastUpdated": "2026-09-23T06:05:07.120619+00:00"
+      "lastUpdated": "2026-09-28T03:32:40.643120+00:00"
     },
     {
       "name": "sc-coding-agent-hardening",
@@ -72,7 +72,7 @@
         "scripts": 0,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T06:05:07.121081+00:00"
+      "lastUpdated": "2026-09-28T03:32:40.643539+00:00"
     },
     {
       "name": "sc-commit-push-pr",
@@ -89,7 +89,7 @@
         "scripts": 9,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T06:05:07.121745+00:00"
+      "lastUpdated": "2026-09-28T03:32:40.644173+00:00"
     },
     {
       "name": "sc-delay-tasks",
@@ -106,7 +106,7 @@
         "scripts": 2,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T06:05:07.122357+00:00"
+      "lastUpdated": "2026-09-28T03:32:40.644761+00:00"
     },
     {
       "name": "sc-docling-pdf",
@@ -123,7 +123,7 @@
         "scripts": 0,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T06:05:07.123165+00:00"
+      "lastUpdated": "2026-09-28T03:32:40.645518+00:00"
     },
     {
       "name": "sc-gh-stack",
@@ -140,7 +140,7 @@
         "scripts": 3,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T06:05:07.124081+00:00"
+      "lastUpdated": "2026-09-28T03:32:40.646414+00:00"
     },
     {
       "name": "sc-git-worktree",
@@ -157,7 +157,7 @@
         "scripts": 7,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T06:05:07.125067+00:00"
+      "lastUpdated": "2026-09-28T03:32:40.647308+00:00"
     },
     {
       "name": "sc-github-issue",
@@ -174,7 +174,7 @@
         "scripts": 1,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T06:05:07.126099+00:00"
+      "lastUpdated": "2026-09-28T03:32:40.648300+00:00"
     },
     {
       "name": "sc-just",
@@ -191,7 +191,7 @@
         "scripts": 0,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T06:05:07.127102+00:00"
+      "lastUpdated": "2026-09-28T03:32:40.649212+00:00"
     },
     {
       "name": "sc-kanban",
@@ -208,7 +208,7 @@
         "scripts": 5,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T06:05:07.127868+00:00"
+      "lastUpdated": "2026-09-28T03:32:40.649896+00:00"
     },
     {
       "name": "sc-launch-term",
@@ -225,7 +225,7 @@
         "scripts": 3,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T06:05:07.128494+00:00"
+      "lastUpdated": "2026-09-28T03:32:40.650534+00:00"
     },
     {
       "name": "sc-launchpad",
@@ -242,7 +242,7 @@
         "scripts": 2,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T06:05:07.129165+00:00"
+      "lastUpdated": "2026-09-28T03:32:40.651213+00:00"
     },
     {
       "name": "sc-manage",
@@ -259,7 +259,7 @@
         "scripts": 8,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T06:05:07.129845+00:00"
+      "lastUpdated": "2026-09-28T03:32:40.651883+00:00"
     },
     {
       "name": "sc-refactory",
@@ -276,7 +276,7 @@
         "scripts": 10,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T06:05:07.130913+00:00"
+      "lastUpdated": "2026-09-28T03:32:40.652907+00:00"
     },
     {
       "name": "sc-repomix-nuget",
@@ -293,7 +293,7 @@
         "scripts": 3,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T06:05:07.131556+00:00"
+      "lastUpdated": "2026-09-28T03:32:40.653573+00:00"
     },
     {
       "name": "sc-roslyn-diff",
@@ -310,7 +310,7 @@
         "scripts": 6,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T06:05:07.132277+00:00"
+      "lastUpdated": "2026-09-28T03:32:40.654274+00:00"
     },
     {
       "name": "sc-rust",
@@ -327,7 +327,7 @@
         "scripts": 0,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T06:05:07.133451+00:00"
+      "lastUpdated": "2026-09-28T03:32:40.655335+00:00"
     },
     {
       "name": "sc-startup",
@@ -344,7 +344,7 @@
         "scripts": 1,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T06:05:07.134183+00:00"
+      "lastUpdated": "2026-09-28T03:32:40.656028+00:00"
     }
   ],
   "metadata": {
@@ -355,6 +355,6 @@
     "totalScripts": 63,
     "totalSchemas": 2
   },
-  "generated": "2026-09-23T06:05:07.134194+00:00",
-  "lastUpdated": "2026-09-23T06:05:07.134195+00:00"
+  "generated": "2026-09-28T03:32:40.656038+00:00",
+  "lastUpdated": "2026-09-28T03:32:40.656039+00:00"
 }
