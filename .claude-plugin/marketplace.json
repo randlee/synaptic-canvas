@@ -10,6 +10,30 @@
   },
   "plugins": [
     {
+      "name": "process-porn",
+      "description": "Find exactly what to remove or fix in sprint plans (md or beads), CI workflows and agent instructions (CLAUDE.md, AGENTS.md, skills, agent prompts) with the TypeSafe Jev agent. A router skill picks the category, an agent collects that category's context, and Jev answers one typed question per item; the report names exact lines and reasons. Requires TYPESAFE_API_KEY. Hosted in randlee/process-porn.",
+      "author": {
+        "name": "randlee"
+      },
+      "license": "MIT",
+      "keywords": [
+        "jev",
+        "typesafe",
+        "ceremony",
+        "review",
+        "ci",
+        "plans"
+      ],
+      "category": "tools",
+      "homepage": "https://github.com/randlee/process-porn",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/randlee/process-porn.git",
+        "path": "packages/process-porn",
+        "ref": "main"
+      }
+    },
+    {
       "name": "sc-ai-cli",
       "source": "./packages/sc-ai-cli",
       "description": "AI-first CLI design toolkit: create, review, and harden JSON-first CLIs with MCP-ready contract seams, typed error contracts, auditable mutations, repeatable scaffolding patterns, and stateful simulator design guidance.\n",
