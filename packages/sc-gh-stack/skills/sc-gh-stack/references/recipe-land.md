@@ -41,6 +41,7 @@ Refusals and what they mean:
 |---------|-------|-------|
 | "stack is out-of-date with its base branch" | Someone pushed to the trunk after the stack's bases were computed | Freeze the trunk, then land through fallback B mechanics (unstack, retarget the top, merge the top). Never `gh stack sync`: it rebases and force-pushes every frozen layer and restarts CI everywhere |
 | "PR #X's branch is not a linear descendant of PR #Y's branch" | A lower layer was rewritten after children branched | Fallback B |
+| "Required status check \"X\" is failing" | A lower layer is red and its fix lives on a layer above | `recipe-restack.md` section 2: unstack, relink only the green layers, close the red layer "Carried by #<above>; branch kept.", then land the new stack number. Never fallback B, `--admin`, or merging the red layer alone |
 | Draft PR listed | A layer is still a draft | `gh pr ready <pr#>`, retry |
 
 ## Fallback A: merge one stacked PR through the async API
