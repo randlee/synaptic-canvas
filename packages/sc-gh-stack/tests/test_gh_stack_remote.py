@@ -133,6 +133,20 @@ class RemoteTests(unittest.TestCase):
         self.assertEqual(client.pr_metadata([1])[1]['number'], 1)
         self.assertEqual(client.observations[1]['state']['freshness'], 'fresh')
 
+    def test_source_selection_preserves_fields_without_rest_fanout(self):
+        metadata = self.client()
+        self.assertEqual(len(metadata.pr_metadata([1, 2])), 2)
+        self.assertEqual(metadata.metrics['rest_requests'], 2)
+        self.assertEqual(metadata.metrics['graphql_requests'], 0)
+        status = self.client()
+        self.assertEqual(status.pr_details([1])[1]['ci'], 'SUCCESS')
+        self.assertEqual(status.metrics['rest_requests'], 0)
+        self.assertEqual(status.metrics['graphql_requests'], 1)
+        bulk = self.client()
+        self.assertEqual(len(bulk.pr_metadata([3, 4, 5])), 3)
+        self.assertEqual(bulk.metrics['rest_requests'], 0)
+        self.assertEqual(bulk.metrics['graphql_requests'], 1)
+
     def test_errors_stop_batches_no_fallback(self):
         for status, body in ((200, {'data': {'repository': {}}, 'errors': [{'message': 'partial failure'}]}), (401, {'message': 'Bad credentials'}), (403, {'message': 'Forbidden'}), (429, {'message': 'limited'})):
             with self.subTest(status=status):
