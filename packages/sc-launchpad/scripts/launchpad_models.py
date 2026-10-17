@@ -53,7 +53,7 @@ class LaunchpadInput(BaseModel):
     prompt: str = Field(min_length=1)
     tool: Literal["claude", "codex", "gemini"]
     model: Optional[str] = None
-    effort: Optional[Literal[agent_models.EFFORTS]] = None  # type: ignore[valid-type]
+    effort: Optional[str] = None  # validated per model in normalize_tool_model
     cwd: Optional[str] = Field(default=None, min_length=1)
     atm_identity: Optional[str] = None
     extra_args: List[str] = Field(default_factory=list)

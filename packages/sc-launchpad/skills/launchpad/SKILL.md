@@ -54,8 +54,10 @@ Optional fields:
 - `ephemeral`: `true` to keep claude/codex from persisting the session
 
 `output_format` defaults to `json` when `resume_session_id` or `isolation` is
-present, otherwise `text`. Payloads without the new fields behave exactly as
-before. Gemini returns `CAPABILITY.UNSUPPORTED` for `output_format: "json"`,
+present, otherwise `text`. Payloads without the new fields still validate, but
+defaults and some behavior changed in 0.14.0 (newest-model defaults, the `codex`
+alias, full ids in `data.model`, prompt on stdin); see the CHANGELOG "Changed"
+section. Gemini returns `CAPABILITY.UNSUPPORTED` for `output_format: "json"`,
 `resume_session_id`, `isolation`, `ephemeral`, and `effort`.
 
 ### Multi-turn isolated sessions
@@ -79,7 +81,8 @@ See the package README for the exact per-harness flags and what each
 isolation level guarantees.
 
 Claude aliases: `fable`, `opus`, `sonnet`, `haiku`. Codex aliases: `sol`, `astra`,
-`terra`, `luna`, `codex`. Full ids are also accepted; the README has the table.
+`terra`, `luna`, `codex`. Full ids are also accepted; a claude alias or id with
+`[1m]` appended selects the 1M-context variant. The README has the table.
 
 ## ATM Rules
 

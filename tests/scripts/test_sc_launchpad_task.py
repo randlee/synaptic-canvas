@@ -65,7 +65,6 @@ def test_child_env_sets_or_clears_atm_vars():
         {"session": "x"},
         {"isolation": {"tools": "none"}, "extra_args": ["--x"]},
         {"isolation": {"tools": "none"}, "atm_identity": "r1"},
-        {"effort": "extreme"},
     ],
 )
 def test_invalid_payloads_are_rejected(fields):
@@ -97,6 +96,8 @@ def test_structured_output_defaults():
         ("claude", None, "claude-fable-5-1"),
         ("claude", "opus", "claude-opus-5-5"),
         ("claude", "claude-haiku-5-5", "claude-haiku-5-5"),
+        ("claude", "fable[1m]", "claude-fable-5-1[1m]"),
+        ("claude", "claude-opus-5-5[1m]", "claude-opus-5-5[1m]"),
         ("codex", None, "gpt-6.1-sol"),
         ("codex", "codex", "gpt-6.1-sol"),
         ("codex", "astra", "gpt-6-astra"),
@@ -113,7 +114,10 @@ def test_normalize_tool_model(tool, model, expected):
     [
         ({"model": "gpt-4"}, "VALIDATION.INVALID_MODEL"),
         ({"tool": "codex", "model": "max"}, "VALIDATION.INVALID_MODEL"),  # legacy alias is gone
+        ({"model": "claude-sonnet-4-6"}, "VALIDATION.INVALID_MODEL"),  # ids outside the table
+        ({"tool": "codex", "model": "sol[1m]"}, "VALIDATION.INVALID_MODEL"),  # 1M is claude-only
         ({"model": "haiku", "effort": "ultra"}, "VALIDATION.INVALID_EFFORT"),
+        ({"effort": "extreme"}, "VALIDATION.INVALID_EFFORT"),
         ({"tool": "codex", "model": "luna", "effort": "ultra"}, "VALIDATION.INVALID_EFFORT"),
     ],
 )
@@ -128,6 +132,7 @@ def test_bad_model_or_effort_is_a_typed_failure(fields, code):
     ("tool", "model", "expected"),
     [
         ("claude", "claude-opus-5-5", "opus"),
+        ("claude", "claude-fable-5-1[1m]", "fable[1m]"),
         ("codex", "gpt-6.1-sol", "sol"),
         ("codex", "gpt-6-sol", "gpt-6-sol"),  # no alias points at it
         ("gemini", "x", "gemini"),

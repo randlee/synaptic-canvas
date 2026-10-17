@@ -45,7 +45,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Defaults are the newest models: claude `fable` (`claude-fable-5-1`), codex `sol`
   (`gpt-6.1-sol`). The `codex` alias now means the Codex default (`gpt-6.1-sol`,
   was `gpt-5.6-terra`); `luna` is `gpt-6-luna`. Legacy codex aliases were removed.
-  `data.model` is always the full model id.
+  `data.model` is always the full model id. Claude ids outside the table (for example
+  `claude-sonnet-4-6`, `claude-fable-5`) now fail with `VALIDATION.INVALID_MODEL`;
+  append `[1m]` to any claude alias or id (`fable[1m]`) for the 1M-context variant.
 - The runtime is split into modules (`launchpad_models`, `launchpad_commands`,
   `launchpad_process`, `launchpad_output`) behind the unchanged
   `sc_launchpad_task.py` entry point.
@@ -59,7 +61,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - `resume_session_id` is limited to `[A-Za-z0-9._:-]`.
 - `cwd` is required unless `isolation.cwd` is `"temp"`, and forbidden with it.
 - `isolation.tools: "none"` rejects `extra_args` and `atm_identity`.
-- Stop signals are trapped before the child starts, so no signal can orphan it.
+- Stop-signal handlers are installed before the child starts, so a stop request
+  during launch kills the child instead of leaving it running.
 
 ### Fixed
 - The runtime imports on Python 3.9 (pydantic models no longer use `X | None`).

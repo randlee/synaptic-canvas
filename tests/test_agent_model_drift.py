@@ -86,6 +86,12 @@ def test_resolution_and_flags():
     assert agent_models.model_flags("codex", spec, "max") == ["--model", "gpt-6-luna", "-c", "model_reasoning_effort=max"]
     assert agent_models.model_flags("claude", agent_models.resolve_model("claude", "opus"), None) == [
         "--model", "claude-opus-5-5"]
+    assert agent_models.resolve_model("claude", "fable[1m]").id == "claude-fable-5-1[1m]"
+    assert agent_models.alias_for("claude", "claude-fable-5-1[1m]") == "fable[1m]"
+    with pytest.raises(agent_models.ModelError, match=r"append \[1m\]"):
+        agent_models.resolve_model("claude", "claude-sonnet-4-6[1m]")
+    with pytest.raises(agent_models.ModelError):
+        agent_models.resolve_model("codex", "sol[1m]")
 
 
 # --- drift detection on synthetic CLI data ------------------------------------------
@@ -143,6 +149,39 @@ def test_claude_alias_the_cli_did_not_resolve_is_not_drift():
     live = current_claude()
     del live.aliases["haiku"]  # e.g. not available on this account
     assert discovery.claude_drift(live) == []
+
+
+def test_unknown_codex_effort_level_is_an_edit():
+    live = current_codex()
+    live.models["gpt-6-luna"] = ModelSpec("gpt-6-luna", agent_models.EFFORTS + ("hyper",), "medium")
+    edits = discovery.codex_drift(live)
+    assert edits[0].startswith("EFFORTS: add 'hyper'")
+
+
+def test_claude_probe_env_drops_overrides_and_blocks_the_api(monkeypatch):
+    for var in discovery.CLAUDE_OVERRIDE_VARS + ("ANTHROPIC_DEFAULT_FUTURE_MODEL",):
+        monkeypatch.setenv(var, "claude-haiku-5-5[1m]")
+    monkeypatch.setenv("ANTHROPIC_BASE_URL", "https://example.invalid")
+    monkeypatch.setenv("KEEP_ME", "1")
+    env = discovery._claude_env()
+    assert not [k for k in env if k in discovery.CLAUDE_OVERRIDE_VARS or k.startswith("ANTHROPIC_DEFAULT_")]
+    assert env["ANTHROPIC_BASE_URL"] == discovery.NO_API and env["KEEP_ME"] == "1"
+
+
+@pytest.mark.parametrize(
+    ("model", "accepted"),
+    [("claude-fable-5-1", True), ("claude-haiku-5-5", True), ("claude-haiku-5-5[1m]", False),
+     ("us.anthropic.claude-opus-5-5-v1:0", False), ("claude-opus-5-5@20261001", False)],
+)
+def test_probe_accepts_only_first_party_ids(model, accepted):
+    assert bool(discovery.CLAUDE_ID.match(model)) is accepted
+
+
+def test_claude_help_effort_parse():
+    help_text = "  --effort <level>   Reasoning effort (low, medium, high, xhigh, max)\n"
+    assert discovery.claude_efforts(help_text) == agent_models.CLAUDE_EFFORTS
+    assert discovery.claude_efforts("--effort <level>  (see docs, or `low`)") == ()
+    assert discovery.claude_efforts("no such flag") == ()
 
 
 def test_fix_instructions_name_every_file_to_touch():

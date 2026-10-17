@@ -63,6 +63,9 @@ default is the newest flagship of each tool.
 | claude | `fable` (`claude-fable-5-1`), `opus`, `sonnet`, `haiku` | `fable` |
 | codex | `sol` (`gpt-6.1-sol`), `astra` (`gpt-6-astra`), `terra` (`gpt-5.6-terra`), `luna` (`gpt-6-luna`), `codex` (the Codex default, `gpt-6.1-sol`) | `sol` |
 
+Append `[1m]` to any claude alias or id (`fable[1m]`, `claude-opus-5-5[1m]`) for
+the 1M-context variant.
+
 `effort` sets reasoning effort: claude `low`..`max` (`--effort`), codex
 `low`..`ultra` (`-c model_reasoning_effort=<level>`; `luna` models stop at
 `max`). Omit it to use the CLI's default. An unknown model or an effort the

@@ -26,6 +26,7 @@ import subprocess
 import sys
 import tempfile
 import threading
+import time
 from pathlib import Path
 from typing import Any, Dict, List, NamedTuple, Optional, Tuple
 
@@ -35,9 +36,29 @@ sys.path.insert(0, str(CANONICAL.parent))
 
 import agent_models  # noqa: E402
 
-PROBE_SECONDS = 30
+PROBE_SECONDS = 30  # total budget per probe; only a hung CLI ever reaches it
 FAMILY = re.compile(r"^gpt-(\d+(?:\.\d+)*)-([a-z]+)$")
+CLAUDE_ID = re.compile(r"^claude-[a-z]+(-\d+)+$")
 CLAUDE_EFFORT_HELP = re.compile(r"--effort\b[^(]*\(([^)]*)\)", re.DOTALL)
+EFFORT_WORD = re.compile(r"^[a-z]+$")
+
+# Settings that make claude resolve an alias to something other than the first-party
+# default (1M variants, Bedrock/Vertex ids, a pinned model). The probe drops them all.
+CLAUDE_OVERRIDE_VARS = (
+    "ANTHROPIC_MODEL", "ANTHROPIC_SMALL_FAST_MODEL", "ANTHROPIC_DEFAULT_OPUS_MODEL",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL", "ANTHROPIC_DEFAULT_HAIKU_MODEL", "ANTHROPIC_DEFAULT_FABLE_MODEL",
+    "CLAUDE_CODE_USE_BEDROCK", "CLAUDE_CODE_USE_VERTEX", "CLAUDE_CODE_SUBAGENT_MODEL",
+)
+# A closed local port: claude still prints its init event (with the resolved model), but
+# its API request can never leave the machine, so the probe cannot spend tokens.
+NO_API = "http://127.0.0.1:9"
+
+
+def _claude_env() -> Dict[str, str]:
+    env = {k: v for k, v in os.environ.items()
+           if k not in CLAUDE_OVERRIDE_VARS and not k.startswith("ANTHROPIC_DEFAULT_")}
+    env["ANTHROPIC_BASE_URL"] = NO_API
+    return env
 
 
 class LiveCodex(NamedTuple):
@@ -68,6 +89,7 @@ class _Lines:
     """Read a child's stdout lines on a thread so every wait has a deadline."""
 
     def __init__(self, proc: "subprocess.Popen[bytes]") -> None:
+        self._deadline = time.monotonic() + PROBE_SECONDS
         self._queue: "queue.Queue[Optional[bytes]]" = queue.Queue()
         thread = threading.Thread(target=self._pump, args=(proc,), daemon=True)
         thread.start()
@@ -79,10 +101,10 @@ class _Lines:
         self._queue.put(None)
 
     def json_events(self):
-        """Yield decoded JSON objects; stop at EOF or when the probe deadline passes."""
+        """Yield decoded JSON objects; stop at EOF or when the probe's total budget is spent."""
         while True:
             try:
-                line = self._queue.get(timeout=PROBE_SECONDS)
+                line = self._queue.get(timeout=max(0.0, self._deadline - time.monotonic()))
             except queue.Empty:
                 return
             if line is None:
@@ -171,8 +193,8 @@ def _claude_resolve(exe: str, alias: str, cwd: str) -> Optional[str]:
             "--tools", "", "--strict-mcp-config", "--safe-mode", "--disable-slash-commands",
             "--no-session-persistence"]
     try:
-        proc = subprocess.Popen(argv, cwd=cwd, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                                stderr=subprocess.DEVNULL)
+        proc = subprocess.Popen(argv, cwd=cwd, env=_claude_env(), stdin=subprocess.PIPE,
+                                stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
     except OSError:
         return None
     try:
@@ -182,12 +204,20 @@ def _claude_resolve(exe: str, alias: str, cwd: str) -> Optional[str]:
         for event in _Lines(proc).json_events():
             if event.get("type") == "system" and event.get("subtype") == "init":
                 model = event.get("model")
-                return model if isinstance(model, str) and model else None
+                # Anything but a plain first-party id (a provider id, a variant) is no data.
+                return model if isinstance(model, str) and CLAUDE_ID.match(model) else None
         return None
     except OSError:
         return None
     finally:
         _kill(proc)
+
+
+def claude_efforts(help_text: str) -> Tuple[str, ...]:
+    """The ``--effort`` levels in ``claude --help``; () when the wording is not recognised."""
+    match = CLAUDE_EFFORT_HELP.search(help_text)
+    efforts = tuple(e.strip() for e in match.group(1).split(",")) if match else ()
+    return efforts if all(EFFORT_WORD.match(e) for e in efforts) else ()
 
 
 def claude_live() -> Optional[LiveClaude]:
@@ -199,8 +229,7 @@ def claude_live() -> Optional[LiveClaude]:
                                    timeout=PROBE_SECONDS).stdout
     except (OSError, subprocess.TimeoutExpired):
         return None
-    match = CLAUDE_EFFORT_HELP.search(help_text)
-    efforts = tuple(e.strip() for e in match.group(1).split(",")) if match else ()
+    efforts = claude_efforts(help_text)
     with tempfile.TemporaryDirectory(prefix="sc-model-drift-") as cwd:
         resolved = {alias: _claude_resolve(exe, alias, cwd) for alias in agent_models.ALIASES["claude"]}
     aliases = {alias: model for alias, model in resolved.items() if model}
@@ -241,6 +270,10 @@ def codex_drift(live: LiveCodex) -> List[str]:
     table = agent_models.MODELS["codex"]
     aliases = agent_models.ALIASES["codex"]
     edits: List[str] = []
+    unknown = sorted({e for spec in live.models.values() for e in spec.efforts} - set(agent_models.EFFORTS))
+    if unknown:
+        edits.append(f"EFFORTS: add {', '.join(map(repr, unknown))} in its place (lowest first) - "
+                     "codex reports these levels")
     for model_id, spec in live.models.items():
         if model_id not in table:
             edits.append(f'MODELS["codex"]: add  {spec_literal(spec)}')

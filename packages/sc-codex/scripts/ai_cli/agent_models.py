@@ -76,6 +76,9 @@ ALIASES: Dict[str, Dict[str, str]] = {
 # Used when a launch names no model: the newest flagship of each tool.
 DEFAULT_ALIAS = {"claude": "fable", "codex": "sol"}
 
+# Claude's 1M-context variant: any claude alias or id plus this suffix (`fable[1m]`).
+CLAUDE_1M = "[1m]"
+
 
 class ModelError(ValueError):
     """Unknown model or unsupported effort; the message lists the valid choices."""
@@ -87,16 +90,23 @@ def model_choices(tool: str) -> List[str]:
 
 
 def resolve_model(tool: str, name: Optional[str] = None) -> ModelSpec:
-    """Map an alias or full id (default: the tool's default) to its ``ModelSpec``."""
+    """Map an alias or full id (default: the tool's default) to its ``ModelSpec``.
+
+    A claude name ending in ``[1m]`` resolves like the bare name and keeps the suffix
+    on the id, so ``--model`` asks for the 1M-context variant.
+    """
     name = name or DEFAULT_ALIAS[tool]
-    model_id = ALIASES[tool].get(name, name)
-    spec = MODELS[tool].get(model_id)
+    base, suffix = name, ""
+    if tool == "claude" and name.endswith(CLAUDE_1M):
+        base, suffix = name[: -len(CLAUDE_1M)], CLAUDE_1M
+    spec = MODELS[tool].get(ALIASES[tool].get(base, base))
     if spec is None:
+        one_m = f"; append {CLAUDE_1M} for 1M context" if tool == "claude" else ""
         raise ModelError(
             f"Unknown {tool} model '{name}'. Use an alias ({', '.join(ALIASES[tool])}) "
-            f"or a full id ({', '.join(MODELS[tool])})."
+            f"or a full id ({', '.join(MODELS[tool])}){one_m}."
         )
-    return spec
+    return spec._replace(id=spec.id + suffix) if suffix else spec
 
 
 def resolve_effort(spec: ModelSpec, effort: Optional[str]) -> Optional[str]:
@@ -112,9 +122,10 @@ def resolve_effort(spec: ModelSpec, effort: Optional[str]) -> Optional[str]:
 
 def alias_for(tool: str, model_id: str) -> Optional[str]:
     """The family alias that points at ``model_id`` (never the `codex` catch-all), if any."""
+    base = model_id[: -len(CLAUDE_1M)] if tool == "claude" and model_id.endswith(CLAUDE_1M) else model_id
     for alias, target in ALIASES[tool].items():
-        if target == model_id and alias != tool:
-            return alias
+        if target == base and alias != tool:
+            return alias + model_id[len(base):]
     return None
 
 
