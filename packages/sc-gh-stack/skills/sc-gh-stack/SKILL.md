@@ -50,7 +50,9 @@ local reports may retain useful evidence with explicit unknowns.
 `.claude/scripts/gh_stack_view.py`) is the status call. Reuse sufficient
 observations and mutation responses; obtain only missing or changed facts
 needed for the next write or dispatch. Scope with `--stack <number-or-branch>`
-or `--trunk`; `--json` includes every layer. Use `--refresh-git` for current
+or `--trunk`; `--compact-json` bounds routine agent output without changing
+acquisition, while `--json` includes every layer. Compact output is not complete
+composition evidence and never selects the top or a merge range. Use `--refresh-git` for current
 remote refs, `--refresh-status` for hosted facts, or `--refresh` for both.
 Do not duplicate the hosted executor's preflight with precautionary scans.
 Paste requested status output verbatim. Never fan out `gh pr view` per branch,

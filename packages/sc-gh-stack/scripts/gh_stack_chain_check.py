@@ -31,10 +31,10 @@ import shlex
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from gh_stack_shared import ToolError, guarded, is_ancestor, origin_sha, run, short  # noqa: E402
-from gh_stack_local import read_local_snapshot, evaluate_stack_conflicts, _branch as valid_branch
+from gh_stack_shared import ToolError, guarded, is_ancestor, origin_sha, run, short, ReportArgumentParser, compact_report  # noqa: E402
+from gh_stack_local import read_local_snapshot, evaluate_stack_conflicts, scope_diagnostics, _branch as valid_branch
 from gh_stack_remote import StackDataClient
-from gh_stack_view import add_refresh_options, _selected
+from gh_stack_view import add_refresh_options, _selected, _catalog_composition, _scope_epoch, _git_scope_fresh
 
 
 def merge_clean(base_sha: str, head_sha: str) -> bool | None:
@@ -101,14 +101,15 @@ def resolve_layers(args: list[str], by_number: dict[int, dict], by_branch: dict[
     return layers
 
 
-def evaluate(trunk: str, layers: list[str], by_branch: dict[str, dict], *, fetched: bool, use_pr: bool, refs=None, remote="origin", conflicts=None) -> dict:
+def evaluate(trunk: str, layers: list[str], by_branch: dict[str, dict], *, fetched: bool, use_pr: bool, refs=None, remote="origin", conflicts=None, ref_observations=None, pr_observations=None) -> dict:
     """Pure chain evaluation over injected lookups (origin_sha, is_ancestor, merge_clean)."""
     rows: list[dict] = []
     problems: list[str] = []
     notes: list[str] = []
     resolve = (lambda name: refs.get(f"refs/remotes/{remote}/{name}")) if refs is not None else origin_sha
-    trunk_sha = resolve(trunk) if fetched else None
-    if fetched and trunk_sha is None:
+    fresh = lambda name: fetched and (ref_observations is None or ref_observations.get(name, {}).get('fresh') is True)
+    trunk_sha = resolve(trunk) if fresh(trunk) else None
+    if fetched and trunk_sha is None and ref_observations is None:
         raise ToolError(f"origin/{trunk} does not exist; pass the trunk branch name exactly as on origin")
     if len(layers) != len(set(layers)):
         problems.append("a branch appears twice in the proposed order")
@@ -119,15 +120,16 @@ def evaluate(trunk: str, layers: list[str], by_branch: dict[str, dict], *, fetch
     parent_name = trunk
     parent_sha = trunk_sha
     for idx, name in enumerate(layers, start=1):
-        sha = resolve(name) if fetched else None
+        sha = resolve(name) if fresh(name) else None
         pr = by_branch.get(name) if use_pr else None
+        trusted = lambda field: pr_observations is None or pr_observations.get((pr or {}).get('number'), {}).get(field, {}).get('freshness') == 'fresh'
         row = {"layer": idx, "branch": name, "origin": sha, "pr": pr.get("number") if pr else None,
-               "pushed": None if not fetched else sha is not None, "contains_parent": None,
+               "pushed": None if not fresh(name) else sha is not None, "contains_parent": None,
                "pr_base_ok": None, "pr_head_ok": None, "draft": bool(pr and pr.get("isDraft")),
                "pr_state": pr.get("state") if pr else None, "expected_base": parent_name}
-        if fetched and sha is None:
+        if fresh(name) and sha is None:
             problems.append(f"L{idx} {name}: not on origin (unpushed) -> push it before linking")
-        elif fetched and parent_sha:
+        elif sha and parent_sha:
             row["contains_parent"] = is_ancestor(parent_sha, sha)
             if not row["contains_parent"]:
                 if idx == 1:
@@ -139,16 +141,16 @@ def evaluate(trunk: str, layers: list[str], by_branch: dict[str, dict], *, fetch
                 else:
                     problems.append(f"L{idx} {name}: does not contain parent {parent_name} @ {short(parent_sha)} -> cut from a stale head or a fork; declare a merge-forward or reorder")
         if pr:
-            if pr.get("state") is not None and pr.get("state") != "OPEN":
+            if trusted('state') and pr.get("state") is not None and pr.get("state") != "OPEN":
                 problems.append(f"L{idx} {name}: PR #{pr['number']} is {pr.get('state')} -> a merged/closed PR cannot be linked; open a new one")
-            if pr.get("isDraft"):
+            if trusted('isDraft') and pr.get("isDraft"):
                 problems.append(f"L{idx} {name}: PR #{pr['number']} is DRAFT -> blocks gh stack merge; mark ready before landing")
-            base_ok = pr.get("baseRefName") == parent_name if pr.get('baseRefName') is not None else None
+            base_ok = pr.get("baseRefName") == parent_name if trusted('baseRefName') and pr.get('baseRefName') is not None else None
             row["pr_base_ok"] = base_ok
             if base_ok is False:
                 notes.append(f"L{idx} {name}: PR #{pr['number']} base is {pr.get('baseRefName')}, expected {parent_name}; `gh stack link --base {trunk} ...` corrects it, verify afterwards")
             if fetched and sha:
-                head_ok = pr.get("headRefOid") == sha if pr.get('headRefOid') is not None else None
+                head_ok = pr.get("headRefOid") == sha if trusted('headRefOid') and pr.get('headRefOid') is not None else None
                 row["pr_head_ok"] = head_ok
                 if head_ok is False:
                     problems.append(f"L{idx} {name}: PR #{pr['number']} head {short(pr.get('headRefOid'))} != origin {short(sha)} -> stale PR head; wait for GitHub or re-push")
@@ -156,7 +158,7 @@ def evaluate(trunk: str, layers: list[str], by_branch: dict[str, dict], *, fetch
             notes.append(f"L{idx} {name}: no PR yet; `gh stack link` creates one with base {parent_name}")
         rows.append(row)
         parent_name = name
-        parent_sha = sha or parent_sha
+        parent_sha = sha if ref_observations is not None else sha or parent_sha
     landing: dict = {"clean": None, "reason": "not judged"}
     if fetched and rows and rows[-1]["origin"] and trunk_sha and not any(r["pushed"] is False for r in rows):
         result = conflicts['combined']['clean'] if conflicts is not None else merge_clean(trunk_sha, rows[-1]["origin"])
@@ -238,7 +240,7 @@ def preflight(*, need_gh: bool) -> None:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap = ReportArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--trunk", required=True, help="branch the stack lands on (e.g. develop, integrate/phase-bc)")
     ap.add_argument("layers", nargs="+", help="proposed order bottom to top: branch names or PR numbers")
     ap.add_argument("--no-fetch", action="store_true", help="skip `git fetch origin`; compare against the cached origin/* refs")
@@ -246,11 +248,13 @@ def main() -> int:
     ap.add_argument("--json", action="store_true", help="emit the report as JSON")
     add_refresh_options(ap)
     args = ap.parse_args()
+    if args.compact_json and (args.json or args.full):
+        ap.error('--compact-json conflicts with --json and --full')
     if args.no_fetch and (args.refresh_git or args.refresh):
         ap.error('--no-fetch conflicts with an explicit git refresh')
     if args.no_pr and (args.refresh_status or args.refresh):
         ap.error('--no-pr conflicts with an explicit hosted refresh')
-    return guarded("gh-stack-chain-check", lambda: run_check(args), json_errors=args.json)
+    return guarded("gh-stack-chain-check", lambda: run_check(args), json_errors=args.json or args.compact_json)
 
 
 def run_check(args: argparse.Namespace) -> int:
@@ -287,13 +291,15 @@ def run_check(args: argparse.Namespace) -> int:
     layers = resolve_layers(args.layers, by_number, by_branch, offline=True)
     if any(not valid_branch(branch) for branch in layers):
         raise ToolError('invalid layer branch name', 'INPUT.INVALID_REF')
+    catalog_scope = [stack for stack in stacks if any(branch['name'] in layers for branch in stack['branches'])]
+    catalog_scope.append({'trunk': args.trunk, 'branches': [{'name': branch} for branch in layers]})
     git_observation = client.refresh_git(force=getattr(args, 'refresh_git', False) or getattr(args, 'refresh', False),
                                          offline=args.no_fetch or status_only, refs=[args.trunk, *layers])
     if git_observation['source'] == 'fetched':
         refreshed = read_local_snapshot(remote, run_fn=run)
         # A catalog change while numeric identifiers were being resolved needs
         # a new report; do not silently pin the old mapping to the new catalog.
-        if refreshed['stacks'] != snapshot['stacks']:
+        if _catalog_composition(refreshed, catalog_scope) != _catalog_composition(snapshot, catalog_scope):
             raise ToolError('catalog changed during layer resolution; retry local status', 'STATE.SNAPSHOT_CHANGED')
         snapshot = refreshed
     refs = snapshot['refs']
@@ -314,7 +320,10 @@ def run_check(args: argparse.Namespace) -> int:
         details.update(client.pr_metadata(remaining, force=force, offline=offline, head_map=head_map))
     for branch, pr in list(known.items()):
         known[branch] = details.get(pr['number'], pr)
-    report = evaluate(args.trunk, layers, known, fetched=bool(refs.get(f'refs/remotes/{remote}/{args.trunk}')), use_pr=True, refs=refs, remote=remote, conflicts=conflicts)
+    report = evaluate(args.trunk, layers, known,
+                      fetched=True if git_observation.get('refs') is not None else bool(refs.get(f'refs/remotes/{remote}/{args.trunk}')),
+                      use_pr=True, refs=refs, remote=remote, conflicts=conflicts, ref_observations=git_observation.get('refs'),
+                      pr_observations=client.observations)
     unknown_count = 0
     local = {entry['branch']: entry for entry in conflicts['layers']}
     for row in report['rows']:
@@ -330,29 +339,29 @@ def run_check(args: argparse.Namespace) -> int:
             row['pr_base_ok'] = row['pr_head_ok'] = None
         if entry['clean'] is False:
             report['problems'].append(f"L{row['layer']} {row['branch']}: local content conflict against intended parent")
-        if not git_observation['fresh']:
+        row_fresh = _git_scope_fresh(git_observation, [args.trunk, row['branch'], row.get('expected_base', args.trunk)])
+        if not _git_scope_fresh(git_observation, [row['branch']]):
             row['pushed'] = None
-        row['unknown'] = entry['clean'] is None or stale or not git_observation['fresh']
+        row['unknown'] = entry['clean'] is None or stale or not row_fresh
         if row['unknown']:
             unknown_count += 1
-    discovery_incomplete = [warning for warning in snapshot['warnings'] if not warning.startswith('No local gh-stack catalog')]
+    discovery_incomplete = [warning for warning in scope_diagnostics(snapshot, stacks=catalog_scope, branches=layers)
+                            if not warning.startswith('No local gh-stack catalog')]
     if conflicts['clean'] is None or unknown_count or discovery_incomplete:
         report['linkable'] = None if not report['problems'] else False
     elif report['problems']:
         report['linkable'] = False
     report['local_mergeability'] = conflicts
-    if read_local_snapshot(remote, run_fn=run)['fingerprint'] != snapshot['fingerprint']:
-        report['linkable'] = None
-        report['landing']['clean'] = None
-        conflicts['clean'] = None
-        report['problems'].append('snapshot changed during evaluation; retry local status')
+    final_snapshot = read_local_snapshot(remote, run_fn=run)
+    if _scope_epoch(final_snapshot, catalog_scope, remote=remote, branches=[args.trunk, *layers]) != _scope_epoch(snapshot, catalog_scope, remote=remote, branches=[args.trunk, *layers]):
+        raise ToolError('Snapshot changed during evaluation; retry the scoped chain check', 'STATE.SNAPSHOT_CHANGED')
     report.update(schema_version=1, success=True, git_observation=git_observation, observations=client.observations,
                   catalogs=snapshot.get('catalogs', []),
                   metrics=client.metrics, warnings=list(dict.fromkeys(snapshot['warnings'] + client.warnings)), unknown_count=unknown_count,
                   snapshot_id=hashlib.sha256((snapshot['fingerprint'] + str(client.snapshot_id)).encode()).hexdigest()[:24])
     report['link_command'] = link_command(report) if report['linkable'] is True else None
-    if args.json:
-        print(json.dumps(report, indent=2))
+    if args.json or getattr(args, 'compact_json', False):
+        print(json.dumps(compact_report(report) if getattr(args, 'compact_json', False) else report, indent=2))
     else:
         print(render(report, full=getattr(args, 'full', False)))
     return 0 if report["linkable"] is True else 1

@@ -97,6 +97,11 @@ Order: fetch → reconcile GitHub's stack (pulls remotely-added branches; non-in
 This upstream command refreshes remote state; routine status uses
 `gh_stack_view.py --stack <number-or-branch> --json` instead, which derives
 local state and shares observations before acquiring missing hosted facts.
+For routine agent status, `--compact-json` limits rows/stacks and diagnostics
+while retaining full-scope verdict/counts; acquisition is unchanged. It is not
+complete composition evidence: retain full `--json` for top/range selection.
+`--compact-json` conflicts with `--json` and `--full`; complete JSON still
+accepts `--full`. Invalid arguments produce `INPUT.INVALID_ARGUMENT` JSON (exit 2).
 
 ```json
 {
@@ -135,11 +140,16 @@ No arg → current stack; PR# → that PR + everything below; stack# → every u
 
 **Field note:** `merge` blocks the whole set on "not a linear descendant" or "out-of-date with base" — it doesn't selectively skip a bad layer. A scoped `gh stack merge <lower-pr>` can sweep in an upper *empty* draft too (GitHub marks it merged, deletes its branch). Inspect sufficient verified remote composition before scoping; otherwise use scoped `--refresh` and the compact projection in `recipe-evidence.md`. Ordinary local JSON and `--refresh-status` do not certify membership.
 
-**Field note:** `gh pr merge` on a stacked PR: `must be merged using the asynchronous merge REST API`. Working fallback (poll until `"merged"`; an abbreviated SHA fails with the misleading `Pull request head branch was modified` — always pass the full 40-char `headRefOid`):
+**Field note:** `gh pr merge` on a stacked PR: `must be merged using the asynchronous merge REST API`. Working fallback (reuse the exact full `headRefOid`; an abbreviated SHA fails with the misleading `Pull request head branch was modified`):
 ```bash
 gh api -X PUT repos/{owner}/{repo}/pulls/{n}/merge-async -f merge_method=merge -f sha=<FULL headRefOid>
-gh api repos/{owner}/{repo}/pulls/{n}/merge-async/<uuid>   # poll
+gh api repos/{owner}/{repo}/pulls/{n}/merge-async/<uuid>   # read only this operation
 ```
+Poll only the returned UUID with backoff and a finite deadline; stop on terminal
+failure, authentication failure or throttle response. Respect `Retry-After`/reset
+and shared cooldowns; do not switch protocols or run discovery/status inside the
+loop. At deadline report the outstanding UUID, never resubmit the merge. See
+`recipe-land.md` fallback A for the complete recovery strategy.
 After the parent merges, GitHub retargets/rebases the child branch within ~30s; once trees are confirmed identical, `git fetch && git reset --hard origin/<child>` — never force-push over it.
 
 **Field note:** to check whether a PR's base was ever silently retargeted, filter `/events` (not `/timeline`, which misses it): `gh api repos/{owner}/{repo}/issues/{n}/events | jq '.[] | select(.event=="base_ref_changed")'`.
@@ -156,11 +166,11 @@ Status messages go to **stderr** (`✓`/`✗`/`⚠`/`ℹ` prefixes); data output
 | 1 | Generic error | Read stderr |
 | 2 | Not in a stack / unknown stack# | `gh stack init`, or check the number |
 | 3 | Rebase conflict | Resolve, `git add`, `gh stack rebase --continue` |
-| 4 | GitHub API failure | Check `gh auth status`, retry |
+| 4 | GitHub API failure | Inspect the existing error; auth failures stop dependent work, throttle responses honor shared cooldown/Retry-After/reset; other transient errors get bounded backoff within a finite deadline; reconcile an uncertain mutation outcome before retrying, never blind retry or protocol switching |
 | 5 | Invalid arguments | Fix invocation (e.g. `add` off the top branch) |
 | 6 | Disambiguation required | `gh stack checkout <non-shared-branch>` first |
 | 7 | Rebase in progress | `--continue` or `--abort` |
-| 8 | Stack file locked | Wait (~5s timeout), retry |
+| 8 | Stack file locked | Inspect the holder; bounded wait (~5s lock timeout), then report a persistent lock instead of retrying indefinitely |
 | 9 | Stacked PRs unavailable | Tell user; repo admin must enable |
 | 10 | Modify recovery required | `gh stack modify --abort` (never invoke `modify` yourself) |
 
@@ -182,3 +192,7 @@ echo "$output" | jq -r '.stacks[].trunk'
 4. `checkout` by branch name only resolves locally tracked stacks — use a stack#/PR# to pull from GitHub.
 5. `submit` generates title/body from commits, no custom-title flag — `gh pr edit` after.
 6. `link` never removes a PR and cannot insert mid-stack (see field notes above).
+7. Shared-client pacing covers helper acquisition, not arbitrary direct `gh`
+   commands in other agents. Use one stack writer/acquisition coordinator and
+   reuse shared observations; never launch per-worktree `gh` scan/checkout loops
+   or parallel CI watchers to evade a cooldown.

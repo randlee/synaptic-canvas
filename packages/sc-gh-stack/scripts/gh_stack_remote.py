@@ -59,12 +59,17 @@ class StackDataClient:
     value is retained with freshness=stale, never promoted to fresh on failure.
     """
 
-    def __init__(self, repository, cache_dir=None, run_fn=run, clock=time.time, deadline_seconds=30, monotonic=time.monotonic):
+    def __init__(self, repository, cache_dir=None, run_fn=run, clock=time.time, deadline_seconds=30, monotonic=time.monotonic, sleep=time.sleep):
         self.repository = repository
         self.run = run_fn
         self.clock = clock
         self.monotonic = monotonic
-        self.deadline = monotonic() + deadline_seconds
+        self.sleep = sleep
+        # Local discovery and git transport must not consume the hosted-query
+        # allowance. Start it only on the first API attempt, then retain one
+        # deadline across all hosted acquisition methods on this client.
+        self.deadline_seconds = deadline_seconds
+        self.deadline = None
         self.host = repository.get('host') or 'github.com'
         self.owner = repository.get('owner')
         self.name = repository.get('name')
@@ -157,6 +162,8 @@ class StackDataClient:
     def _request(self, endpoint, query=None, etag=None):
         if self._stopped or not self._valid_repository:
             return None, {}, None
+        if self.deadline is None:
+            self.deadline = self.monotonic() + self.deadline_seconds
         remaining = self.deadline - self.monotonic()
         if remaining <= 0:
             self._warn('GitHub acquisition deadline reached; remaining hosted facts are unknown')
@@ -168,6 +175,18 @@ class StackDataClient:
                 self._warn('GitHub refresh deferred: shared cooldown or refresh in progress')
                 self._stopped = True
                 return None, {}, None
+            # Cooperating adapter clients share a small start-rate bound, not
+            # just reactive throttle handling. The lock remains held through
+            # the request. Direct gh/extension calls outside this adapter do
+            # not participate and remain the caller's responsibility.
+            delay = max(0, pressure.get('next_request_at', 0) - self.clock())
+            remaining = self.deadline - self.monotonic()
+            if delay >= remaining:
+                self._warn('GitHub acquisition deadline reached before shared request slot; remaining hosted facts are unknown')
+                self._stopped = True
+                return None, {}, None
+            if delay:
+                self.sleep(delay)
             cmd = ['gh', 'api', '--hostname', self.host, '-i', endpoint]
             if query is not None:
                 cmd += ['-f', 'query=' + query]
@@ -178,6 +197,8 @@ class StackDataClient:
                 self._warn('GitHub acquisition deadline reached; remaining hosted facts are unknown')
                 self._stopped = True
                 return None, {}, None
+            pressure['next_request_at'] = self.clock() + .25
+            _write(self.pressure_path, pressure)
             self.metrics['requests'] += 1
             self.metrics['graphql_requests' if query else 'rest_requests'] += 1
             try:
@@ -223,7 +244,7 @@ class StackDataClient:
                     until = max(until, float(headers.get('x-ratelimit-reset', 0)))
                 except ValueError:
                     pass
-                _write(self.pressure_path, {'until': until, 'reason': 'throttle'})
+                _write(self.pressure_path, dict(pressure, until=until, reason='throttle'))
                 self._warn('GitHub throttled; shared cooldown recorded')
             if throttle or status not in (200, 201, 304) or proc.returncode != 0 or errors:
                 self._stopped = True
@@ -236,7 +257,7 @@ class StackDataClient:
                     until = float(headers.get('x-ratelimit-reset', self.clock() + 60))
                 except ValueError:
                     until = self.clock() + 60
-                _write(self.pressure_path, {'until': until, 'reason': 'primary exhausted'})
+                _write(self.pressure_path, dict(pressure, until=until, reason='primary exhausted'))
                 self._stopped = True
             return body, headers, status
 
@@ -421,6 +442,11 @@ class StackDataClient:
                 if (not force or coalesced) and cached.get('complete') and 0 <= self.clock() - cached.get('time', -1e20) < 120:
                     observed(branch, cached)
                     continue
+                if ((not force or coalesced)
+                        and 0 <= self.clock() - cached.get('unavailable_at', -1e20) < 60):
+                    observed(branch, cached)
+                    self._warn('Branch %s: PR mapping unknown; retry deferred after incomplete refresh' % branch)
+                    continue
                 if offline or not acquired or self._stopped:
                     observed(branch, {**cached, 'complete': False, 'reason': 'PR mapping unavailable: offline, failed request, or refresh in progress'})
                     self._warn('Branch %s: PR mapping unknown' % branch)
@@ -440,16 +466,27 @@ class StackDataClient:
                     data['branches'][branch] = entry
                     if entry['pr']:
                         self._store(data, entry['pr'], source, COMMON)
+                else:
+                    # A failed/partial acquisition is unknown, not confirmed
+                    # absence. Persist the failure separately from the prior
+                    # observation so later worktrees do not immediately repeat
+                    # the same denied or ambiguous query.
+                    entry = dict(data['branches'].get(branch, {}), complete=False,
+                                 unavailable_at=self.clock(), reason=entry['reason'])
+                    data['branches'][branch] = entry
                 observed(branch, entry)
                 if not complete:
                     self._warn('Branch %s: ambiguous or incomplete PR mapping' % branch)
             if len(missing) <= 2:
                 for branch in missing:
                     if self._stopped:
-                        observed(branch, {'reason': 'Acquisition stopped after a failed request'})
+                        accept(branch, [], None, False)
                         continue
                     endpoint = 'repos/%s/%s/pulls?%s' % (self.owner, self.name, urlencode({'state': 'open', 'head': self.owner + ':' + branch, 'per_page': 100}))
-                    body = self._rest(data, endpoint, force=force)
+                    # Mapping freshness/retry suppression is managed above.
+                    # Revalidate the REST body on an actual retry rather than
+                    # re-promoting an older response after a failed refresh.
+                    body = self._rest(data, endpoint, force=True)
                     nodes = [{**self._normalize(pr), 'headRepositoryNameWithOwner': ((pr.get('head') or {}).get('repo') or {}).get('full_name')} for pr in body if isinstance(pr, dict)] if isinstance(body, list) else []
                     complete = isinstance(body, list) and len(nodes) == len(body) and not re.search(r'rel="next"', data['rest'].get(endpoint, {}).get('link') or '')
                     accept(branch, nodes, 'REST', bool(complete))
@@ -458,7 +495,7 @@ class StackDataClient:
                     batch = missing[start:start + 50]
                     if self._stopped:
                         for branch in batch:
-                            observed(branch, {'reason': 'Acquisition stopped after a failed request'})
+                            accept(branch, [], None, False)
                         continue
                     selection = ' '.join('b%s:pullRequests(headRefName:%s,states:OPEN,first:2){nodes{%s headRepository{nameWithOwner}} pageInfo{hasNextPage}}' % (i, json.dumps(branch), ' '.join(COMMON)) for i, branch in enumerate(batch))
                     query = 'query{repository(owner:%s,name:%s){%s} rateLimit{cost remaining resetAt}}' % (json.dumps(self.owner), json.dumps(self.name), selection)
@@ -587,6 +624,8 @@ class StackDataClient:
 
         ``refs=None`` retains the legacy configured-refspec fetch. Explicit
         scopes never inherit freshness from a different explicit ref scope.
+        A deleted catalog branch is negatively cached, not allowed to abort
+        refresh of every surviving branch in the same scope.
         """
         from gh_stack_local import _branch
         started = time.monotonic()
@@ -629,36 +668,65 @@ class StackDataClient:
                     missing.append(ref)
             if offline or not acquired or not missing:
                 return result(state)
-            remaining = self.deadline - self.monotonic()
-            if remaining <= 0:
-                self._warn('Acquisition deadline reached; git refs were not refreshed')
-                for ref in missing:
-                    state['refs'][ref] = dict(state['refs'].get(ref, {}), error='Refresh deadline reached', retry_at=self.clock() + 15)
-                _write(path, state)
-                return result(state)
-            self.metrics['git_fetches'] += 1
-            error = None
-            command = ['git', 'fetch', '--quiet']
-            if selected is None:
-                command += ['--', remote]
-            else:
-                command += ['--no-tags', '--no-recurse-submodules', '--', remote]
-                command += ['+refs/heads/%s:refs/remotes/%s/%s' % (ref, remote, ref) for ref in missing]
-            try:
-                proc = self.run(command, check=False,
-                                cwd=str(self.repository.get('root') or '.'), timeout=min(60, remaining))
-                if proc.returncode:
-                    error = (proc.stderr or proc.stdout or 'git fetch failed').strip()
-            except Exception as exc:
-                error = str(exc)
+            # Git work has its own total bound; it must not consume the hosted
+            # API budget before the first API request has even been attempted.
+            git_deadline = self.monotonic() + 60
+            def invoke(command):
+                remaining = git_deadline - self.monotonic()
+                if remaining <= 0:
+                    raise TimeoutError('Git refresh deadline reached')
+                return self.run(command, check=False,
+                                cwd=str(self.repository.get('root') or '.'), timeout=remaining)
+            def fetch(names):
+                self.metrics['git_fetches'] += 1
+                command = ['git', 'fetch', '--quiet']
+                if selected is None:
+                    command += ['--', remote]
+                else:
+                    command += ['--no-tags', '--no-recurse-submodules', '--', remote]
+                    command += ['+refs/heads/%s:refs/remotes/%s/%s' % (ref, remote, ref) for ref in names]
+                try:
+                    proc = invoke(command)
+                    return (proc.stderr or proc.stdout or 'git fetch failed').strip() if proc.returncode else None
+                except Exception as exc:
+                    return str(exc)
+            error = fetch(missing)
+            absent, successful = set(), set(missing) if not error else set()
+            if selected is not None and error and re.search(r"could(?:n't| not) find remote ref", error, re.I):
+                # One advertisement read partitions the entire scope. Retrying
+                # each ref separately would turn a stale stack into O(N) reads.
+                try:
+                    self.metrics['git_ref_discoveries'] = self.metrics.get('git_ref_discoveries', 0) + 1
+                    advertised = invoke(['git', 'ls-remote', '--heads', '--', remote,
+                                         *['refs/heads/' + ref for ref in missing]])
+                    if advertised.returncode:
+                        raise ValueError((advertised.stderr or advertised.stdout or 'remote ref discovery failed').strip())
+                    present = set()
+                    for line in advertised.stdout.splitlines():
+                        match = re.fullmatch(r'([0-9a-fA-F]{40}|[0-9a-fA-F]{64})\s+refs/heads/(.+)', line)
+                        if not match or match[2] not in missing:
+                            raise ValueError('Invalid remote ref advertisement')
+                        present.add(match[2])
+                    absent = set(missing) - present
+                    if present:
+                        error = fetch(sorted(present))
+                        if not error:
+                            successful = present
+                except Exception as exc:
+                    error = str(exc)
             for ref in missing:
                 entry = dict(state['refs'].get(ref, {}))
-                if error:
+                if ref in absent:
+                    entry.update(error='Remote branch not advertised: ' + ref, exists=False,
+                                 retry_at=self.clock() + 60, completed_monotonic=time.monotonic())
+                elif ref not in successful:
                     entry.update(error=error, retry_at=self.clock() + 15, completed_monotonic=time.monotonic())
                 else:
-                    entry = {'observed_at': self.clock(), 'completed_monotonic': time.monotonic(), 'error': None}
+                    entry = {'observed_at': self.clock(), 'completed_monotonic': time.monotonic(), 'error': None, 'exists': True}
                 state['refs'][ref] = entry
             if error:
                 self._warn('Git fetch failed; remote refs are stale: ' + error)
+            if absent:
+                self._warn('Remote branches absent; surviving refs refreshed independently: ' + ', '.join(sorted(absent)))
             _write(path, state)
-            return result(state, fetched=not error)
+            return result(state, fetched=bool(successful))

@@ -139,6 +139,41 @@ class EvaluateTests(unittest.TestCase):
         report = gcc.evaluate(TRUNK, ["l1", "l1"], self.prs, fetched=True, use_pr=True)
         self.assertTrue(any("appears twice" in p for p in report["problems"]))
 
+    def test_stale_parent_ref_never_generates_hard_ancestry_or_head_failure(self):
+        self.ancestors.discard((A1, B2))
+        self.prs['l1']['headRefOid'] = OLD
+        observations = {TRUNK: {'fresh': True}, 'l1': {'fresh': False, 'exists': False},
+                        'l2': {'fresh': True}, 'l3': {'fresh': True}}
+        report = gcc.evaluate(TRUNK, ['l1', 'l2', 'l3'], self.prs, fetched=True, use_pr=True,
+                              ref_observations=observations)
+        assert report['rows'][0]['pushed'] is None
+        assert report['rows'][0]['pr_head_ok'] is None
+        assert report['rows'][1]['pushed'] is True
+        assert report['rows'][1]['contains_parent'] is None
+        assert not report['problems']
+
+    def test_stale_current_ref_is_not_passed_as_none_to_git(self):
+        for stale in ('l1', 'l2'):
+            with self.subTest(stale=stale):
+                observations = {name: {'fresh': name != stale} for name in (TRUNK, 'l1', 'l2', 'l3')}
+                def ancestor(older, newer):
+                    assert older is not None and newer is not None
+                    return older == newer or (older, newer) in self.ancestors
+                with mock.patch.object(gcc, 'is_ancestor', side_effect=ancestor):
+                    report = gcc.evaluate(TRUNK, ['l1', 'l2', 'l3'], self.prs, fetched=True, use_pr=True,
+                                          ref_observations=observations)
+                assert not report['problems']
+                assert next(row for row in report['rows'] if row['branch'] == stale)['pushed'] is None
+
+    def test_stale_hosted_metadata_does_not_generate_hard_write_advice(self):
+        self.prs['l1'].update(headRefOid=OLD, baseRefName='old-base', state='CLOSED', isDraft=True)
+        observations = {1: {field: {'freshness': 'stale'} for field in self.prs['l1']}}
+        report = gcc.evaluate(TRUNK, ['l1'], self.prs, fetched=True, use_pr=True,
+                              pr_observations=observations)
+        assert not report['problems']
+        assert report['rows'][0]['pr_head_ok'] is None
+        assert report['rows'][0]['pr_base_ok'] is None
+
 
 class IndexAndResolveTests(unittest.TestCase):
     def test_open_pr_wins_over_closed_for_same_branch(self) -> None:

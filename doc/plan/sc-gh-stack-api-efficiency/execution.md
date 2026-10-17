@@ -85,7 +85,7 @@ Bulk branch lookup uses GitHub's documented
 Small equivalent REST lookups remain preferred without creating REST fanout.
 Live endpoint compatibility and hosted mutation/recovery outcomes were not
 exercised; recipe-equivalence evidence is a strategy/contract review, not a
-production landing test. No release or PR has been created for this work.
+production landing test. No release or PR had been created at that handoff.
 
 ## Post-review regression fixes
 
@@ -103,3 +103,38 @@ Tests use local git, fake transports/clocks and the actual documented projection
 no live GitHub API or 500-layer experiment was run. The earlier Jev development
 gate is historical evidence for `dc526cc`, not a rerun against this follow-up.
 The review's medium-priority findings remain outside this focused patch.
+
+## Remaining-review closure and hosted stack
+
+PR #125 contains the original work above documentation PR #119 in stack #126.
+Its hosted manifest validation exposed a missing shebang, fixed on its own
+branch at `6d5e5d2`. Subsequent review hardening is a separate layer above #125.
+
+The follow-up fixes failed branch-mapping retry suppression, independent git
+and hosted deadlines, bounded shared adapter pacing, deleted-branch batched
+fetch recovery, and exact-stack diagnostic/epoch isolation. Trunk-wide
+discovery still detects newly added or conflicting stacks. Per-ref and
+per-field freshness prevent stale observations from generating reset/push
+advice or retiring an active layer; fresh sibling refs remain visible.
+
+Both CLIs add `--compact-json` with explicit counts/truncation and bounded
+rows, refs, commands and messages; complete `--json` is unchanged and remains
+the composition evidence source. Parse errors and interruption preserve the
+machine-output error envelope. Companion worktree handoffs now reuse sufficient
+evidence and record returned numeric stack identity for any necessary scoped
+refresh. Remaining retry/polling guidance is bounded; recipe strategies and
+top-only hosted QA/CI stay intact. LANDING explicitly predicts top/trunk
+content, not whole-stack eligibility.
+
+Adapter pacing cannot intercept independent direct `gh`/extension commands;
+the documented single coordinator remains responsible for those. No new HTTP
+client, release, 500-layer experiment, or live GitHub API test was introduced.
+Real API calls in this follow-up only create/inspect PRs, stacks and CI.
+The historical Jev gate is not presented as a rerun against these fixes.
+
+Verification on 2026-10-17: **453 tests passed in 63.47 seconds**, covering both
+complete package suites. Compilation, both package artifact validators and
+whitespace validation passed. The dedicated offline CI job now runs both suites.
+Independent follow-up review caught and closed trunk-filter membership drift,
+unbounded compact ref/command fields, and stale current-ref ancestry evaluation;
+regressions cover these and stale hosted lifecycle/head/base observations.

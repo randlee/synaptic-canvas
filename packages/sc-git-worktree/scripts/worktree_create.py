@@ -301,7 +301,7 @@ def build_stack_handoff(
     `writer` is for the single agent that works in the worktree; `stack_writer` is for
     the one agent that runs gh stack write commands and opens PRs (never the layer's
     writer). Everything derives from the gh-stack field playbook (sc-gh-stack).
-    Angle-bracket placeholders are read from /sc-gh-stack-view or gh output.
+    Angle-bracket placeholders come from sufficient scoped composition evidence or gh output.
     """
     trunk = stack_info["trunk"]
     parent = stack_info["parent"]
@@ -341,7 +341,8 @@ def build_stack_handoff(
     stack_writer_commands = [
         f"# after the writer's first push of {branch}:",
         pr_create,
-        f"cd {wt} && gh stack checkout <stack#>   # import tracking into this new worktree; skip only when no stack exists yet",
+        "# reuse sufficient verified ordered composition and exact pushed heads; never infer the top from summary rows",
+        "# explicit-number link/full link does not need checkout in this new worktree; import tracking only if a later local-tracking-dependent operation needs it",
     ]
     if above:
         stack_writer_commands += [
@@ -358,8 +359,9 @@ def build_stack_handoff(
             )
         stack_writer_commands += [
             f"gh stack link --base {trunk} {lower_prs}<pr# of {branch}> <pr# of {above}> ... <top-pr#>",
-            "# every other stack worktree: gh stack unstack --local && gh stack checkout <new stack#>",
-            "/sc-gh-stack-view",
+            "# record the returned numeric stack number from link; a relink mints a new number",
+            "# inspect local catalog diagnostics; clear only tracking proven stale, and import once in the worktree that needs it (sc-gh-stack recipe-stale-tracking.md)",
+            "# reconcile affected bases/heads from mutation responses; only if complete composition/base evidence is missing: /sc-gh-stack-view --stack <returned-stack#> --refresh",
         ]
     else:
         if chain_check_available:
@@ -367,9 +369,11 @@ def build_stack_handoff(
                 f"python3 .claude/scripts/gh_stack_chain_check.py --trunk {trunk} {lower_names}{branch}   # must print LINKABLE"
             )
         stack_writer_commands += [
-            f"gh stack link <stack#> <pr# of {branch}>          # append: only if {parent} is the top row in /sc-gh-stack-view",
+            "# choose exactly one link form: append to a known existing stack, OR first/full link below",
+            f"gh stack link <stack#> <pr# of {branch}>          # append: only if complete ordered composition proves {parent} is the current pushed top",
             f"gh stack link --base {trunk} {lower_prs}<pr# of {branch}>   # first link, or full relink",
-            "/sc-gh-stack-view",
+            "# record the returned numeric stack number from link; a relink mints a new number",
+            "# reconcile affected bases/heads from mutation responses; only if complete composition/base evidence is missing: /sc-gh-stack-view --stack <returned-stack#> --refresh",
         ]
 
     return {

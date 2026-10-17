@@ -57,7 +57,7 @@ API-free reporting can still expose useful local evidence and unknowns.
 ## Usage
 
 ```
-/sc-gh-stack-view [--trunk <branch> | --phase aw] [--stack <number-or-branch>] [--remote origin] [--all] [--full] [--refresh-git] [--refresh-status] [--refresh] [--no-fetch] [--no-pr] [--json]
+/sc-gh-stack-view [--trunk <branch> | --phase aw] [--stack <number-or-branch>] [--remote origin] [--all] [--full | --json | --compact-json] [--refresh-git] [--refresh-status] [--refresh] [--no-fetch] [--no-pr]
 ```
 
 Run from anywhere in the repo, normally the main checkout on `develop` or
@@ -87,6 +87,11 @@ Use the compact projection in `../sc-gh-stack/references/recipe-evidence.md`.
 Text summaries show at most ten layer rows and count all blockers/unknowns.
 `--full` shows all rows without forcing refresh; `--json` is always complete and
 includes provenance, observation age, exact SHAs and unknown reasons.
+`--compact-json` bounds routine agent output to ten rows per stack, ten stacks and bounded
+diagnostics, with total/shown/truncated counts and full-scope verdicts. It does
+not change acquisition or certify complete composition; never use its truncated
+rows for selecting a top, cut, restack or merge range. Use sufficient
+complete evidence or the full-JSON projection above for those operations.
 Shared observations live under the common repository's
 `.sc/sc-gh-stack/output/`; nonsecret cooldowns under `~/.sc/sc-gh-stack/`.
 No tokens are stored. Respect reported cooldowns; do not retry via another protocol.
@@ -113,7 +118,10 @@ Environment/discovery failures produce one `gh-stack-view: ...` stderr line,
 never a traceback; `--json` also emits a structured error. Hosted PR-field failures
 retain useful local output with qualified observations. An incomplete explicit
 membership refresh or changed snapshot refuses the report instead of certifying
-old composition:
+old composition.
+
+Both JSON modes report invalid command-line arguments as structured
+`INPUT.INVALID_ARGUMENT` errors (exit 2).
 
 - `git` not on PATH or not inside a git repository. `gh` is needed only for requested hosted acquisition; the extension is not needed for reporting.
 - Hosted acquisition failure: inspect the reported auth/cooldown reason; `--no-pr` gives an API-free view meanwhile.
@@ -158,6 +166,12 @@ do not rebase a layer whose CI could go green just to catch up with trunk. The l
 `isMerged`, `isQueued`, `needsRebase`, `pr`) for agents that need to branch on
 the result. Inspect exact SHAs and unknown reasons before acting.
 
+`LANDING` is only the top/trunk content-merge prediction plus lower-head
+containment. A green `LANDING` is not a whole-stack clean result: require
+`local_mergeability.clean == true` for all intended layer pairs and top/trunk,
+with no unknown/conflicted pair. Hosted CI/QA still gate the exact top head
+only; local cleanliness never substitutes for GitHub's policy enforcement.
+
 If you see stale local tracking (🔄, or a false `NOT COHERENT` with `-` rows
 right after an `unstack`), that is fixed by the recipe in
 `../sc-gh-stack/references/recipe-stale-tracking.md`, not by re-running this
@@ -173,6 +187,9 @@ script harder.
   heads over someone else's push and turns PRs CONFLICTING).
 - After a mutation, reconcile affected facts before dependent work. Reuse
   sufficient mutation responses; refresh only missing or invalidated evidence.
+- Use one acquisition coordinator and the shared client. Its cooldown cannot
+  throttle unrelated direct `gh` processes; no parallel per-worktree status or
+  checkout loops and no alternate-protocol retries around a cooldown.
 - Draft PRs block `gh stack merge`; the table flags them.
 
 ## Related

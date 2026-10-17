@@ -71,7 +71,10 @@ Commands taking an explicit stack number (`merge 7`, `unstack 7`) sidestep this 
 
 ## Stack file locked (exit 8)
 
-Another `gh stack` process holds `.git/gh-stack.lock`. The lock times out after ~5 seconds — wait and retry. A persistent exit 8 means another process still holds it; find and stop it.
+Another `gh stack` process holds `.git/gh-stack.lock`. The lock times out after
+~5 seconds. Inspect the holder and use a bounded wait; persistent exit 8 is a
+reported blocker, not an indefinite retry loop. Do not stop another writer's
+process without coordinating with its owner.
 
 ## Interrupted modify (exit 10)
 
@@ -95,7 +98,7 @@ The repository doesn't have stacked PRs enabled. This can't be fixed from the CL
 
 | Observed message | Cause | Fix |
 |---|---|---|
-| `stack is out-of-date with its base branch` | Someone pushed to trunk after the final sync | Freeze trunk pushes during merge, use the merge-async fallback, or re-sync (`gh stack sync`) and retry |
+| `stack is out-of-date with its base branch` | Someone pushed to trunk after the final sync | Freeze trunk pushes and use `recipe-land.md` fallback B; never `gh stack sync` over frozen layers or sequential async merges that rebase them |
 | `PR #X's branch is not a linear descendant of PR #Y's branch` | A lower layer was rewritten (rebased/force-pushed) after children branched from it | `gh stack unstack`, `gh pr edit <top-PR> --base <trunk>`, merge the top PR directly — GitHub marks the lower PRs MERGED by ancestry |
 | `HTTP 422 PullRequest.base is invalid` / `new PRs must be added to the top of the existing stack` | Tried a mid-stack insert via `gh stack link` | `unstack` + `gh pr edit <PR> --base <new-base>` + full re-link with the complete branch list |
 | `Pull request head branch was modified` (on a `merge-async` call) | Passed an abbreviated or stale SHA instead of the exact full `headRefOid` | Verify the target's full head from sufficient observations or a targeted `gh pr view --json headRefOid`; pass it in full |

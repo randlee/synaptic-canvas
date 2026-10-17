@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import hashlib
 import json
 import os
@@ -10,8 +11,8 @@ import shutil
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from gh_stack_shared import ToolError, guarded, is_ancestor, origin_sha, run, short
-from gh_stack_local import read_local_snapshot, evaluate_stack_conflicts, _branch as valid_branch
+from gh_stack_shared import ToolError, guarded, is_ancestor, origin_sha, run, short, ReportArgumentParser, compact_report
+from gh_stack_local import read_local_snapshot, evaluate_stack_conflicts, scope_diagnostics, _branch as valid_branch
 from gh_stack_remote import StackDataClient, _read as read_snapshot, _write as write_snapshot
 
 SKIPPED: list[str] = []
@@ -113,10 +114,11 @@ def landing_verdict(stack: dict, rows: list[dict], trunk_origin: str | None) -> 
             "reason": f"top head contains all {len(open_rows)} open layer(s) and merges clean into {stack['trunk']}"}
 
 
-def build_rows(stack: dict, prs: dict[int, dict], *, fetched: bool, refs=None, remote="origin") -> tuple[list[dict], list[str], list[str]]:
+def build_rows(stack: dict, prs: dict[int, dict], *, fetched: bool, refs=None, remote="origin", ref_observations=None, pr_observations=None) -> tuple[list[dict], list[str], list[str]]:
     trunk = stack["trunk"]
     resolve = (lambda name: refs.get(f"refs/remotes/{remote}/{name}")) if refs is not None else origin_sha
-    trunk_origin = resolve(trunk) if fetched else None
+    fresh = lambda name: fetched and (ref_observations is None or ref_observations.get(name, {}).get('fresh') is True)
+    trunk_origin = resolve(trunk) if fresh(trunk) else None
     rows: list[dict] = []
     problems: list[str] = []
     notes: list[str] = []
@@ -129,6 +131,8 @@ def build_rows(stack: dict, prs: dict[int, dict], *, fetched: bool, refs=None, r
     for idx, br in enumerate(stack["branches"], start=1):
         name = br["name"]
         pr = prs.get((br.get("pr") or {}).get("number") or -1, {})
+        number = (br.get('pr') or {}).get('number')
+        trusted = lambda field: pr_observations is None or pr_observations.get(number, {}).get(field, {}).get('freshness') == 'fresh'
         if br.get("isMerged"):
             rows.append({"layer": idx, "branch": name, "pr": (br.get("pr") or {}).get("number"),
                          "head": br.get("head"), "base": br.get("base"), "merged": True, "queued": False,
@@ -137,7 +141,7 @@ def build_rows(stack: dict, prs: dict[int, dict], *, fetched: bool, refs=None, r
                          "pr_head": pr.get("headRefOid"), "expected_base": expected_base, "pr_base": pr.get("baseRefName")})
             # Merged: its head is (an ancestor of) the trunk head now.  The next
             # open layer must sit on the trunk; ``parent`` stays at the trunk.
-            expected_base = trunk_origin or br.get("head") or expected_base
+            expected_base = trunk_origin if ref_observations is not None else trunk_origin or br.get("head") or expected_base
             parent = trunk
             continue
         # gh stack omits ``head``/``base`` for a layer that has no local branch
@@ -145,17 +149,18 @@ def build_rows(stack: dict, prs: dict[int, dict], *, fetched: bool, refs=None, r
         # Never subscript them directly: a missing key must degrade to ❓, not crash.
         head = br.get("head")
         base = br.get("base")
-        origin = resolve(name) if fetched else None
+        origin = resolve(name) if fresh(name) else None
         if (br.get("pr") or {}).get("number") is not None and prs and not pr:
             notes.append(f"L{idx} {name}: PR #{(br.get('pr') or {}).get('number')} could not be resolved on GitHub (deleted, or no access); merge and CI shown as unknown")
-        base_ok = (base == expected_base) if (expected_base and base) else None
+        base_ok = (base == expected_base) if (expected_base and base and (ref_observations is None or fresh(name))) else None
         origin_ok = None
         if origin:
             if head:
-                origin_ok = head == origin and (not pr or pr.get("headRefOid") == origin)
+                origin_ok = (False if head != origin else None if pr and not trusted('headRefOid')
+                             else not pr or pr.get("headRefOid") == origin)
             elif pr:
                 # No local head to compare; the remote side (origin vs PR) can still be checked.
-                origin_ok = pr.get("headRefOid") == origin
+                origin_ok = pr.get("headRefOid") == origin if trusted('headRefOid') else None
         if head is None:
             notes.append(f"L{idx} {name}: gh stack reported no local head (branch not present locally); local tracking not verified")
         if base is None:
@@ -182,11 +187,12 @@ def build_rows(stack: dict, prs: dict[int, dict], *, fetched: bool, refs=None, r
             "behind_trunk": False,
             "pr_unresolved": bool((br.get("pr") or {}).get("number") is not None and prs and not pr),
         }
-        if refs is not None and expected_base and (origin or head):
-            row["needs_rebase"] = not is_ancestor(expected_base, origin or head)
+        conflict_head = origin if ref_observations is not None else origin or head
+        if refs is not None and expected_base and conflict_head:
+            row["needs_rebase"] = not is_ancestor(expected_base, conflict_head)
             br["needsRebase"] = row["needs_rebase"]
         parent_is_trunk = parent == trunk
-        if pr and pr.get("baseRefName") not in (None, parent):
+        if pr and trusted('baseRefName') and pr.get("baseRefName") not in (None, parent):
             problems.append(f"L{idx} {name}: PR #{row['pr']} base is {pr['baseRefName']}, expected {parent}")
         if base_ok is False:
             # The lowest OPEN layer (idx 1, or any layer whose lower layers are
@@ -207,15 +213,15 @@ def build_rows(stack: dict, prs: dict[int, dict], *, fetched: bool, refs=None, r
                 notes.append(f"L{idx} {name}: gh stack reports needsRebase, but only against a trunk that moved; no action while its CI can go green")
             else:
                 problems.append(f"L{idx} {name}: gh stack reports needsRebase")
-        if pr.get("mergeable") == "CONFLICTING":
+        if trusted('mergeable') and pr.get("mergeable") == "CONFLICTING":
             problems.append(f"L{idx} {name}: PR #{row['pr']} CONFLICTING")
-        if pr.get("isDraft"):
+        if trusted('isDraft') and pr.get("isDraft"):
             problems.append(f"L{idx} {name}: PR #{row['pr']} is DRAFT (blocks stack merge)")
-        if pr.get("state") == "CLOSED":
+        if trusted('state') and pr.get("state") == "CLOSED":
             problems.append(f"L{idx} {name}: PR #{row['pr']} is CLOSED")
         rows.append(row)
         # The next layer must be based on THIS layer's pushed head (fall back to local, then PR).
-        expected_base = origin or head or pr.get("headRefOid") or expected_base
+        expected_base = origin if ref_observations is not None else origin or head or pr.get("headRefOid") or expected_base
         parent = name
     return rows, problems, notes
 
@@ -269,7 +275,7 @@ def render_landing(landing: dict) -> str:
     if landing["landable"] is None:
         return f"LANDING: ❓ not judged - {landing['reason']}"
     if landing["landable"]:
-        return f"LANDING: ✅ local content prediction for {landing['top']} @ {short(landing['top_sha'])}; hosted policy is separate - {landing['reason']}"
+        return f"LANDING: ✅ top/trunk content prediction for {landing['top']} @ {short(landing['top_sha'])}; not whole-stack eligibility; hosted policy is separate - {landing['reason']}"
     return f"LANDING: ❌ {landing['top']} @ {short(landing.get('top_sha'))} cannot land as one merge - {landing['reason']}"
 
 
@@ -325,6 +331,7 @@ def add_refresh_options(ap, *, include_structure=False):
     ap.add_argument("--remote", default="origin", help="selected git remote")
     ap.add_argument("--stack", help="stack number, ID, or one of its branch names")
     ap.add_argument("--full", action="store_true", help="show every layer/issue; does not refresh")
+    ap.add_argument("--compact-json", action="store_true", help="bounded JSON presentation (ten rows/stacks); not complete composition evidence; does not refresh")
     ap.add_argument("--refresh-git", action="store_true", help="refresh git refs once; no API requests unless combined with --refresh-status")
     ap.add_argument("--refresh-status", action="store_true", help="refresh required hosted fields without implying a git fetch")
     refresh_help = ("refresh selected stack membership, git refs and required hosted fields" if include_structure else
@@ -333,7 +340,7 @@ def add_refresh_options(ap, *, include_structure=False):
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description=__doc__)
+    ap = ReportArgumentParser(description=__doc__)
     ap.add_argument("--trunk", help="only stacks with this trunk")
     ap.add_argument("--phase", help="shorthand for --trunk integrate/phase-<PHASE>")
     ap.add_argument("--all", action="store_true", help="include merged/closed stacks")
@@ -342,12 +349,14 @@ def main() -> int:
     ap.add_argument("--json", action="store_true", help="complete structured snapshot")
     add_refresh_options(ap, include_structure=True)
     args = ap.parse_args()
+    if args.compact_json and (args.json or args.full):
+        ap.error("--compact-json conflicts with --json and --full")
     if args.no_fetch and (args.refresh_git or args.refresh):
         ap.error("--no-fetch conflicts with an explicit git refresh")
     if args.no_pr and (args.refresh_status or args.refresh):
         ap.error("--no-pr conflicts with an explicit hosted refresh")
     trunk_filter = args.trunk or (f"integrate/phase-{args.phase.lower()}" if args.phase else None)
-    return guarded("gh-stack-view", lambda: run_report(args, trunk_filter), json_errors=args.json)
+    return guarded("gh-stack-view", lambda: run_report(args, trunk_filter), json_errors=args.json or args.compact_json)
 
 
 def preflight() -> None:
@@ -403,14 +412,42 @@ def _remote_shape(data, refs, *, expected_number=None, local_stack=None):
             "id": data.get("id"), "worktree": (local_stack or {}).get("worktree"), "source": "REST"}
 
 
-def _catalog_composition(snapshot):
+def _catalog_composition(snapshot, scope=None):
     """Exclude fetched refs, but retain all catalog identities and recorded state."""
+    selected = snapshot["stacks"]
+    if scope is not None:
+        names = {branch['name'] for stack in scope for branch in stack['branches']}
+        ids = {stack['id'] for stack in scope if stack.get('id') is not None}
+        numbers = {stack['number'] for stack in scope if stack.get('number') is not None}
+        selected = [stack for stack in selected if stack.get('id') in ids or stack.get('number') in numbers
+                    or any(branch['name'] in names for branch in stack['branches'])]
     return ([{"source_path": entry.get("source_path"), "digest": entry.get("digest")}
-             for entry in snapshot.get("catalogs", [])],
+             for entry in snapshot.get("catalogs", [])] if scope is None else [warning for warning in scope_diagnostics(snapshot, stacks=scope)
+                                                                            if not warning.startswith('No local gh-stack catalog')],
             [{"trunk": stack["trunk"], "id": stack.get("id"), "number": stack.get("number"),
               "branches": [{key: branch.get(key) for key in ("name", "recorded_head", "base", "pr", "isMerged")}
                            for branch in stack["branches"]]}
-             for stack in snapshot["stacks"]])
+             for stack in selected])
+
+
+def _scope_epoch(snapshot, scope, *, remote='origin', branches=None):
+    """Unrelated worktrees/refs must not invalidate a qualified explicit scope."""
+    names = set(branches or []) | {stack['trunk'] for stack in scope} | {
+        branch['name'] for stack in scope for branch in stack['branches']}
+    refs = {prefix + name: snapshot['refs'].get(prefix + name) for name in sorted(names)
+            for prefix in ('refs/heads/', f'refs/remotes/{remote}/')}
+    return (_catalog_composition(snapshot, scope), refs,
+            [warning for warning in scope_diagnostics(snapshot, stacks=scope, branches=names)
+             if not warning.startswith('No local gh-stack catalog')],
+            {key: snapshot['repository'].get(key) for key in ('identity', 'common_dir', 'remote')})
+
+
+def _git_scope_fresh(observation, names):
+    """A missing retired branch must not poison surviving independent refs."""
+    entries = observation.get('refs')
+    if entries is None:
+        return observation['fresh']
+    return all(entries.get(name, {}).get('fresh') is True for name in names)
 
 
 def _refresh_structure(client, number, refs, *, force, local_stack=None, require_fresh=False):
@@ -433,7 +470,11 @@ def run_report(args: argparse.Namespace, trunk_filter: str | None) -> int:
     snapshot = read_local_snapshot(remote, run_fn=run)
     stacks, hidden = discover_stacks(trunk_filter, include_all=args.all, snapshot=snapshot)
     selector = getattr(args, "stack", None)
-    stacks = [s for s in stacks if _selected(s, selector)]
+    # Lifecycle enrichment must not mutate the catalog epoch we later verify.
+    stacks = copy.deepcopy([s for s in stacks if _selected(s, selector)])
+    # A trunk filter still requests discovery of every stack on that trunk;
+    # only an exact stack selector establishes independent fixed membership.
+    catalog_scope = list(stacks) if selector else None
     repository = snapshot["repository"]
     client = StackDataClient(repository, run_fn=run)
     git_only = getattr(args, "refresh_git", False) and not getattr(args, "refresh_status", False) and not getattr(args, "refresh", False)
@@ -471,6 +512,7 @@ def run_report(args: argparse.Namespace, trunk_filter: str | None) -> int:
         for stack in stacks:
             stack.setdefault("structure_observation", {"source": "local_catalog", "freshness": "unknown",
                                                        "complete": False, "observed_at": None})
+    epoch_scope = [*catalog_scope, *stacks] if catalog_scope is not None else None
     status_only = getattr(args, "refresh_status", False) and not getattr(args, "refresh_git", False) and not getattr(args, "refresh", False)
     git_observation = client.refresh_git(
         force=getattr(args, "refresh_git", False) or getattr(args, "refresh", False),
@@ -478,7 +520,7 @@ def run_report(args: argparse.Namespace, trunk_filter: str | None) -> int:
         refs=sorted({st["trunk"] for st in stacks} | {b["name"] for st in stacks for b in st["branches"] if not b.get("isMerged")}))
     if git_observation["source"] == "fetched":
         refreshed = read_local_snapshot(remote, run_fn=run)
-        if _catalog_composition(refreshed) != _catalog_composition(snapshot):
+        if _catalog_composition(refreshed, epoch_scope) != _catalog_composition(snapshot, epoch_scope):
             raise ToolError("Local catalog composition changed while refreshing refs; retry the scoped report",
                             "STATE.SNAPSHOT_CHANGED")
         snapshot = refreshed
@@ -488,7 +530,6 @@ def run_report(args: argparse.Namespace, trunk_filter: str | None) -> int:
             for branch in stack["branches"]:
                 branch["head"] = snapshot["refs"].get("refs/heads/" + branch["name"])
     refs = snapshot["refs"]
-    fetched = git_observation["fresh"]
     # Derive the local facts first. Hosted lifecycle can subsequently retire a
     # layer; only that changed parent sequence requires another local pass.
     local_conflicts = [evaluate_stack_conflicts(st, refs, remote, run_fn=run) for st in stacks]
@@ -514,6 +555,7 @@ def run_report(args: argparse.Namespace, trunk_filter: str | None) -> int:
     previous_rows = {(s["trunk"], r["branch"]): r for s in previous.get("stacks", []) for r in s.get("rows", [])}
     for stack_index, st in enumerate(stacks):
         effective_prs = dict(prs)
+        effective_observations = copy.deepcopy(client.observations)
         for b in st["branches"]:
             number = (b.get("pr") or {}).get("number")
             detail = prs.get(number, {})
@@ -523,17 +565,23 @@ def run_report(args: argparse.Namespace, trunk_filter: str | None) -> int:
                 # A failed forced detail refresh may return an old cached state.
                 # It must not retire or reactivate a layer from fresh REST scope.
                 b["lifecycle_observation"] = dict(st["structure_observation"])
+                effective_observations.setdefault(number, {})['state'] = dict(b['lifecycle_observation'])
                 if detail and b.get("pr"):
                     detail = dict(detail, state=b["pr"]["state"])
                     effective_prs[number] = detail
                 continue
             if fresh_state:
                 b["lifecycle_observation"] = dict(lifecycle)
-            if detail.get("state") == "MERGED":
+            if fresh_state and detail.get("state") == "MERGED":
                 b["isMerged"] = True
-            if detail.get("state") and b.get("pr"):
+            if fresh_state and detail.get("state") and b.get("pr"):
                 b["pr"]["state"] = detail["state"]
-        rows, problems, notes = build_rows(st, effective_prs, fetched=fetched, refs=refs, remote=remote)
+        stack_fetched = _git_scope_fresh(git_observation, [st['trunk'], *[
+            branch['name'] for branch in st['branches'] if not branch.get('isMerged')]])
+        rows, problems, notes = build_rows(st, effective_prs,
+                                           fetched=stack_fetched if git_observation.get('refs') is None else True,
+                                           refs=refs, remote=remote, ref_observations=git_observation.get('refs'),
+                                           pr_observations=effective_observations)
         conflicts = local_conflicts[stack_index]
         if tuple(bool(b.get("isMerged")) for b in st["branches"]) != merged_shapes[stack_index]:
             conflicts = evaluate_stack_conflicts(st, refs, remote, run_fn=run)
@@ -550,15 +598,18 @@ def run_report(args: argparse.Namespace, trunk_filter: str | None) -> int:
             before = previous_rows.get((st["trunk"], row["branch"]), {})
             keys = ("head", "origin", "base", "ci", "mergeable", "merge_state", "needs_rebase", "local_merge_clean")
             row["changed"] = any(row.get(k) != before.get(k) for k in keys)
-        trunk_origin = refs.get(f"refs/remotes/{remote}/{st['trunk']}") if fetched else None
+        trunk_origin = refs.get(f"refs/remotes/{remote}/{st['trunk']}") if stack_fetched else None
         active = [r for r in rows if not r.get("merged")]
         combined = conflicts["combined"]
         top = active[-1] if active else {}
         missing = [r["branch"] for r in active[:-1] if not (r.get("origin") or r.get("head")) or not combined.get("head") or not is_ancestor(r.get("origin") or r["head"], combined["head"])]
         landing = {"landable": False if missing else combined["clean"], "top": top.get("branch"),
                    "top_sha": combined.get("head"), "reason": "top does not contain: " + ", ".join(missing) if missing else combined["reason"]}
-        if SKIPPED:
-            problems.append(f"discovery incomplete: {len(SKIPPED)} catalog/worktree diagnostic(s)")
+        blocking = ([warning for warning in scope_diagnostics(snapshot, stacks=[st])
+                     if not warning.startswith('No local gh-stack catalog')]
+                    if selector else SKIPPED)
+        if blocking:
+            problems.append(f"discovery incomplete: {len(blocking)} catalog/worktree diagnostic(s)")
             landing["landable"] = None
             landing["reason"] = "local catalog discovery incomplete"
         def chain_unknown(row):
@@ -576,17 +627,27 @@ def run_report(args: argparse.Namespace, trunk_filter: str | None) -> int:
                  "worktree": st.get("worktree"), "branches": st["branches"], "rows": rows, "problems": problems,
                  "notes": notes, "coherent": coherent, "landing": landing, "local_mergeability": conflicts}
         report.append(entry)
-    if read_local_snapshot(remote, run_fn=run)["fingerprint"] != snapshot["fingerprint"]:
+    final_snapshot = read_local_snapshot(remote, run_fn=run)
+    changed = (_scope_epoch(final_snapshot, epoch_scope, remote=remote) != _scope_epoch(snapshot, epoch_scope, remote=remote)
+               if epoch_scope is not None else final_snapshot['fingerprint'] != snapshot['fingerprint'])
+    if changed:
         raise ToolError("Snapshot changed during evaluation; retry the scoped report",
                         "STATE.SNAPSHOT_CHANGED")
+    required_refs = sorted({stack['trunk'] for stack in stacks} | {
+        branch['name'] for stack in stacks for branch in stack['branches'] if not branch.get('isMerged')})
+    # Lifecycle may have retired a deleted catalog branch after the initial
+    # fetch. Qualify freshness against the complete active report scope, while
+    # retaining every requested ref's failed observation for diagnostics.
+    git_observation = dict(git_observation, requested_fresh=git_observation['fresh'], required_refs=required_refs,
+                           fresh=_git_scope_fresh(git_observation, required_refs))
     payload = {"schema_version": 1, "success": True, "stacks": report, "hidden": hidden, "coherent": not any_problem,
                "catalogs": snapshot.get("catalogs", []),
                "skipped_worktrees": SKIPPED, "warnings": list(dict.fromkeys(SKIPPED + client.warnings)),
                "git_observation": git_observation, "observations": client.observations, "metrics": client.metrics,
                "snapshot_id": hashlib.sha256((snapshot["fingerprint"] + str(client.snapshot_id)).encode()).hexdigest()[:24]}
     write_snapshot(previous_path, payload)
-    if args.json:
-        print(json.dumps(payload, indent=2))
+    if args.json or getattr(args, 'compact_json', False):
+        print(json.dumps(compact_report(payload) if getattr(args, 'compact_json', False) else payload, indent=2))
     else:
         blocks = [render_table(entry, entry["rows"], entry["problems"], entry["notes"], entry["landing"],
                                trunk_origin=entry["trunk_origin"], full=getattr(args, "full", False), coherent=entry["coherent"])

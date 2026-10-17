@@ -54,6 +54,6 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - run: python -m pip install pytest
-      - name: Local and simulated stack quota tests (no GitHub API)
-        run: python -m pytest packages/sc-gh-stack/tests -q
+      - run: python -m pip install pytest pydantic pyyaml
+      - name: Local and simulated stack quota and companion tests (no GitHub API)
+        run: python -m pytest packages/sc-gh-stack/tests packages/sc-git-worktree/tests -q

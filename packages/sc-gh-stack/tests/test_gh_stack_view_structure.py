@@ -242,7 +242,7 @@ def test_refresh_help_does_not_claim_structure_support_for_chain():
     assert 'membership' in view_parser.format_help()
 
 
-@pytest.mark.parametrize('change', ['membership', 'number', 'trunk', 'recorded_base', 'digest'])
+@pytest.mark.parametrize('change', ['membership', 'number', 'trunk', 'recorded_base'])
 def test_catalog_changes_across_fetch_are_not_hidden_by_new_epoch(harness, change):
     snapshot, client, run = harness
     refreshed = copy.deepcopy(snapshot)
@@ -255,12 +255,154 @@ def test_catalog_changes_across_fetch_are_not_hidden_by_new_epoch(harness, chang
         refreshed['stacks'][0]['trunk'] = 'develop'
     elif change == 'recorded_base':
         refreshed['stacks'][0]['branches'][0]['base'] = 'e' * 40
-    else:
-        refreshed['catalogs'][0]['digest'] = 'changed'
     with pytest.raises(view.ToolError) as error:
         run(snapshots=[snapshot, refreshed, refreshed])
     assert error.value.code == 'STATE.SNAPSHOT_CHANGED'
     client.pr_details.assert_not_called()
+
+
+def test_selected_semantics_unchanged_despite_unrelated_catalog_digest_change(harness):
+    snapshot, _, run = harness
+    refreshed = copy.deepcopy(snapshot)
+    refreshed['fingerprint'] = 'unrelated-change'
+    refreshed['catalogs'][0]['digest'] = 'same-catalog-other-stack-edited'
+    code, report = run(snapshots=[snapshot, refreshed, refreshed])
+    assert code == 0
+    assert report['coherent'] is True
+
+
+def test_unrelated_catalog_diagnostic_is_visible_without_poisoning_explicit_scope(harness):
+    snapshot, _, run = harness
+    snapshot['warnings'] = ['damaged unrelated stack']
+    snapshot['scope_issues'] = [{'message': snapshot['warnings'][0], 'branches': ['elsewhere']}]
+    code, report = run()
+    assert code == 0
+    assert report['stacks'][0]['landing']['landable'] is True
+    assert 'damaged unrelated stack' in report['warnings']
+    code, report = run(stack=None)
+    assert code == 1
+    assert report['stacks'][0]['landing']['landable'] is None
+
+
+def test_relevant_catalog_diagnostic_remains_blocking(harness):
+    snapshot, _, run = harness
+    snapshot['warnings'] = ['damaged requested stack']
+    snapshot['scope_issues'] = [{'message': snapshot['warnings'][0], 'branches': ['one']}]
+    code, report = run()
+    assert code == 1
+    assert report['stacks'][0]['landing']['landable'] is None
+
+
+def test_trunk_filter_alone_does_not_hide_disjoint_conflicting_stacks(harness):
+    snapshot, _, run = harness
+    snapshot['warnings'] = ['conflicting omitted stacks on main']
+    snapshot['scope_issues'] = [{'message': snapshot['warnings'][0], 'branches': ['elsewhere']}]
+    code, report = run(stack=None, trunk_filter='main')
+    assert code == 1
+    assert report['stacks'][0]['landing']['landable'] is None
+
+
+def test_trunk_filter_detects_new_disjoint_stack_during_evaluation(harness):
+    snapshot, _, run = harness
+    final = copy.deepcopy(snapshot)
+    final['fingerprint'] = 'new-same-trunk-stack'
+    final['stacks'].append(dict(trunk='main', branches=[dict(name='new')]))
+    code, report = run(stack=None, trunk_filter='main', snapshots=[snapshot, snapshot, final], guard_errors=True)
+    assert code == 2
+    assert report['error']['code'] == 'STATE.SNAPSHOT_CHANGED'
+
+
+def test_unrelated_final_ref_changes_do_not_invalidate_selected_stack(harness):
+    snapshot, _, run = harness
+    final = copy.deepcopy(snapshot)
+    final['fingerprint'] = 'unrelated-writer'
+    final['refs']['refs/heads/unrelated'] = 'e' * 40
+    code, report = run(snapshots=[snapshot, snapshot, final])
+    assert code == 0
+    assert report['coherent'] is True
+
+
+def test_selected_final_ref_change_remains_fatal(harness):
+    snapshot, _, run = harness
+    final = copy.deepcopy(snapshot)
+    final['fingerprint'] = 'requested-writer'
+    final['refs']['refs/remotes/origin/two'] = 'e' * 40
+    code, report = run(snapshots=[snapshot, snapshot, final], guard_errors=True)
+    assert code == 2
+    assert report['error']['code'] == 'STATE.SNAPSHOT_CHANGED'
+
+
+def test_no_fetch_lifecycle_enrichment_does_not_mutate_catalog_epoch(harness):
+    snapshot, client, run = harness
+    client.refresh_git.return_value['source'] = 'cached'
+    code, report = run(snapshots=[snapshot, snapshot])
+    assert code == 0
+    assert report['coherent'] is True
+    assert 'state' not in snapshot['stacks'][0]['branches'][0]['pr']
+
+
+def test_retired_deleted_branch_does_not_poison_fresh_active_scope(harness):
+    snapshot, client, run = harness
+    client.refresh_git.return_value.update(fresh=False, refs={
+        'main': {'fresh': True}, 'one': {'fresh': False, 'exists': False}, 'two': {'fresh': True}})
+    original_details = client.pr_details.side_effect
+    def details(*args, **kwargs):
+        result = original_details(*args, **kwargs)
+        result[NUMBERS['one']]['state'] = 'MERGED'
+        result[NUMBERS['two']]['baseRefName'] = 'main'
+        return result
+    client.pr_details.side_effect = details
+    code, report = run()
+    assert code == 0
+    assert report['coherent'] is True
+    assert report['git_observation']['fresh'] is True
+    assert report['git_observation']['requested_fresh'] is False
+    assert report['git_observation']['required_refs'] == ['main', 'two']
+    assert report['git_observation']['refs']['one']['exists'] is False
+
+
+def test_absent_active_branch_keeps_healthy_sibling_ref_observations_visible(harness):
+    _, client, run = harness
+    client.refresh_git.return_value.update(fresh=False, refs={
+        'main': {'fresh': True}, 'one': {'fresh': False, 'exists': False}, 'two': {'fresh': True}})
+    code, report = run()
+    assert code == 1
+    rows = report['stacks'][0]['rows']
+    assert rows[0]['origin'] is None and rows[0]['origin_ok'] is None
+    assert rows[1]['origin'] == SHAS['two'] and rows[1]['origin_ok'] is True
+    assert rows[1]['base_ok'] is None
+
+
+@pytest.mark.parametrize('old_state', ['CLOSED', 'MERGED'])
+def test_stale_hosted_metadata_cannot_retire_layers_or_order_writes(harness, old_state):
+    _, client, run = harness
+    original_details = client.pr_details.side_effect
+    def details(*args, **kwargs):
+        result = original_details(*args, **kwargs)
+        result[NUMBERS['one']].update(state=old_state, isDraft=True, headRefOid='e' * 40,
+                                       baseRefName='old-base', mergeable='CONFLICTING')
+        client.observations[NUMBERS['one']] = {
+            field: {'freshness': 'stale'} for field in result[NUMBERS['one']]}
+        return result
+    client.pr_details.side_effect = details
+    code, report = run()
+    assert code == 1
+    entry = report['stacks'][0]
+    assert entry['rows'][0]['merged'] is False
+    assert entry['rows'][0]['origin_ok'] is None
+    assert entry['rows'][0]['hosted_stale'] is True
+    assert entry['problems'] == []
+    assert entry['coherent'] is None
+
+
+def test_compact_view_projection_keeps_full_snapshot_out_of_stdout(harness):
+    _, _, run = harness
+    code, report = run(json=False, compact_json=True)
+    assert code == 0
+    assert report['output_mode'] == 'compact'
+    assert report['stacks'][0]['total_layers'] == 2
+    assert 'branches' not in report['stacks'][0]
+    assert 'observations' not in report
 
 
 def test_rest_composition_survives_ref_epoch_refresh(harness):

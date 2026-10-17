@@ -23,7 +23,8 @@ Reuse sufficient verified complete composition; do not refresh as a ritual.
 When missing, scope `--refresh` to the known stack number or a branch whose
 local catalog records that number. Ordinary local JSON and `--refresh-status`
 cannot certify remote membership. Keep full JSON in the shell and emit only
-the needed fields; never infer the top from summary row order:
+the needed fields; never infer the top from summary row order. `--compact-json`
+is routine status only, not a replacement for this full-composition projection:
 
 ```bash
 stack_status=0

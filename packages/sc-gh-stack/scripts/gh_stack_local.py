@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """Read native gh-stack catalogs and predict content conflicts without networking.
 
 Catalogs are historical observations; refs and conflict probes are a separate epoch.
@@ -127,6 +128,44 @@ def _normalize(item, refs):
     return result
 
 
+def _scope_hint(item):
+    """Retain only validated identity hints; malformed scope stays unknown."""
+    branches = item.get('branches') if isinstance(item, dict) else None
+    names = [branch.get('branch') for branch in branches if isinstance(branch, dict)] if isinstance(branches, list) else []
+    return {'branches': [name for name in names if _branch(name)],
+            'pr_numbers': [branch['pullRequest']['number'] for branch in (branches if isinstance(branches, list) else [])
+                           if isinstance(branch, dict) and isinstance(branch.get('pullRequest'), dict)
+                           and type(branch['pullRequest'].get('number')) is int],
+            'id': item.get('id') if isinstance(item, dict) and isinstance(item.get('id'), str) else None,
+            'number': item.get('number') if isinstance(item, dict) and type(item.get('number')) is int else None,
+            'scope_known': isinstance(branches, list) and bool(branches) and len(names) == len(branches) and all(_branch(name) for name in names)}
+
+
+def scope_diagnostics(snapshot, *, stacks=None, branches=None):
+    """Return blocking diagnostics for an explicit scope, not unrelated stacks.
+
+    All warnings remain in the snapshot for visibility. Without a scope, discovery
+    is still conservative. An explicit scope is not invalidated by an unreadable
+    unrelated catalog, but affirmative branch/stack identity collisions block it.
+    """
+    if stacks is None and branches is None:
+        return list(snapshot.get('warnings', []))
+    stacks = stacks or []
+    names = set(branches or []) | {branch['name'] for stack in stacks for branch in stack['branches']}
+    ids = {stack['id'] for stack in stacks if stack.get('id') is not None}
+    numbers = {stack['number'] for stack in stacks if stack.get('number') is not None}
+    prs = {(branch.get('pr') or {}).get('number') for stack in stacks for branch in stack['branches']} - {None}
+    by_message = {}
+    for issue in snapshot.get('scope_issues', []):
+        by_message.setdefault(issue['message'], []).append(issue)
+    def relevant(issue):
+        return (bool(names & set(issue.get('branches', [])))
+                or bool(prs & set(issue.get('pr_numbers', [])))
+                or issue.get('id') in ids or issue.get('number') in numbers)
+    return [warning for warning in snapshot.get('warnings', [])
+            if warning not in by_message or any(relevant(issue) for issue in by_message[warning])]
+
+
 def read_local_snapshot(remote='origin', run_fn=run):
     """Resolve catalogs once per git directory, returning useful local unknowns."""
     if not _branch(remote):
@@ -139,7 +178,7 @@ def read_local_snapshot(remote='origin', run_fn=run):
         value = git('rev-parse', flag, cwd=cwd).stdout.removesuffix('\n')
         return os.path.realpath(os.path.join(cwd or os.getcwd(), value))
     common, current = gitdir('--git-common-dir'), gitdir('--git-dir')
-    warnings = []
+    warnings, scope_issues = [], []
     refs = {}
     for line in git('for-each-ref', '--format=%(refname) %(objectname)', 'refs/heads/', 'refs/remotes/').stdout.splitlines():
         ref, sha = line.split(' ', 1)
@@ -190,7 +229,9 @@ def read_local_snapshot(remote='origin', run_fn=run):
             epoch.append((str(path), None))
             continue
         except OSError as exc:
-            warnings.append(f'Cannot read catalog {path}: {exc}')
+            message = f'Cannot read catalog {path}: {exc}'
+            warnings.append(message)
+            scope_issues.append({'message': message, 'scope_known': False})
             epoch.append((str(path), str(exc)))
             continue
         digest = hashlib.sha256(raw).hexdigest()
@@ -219,10 +260,14 @@ def read_local_snapshot(remote='origin', run_fn=run):
                     diagnostic['compositions'].append(composition)
                 except ValueError as exc:
                     diagnostic['errors'].append(str(exc))
-                    warnings.append(f'Invalid stack in {path}: {exc}; inspect catalog without migrating it')
+                    message = f'Invalid stack in {path}: {exc}; inspect catalog without migrating it'
+                    warnings.append(message)
+                    scope_issues.append(dict(_scope_hint(item), message=message))
         except (ValueError, UnicodeError) as exc:
             diagnostic['errors'].append(str(exc))
-            warnings.append(f'Invalid catalog {path}: {exc}; inspect catalog without migrating it')
+            message = f'Invalid catalog {path}: {exc}; inspect catalog without migrating it'
+            warnings.append(message)
+            scope_issues.append({'message': message, 'scope_known': False})
     unique, blocked = [], set()
     for candidate in candidates:
         if candidate in unique:
@@ -236,6 +281,12 @@ def read_local_snapshot(remote='origin', run_fn=run):
             same_id = any(left.get(k) is not None and left.get(k) == right.get(k) for k in ('id', 'number'))
             if overlap or (pr_overlap - {None}) or same_id:
                 blocked.update((i, j))
+                message = 'Conflicting stack identities/orders/membership in local catalogs; affected stacks omitted; reconcile catalogs explicitly'
+                for affected in (left, right):
+                    scope_issues.append({'message': message, 'scope_known': True,
+                                         'branches': [branch['name'] for branch in affected['branches']],
+                                         'pr_numbers': [(branch.get('pr') or {}).get('number') for branch in affected['branches']],
+                                         'id': affected.get('id'), 'number': affected.get('number')})
     if blocked:
         warnings.append('Conflicting stack identities/orders/membership in local catalogs; affected stacks omitted; reconcile catalogs explicitly')
     stacks = [s for i, s in enumerate(unique) if i not in blocked]
@@ -245,7 +296,7 @@ def read_local_snapshot(remote='origin', run_fn=run):
         warnings.append('No local gh-stack catalog; remote-only stacks may still exist')
     fingerprint = hashlib.sha256(json.dumps([epoch, refs, repository['identity'], remote, records], sort_keys=True).encode()).hexdigest()
     return {'repository': repository, 'refs': refs, 'stacks': stacks, 'catalogs': catalogs,
-            'warnings': warnings, 'fingerprint': fingerprint}
+            'warnings': warnings, 'scope_issues': scope_issues, 'fingerprint': fingerprint}
 
 
 def evaluate_stack_conflicts(stack, refs, remote='origin', run_fn=run):

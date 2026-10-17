@@ -56,7 +56,7 @@ contents that points to one reference per situation:
 
 ## Usage
 
-- `/sc-gh-stack-view [--trunk <branch>] [--stack <number-or-branch>] [--remote origin] [--all] [--full] [--refresh-git | --refresh-status | --refresh] [--no-fetch] [--no-pr] [--json]`
+- `/sc-gh-stack-view [--trunk <branch>] [--stack <number-or-branch>] [--remote origin] [--all] [--full | --json | --compact-json] [--refresh-git | --refresh-status | --refresh] [--no-fetch] [--no-pr]`
 - `/sc-gh-stack --status | --check <trunk> <layers...> | --cut <layer> | --link | --restack | --land`
 
 Scripts (installed under `.claude/scripts/`). Both derive local state first,
@@ -78,6 +78,13 @@ Every layer's local content-conflict result is separate from hosted eligibility;
 missing or stale evidence stays unknown. A git fetch does not refresh checks
 or reviews. Summaries show at most ten layer rows and count all blockers;
 `--full` and `--json` are complete. JSON includes provenance and exact SHAs.
+Both scripts offer `--compact-json` for bounded routine agent status: ten
+rows per stack and ten stacks, bounded diagnostics, full-scope verdicts and total/shown/truncated
+counts, with no acquisition change. Compact output is not complete composition
+evidence; use full JSON for top/range selection. Both JSON modes return
+`INPUT.INVALID_ARGUMENT` on invalid arguments (exit 2).
+`LANDING` predicts top/trunk content merge and containment only; every local
+layer pair must also be clean, while hosted CI/QA still gate the exact top only.
 Reuse sufficient observations and mutation responses between recipe steps.
 
 ## The model in one paragraph
