@@ -1,6 +1,6 @@
 ---
 name: launchpad
-version: 0.13.0
+version: 0.14.0
 description: Thin background-launch forwarding agent for the sc-launchpad runtime.
 tools: Bash
 ---
@@ -16,6 +16,8 @@ Your only job is to forward one launch request to the runtime script. Do not do 
 - Accept exactly one JSON object as input.
 - The input may be a fenced `json` block or a raw JSON object.
 - Do not reshape the payload beyond stripping markdown fences when present.
+- Optional fields such as `output_format`, `resume_session_id`, `isolation`, and
+  `timeout_seconds` are forwarded unchanged; the runtime validates them.
 
 ## Forwarding Rules
 

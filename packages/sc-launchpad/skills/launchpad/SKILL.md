@@ -1,6 +1,6 @@
 ---
 name: launchpad
-version: 0.13.0
+version: 0.14.0
 description: "Use when another workflow must launch Claude, Codex, or Gemini as a separate background sub-agent without opening a terminal. Spawns the `launchpad` agent with fenced JSON input and `run_in_background: true`."
 ---
 
@@ -40,12 +40,32 @@ Required fields:
 - `description`
 - `prompt`
 - `tool`
-- `cwd`
+- `cwd` (omit only when `isolation.cwd` is `"temp"`)
 
 Optional fields:
 - `model`
 - `atm_identity`
 - `extra_args`
+- `output_format`: `"text"` or `"json"` (structured mode; returns `session_id` and `result_text`)
+- `resume_session_id`: continue a claude/codex session; requires an explicit `isolation` object
+- `isolation`: `{"tools": "none"|"default", "cwd": "temp"|"given"}`
+- `timeout_seconds`: kill the child and return `CLI.TIMEOUT` after this many seconds
+
+`output_format` defaults to `json` when `resume_session_id` or `isolation` is
+present, otherwise `text`. Payloads without the new fields behave exactly as
+before. Gemini returns `CAPABILITY.UNSUPPORTED` for `output_format: "json"`,
+`resume_session_id`, and `isolation`.
+
+### Multi-turn isolated sessions
+
+1. Turn 1: `"isolation": {"tools": "none", "cwd": "temp"}` (no `cwd`). Keep
+   `data.session_id` and `data.cwd` from the envelope.
+2. Turn 2..N: pass `"cwd": <data.cwd>`, `"resume_session_id": <data.session_id>`,
+   and `"isolation": {"tools": "none", "cwd": "given"}` to keep isolation, or
+   `{"tools": "default", "cwd": "given"}` to relax it explicitly.
+
+See the package README for the exact per-harness flags and what each
+isolation level guarantees.
 
 For Claude launches, `model` accepts `sonnet`, `haiku`, `opus`, or `fable`.
 
@@ -83,10 +103,36 @@ The `launchpad` agent returns the runtime stdout exactly as-is. The runtime prin
     "atm_identity": "reviewer-1",
     "exit_code": 0,
     "stdout": "child stdout",
-    "stderr": ""
+    "stderr": "",
+    "output_format": "json",
+    "session_id": "646130d0-5d6a-434c-95ed-b8d500fdc35f",
+    "result_text": "final assistant text",
+    "resumed_session_id": null,
+    "isolation": {"tools": "none", "cwd": "given", "flags": ["--tools", "", "--strict-mcp-config", "--safe-mode", "--disable-slash-commands"]},
+    "timeout_seconds": 120,
+    "timed_out": false,
+    "duration_seconds": 3.4,
+    "warnings": []
   },
   "error": null
 }
 ```
 
-Errors use the same envelope with `success: false` and a populated `error` object.
+In text mode `session_id` and `result_text` are `null`.
+
+Errors use the same envelope with `success: false` and a populated `error`
+object: `code`, `message`, `recoverable`, `suggested_action`, and optional
+`details` (for example `stderr_tail`, `searched_path`, `reported_error`).
+Codes include `CLI.NOT_FOUND`, `CLI.NON_ZERO_EXIT`, `CLI.TIMEOUT`,
+`CLI.OUTPUT_UNPARSEABLE`, `CLI.SESSION_ID_MISSING`, `CLI.RESULT_MISSING`,
+`CLI.RESUME_SESSION_NOT_FOUND`, `CLI.AUTH_FAILED`, `CLI.REPORTED_ERROR`,
+`CLI.UNSUPPORTED_FLAG`, and `CAPABILITY.UNSUPPORTED`.
+
+## Direct Script Invocation (programs only)
+
+A program (not the main LLM session) may run
+`python3 .claude/scripts/sc_launchpad_task.py --json '<payload>'` (or
+`--json -` with the payload on stdin) as a subprocess, for example to fan out
+one prompt to several harnesses in parallel. It prints exactly one envelope on
+stdout and exits 0; branch on `success`. LLM sessions keep using the
+`launchpad` agent as described above.

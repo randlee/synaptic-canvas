@@ -333,7 +333,7 @@
     },
     "sc-launchpad": {
       "name": "sc-launchpad",
-      "version": "0.13.0",
+      "version": "0.14.0",
       "status": "beta",
       "tier": 0,
       "description": "Launch Claude (including Fable), Codex (including Sol, Terra, and Luna), or Gemini as a separate background sub-agent runtime, with explicit ATM teammate-mode normalization and roster registration.\n",
@@ -369,7 +369,7 @@
         "gemini",
         "pydantic"
       ],
-      "lastUpdated": "2026-09-23",
+      "lastUpdated": "2026-10-17",
       "dependents": [],
       "readme": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-launchpad/README.md",
       "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-launchpad/CHANGELOG.md"
