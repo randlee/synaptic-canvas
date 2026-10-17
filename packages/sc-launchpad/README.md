@@ -210,6 +210,12 @@ goals tool_suggest skill_search`; `--yolo` is omitted.
 `tempfile.mkdtemp(prefix="sc-launchpad-")`, outside any git repository (codex
 gets `--skip-git-repo-check` whenever `isolation` is present).
 
+**`extra_args`** are appended after the isolation flags and are not filtered.
+Arguments that touch tools, permissions, sandbox, MCP, or config (for example
+`--tools`, `--allowed-tools`, `--dangerously-skip-permissions`, `--yolo`,
+`--enable`, `-c`, `--sandbox`, `--add-dir`) can override isolation; keep
+`extra_args` empty for isolated turns unless you have checked them.
+
 **`tools: "default"`** — the harness's normal tools and the existing automation
 flags (`--dangerously-skip-permissions`, `--yolo`).
 
