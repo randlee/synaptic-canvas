@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """Read native gh-stack catalogs and predict content conflicts without networking.
 
 Catalogs are historical observations; refs and conflict probes are a separate epoch.
