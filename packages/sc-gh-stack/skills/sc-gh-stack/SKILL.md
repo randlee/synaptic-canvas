@@ -103,7 +103,8 @@ response or existing observation does not need a repeated full report.
    stack branch. Without `--base` the bottom PR is retargeted to the default
    branch and locked there. Appending one PR to an existing stack may use
    `gh stack link <stack#> <pr#>`, which appends on top only and cannot
-   insert. Either way, verify every base with `/sc-gh-stack-view` afterwards.
+   insert. Either way, verify every affected base from sufficient mutation
+   responses or existing observations; request a scoped view only for missing facts.
 2. Cut a new layer only from a **pushed** head that contains every lower
    layer's head (`git merge-base --is-ancestor`). Two layers cut from the same
    head must declare at cut time which one merges the other forward.
