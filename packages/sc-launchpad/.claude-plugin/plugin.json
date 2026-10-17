@@ -25,6 +25,7 @@
     "./skills/launchpad/SKILL.md"
   ],
   "scripts": [
+    "./scripts/agent_models.py",
     "./scripts/launchpad_commands.py",
     "./scripts/launchpad_models.py",
     "./scripts/launchpad_output.py",

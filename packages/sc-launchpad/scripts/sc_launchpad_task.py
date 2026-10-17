@@ -76,6 +76,7 @@ def check_capabilities(payload: LaunchpadInput) -> None:
             ("resume_session_id", payload.resume_session_id is not None),
             ("isolation", payload.isolation is not None),
             ("ephemeral", payload.ephemeral),
+            ("effort", payload.effort is not None),
         )
         if present
     ]
@@ -83,8 +84,8 @@ def check_capabilities(payload: LaunchpadInput) -> None:
         raise LaunchFailure(
             "CAPABILITY.UNSUPPORTED",
             "gemini does not support " + ", ".join(requested) + " in sc-launchpad",
-            "Use tool 'claude' or 'codex' for session ids, resume, isolation, and "
-            "ephemeral sessions, or launch gemini in text mode without these fields.",
+            "Use tool 'claude' or 'codex' for session ids, resume, isolation, "
+            "ephemeral sessions, and effort, or launch gemini in text mode without these fields.",
             recoverable=False,
             details={"tool": "gemini", "unsupported_fields": requested},
         )
@@ -136,6 +137,7 @@ def audit(env: Dict[str, str], payload: LaunchpadInput, response: dict, started:
         "level": "info" if response["success"] else "error",
         "tool": payload.tool,
         "model": data.get("model", payload.model),
+        "effort": payload.effort,
         "output_format": "json" if payload.structured else "text",
         "isolation": payload.isolation.model_dump() if payload.isolation else None,
         "ephemeral": payload.ephemeral,
@@ -197,6 +199,7 @@ def run_payload(payload: LaunchpadInput, parent_env: Dict[str, str]) -> dict:
     data: Dict[str, Any] = {
         "tool": payload.tool,
         "model": model,
+        "effort": payload.effort,
         "cwd": str(cwd),
         "cleanup_paths": [str(p) for p in cleanup_paths],
         "teammate_mode": teammate_mode,

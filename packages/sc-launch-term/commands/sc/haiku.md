@@ -1,10 +1,10 @@
 ---
 description: Launch Claude Code (haiku) in a supported terminal at a specified directory
-argument-hint: "[dir] [--terminal <name>] [--tab] [--tmux] [--identity <name>] [-- <claude args...>]"
+argument-hint: "[dir] [--terminal <name>] [--tab] [--tmux] [--identity <name>] [--effort <level>] [-- <claude args...>]"
 allowed-tools: Bash, AskUserQuestion
 ---
 
-Launch Claude Code with `claude --model haiku --dangerously-skip-permissions` in a supported terminal.
+Launch Claude Code with `claude --model claude-haiku-5-5 --dangerously-skip-permissions` in a supported terminal.
 
 ## Arguments
 
@@ -14,6 +14,7 @@ Parse from `$ARGUMENTS`:
 - `--tab` optional request for a new tab instead of a new window when supported.
 - `--tmux` optional tmux session flow using the session name `"{folder} - haiku"`.
 - `--identity <name>` optional. If omitted, a random name is generated. Exports both `ATM_TEAM` and `ATM_IDENTITY=<name>` into the launched session.
+- `--effort <level>` optional reasoning effort: `low`, `medium`, `high`, `xhigh`, or `max` (passed as `--effort <level>`). Default: Claude's own.
 - `-- <claude args...>` optional passthrough Claude CLI arguments. Everything after `--` is forwarded to `claude`.
 
 Supported backends:
@@ -32,7 +33,7 @@ Backend notes:
 **Step 0** — If `$ARGUMENTS` contains `--help`, print the following and stop:
 
 ```
-Usage: /sc:haiku [dir] [--terminal <name>] [--tab] [--tmux] [--identity <name>] [-- <claude args...>]
+Usage: /sc:haiku [dir] [--terminal <name>] [--tab] [--tmux] [--identity <name>] [--effort <level>] [-- <claude args...>]
 
 Launch Claude Code (haiku) in a supported terminal.
 
@@ -47,13 +48,13 @@ Examples:
   /sc:haiku ~/projects/foo --terminal ghostty -- --continue --resume <session-id>
 ```
 
-**Step 1** — Parse `$ARGUMENTS`. Extract `dir`, `--terminal`, `--tab`, `--tmux`, and `--identity`. If `--` is present, collect everything after it into `CLAUDE_ARG_TAIL`; otherwise `CLAUDE_ARG_TAIL` is empty.
+**Step 1** — Parse `$ARGUMENTS`. Extract `dir`, `--terminal`, `--tab`, `--tmux`, `--identity`, and `--effort`. If `--` is present, collect everything after it into `CLAUDE_ARG_TAIL`; otherwise `CLAUDE_ARG_TAIL` is empty.
 
 **Step 2** — Resolve `dir` to an absolute path.
 
 **Step 3** — If `warp` is selected with `--tab`, stop and explain that scripted Warp launches open a new window only.
 
-**Step 4** — Build `TERM_ARG`: `--terminal <name>` if supplied, otherwise omit.
+**Step 4** — Build `TERM_ARG`: `--terminal <name>` if supplied, otherwise omit. Build `EFFORT_ARG`: `--effort <level>` if supplied, otherwise omit.
 
 **Step 5** — Resolve identity: use `--identity <name>` if supplied, otherwise generate a random name. Build `IDENTITY_ARG` from the resolved value.
 
@@ -62,7 +63,7 @@ Examples:
 Run and stop:
 
 ```bash
-.claude/scripts/sc-term-launch.sh launch-claude-model haiku "<resolved_dir>" <TERM_ARG> <TAB_ARG> <IDENTITY_ARG> <CLAUDE_ARG_TAIL>
+.claude/scripts/sc-term-launch.sh launch-claude-model haiku "<resolved_dir>" <TERM_ARG> <TAB_ARG> <IDENTITY_ARG> <EFFORT_ARG> <CLAUDE_ARG_TAIL>
 ```
 
 ### With `--tmux`
@@ -82,7 +83,7 @@ If `available` is false, stop and tell the user that local tmux support is unava
 If `exists` is false, run and stop:
 
 ```bash
-.claude/scripts/sc-term-launch.sh launch-claude-model haiku "<resolved_dir>" <TERM_ARG> <TAB_ARG> <IDENTITY_ARG> --tmux "<SESSION_NAME>" <CLAUDE_ARG_TAIL>
+.claude/scripts/sc-term-launch.sh launch-claude-model haiku "<resolved_dir>" <TERM_ARG> <TAB_ARG> <IDENTITY_ARG> <EFFORT_ARG> --tmux "<SESSION_NAME>" <CLAUDE_ARG_TAIL>
 ```
 
 If `exists` is true, use `AskUserQuestion` exactly once with:
@@ -100,15 +101,15 @@ Handle responses:
 
 **Connect + Claude pane**:
 ```bash
-.claude/scripts/sc-term-launch.sh attach-pane-claude-model "<SESSION_NAME>" haiku --cwd "<resolved_dir>" <TERM_ARG> <TAB_ARG> <IDENTITY_ARG> <CLAUDE_ARG_TAIL>
+.claude/scripts/sc-term-launch.sh attach-pane-claude-model "<SESSION_NAME>" haiku --cwd "<resolved_dir>" <TERM_ARG> <TAB_ARG> <IDENTITY_ARG> <EFFORT_ARG> <CLAUDE_ARG_TAIL>
 ```
 
 **New session (`next_name`)**:
 ```bash
-.claude/scripts/sc-term-launch.sh launch-claude-model haiku "<resolved_dir>" <TERM_ARG> <TAB_ARG> <IDENTITY_ARG> --tmux "<next_name>" <CLAUDE_ARG_TAIL>
+.claude/scripts/sc-term-launch.sh launch-claude-model haiku "<resolved_dir>" <TERM_ARG> <TAB_ARG> <IDENTITY_ARG> <EFFORT_ARG> --tmux "<next_name>" <CLAUDE_ARG_TAIL>
 ```
 
 **Enter custom name** — ask for the session name in a follow-up message, then:
 ```bash
-.claude/scripts/sc-term-launch.sh launch-claude-model haiku "<resolved_dir>" <TERM_ARG> <TAB_ARG> <IDENTITY_ARG> --tmux "<custom_name>" <CLAUDE_ARG_TAIL>
+.claude/scripts/sc-term-launch.sh launch-claude-model haiku "<resolved_dir>" <TERM_ARG> <TAB_ARG> <IDENTITY_ARG> <EFFORT_ARG> --tmux "<custom_name>" <CLAUDE_ARG_TAIL>
 ```

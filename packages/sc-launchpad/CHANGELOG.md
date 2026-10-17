@@ -7,6 +7,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [0.14.0] - 2026-10-17
 ### Added
+- `effort` payload field: claude `--effort`, codex `-c model_reasoning_effort=<level>`,
+  validated per model (`VALIDATION.INVALID_EFFORT`); gemini returns `CAPABILITY.UNSUPPORTED`.
+- Shared model table `scripts/agent_models.py` (with sc-launch-term and sc-codex).
 - Structured output mode (`output_format: "json"`): `claude --print --output-format
   stream-json --verbose` and `codex exec --json`, returning `data.session_id` and
   `data.result_text`. Raw stdout is not repeated in the envelope
@@ -39,6 +42,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   `--json -` from stdin) for parallel fan-out.
 
 ### Changed
+- Defaults are the newest models: claude `fable` (`claude-fable-5-1`), codex `sol`
+  (`gpt-6.1-sol`). The `codex` alias now means the Codex default (`gpt-6.1-sol`,
+  was `gpt-5.6-terra`); `luna` is `gpt-6-luna`. Legacy codex aliases were removed.
+  `data.model` is always the full model id.
 - The runtime is split into modules (`launchpad_models`, `launchpad_commands`,
   `launchpad_process`, `launchpad_output`) behind the unchanged
   `sc_launchpad_task.py` entry point.

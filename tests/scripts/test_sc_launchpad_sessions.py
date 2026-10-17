@@ -217,7 +217,7 @@ def test_codex_isolated_turn_uses_private_codex_home(fake_bin, tmp_path, private
     response = lp.run_payload(payload(tool="codex", model="luna", isolation=ISOLATED), env)
     assert response["success"] is True, response
     data = response["data"]
-    assert (data["session_id"], data["result_text"], data["model"]) == (THREAD, "FINAL", "gpt-5.6-luna")
+    assert (data["session_id"], data["result_text"], data["model"]) == (THREAD, "FINAL", "gpt-6-luna")
     codex_home = Path(recorded(tmp_path)["codex_home"])
     assert codex_home.parent == private_tmp.resolve()
     assert sorted(p.name for p in codex_home.iterdir()) == ["auth.json"]
@@ -267,8 +267,20 @@ def test_text_mode(fake_bin, tmp_path, workdir):
     data = response["data"]
     assert (data["stdout"], data["output_format"], data["session_id"]) == ("plain text\n", "text", None)
     rec = recorded(tmp_path)
-    assert rec["argv"] == ["--print", "--dangerously-skip-permissions", "--model", "haiku"]
+    assert rec["argv"] == ["--print", "--dangerously-skip-permissions", "--model", "claude-haiku-5-5"]
     assert rec["stdin"] == "Answer the question"
+
+
+@pytest.mark.parametrize(
+    ("tool", "stdout", "flags"),
+    [("claude", "ok\n", ["--effort", "max"]), ("codex", "ok\n", ["-c", "model_reasoning_effort=max"])],
+)
+def test_effort_reaches_the_cli(fake_bin, tmp_path, workdir, tool, stdout, flags):
+    response = run(fake_bin, tmp_path, {"stdout": stdout}, tool=tool, cwd=str(workdir), effort="max")
+    assert response["success"] is True, response
+    assert response["data"]["effort"] == "max"
+    argv = recorded(tmp_path)["argv"]
+    assert argv[argv.index("--model") + 2:][:2] == flags
 
 
 def test_audit_log_records_launch_without_prompt(fake_bin, tmp_path):
@@ -531,7 +543,7 @@ def test_rejected_extra_arg_names_the_flag(fake_bin, tmp_path, workdir):
 @pytest.mark.parametrize(
     "fields",
     [{"output_format": "json"}, {"isolation": {"tools": "none"}}, {"resume_session_id": SESSION, "isolation": {}},
-     {"ephemeral": True}],
+     {"ephemeral": True}, {"effort": "high"}],
 )
 def test_gemini_session_fields_are_typed_unsupported(fake_bin, tmp_path, workdir, fields):
     response = run(fake_bin, tmp_path, {}, tool="gemini", cwd=str(workdir), **fields)

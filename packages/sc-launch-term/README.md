@@ -1,8 +1,9 @@
 # sc-launch-term
 
 Launch Claude, Codex, and Gemini sessions in supported terminals with a shared
-autodetect launcher. Codex exposes Sol, Terra, and Luna model aliases through
-one shared model-launch implementation.
+autodetect launcher. Codex exposes Sol, Astra, Terra, and Luna model aliases through
+one shared model-launch implementation. Models and reasoning-effort levels come
+from the shared table `scripts/agent_models.py` (also used by sc-launchpad and sc-codex).
 
 ## Commands
 
@@ -11,6 +12,7 @@ one shared model-launch implementation.
 - `/sc:opus`
 - `/sc:fable`
 - `/sc:sol`
+- `/sc:astra`
 - `/sc:terra`
 - `/sc:luna`
 - `/sc:codex`
@@ -23,6 +25,7 @@ Each command accepts:
 - `--tab` to request a new tab when the backend supports it
 - `--tmux` to create or attach to a named tmux session
 - `--identity <name>` optional; if omitted, the launcher generates a model-specific identity and exports both `ATM_TEAM` and `ATM_IDENTITY`
+- `--effort <level>` optional reasoning effort (Claude and Codex commands): claude `low`..`max`, codex `low`..`ultra` (`luna` stops at `max`); omitted means the CLI's default
 - `-- <args...>` to forward extra CLI args to the launched tool
 
 ## Terminal Backends
@@ -42,12 +45,14 @@ Notes:
 - Warp automation uses Warp launch configurations and opens a new window.
 - cmux automation creates and focuses a new cmux workspace, which is cmux's tab primitive.
 - `/sc:sonnet`, `/sc:haiku`, `/sc:opus`, and `/sc:fable` launch `claude` directly with
-  `--model <name> --dangerously-skip-permissions`, so they no longer depend on
-  shell aliases or functions.
-- `/sc:sol`, `/sc:terra`, and `/sc:luna` launch Codex with
-  `--model gpt-5.6-sol`, `--model gpt-5.6-terra`, and `--model gpt-5.6-luna`
+  `--model <full id> --dangerously-skip-permissions` (for example
+  `claude-fable-5-1`), so they no longer depend on shell aliases or functions.
+- `/sc:sol`, `/sc:astra`, `/sc:terra`, and `/sc:luna` launch Codex with
+  `--model gpt-6.1-sol`, `gpt-6-astra`, `gpt-5.6-terra`, and `gpt-6-luna`
   respectively, using the shared Codex launcher and model-specific identity pools.
-- `/sc:codex` is a deprecated compatibility alias for `/sc:terra`.
+- `/sc:codex` launches the Codex default model (currently `sol`).
+- `--effort` becomes `--effort <level>` for claude and
+  `-c model_reasoning_effort=<level>` for codex.
 - When `--tmux` is used with Claude model commands, the launcher also
   adds `--teammate-mode tmux` to match the current local wrappers.
 - If `ATM_TEAM` is set in the current environment, every launch exports both
@@ -72,7 +77,7 @@ This package is intended for global command installation under `~/.claude/`.
 
 - The commands launch locally installed CLIs only. They do not download code or open network connections by themselves.
 - `/sc:sonnet`, `/sc:haiku`, `/sc:opus`, and `/sc:fable` invoke the local `claude` CLI with `--dangerously-skip-permissions`, so use this package only in environments where that launch model is acceptable.
-- `/sc:sol`, `/sc:terra`, `/sc:luna`, and deprecated `/sc:codex` forward to the local `codex` executable on `PATH`.
+- `/sc:sol`, `/sc:astra`, `/sc:terra`, `/sc:luna`, and `/sc:codex` forward to the local `codex` executable on `PATH`.
 - `/sc:gemini` forwards to the local `gemini` executable on `PATH`.
 - cmux requires the local `cmux` CLI on `PATH`; cmux launches always target a new workspace/tab.
 - When `ATM_TEAM` is present, the launcher exports both `ATM_TEAM` and an explicit or generated `ATM_IDENTITY` into the child session.
@@ -88,6 +93,7 @@ This package is intended for global command installation under `~/.claude/`.
 /sc:opus ~/projects/foo --tab
 /sc:fable ~/projects/foo --terminal cmux --tab
 /sc:sol ~/projects/foo
+/sc:astra ~/projects/foo --effort high
 /sc:terra ~/projects/foo --terminal cmux --tab
 /sc:luna ~/projects/foo
 /sc:codex ~/projects/foo --identity alice

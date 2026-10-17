@@ -65,6 +65,7 @@ def test_child_env_sets_or_clears_atm_vars():
         {"session": "x"},
         {"isolation": {"tools": "none"}, "extra_args": ["--x"]},
         {"isolation": {"tools": "none"}, "atm_identity": "r1"},
+        {"effort": "extreme"},
     ],
 )
 def test_invalid_payloads_are_rejected(fields):
@@ -93,11 +94,13 @@ def test_structured_output_defaults():
 @pytest.mark.parametrize(
     ("tool", "model", "expected"),
     [
-        ("claude", None, "sonnet"),
-        ("claude", "claude-fable-5[1m]", "fable"),
-        ("codex", None, "gpt-5.6-terra"),
-        ("codex", "codex", "gpt-5.6-terra"),
-        ("codex", "luna", "gpt-5.6-luna"),
+        ("claude", None, "claude-fable-5-1"),
+        ("claude", "opus", "claude-opus-5-5"),
+        ("claude", "claude-haiku-5-5", "claude-haiku-5-5"),
+        ("codex", None, "gpt-6.1-sol"),
+        ("codex", "codex", "gpt-6.1-sol"),
+        ("codex", "astra", "gpt-6-astra"),
+        ("codex", "gpt-5.6-luna", "gpt-5.6-luna"),
         ("gemini", "gemini-2.5-pro", "gemini-2.5-pro"),
     ],
 )
@@ -105,15 +108,30 @@ def test_normalize_tool_model(tool, model, expected):
     assert normalize_tool_model(payload(tool=tool, model=model)) == expected
 
 
-def test_unknown_model_is_a_typed_failure():
+@pytest.mark.parametrize(
+    ("fields", "code"),
+    [
+        ({"model": "gpt-4"}, "VALIDATION.INVALID_MODEL"),
+        ({"tool": "codex", "model": "max"}, "VALIDATION.INVALID_MODEL"),  # legacy alias is gone
+        ({"model": "haiku", "effort": "ultra"}, "VALIDATION.INVALID_EFFORT"),
+        ({"tool": "codex", "model": "luna", "effort": "ultra"}, "VALIDATION.INVALID_EFFORT"),
+    ],
+)
+def test_bad_model_or_effort_is_a_typed_failure(fields, code):
     with pytest.raises(LaunchFailure) as exc:
-        normalize_tool_model(payload(model="gpt-4"))
-    assert exc.value.code == "VALIDATION.INVALID_MODEL"
+        normalize_tool_model(payload(**fields))
+    assert exc.value.code == code
+    assert "Supported" in exc.value.message or "Use an alias" in exc.value.message
 
 
 @pytest.mark.parametrize(
     ("tool", "model", "expected"),
-    [("claude", "opus", "opus"), ("codex", "gpt-5.6-terra", "terra"), ("gemini", "x", "gemini")],
+    [
+        ("claude", "claude-opus-5-5", "opus"),
+        ("codex", "gpt-6.1-sol", "sol"),
+        ("codex", "gpt-6-sol", "gpt-6-sol"),  # no alias points at it
+        ("gemini", "x", "gemini"),
+    ],
 )
 def test_roster_model(tool, model, expected):
     assert roster_model(payload(tool=tool), model) == expected
@@ -123,11 +141,24 @@ def test_roster_model(tool, model, expected):
 
 
 def test_text_mode_commands_put_prompt_on_stdin():
-    claude = commands.build_command(payload(extra_args=["--x"]), "haiku")
-    assert claude.argv == ["claude", "--print", "--dangerously-skip-permissions", "--model", "haiku", "--x"]
+    claude = commands.build_command(payload(extra_args=["--x"]), "claude-haiku-5-5")
+    assert claude.argv == ["claude", "--print", "--dangerously-skip-permissions", "--model", "claude-haiku-5-5", "--x"]
     codex = commands.build_command(payload(tool="codex", extra_args=["--x"]), "gpt-5.6-terra")
     assert codex.argv == ["codex", "exec", "--yolo", "--model", "gpt-5.6-terra", "--x", "--", "-"]
     assert claude.stdin == codex.stdin == "Answer the question"
+
+
+def test_effort_flags_are_unquoted():
+    claude = commands.build_command(payload(effort="xhigh"), "claude-opus-5-5").argv
+    assert claude[claude.index("--model"):][:4] == ["--model", "claude-opus-5-5", "--effort", "xhigh"]
+    codex = commands.build_command(payload(tool="codex", effort="ultra"), "gpt-6.1-sol").argv
+    assert codex[codex.index("--model"):][:4] == ["--model", "gpt-6.1-sol", "-c", "model_reasoning_effort=ultra"]
+    commands.check_batch_shim("codex.cmd", codex)  # must not raise
+
+
+def test_no_effort_passes_no_effort_flag():
+    argv = commands.build_command(payload(tool="codex"), "gpt-6.1-sol").argv
+    assert "-c" not in argv and "--effort" not in argv
 
 
 def test_gemini_keeps_prompt_on_argv():
@@ -137,7 +168,7 @@ def test_gemini_keeps_prompt_on_argv():
 
 
 def test_claude_isolated_command():
-    argv = commands.build_command(payload(isolation=ISOLATED, ephemeral=True), "haiku").argv
+    argv = commands.build_command(payload(isolation=ISOLATED, ephemeral=True), "claude-haiku-5-5").argv
     assert argv[:5] == ["claude", "--print", "--output-format", "stream-json", "--verbose"]
     assert "--dangerously-skip-permissions" not in argv
     assert argv[argv.index("--tools") + 1] == ""
@@ -145,13 +176,13 @@ def test_claude_isolated_command():
 
 
 def test_claude_resume_with_default_tools_keeps_permissions_flag():
-    argv = commands.build_command(payload(resume_session_id=SESSION, isolation={}), "sonnet").argv
+    argv = commands.build_command(payload(resume_session_id=SESSION, isolation={}), "claude-sonnet-5-5").argv
     assert argv[argv.index("--resume") + 1] == SESSION
     assert "--dangerously-skip-permissions" in argv and "--tools" not in argv
 
 
 def test_codex_isolated_command_is_shim_safe():
-    argv = commands.build_command(payload(tool="codex", isolation=ISOLATED, ephemeral=True), "m").argv
+    argv = commands.build_command(payload(tool="codex", isolation=ISOLATED, ephemeral=True), "gpt-6.1-sol").argv
     assert argv[:3] == ["codex", "exec", "--json"]
     assert "--yolo" not in argv and "--ephemeral" in argv
     assert {"--skip-git-repo-check", "sandbox_mode=read-only", "web_search=disabled"} <= set(argv)
@@ -162,7 +193,7 @@ def test_codex_isolated_command_is_shim_safe():
 
 
 def test_codex_resume_places_session_before_stdin_marker():
-    argv = commands.build_command(payload(tool="codex", resume_session_id=SESSION, isolation={}), "m").argv
+    argv = commands.build_command(payload(tool="codex", resume_session_id=SESSION, isolation={}), "gpt-6.1-sol").argv
     assert argv[:4] == ["codex", "exec", "resume", "--json"]
     assert "--yolo" in argv
     assert argv[-3:] == ["--", SESSION, "-"]

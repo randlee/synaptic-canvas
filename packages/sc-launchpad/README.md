@@ -1,6 +1,6 @@
 # sc-launchpad
 
-Launch Claude (including the `fable` model), Codex (including `sol`, `terra`, and `luna`), or Gemini as a background sub-agent runtime without
+Launch Claude, Codex, or Gemini, with model and reasoning-effort selection, as a background sub-agent runtime without
 opening a visible terminal window.
 
 ## Included Artifacts
@@ -10,6 +10,7 @@ opening a visible terminal window.
 - `scripts/sc_launchpad_task.py` (entry point)
 - `scripts/launchpad_models.py`, `launchpad_commands.py`, `launchpad_process.py`, `launchpad_output.py`
 - `scripts/launchpad_shared.py`
+- `scripts/agent_models.py` (shared model table; synced from `packages/shared/scripts`)
 
 ## What It Does
 
@@ -53,13 +54,21 @@ Otherwise, the runtime clears both ATM variables before spawning the child.
 - Structured, resumable, and isolated launches are described in "Sessions, Resume, and Isolation" below.
 - This package depends on local Python 3 plus whichever AI CLI you are launching.
 
-For Claude launches, `model` accepts `sonnet`, `haiku`, `opus`, or `fable`,
-plus the corresponding supported full model names.
+`model` takes an alias or a full model id from the shared table in
+`scripts/agent_models.py` (also used by sc-launch-term and sc-codex). The
+default is the newest flagship of each tool.
 
-For Codex launches, `model` accepts `sol`, `terra`, or `luna`. The deprecated
-`codex` alias routes to `gpt-5.6-terra`; the runtime also accepts the known
-legacy Codex aliases for compatibility. The canonical model IDs are
-`gpt-5.6-sol`, `gpt-5.6-terra`, and `gpt-5.6-luna`.
+| Tool | Aliases | Default |
+|------|---------|---------|
+| claude | `fable` (`claude-fable-5-1`), `opus`, `sonnet`, `haiku` | `fable` |
+| codex | `sol` (`gpt-6.1-sol`), `astra` (`gpt-6-astra`), `terra` (`gpt-5.6-terra`), `luna` (`gpt-6-luna`), `codex` (the Codex default, `gpt-6.1-sol`) | `sol` |
+
+`effort` sets reasoning effort: claude `low`..`max` (`--effort`), codex
+`low`..`ultra` (`-c model_reasoning_effort=<level>`; `luna` models stop at
+`max`). Omit it to use the CLI's default. An unknown model or an effort the
+model does not support returns `VALIDATION.INVALID_MODEL` /
+`VALIDATION.INVALID_EFFORT` listing the valid choices. Gemini takes any
+`model` string and rejects `effort`.
 
 ## Installation
 
@@ -77,7 +86,7 @@ surface where orchestrator skills or agents need background launch support.
   "description": "Run a background code review",
   "prompt": "Review the changed files for risks and missing tests.",
   "tool": "codex",
-  "model": "terra",
+  "model": "sol",
   "cwd": "/abs/path/to/repo",
   "atm_identity": "reviewer-1",
   "extra_args": ["--skip-git-repo-check"]
@@ -251,7 +260,7 @@ work as before.
 
 | Code | When |
 |------|------|
-| `VALIDATION.MISSING_INPUT` / `VALIDATION.INVALID_JSON` / `VALIDATION.INVALID_PAYLOAD` / `VALIDATION.INVALID_CWD` / `VALIDATION.INVALID_MODEL` | Payload problems (unknown fields are rejected). |
+| `VALIDATION.MISSING_INPUT` / `VALIDATION.INVALID_JSON` / `VALIDATION.INVALID_PAYLOAD` / `VALIDATION.INVALID_CWD` / `VALIDATION.INVALID_MODEL` / `VALIDATION.INVALID_EFFORT` | Payload problems (unknown fields are rejected). |
 | `CLI.NOT_FOUND` | The CLI (or `atm` in teammate mode) is not on PATH; `details.searched_path` lists the PATH directories. |
 | `CLI.LAUNCH_FAILED` | The executable could not be started. |
 | `CLI.NON_ZERO_EXIT` | The child exited non-zero for an unclassified reason. |
@@ -314,7 +323,7 @@ Contract:
 
 Each launch appends one line to
 `<CLAUDE_PROJECT_DIR or cwd>/.claude/state/logs/sc-launchpad/launch.jsonl`:
-`timestamp`, `event` (`launch`), `package`, `level`, `tool`, `model`,
+`timestamp`, `event` (`launch`), `package`, `level`, `tool`, `model`, `effort`,
 `output_format`, `isolation`, `ephemeral`, `session_id`, `resumed_session_id`,
 `exit_code`, `error_code`, `duration_seconds`. The prompt, the answer, and the
 environment are never logged. A log write failure never fails the launch.

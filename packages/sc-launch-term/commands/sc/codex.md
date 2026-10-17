@@ -1,21 +1,27 @@
 ---
-description: Deprecated compatibility alias for launching Codex Terra in a supported terminal
-argument-hint: "[dir] [--terminal <name>] [--tab] [--tmux] [--identity <name>] [-- <codex args...>]"
+description: Launch Codex with the default Codex model (gpt-6.1-sol) in a supported terminal
+argument-hint: "[dir] [--terminal <name>] [--tab] [--tmux] [--identity <name>] [--effort <level>] [-- <codex args...>]"
 allowed-tools: Bash, AskUserQuestion
 ---
 
-`/sc:codex` is retained as a deprecated compatibility alias. It routes to the `terra` model and Terra identity pool, launching Codex as `gpt-5.6-terra`.
+`/sc:codex` launches the Codex CLI's default model, currently `sol` (`gpt-6.1-sol`), and uses the Sol identity pool.
 
-Use `/sc:terra` for new invocations. The shared launcher handles argument parsing, terminal selection, cmux workspace/tab creation, tmux session collision handling, identity generation, and Codex passthrough arguments.
-
-For this compatibility alias, resolve the optional directory and arguments using the same contract as the model commands, then invoke:
+Use the same argument contract and tmux collision handling as `/sc:fable` (session name `"{folder} - codex"`), with
+`CODEX_ARG_TAIL` (everything after `--`, forwarded to `codex`) in place of
+`CLAUDE_ARG_TAIL`, `--effort <level>` accepting `low`, `medium`, `high`, `xhigh`, `max`, or `ultra`
+(passed as `-c model_reasoning_effort=<level>`; default: the model's own, `low`),
+and invoke:
 
 ```bash
-.claude/scripts/sc-term-launch.sh launch-codex-model codex "<resolved_dir>" <TERM_ARG> <TAB_ARG> <IDENTITY_ARG> <CODEX_ARG_TAIL>
+.claude/scripts/sc-term-launch.sh launch-codex-model codex "<resolved_dir>" <TERM_ARG> <TAB_ARG> <IDENTITY_ARG> <EFFORT_ARG> <CODEX_ARG_TAIL>
 ```
 
-The deprecated `codex` model alias is normalized by the launcher to:
+For `--tmux`, use `launch-codex-model codex ... --tmux "<session>"` and
+`attach-pane-codex-model "<session>" codex --cwd "<resolved_dir>" ...` in place of the
+Claude subcommands.
+
+A missing identity is drawn from the Sol sci-fi/cyberpunk name pool. The launched command is:
 
 ```text
-codex --model gpt-5.6-terra --yolo --enable hooks
+codex --model gpt-6.1-sol --yolo --enable hooks
 ```

@@ -43,7 +43,8 @@ Required fields:
 - `cwd` (required, except it must be omitted when `isolation.cwd` is `"temp"`)
 
 Optional fields:
-- `model`
+- `model`: alias or full id (claude default `fable`, codex default `sol`; see README)
+- `effort`: reasoning effort (claude `low`..`max`, codex `low`..`ultra`); omit for the CLI default
 - `atm_identity`
 - `extra_args`
 - `output_format`: `"text"` or `"json"` (structured mode; returns `session_id` and `result_text`)
@@ -55,7 +56,7 @@ Optional fields:
 `output_format` defaults to `json` when `resume_session_id` or `isolation` is
 present, otherwise `text`. Payloads without the new fields behave exactly as
 before. Gemini returns `CAPABILITY.UNSUPPORTED` for `output_format: "json"`,
-`resume_session_id`, `isolation`, and `ephemeral`.
+`resume_session_id`, `isolation`, `ephemeral`, and `effort`.
 
 ### Multi-turn isolated sessions
 
@@ -77,7 +78,8 @@ availability or use and fails closed with `ISOLATION.VIOLATED`.
 See the package README for the exact per-harness flags and what each
 isolation level guarantees.
 
-For Claude launches, `model` accepts `sonnet`, `haiku`, `opus`, or `fable`.
+Claude aliases: `fable`, `opus`, `sonnet`, `haiku`. Codex aliases: `sol`, `astra`,
+`terra`, `luna`, `codex`. Full ids are also accepted; the README has the table.
 
 ## ATM Rules
 

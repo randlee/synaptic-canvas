@@ -8,6 +8,7 @@ import tempfile
 from pathlib import Path
 from typing import Dict, List, NamedTuple, Optional
 
+import agent_models
 from launchpad_models import LaunchFailure, LaunchpadInput
 
 TEMP_PREFIX = "sc-launchpad-"
@@ -72,13 +73,18 @@ def isolation_flags(payload: LaunchpadInput) -> List[str]:
 
 
 def build_command(payload: LaunchpadInput, model: Optional[str]) -> LaunchCommand:
-    """Build argv and the stdin text. claude/codex always read the prompt from stdin."""
-    model_args = ["--model", model] if model else []
+    """Build argv and the stdin text. claude/codex always read the prompt from stdin.
+
+    ``model`` is the id from ``normalize_tool_model``; claude/codex also get the effort flag.
+    """
     if payload.tool == "gemini":
+        model_args = ["--model", model] if model else []
         return LaunchCommand(
             ["gemini", "--yolo", "--prompt", payload.prompt, *model_args, *payload.extra_args],
             None,
         )
+    spec = agent_models.resolve_model(payload.tool, model)
+    model_args = agent_models.model_flags(payload.tool, spec, payload.effort)
     automation = [] if payload.no_tools else (
         ["--dangerously-skip-permissions"] if payload.tool == "claude" else ["--yolo"]
     )

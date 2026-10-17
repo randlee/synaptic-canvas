@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 import os
 import secrets
 import shlex
@@ -102,7 +102,19 @@ _IDENTITY_NAMES: dict[str, list[str]] = {
         "Fablewood",
     ],
     # Codex model identities use the model alias initial and a sci-fi/cyberpunk
-    # vocabulary. The deprecated `codex` alias is normalized to `terra` below.
+    # vocabulary. The `codex` alias is the Codex default model (`sol`), mapped below.
+    "astra": [
+        "Ash",
+        "Atreides",
+        "Avasarala",
+        "Akira",
+        "Automata",
+        "Axiom",
+        "Aegis",
+        "Apex",
+        "Arclight",
+        "Avatar",
+    ],
     "sol": [
         "Smith",
         "Switch",
@@ -141,7 +153,7 @@ _IDENTITY_NAMES: dict[str, list[str]] = {
     ],
 }
 
-_IDENTITY_ALIASES = {"codex": "terra"}
+_IDENTITY_ALIASES = {"codex": "sol"}
 
 _FALLBACK_NAMES: list[str] = [
     "Amber",
@@ -187,7 +199,7 @@ def _decode_crockford(value: str) -> int:
 
 
 def generate_ulid(now: datetime | None = None) -> str:
-    timestamp = now or datetime.now(UTC)
+    timestamp = now or datetime.now(timezone.utc)
     timestamp_ms = int(timestamp.timestamp() * 1000)
     entropy = int.from_bytes(secrets.token_bytes(10), "big")
     return _encode_crockford(timestamp_ms, 10) + _encode_crockford(entropy, 16)
@@ -197,7 +209,7 @@ def ulid_timestamp(launch_id: str) -> datetime:
     if len(launch_id) != 26:
         raise ValueError(f"Invalid ULID length: {launch_id}")
     timestamp_ms = _decode_crockford(launch_id[:10])
-    return datetime.fromtimestamp(timestamp_ms / 1000, tz=UTC)
+    return datetime.fromtimestamp(timestamp_ms / 1000, tz=timezone.utc)
 
 
 def session_filename_from_launch_id(launch_id: str) -> str:

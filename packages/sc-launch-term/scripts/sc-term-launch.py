@@ -16,6 +16,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+import agent_models  # noqa: E402
 from launch_term_shared import (
     _IDENTITY_NAMES,  # noqa: F401 - retained as a module-level identity-pool view
     build_claude_session_record_path,
@@ -32,14 +33,12 @@ from launch_term_shared import (
 
 MAC_TERMINALS = ("iterm2", "ghostty", "wezterm", "warp", "cmux", "terminal")
 WINDOWS_TERMINALS = ("wt", "warp")
-CLAUDE_MODELS = ("sonnet", "haiku", "opus", "fable")
-CODEX_MODELS = ("sol", "terra", "luna", "codex")
-CODEX_MODEL_IDS = {
-    "sol": "gpt-5.6-sol",
-    "terra": "gpt-5.6-terra",
-    "luna": "gpt-5.6-luna",
-}
-TEAM_MEMBER_MODELS = CLAUDE_MODELS + CODEX_MODELS + ("gemini",)
+# Models, aliases, and effort levels come from the shared table (agent_models.py).
+CLAUDE_MODELS = tuple(agent_models.model_choices("claude"))
+CODEX_MODELS = tuple(agent_models.model_choices("codex"))
+TEAM_MEMBER_MODELS = (
+    tuple(agent_models.ALIASES["claude"]) + tuple(agent_models.ALIASES["codex"]) + ("gemini",)
+)
 MACOS_SHELL_SETTLE_DELAY_SECONDS = 0.8
 
 
@@ -457,34 +456,38 @@ def render_command_argv(command_argv: list[str], terminal: str) -> str:
     return shlex.join(command_argv)
 
 
+def resolve_model(tool: str, model: str, effort: str | None) -> tuple[agent_models.ModelSpec, str]:
+    """The model spec plus its label: the family alias, else the full id (`codex` -> `sol`)."""
+    try:
+        spec = agent_models.resolve_model(tool, model)
+        agent_models.resolve_effort(spec, effort)
+    except agent_models.ModelError as exc:
+        fail(str(exc))
+    return spec, agent_models.alias_for(tool, spec.id) or spec.id
+
+
+def identity_family(tool: str, label: str) -> str:
+    """Identity pool key: the alias, or the family inside a full id (claude-opus-5-5 -> opus)."""
+    if label in agent_models.ALIASES.get(tool, {}):
+        return label
+    parts = label.split("-")
+    return parts[1] if tool == "claude" else parts[-1]
+
+
 def build_claude_argv(
-    model: str, extra_args: list[str], teammate_mode: bool
+    spec: agent_models.ModelSpec, effort: str | None, extra_args: list[str], teammate_mode: bool
 ) -> list[str]:
-    command = ["claude", "--model", model, "--dangerously-skip-permissions"]
+    command = ["claude", *agent_models.model_flags("claude", spec, effort), "--dangerously-skip-permissions"]
     if teammate_mode:
         command.extend(["--teammate-mode", "tmux"])
     command.extend(extra_args)
     return command
 
 
-def canonical_codex_model(model: str) -> str:
-    """Normalize the deprecated Codex alias to the Terra model identity."""
-    return "terra" if model == "codex" else model
-
-
-def codex_model_id(model: str) -> str:
-    return CODEX_MODEL_IDS[canonical_codex_model(model)]
-
-
-def build_codex_argv(model: str, extra_args: list[str]) -> list[str]:
-    command = [
-        "codex",
-        "--model",
-        codex_model_id(model),
-        "--yolo",
-        "--enable",
-        "hooks",
-    ]
+def build_codex_argv(
+    spec: agent_models.ModelSpec, effort: str | None, extra_args: list[str]
+) -> list[str]:
+    command = ["codex", *agent_models.model_flags("codex", spec, effort), "--yolo", "--enable", "hooks"]
     command.extend(extra_args)
     return command
 
@@ -578,7 +581,7 @@ def session_tracking_for_member_model(
     member_model: str | None,
     dir_path: str,
 ) -> tuple[str, Path] | tuple[None, None]:
-    if member_model in CODEX_MODELS:
+    if member_model in agent_models.ALIASES["codex"]:
         launch_id = generate_ulid()
         return launch_id, build_codex_session_record_path(dir_path, launch_id)
     return None, None
@@ -594,21 +597,16 @@ def model_session_record_path(tool: str, dir_path: str, launch_id: str) -> Path:
 
 def build_model_argv(
     tool: str,
-    model: str,
+    spec: agent_models.ModelSpec,
+    effort: str | None,
     extra_args: list[str],
     teammate_mode: bool,
 ) -> list[str]:
     if tool == "claude":
-        return build_claude_argv(model, extra_args, teammate_mode)
+        return build_claude_argv(spec, effort, extra_args, teammate_mode)
     if tool == "codex":
-        return build_codex_argv(model, extra_args)
+        return build_codex_argv(spec, effort, extra_args)
     fail(f"Unsupported model-launch tool: {tool}")
-
-
-def canonical_model_label(tool: str, model: str) -> str:
-    if tool == "codex":
-        return canonical_codex_model(model)
-    return model
 
 
 def handle_launch_model(args: argparse.Namespace, tool: str) -> None:
@@ -616,15 +614,15 @@ def handle_launch_model(args: argparse.Namespace, tool: str) -> None:
     if args.tmux and not tmux_available():
         fail("tmux is not available on PATH; omit --tmux or install tmux")
 
-    model = canonical_model_label(tool, args.model)
+    spec, model = resolve_model(tool, args.model, args.effort)
     team = resolve_team()
-    identity = resolve_identity(args.identity, model)
+    identity = resolve_identity(args.identity, identity_family(tool, model))
     register_team_member(team, identity, model, args.dir)
     launch_id = generate_ulid()
     session_record = model_session_record_path(tool, args.dir, launch_id)
     extra_args = normalize_passthrough_args(getattr(args, "model_args", []))
     command = render_command_argv(
-        build_model_argv(tool, model, extra_args, teammate_mode=bool(args.tmux)),
+        build_model_argv(tool, spec, args.effort, extra_args, teammate_mode=bool(args.tmux)),
         terminal,
     )
     env_vars = {
@@ -642,12 +640,12 @@ def handle_launch_model(args: argparse.Namespace, tool: str) -> None:
         "ok": True,
         "tool": tool,
         "model": model,
+        "model_id": spec.id,
+        "effort": args.effort,
         "launch_id": launch_id,
         "session_record": str(session_record),
         "session_record_found": wait_for_path(session_record),
     }
-    if tool == "codex":
-        result["model_id"] = codex_model_id(model)
     emit_json(result)
 
 
@@ -656,15 +654,15 @@ def handle_attach_pane_model(args: argparse.Namespace, tool: str) -> None:
     if not tmux_available():
         fail("tmux is not available on PATH; cannot attach to a session")
 
-    model = canonical_model_label(tool, args.model)
+    spec, model = resolve_model(tool, args.model, args.effort)
     team = resolve_team()
-    identity = resolve_identity(args.identity, model)
+    identity = resolve_identity(args.identity, identity_family(tool, model))
     register_team_member(team, identity, model, args.cwd)
     launch_id = generate_ulid()
     session_record = model_session_record_path(tool, args.cwd, launch_id)
     extra_args = normalize_passthrough_args(getattr(args, "model_args", []))
     command = render_command_argv(
-        build_model_argv(tool, model, extra_args, teammate_mode=True),
+        build_model_argv(tool, spec, args.effort, extra_args, teammate_mode=True),
         terminal,
     )
     env_vars = {
@@ -687,12 +685,12 @@ def handle_attach_pane_model(args: argparse.Namespace, tool: str) -> None:
         "ok": True,
         "tool": tool,
         "model": model,
+        "model_id": spec.id,
+        "effort": args.effort,
         "launch_id": launch_id,
         "session_record": str(session_record),
         "session_record_found": wait_for_path(session_record),
     }
-    if tool == "codex":
-        result["model_id"] = codex_model_id(model)
     emit_json(result)
 
 
@@ -703,8 +701,8 @@ def handle_launch(args: argparse.Namespace) -> None:
 
     team = resolve_team()
     member_model = (
-        canonical_model_label("codex", args.member_model)
-        if args.member_model in CODEX_MODELS
+        resolve_model("codex", args.member_model, None)[1]
+        if args.member_model in agent_models.ALIASES["codex"]
         else args.member_model
     )
     identity = resolve_identity(args.identity, member_model)
@@ -839,6 +837,9 @@ def build_parser() -> argparse.ArgumentParser:
     launch_claude_model.add_argument("--tab", action="store_true")
     launch_claude_model.add_argument("--tmux")
     launch_claude_model.add_argument("--identity")
+    launch_claude_model.add_argument(
+        "--effort", choices=agent_models.EFFORTS, help="Reasoning effort (default: the CLI's own)"
+    )
 
     launch_codex_model = subparsers.add_parser(
         "launch-codex-model",
@@ -850,6 +851,9 @@ def build_parser() -> argparse.ArgumentParser:
     launch_codex_model.add_argument("--tab", action="store_true")
     launch_codex_model.add_argument("--tmux")
     launch_codex_model.add_argument("--identity")
+    launch_codex_model.add_argument(
+        "--effort", choices=agent_models.EFFORTS, help="Reasoning effort (default: the CLI's own)"
+    )
 
     attach = subparsers.add_parser("attach", help="Attach to an existing tmux session")
     attach.add_argument("session")
@@ -877,6 +881,9 @@ def build_parser() -> argparse.ArgumentParser:
     attach_pane_claude_model.add_argument("--terminal")
     attach_pane_claude_model.add_argument("--tab", action="store_true")
     attach_pane_claude_model.add_argument("--identity")
+    attach_pane_claude_model.add_argument(
+        "--effort", choices=agent_models.EFFORTS, help="Reasoning effort (default: the CLI's own)"
+    )
 
     attach_pane_codex_model = subparsers.add_parser(
         "attach-pane-codex-model",
@@ -888,6 +895,9 @@ def build_parser() -> argparse.ArgumentParser:
     attach_pane_codex_model.add_argument("--terminal")
     attach_pane_codex_model.add_argument("--tab", action="store_true")
     attach_pane_codex_model.add_argument("--identity")
+    attach_pane_codex_model.add_argument(
+        "--effort", choices=agent_models.EFFORTS, help="Reasoning effort (default: the CLI's own)"
+    )
 
     return parser
 

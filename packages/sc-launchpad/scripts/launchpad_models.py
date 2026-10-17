@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
-"""Launch payload, typed failure, and model aliases for the sc-launchpad runtime."""
+"""Launch payload, typed failure, and model resolution for the sc-launchpad runtime."""
 
 from typing import Any, Dict, List, Literal, Optional
 
 from pydantic import BaseModel, Field, model_validator
+
+import agent_models
 
 
 class LaunchFailure(Exception):
@@ -51,6 +53,7 @@ class LaunchpadInput(BaseModel):
     prompt: str = Field(min_length=1)
     tool: Literal["claude", "codex", "gemini"]
     model: Optional[str] = None
+    effort: Optional[Literal[agent_models.EFFORTS]] = None  # type: ignore[valid-type]
     cwd: Optional[str] = Field(default=None, min_length=1)
     atm_identity: Optional[str] = None
     extra_args: List[str] = Field(default_factory=list)
@@ -105,68 +108,23 @@ class LaunchpadInput(BaseModel):
         return self
 
 
-CODEX_MODEL_MAP = {
-    # `codex` remains a deprecated compatibility alias for Terra.
-    "codex": "gpt-5.6-terra",
-    "sol": "gpt-5.6-sol",
-    "terra": "gpt-5.6-terra",
-    "luna": "gpt-5.6-luna",
-    "gpt-5.6-sol": "gpt-5.6-sol",
-    "gpt-5.6-terra": "gpt-5.6-terra",
-    "gpt-5.6-luna": "gpt-5.6-luna",
-    "gpt-5.6": "gpt-5.6-sol",
-    # Preserve explicit legacy model requests without using them as defaults.
-    "gpt-5.2-codex": "gpt-5.2-codex",
-    "codex-max": "gpt-5.1-codex-max",
-    "max": "gpt-5.1-codex-max",
-    "gpt-5.1-codex-max": "gpt-5.1-codex-max",
-    "codex-mini": "gpt-5.1-codex-mini",
-    "mini": "gpt-5.1-codex-mini",
-    "gpt-5.1-codex-mini": "gpt-5.1-codex-mini",
-    "gpt-5": "gpt-5.2",
-    "gpt-5.2": "gpt-5.2",
-}
-
-CODEX_ROSTER_MODEL_MAP = {
-    "gpt-5.6-sol": "sol",
-    "gpt-5.6-terra": "terra",
-    "gpt-5.6-luna": "luna",
-}
-
-CLAUDE_MODEL_MAP = {
-    "sonnet": "sonnet",
-    "haiku": "haiku",
-    "opus": "opus",
-    "fable": "fable",
-    "claude-sonnet-4-6": "sonnet",
-    "claude-haiku-4-5": "haiku",
-    "claude-opus-4-1": "opus",
-    "claude-fable-5": "fable",
-    "claude-fable-5[1m]": "fable",
-}
-
-
 def normalize_tool_model(payload: LaunchpadInput) -> Optional[str]:
-    if payload.tool == "claude":
-        normalized = CLAUDE_MODEL_MAP.get(payload.model or "sonnet")
-        hint = "Use one of: sonnet, haiku, opus, fable."
-    elif payload.tool == "codex":
-        normalized = CODEX_MODEL_MAP.get(payload.model or "terra")
-        hint = "Use sol, terra, luna, codex (deprecated), or a known Codex model alias."
-    else:
+    """Full model id for claude/codex (alias or id in, id out; validates effort); gemini as given."""
+    if payload.tool == "gemini":
         return payload.model
-    if normalized is None:
-        raise LaunchFailure(
-            "VALIDATION.INVALID_MODEL",
-            f"Unsupported {payload.tool.capitalize()} model: {payload.model}",
-            hint,
-        )
-    return normalized
+    try:
+        spec = agent_models.resolve_model(payload.tool, payload.model)
+    except agent_models.ModelError as exc:
+        raise LaunchFailure("VALIDATION.INVALID_MODEL", str(exc), "Pass one of the listed models, or omit `model`.")
+    try:
+        agent_models.resolve_effort(spec, payload.effort)
+    except agent_models.ModelError as exc:
+        raise LaunchFailure("VALIDATION.INVALID_EFFORT", str(exc), "Pass one of the listed levels, or omit `effort`.")
+    return spec.id
 
 
-def roster_model(payload: LaunchpadInput, normalized_model: Optional[str]) -> str:
-    if payload.tool == "claude":
-        return normalized_model or "sonnet"
-    if payload.tool == "codex":
-        return CODEX_ROSTER_MODEL_MAP.get(normalized_model or "", normalized_model or "terra")
-    return payload.tool
+def roster_model(payload: LaunchpadInput, model: Optional[str]) -> str:
+    """The short model name ATM records for a teammate (family alias when there is one)."""
+    if payload.tool == "gemini" or model is None:
+        return payload.tool
+    return agent_models.alias_for(payload.tool, model) or model
