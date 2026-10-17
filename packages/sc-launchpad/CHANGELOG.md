@@ -19,13 +19,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   searched PATH, reported error): `CLI.TIMEOUT`, `CLI.OUTPUT_UNPARSEABLE`,
   `CLI.SESSION_ID_MISSING`, `CLI.RESULT_MISSING`, `CLI.RESUME_SESSION_NOT_FOUND`,
   `CLI.AUTH_FAILED`, `CLI.REPORTED_ERROR`, `CLI.UNSUPPORTED_FLAG`,
-  `CLI.LAUNCH_FAILED`, `CAPABILITY.UNSUPPORTED` (gemini).
+  `CLI.LAUNCH_FAILED`, `CAPABILITY.UNSUPPORTED` (gemini), `RUNTIME.INTERRUPTED`.
+  `CLI.UNSUPPORTED_FLAG` names the rejected flag/feature in `details.rejected`.
+- `data.temp_cwd_created`; temp directories are owned (deleted) by the caller.
 - Documented direct script invocation for programs (`--json '<payload>'` or
   `--json -` from stdin) for parallel fan-out.
 
 ### Changed
 - Internal control flow uses a `Result` discriminated union (frozen `Ok`/`Err`).
-- Child processes get an empty stdin and are resolved to an absolute path from PATH.
+- JSON-mode claude/codex launches send the prompt on the child's stdin instead
+  of argv (no Windows command-line length limit); text mode is unchanged.
+- Child processes never inherit the runtime's stdin and are resolved to an
+  absolute path from PATH.
+- SIGTERM/SIGINT/SIGHUP to the runtime kills the child process tree.
+- `resume_session_id` is limited to `[A-Za-z0-9._:-]`.
 - `cwd` is optional only when `isolation.cwd` is `"temp"`.
 
 ### Fixed

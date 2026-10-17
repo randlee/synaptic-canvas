@@ -10,7 +10,9 @@ import json
 import os
 import subprocess
 import sys
+import signal
 import textwrap
+import time
 from dataclasses import FrozenInstanceError
 from pathlib import Path
 
@@ -33,7 +35,7 @@ THREAD = "01a14b21-8dde-7922-9867-dd61bf90ebf1"
 
 FAKE_CLI = textwrap.dedent(
     """
-    import json, os, sys, time
+    import json, os, subprocess, sys, time
     spec = json.loads(os.environ.get("FAKE_CLI_SPEC", "{}"))
     record = os.environ.get("FAKE_CLI_RECORD")
     if record:
@@ -43,11 +45,20 @@ FAKE_CLI = textwrap.dedent(
                     "argv": sys.argv[1:],
                     "cwd": os.getcwd(),
                     "cwd_entries": sorted(os.listdir(os.getcwd())),
-                    "stdin": sys.stdin.read() if not sys.stdin.isatty() else None,
+                    "stdin": sys.stdin.buffer.read().decode("utf-8") if not sys.stdin.isatty() else None,
                     "atm_team": os.environ.get("ATM_TEAM"),
                 },
                 fh,
             )
+    if spec.get("spawn_pid_file"):
+        # A grandchild that would outlive us unless the whole tree is killed.
+        child = subprocess.Popen(
+            [sys.executable, "-c", "import time; time.sleep(120)"],
+            stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        )
+        with open(spec["spawn_pid_file"] + ".tmp", "w") as fh:
+            fh.write(str(child.pid))
+        os.replace(spec["spawn_pid_file"] + ".tmp", spec["spawn_pid_file"])
     if spec.get("pre_stdout"):
         sys.stdout.write(spec["pre_stdout"])
         sys.stdout.flush()
@@ -222,7 +233,9 @@ def test_claude_json_isolated_command():
     assert command[tools_at + 2].startswith("--")
     for flag in ("--strict-mcp-config", "--safe-mode", "--disable-slash-commands"):
         assert flag in command
-    assert command[-2:] == ["--", "Answer the question"]
+    # The prompt goes to stdin, never argv.
+    assert "Answer the question" not in command
+    assert lp.prompt_stdin(item) == "Answer the question"
 
 
 def test_claude_resume_relaxed_command_keeps_permissions_flag():
@@ -243,7 +256,8 @@ def test_codex_json_isolated_command():
     assert 'web_search="disabled"' in command
     for feature in ("shell_tool", "unified_exec", "code_mode_host"):
         assert command[command.index(feature) - 1] == "--disable"
-    assert command[-2:] == ["--", "Answer the question"]
+    assert command[-2:] == ["--", "-"]
+    assert lp.prompt_stdin(item) == "Answer the question"
 
 
 def test_codex_resume_command_places_session_before_prompt():
@@ -252,7 +266,7 @@ def test_codex_resume_command_places_session_before_prompt():
     )
     command = lp.build_command(item, "gpt-5.6-terra")
     assert command[:4] == ["codex", "exec", "resume", "--json"]
-    assert command[-3:] == ["--", THREAD, "Answer the question"]
+    assert command[-3:] == ["--", THREAD, "-"]
     assert "--sandbox" not in command  # `exec resume` has no --sandbox; -c is used
 
 
@@ -291,7 +305,9 @@ def test_claude_isolated_turn_returns_session_and_result(fake_bin, tmp_path):
     assert Path(rec["cwd"]).resolve() == Path(data["cwd"]).resolve()
     assert rec["cwd_entries"] == []
     assert Path(data["cwd"]).name.startswith("sc-launchpad-")
-    assert rec["stdin"] in ("", None)
+    assert data["temp_cwd_created"] is True
+    assert rec["stdin"] == "Answer the question"
+    assert "Answer the question" not in rec["argv"]
 
 
 def test_claude_resume_uses_given_cwd_and_session(fake_bin, tmp_path, workdir):
@@ -355,7 +371,9 @@ def test_codex_resume_argv(fake_bin, tmp_path, workdir):
     assert response["success"] is True, response
     argv = recorded(tmp_path)["argv"]
     assert argv[:3] == ["exec", "resume", "--json"]
-    assert argv[-3:] == ["--", THREAD, "Answer the question"]
+    assert argv[-3:] == ["--", THREAD, "-"]
+    assert recorded(tmp_path)["stdin"] == "Answer the question"
+    assert response["data"]["temp_cwd_created"] is False
 
 
 def test_codex_item_errors_and_transient_error_events_become_warnings(fake_bin, tmp_path, workdir):
@@ -380,7 +398,22 @@ def test_text_mode_is_backward_compatible(fake_bin, tmp_path, workdir):
     assert data["stdout"] == "plain text\n"
     assert data["session_id"] is None and data["result_text"] is None
     assert data["output_format"] == "text"
-    assert recorded(tmp_path)["argv"][:2] == ["--dangerously-skip-permissions", "--print"]
+    rec = recorded(tmp_path)
+    assert rec["argv"] == ["--dangerously-skip-permissions", "--print", "--model", "haiku", "Answer the question"]
+    # Legacy text mode keeps the prompt on argv; stdin is empty, never inherited.
+    assert rec["stdin"] in ("", None)
+
+
+@pytest.mark.parametrize("tool", ["claude", "codex"])
+def test_text_mode_command_line_is_unchanged(tool):
+    item = payload(tool=tool, cwd="/tmp", extra_args=["--x"])
+    model = "sonnet" if tool == "claude" else "gpt-5.6-terra"
+    expected = {
+        "claude": ["claude", "--dangerously-skip-permissions", "--print", "--model", "sonnet", "--x", "Answer the question"],
+        "codex": ["codex", "exec", "--yolo", "--model", "gpt-5.6-terra", "--x", "Answer the question"],
+    }[tool]
+    assert lp.build_command(item, model) == expected
+    assert lp.prompt_stdin(item) is None
 
 
 # ---------------------------------------------------------------------------
@@ -442,6 +475,76 @@ def test_timeout_kills_child(fake_bin, tmp_path, tool):
     if tool == "codex":
         assert response["data"]["session_id"] == THREAD
         assert response["error"]["details"]["partial_session_id"] == THREAD
+
+
+def _pid_alive(pid):
+    if os.name == "nt":
+        out = subprocess.run(
+            ["tasklist", "/FI", f"PID eq {pid}", "/NH"], capture_output=True, text=True
+        ).stdout
+        return str(pid) in out
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:  # pragma: no cover - pid reused by another user
+        return True
+    # A zombie still answers kill(0); treat an unreaped zombie as dead.
+    try:
+        stat = subprocess.run(["ps", "-o", "stat=", "-p", str(pid)], capture_output=True, text=True).stdout
+    except OSError:  # pragma: no cover
+        return True
+    return bool(stat.strip()) and not stat.strip().startswith("Z")
+
+
+def _wait_dead(pid, seconds=10.0):
+    deadline = time.monotonic() + seconds
+    while time.monotonic() < deadline:
+        if not _pid_alive(pid):
+            return True
+        time.sleep(0.1)
+    return False
+
+
+@pytest.mark.parametrize("tool", ["claude", "codex"])
+def test_timeout_kills_grandchildren_too(fake_bin, tmp_path, tool):
+    pid_file = tmp_path / "grandchild.pid"
+    response = run(
+        fake_bin,
+        tmp_path,
+        {"sleep": 60, "spawn_pid_file": str(pid_file)},
+        tool=tool,
+        isolation={"tools": "none", "cwd": "temp"},
+        timeout_seconds=2,
+    )
+    assert response["error"]["code"] == "CLI.TIMEOUT"
+    grandchild = int(pid_file.read_text())
+    assert _wait_dead(grandchild), f"grandchild {grandchild} survived the timeout kill"
+
+
+@pytest.mark.skipif(os.name == "nt", reason="SIGTERM cannot be intercepted on Windows")
+def test_sigterm_to_runtime_kills_child_tree_and_prints_envelope(fake_bin, tmp_path):
+    pid_file = tmp_path / "grandchild.pid"
+    env = make_env(fake_bin, tmp_path, {"sleep": 60, "spawn_pid_file": str(pid_file)})
+    body = json.dumps(
+        {"description": "d", "prompt": "p", "tool": "claude",
+         "isolation": {"tools": "none", "cwd": "temp"}}
+    )
+    proc = subprocess.Popen(
+        [sys.executable, str(SCRIPT), "--json", body],
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.DEVNULL,
+        text=True, env=env,
+    )
+    deadline = time.monotonic() + 30
+    while not pid_file.exists() and time.monotonic() < deadline:
+        time.sleep(0.1)
+    assert pid_file.exists()
+    proc.send_signal(signal.SIGTERM)
+    stdout, _ = proc.communicate(timeout=30)
+    envelope = json.loads(stdout)
+    assert envelope["success"] is False
+    assert envelope["error"]["code"] == "RUNTIME.INTERRUPTED"
+    assert _wait_dead(int(pid_file.read_text()))
 
 
 def test_text_mode_timeout(fake_bin, tmp_path, workdir):
@@ -550,7 +653,56 @@ def test_unknown_flag_is_reported_as_version_drift(fake_bin, tmp_path):
         tool="codex",
         isolation={"tools": "none", "cwd": "temp"},
     )
-    assert response["error"]["code"] == "CLI.UNSUPPORTED_FLAG"
+    error = response["error"]
+    assert error["code"] == "CLI.UNSUPPORTED_FLAG"
+    assert "code_mode_host" in error["message"]
+    assert error["details"]["rejected"] == "code_mode_host"
+    assert error["details"]["rejected_is_isolation_flag"] is True
+    assert "code_mode_host" in error["suggested_action"]
+    assert "never weakened" in error["suggested_action"]
+
+
+def test_unknown_extra_arg_names_the_flag(fake_bin, tmp_path, workdir):
+    response = run(
+        fake_bin,
+        tmp_path,
+        {"exit_code": 1, "stderr": "error: unknown option '--bogus'\n"},
+        cwd=str(workdir),
+        output_format="json",
+        extra_args=["--bogus"],
+    )
+    error = response["error"]
+    assert error["code"] == "CLI.UNSUPPORTED_FLAG"
+    assert error["details"]["rejected"] == "--bogus"
+    assert error["details"]["rejected_is_isolation_flag"] is False
+    assert "extra_args" in error["suggested_action"]
+
+
+@pytest.mark.parametrize("bad", ["-x", "a b", "id;rm", "id&calc", "x\"y", "%PATH%"])
+def test_resume_session_id_charset_is_restricted(bad):
+    raw = json.dumps(
+        {"description": "d", "prompt": "p", "tool": "codex", "cwd": "/tmp",
+         "resume_session_id": bad, "isolation": {}}
+    )
+    assert lp.load_payload_result(raw).error.code == "VALIDATION.INVALID_PAYLOAD"
+
+
+def test_temp_cwd_is_removed_when_launch_never_happens(fake_bin, tmp_path, monkeypatch):
+    created = []
+    real_mkdtemp = lp.tempfile.mkdtemp
+
+    def mkdtemp(**kwargs):
+        created.append(real_mkdtemp(**kwargs))
+        return created[-1]
+
+    monkeypatch.setattr(lp.tempfile, "mkdtemp", mkdtemp)
+    env = make_env(fake_bin, tmp_path, {}, ATM_TEAM="team-a")
+    env["PATH"] = str(fake_bin)  # no `atm` -> member registration fails
+    response = lp.run_payload(
+        payload(atm_identity="r1", isolation={"tools": "none", "cwd": "temp"}), env
+    )
+    assert response["error"]["code"] == "CLI.NOT_FOUND"
+    assert created and not Path(created[0]).exists()
 
 
 @pytest.mark.parametrize(
@@ -630,3 +782,64 @@ def test_direct_invocation_failure_still_exits_zero_with_envelope(tmp_path):
     envelope = json.loads(proc.stdout)
     assert envelope["success"] is False
     assert envelope["error"]["code"] == "VALIDATION.INVALID_JSON"
+
+
+# ---------------------------------------------------------------------------
+# Large prompts (plan-anchor sends up to ~64 KB): stdin, never argv
+# ---------------------------------------------------------------------------
+
+LARGE_PROMPT = "State: " + json.dumps({"rows": ["x" * 90 + str(i) for i in range(500)]}) + "\nQ: \u00e9\u2713?"
+
+
+@pytest.mark.parametrize(
+    ("tool", "stdout"), [("claude", claude_json()), ("codex", CODEX_OK)]
+)
+def test_large_prompt_is_delivered_on_stdin(fake_bin, tmp_path, tool, stdout):
+    assert len(LARGE_PROMPT.encode("utf-8")) > 40_000
+    env = make_env(fake_bin, tmp_path, {"stdout": stdout})
+    body = json.dumps(
+        {"description": "big", "prompt": LARGE_PROMPT, "tool": tool,
+         "isolation": {"tools": "none", "cwd": "temp"}, "timeout_seconds": 60}
+    )
+    proc = _invoke(["--json", "-"], env, stdin=body)
+    envelope = json.loads(proc.stdout)
+    assert envelope["success"] is True, envelope
+    rec = recorded(tmp_path)
+    assert rec["stdin"] == LARGE_PROMPT
+    assert all(len(arg) < 1000 for arg in rec["argv"])
+
+
+def test_large_prompt_on_resume_is_delivered_on_stdin(fake_bin, tmp_path, workdir):
+    response = run(
+        fake_bin,
+        tmp_path,
+        {"stdout": CODEX_OK},
+        tool="codex",
+        prompt=LARGE_PROMPT,
+        cwd=str(workdir),
+        resume_session_id=THREAD,
+        isolation={"tools": "none", "cwd": "given"},
+    )
+    assert response["success"] is True, response
+    rec = recorded(tmp_path)
+    assert rec["stdin"] == LARGE_PROMPT
+    assert rec["argv"][-2:] == [THREAD, "-"]
+
+
+def test_stdin_payload_is_utf8_regardless_of_locale(fake_bin, tmp_path):
+    env = make_env(fake_bin, tmp_path, {"stdout": claude_json()}, PYTHONIOENCODING="cp1252")
+    body = json.dumps(
+        {"description": "utf8", "prompt": "café ✓ 日本", "tool": "claude",
+         "isolation": {"tools": "none", "cwd": "temp"}},
+        ensure_ascii=False,
+    )
+    proc = subprocess.run(
+        [sys.executable, str(SCRIPT), "--json", "-"],
+        input=b"\xef\xbb\xbf" + body.encode("utf-8"),
+        capture_output=True,
+        env=env,
+        timeout=60,
+    )
+    envelope = json.loads(proc.stdout.decode("utf-8"))
+    assert envelope["success"] is True, envelope
+    assert recorded(tmp_path)["stdin"] == "café ✓ 日本"

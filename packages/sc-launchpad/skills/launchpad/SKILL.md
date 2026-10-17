@@ -64,6 +64,11 @@ before. Gemini returns `CAPABILITY.UNSUPPORTED` for `output_format: "json"`,
    and `"isolation": {"tools": "none", "cwd": "given"}` to keep isolation, or
    `{"tools": "default", "cwd": "given"}` to relax it explicitly.
 
+In JSON mode the prompt is sent on the child's stdin (no command-line length
+limit). The temp directory is never deleted by sc-launchpad
+(`data.temp_cwd_created: true`); the caller deletes `data.cwd` after the last
+turn.
+
 See the package README for the exact per-harness flags and what each
 isolation level guarantees.
 
@@ -98,6 +103,7 @@ The `launchpad` agent returns the runtime stdout exactly as-is. The runtime prin
     "tool": "claude",
     "model": "haiku",
     "cwd": "/abs/path/to/repo",
+    "temp_cwd_created": false,
     "teammate_mode": true,
     "atm_team": "annotations-test",
     "atm_identity": "reviewer-1",
@@ -126,7 +132,8 @@ object: `code`, `message`, `recoverable`, `suggested_action`, and optional
 Codes include `CLI.NOT_FOUND`, `CLI.NON_ZERO_EXIT`, `CLI.TIMEOUT`,
 `CLI.OUTPUT_UNPARSEABLE`, `CLI.SESSION_ID_MISSING`, `CLI.RESULT_MISSING`,
 `CLI.RESUME_SESSION_NOT_FOUND`, `CLI.AUTH_FAILED`, `CLI.REPORTED_ERROR`,
-`CLI.UNSUPPORTED_FLAG`, and `CAPABILITY.UNSUPPORTED`.
+`CLI.UNSUPPORTED_FLAG` (names the rejected flag in `details.rejected`),
+`RUNTIME.INTERRUPTED`, and `CAPABILITY.UNSUPPORTED`.
 
 ## Direct Script Invocation (programs only)
 

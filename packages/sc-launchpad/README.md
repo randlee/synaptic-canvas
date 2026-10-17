@@ -93,18 +93,26 @@ mode, same command line, same envelope keys).
 | Field | Type | Meaning |
 |-------|------|---------|
 | `output_format` | `"text"` \| `"json"` | `json` runs the harness in its structured mode (`claude --print --output-format json`, `codex exec --json`) and fills `data.session_id` / `data.result_text`. Default: `json` when `resume_session_id` or `isolation` is present, otherwise `text`. |
-| `resume_session_id` | string | Continue that session with `prompt` (`claude --print --resume <id>`, `codex exec resume <id> <prompt>`). Requires `isolation` (explicit keep/relax) and JSON output. |
+| `resume_session_id` | string | Continue that session with `prompt` (`claude --print --resume <id>`, `codex exec resume <id> -`). Requires `isolation` (explicit keep/relax) and JSON output. Letters, digits, `.`, `_`, `:`, `-` only. |
 | `isolation.tools` | `"default"` \| `"none"` | `none` removes the harness tool surface (see guarantees below). |
 | `isolation.cwd` | `"given"` \| `"temp"` | `temp` creates a fresh empty directory for a **new** session and returns it as `data.cwd`; omit `cwd` in that case. |
 | `timeout_seconds` | number > 0 | Kill the child process tree after this many seconds and return `CLI.TIMEOUT`. |
 
 `cwd` stays required unless `isolation.cwd` is `"temp"`.
 
+**Prompt delivery.** In JSON mode (claude and codex) the prompt is written to
+the child's stdin (`claude --print` with no positional prompt; `codex exec ... -`),
+never put on the command line, so prompts of any size work on Windows (whose
+command line is limited to about 32K characters). Verified live with an 86 KB
+prompt on both harnesses. Text mode keeps the prompt on the command line exactly
+as before.
+
 ### Output fields added to `data`
 
 `output_format`, `session_id`, `result_text`, `resumed_session_id`,
 `isolation` (`{tools, cwd, flags}` or `null`), `timeout_seconds`, `timed_out`,
-`duration_seconds`, `warnings` (non-fatal harness notices). Existing keys
+`duration_seconds`, `warnings` (non-fatal harness notices), `temp_cwd_created`
+(`true` when this launch created `data.cwd` for `isolation.cwd: "temp"`). Existing keys
 (`tool`, `model`, `cwd`, `teammate_mode`, `atm_team`, `atm_identity`,
 `exit_code`, `stdout`, `stderr`) are unchanged; `stdout` is still the raw child
 stdout (the JSON / JSONL stream in structured mode).
@@ -145,8 +153,15 @@ Turn 2..N (same session, same directory, isolation kept explicitly):
 
 Use `"isolation": {"tools": "default", "cwd": "given"}` on a resumed turn to
 relax isolation; a resume without `isolation` is rejected so isolation never
-changes implicitly. The temp directory is not deleted (resume needs it);
-callers remove it when the conversation is finished.
+changes implicitly.
+
+**Temp directory ownership.** The caller owns cleanup. When
+`data.temp_cwd_created` is `true`, sc-launchpad leaves `data.cwd` in place
+(every resumed turn must run in it) and never deletes it; delete it yourself
+after the last turn (for example `shutil.rmtree(cwd, ignore_errors=True)`). It is
+also kept, and reported in `data.cwd`, when the first turn fails after the child
+started (the session may exist). It is removed automatically only when the launch
+fails before any child process started.
 
 Claude stores sessions per project directory, so always resume with the
 `data.cwd` the first turn reported. Codex resolves a thread id globally, but
@@ -156,7 +171,9 @@ the same rule keeps both harnesses uniform.
 
 Verified on macOS with `claude` 2.1.302 and `codex-cli` 0.162.1. Flags are
 listed in `data.isolation.flags`. If a future CLI rejects a flag, the launch
-fails with `CLI.UNSUPPORTED_FLAG`; nothing is silently dropped.
+fails with `CLI.UNSUPPORTED_FLAG` naming the rejected flag or feature
+(`error.details.rejected`, `error.details.rejected_is_isolation_flag`); nothing is
+silently dropped and there is no runtime probing that could weaken isolation.
 
 **Claude, `tools: "none"`** — adds `--tools "" --strict-mcp-config --safe-mode
 --disable-slash-commands` and omits `--dangerously-skip-permissions`.
@@ -215,9 +232,10 @@ work as before.
 | `CLI.RESUME_SESSION_NOT_FOUND` | The harness does not know `resume_session_id`. |
 | `CLI.AUTH_FAILED` | Authentication failure detected (claude `api_error_status` 401/403 or auth text in stderr / error events). |
 | `CLI.REPORTED_ERROR` | Exit 0 but the harness reported an error (claude `is_error`, codex `turn.failed`). |
-| `CLI.UNSUPPORTED_FLAG` | The CLI rejected a flag (version drift or bad `extra_args`). |
+| `CLI.UNSUPPORTED_FLAG` | The CLI rejected a flag or feature name (version drift or bad `extra_args`); `details.rejected` names it. |
 | `CAPABILITY.UNSUPPORTED` | The tool does not support a requested field (gemini). |
 | `ATM.ADD_MEMBER_FAILED` | Teammate registration failed. |
+| `RUNTIME.INTERRUPTED` | The runtime received SIGINT/SIGTERM/SIGHUP (or Ctrl-Break) while the child ran; the child tree was killed. |
 | `RUNTIME.TEMP_CWD_FAILED` / `RUNTIME.UNEXPECTED` | Runtime problems. |
 
 Every failure sets `success: false`, `error.code`, `error.message`,
@@ -241,10 +259,19 @@ python3 .claude/scripts/sc_launchpad_task.py --json - < payload.json   # large p
 Contract:
 
 - Input: exactly one payload object (the fields above), as the argument after
-  `--json` or on stdin with `--json -`.
+  `--json` or on stdin with `--json -` (UTF-8). Use stdin for large prompts: an
+  argument is subject to the OS command-line limit (about 32K characters on
+  Windows).
 - Output: exactly one JSON envelope on stdout,
   `{"success": bool, "data": object|null, "error": object|null}`.
 - Exit status is always `0` when the envelope was printed; branch on
   `success`, never on the exit status.
 - Each invocation is one child process with its own working directory, so
-  parallel invocations do not share state. The child's stdin is empty (`subprocess.DEVNULL`).
+  parallel invocations do not share state. The child never inherits the
+  caller's stdin: it receives the prompt through a pipe (JSON mode) or an
+  empty stdin (text mode).
+- The child runs in its own process group. `timeout_seconds` kills the whole
+  tree; terminating the runtime with SIGTERM/SIGINT (POSIX) or Ctrl-Break
+  (Windows) also kills the tree and still prints an envelope
+  (`RUNTIME.INTERRUPTED`). A hard kill (SIGKILL / `TerminateProcess`) of the
+  runtime cannot be intercepted, so bound run time with `timeout_seconds`.

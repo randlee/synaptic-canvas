@@ -19,6 +19,7 @@ import signal
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -82,6 +83,7 @@ CLI_REPORTED_ERROR = "CLI.REPORTED_ERROR"
 CLI_UNSUPPORTED_FLAG = "CLI.UNSUPPORTED_FLAG"
 CAPABILITY_UNSUPPORTED = "CAPABILITY.UNSUPPORTED"
 TEMP_CWD_FAILED = "RUNTIME.TEMP_CWD_FAILED"
+RUNTIME_INTERRUPTED = "RUNTIME.INTERRUPTED"
 
 STDERR_TAIL_CHARS = 4000
 
@@ -214,7 +216,11 @@ class LaunchpadInput(BaseModel):
     atm_identity: Optional[str] = None
     extra_args: List[str] = Field(default_factory=list)
     output_format: Optional[Literal["text", "json"]] = None
-    resume_session_id: Optional[str] = Field(default=None, min_length=1)
+    # Restricted charset: the id is passed on argv (possibly through a Windows
+    # `.cmd` shim), and real claude/codex session ids are UUIDs.
+    resume_session_id: Optional[str] = Field(
+        default=None, min_length=1, max_length=200, pattern=r"^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+    )
     isolation: Optional[IsolationInput] = None
     timeout_seconds: Optional[float] = Field(default=None, gt=0)
 
@@ -603,7 +609,7 @@ def build_command(
             command.extend(["--resume", payload.resume_session_id])
         command.extend(isolation_flags(payload))
         command.extend(extra)
-        command.extend(["--", payload.prompt])
+        # The prompt is written to stdin (see prompt_stdin): no positional prompt.
         return command
     if payload.tool == "codex":
         if not structured:
@@ -626,13 +632,27 @@ def build_command(
         command.append("--")
         if payload.resume_session_id:
             command.append(payload.resume_session_id)
-        command.append(payload.prompt)
+        # `-` makes codex read the prompt from stdin (see prompt_stdin).
+        command.append("-")
         return command
     command = ["gemini", "--yolo", "--prompt", payload.prompt]
     if normalized_model:
         command.extend(["--model", normalized_model])
     command.extend(extra)
     return command
+
+
+def prompt_stdin(payload: LaunchpadInput) -> Optional[str]:
+    """Prompt text written to the child's stdin, or None when it is on argv.
+
+    Structured (JSON) claude/codex launches deliver the prompt on stdin so large
+    prompts never hit command-line length limits (about 32K characters on
+    Windows) and never pass through a ``.cmd`` shim's argument parsing. Legacy
+    text mode keeps the prompt on the command line, exactly as before.
+    """
+    if payload.tool in ("claude", "codex") and payload.resolved_output_format() == "json":
+        return payload.prompt
+    return None
 
 
 # ---------------------------------------------------------------------------
@@ -667,19 +687,59 @@ def _kill_tree(proc: "subprocess.Popen[str]") -> None:
         pass
 
 
+class _Terminated(Exception):
+    """Raised from a signal handler when the runtime itself is asked to stop."""
+
+
+def _raise_terminated(signum: int, frame: Any) -> None:
+    raise _Terminated(signum)
+
+
+def _install_stop_handlers() -> Dict[int, Any]:
+    """Turn SIGTERM/SIGHUP into an exception so the child tree is killed too.
+
+    The child runs in its own process group (needed to kill grandchildren on
+    timeout), so a caller that terminates this runtime would otherwise orphan
+    it. Only possible on the main thread; SIGKILL cannot be intercepted.
+    """
+    if threading.current_thread() is not threading.main_thread():
+        return {}
+    previous: Dict[int, Any] = {}
+    for name in ("SIGTERM", "SIGHUP", "SIGBREAK"):
+        signum = getattr(signal, name, None)
+        if signum is None:
+            continue
+        try:
+            previous[signum] = signal.signal(signum, _raise_terminated)
+        except (OSError, ValueError):  # pragma: no cover - platform specific
+            continue
+    return previous
+
+
+def _restore_handlers(previous: Dict[int, Any]) -> None:
+    for signum, handler in previous.items():
+        try:
+            signal.signal(signum, handler)
+        except (OSError, ValueError, TypeError):  # pragma: no cover
+            pass
+
+
 def run_process(
     command: List[str],
     cwd: Path,
     env: Dict[str, str],
     timeout_seconds: Optional[float],
+    stdin_text: Optional[str] = None,
 ) -> "Result[ProcessOutcome, Failure]":
+    # The child never inherits this process's stdin: it gets either the prompt
+    # through a pipe or an empty stdin.
     popen_kwargs: Dict[str, Any] = {
         "cwd": str(cwd),
         "env": env,
         "text": True,
         "encoding": "utf-8",
         "errors": "replace",
-        "stdin": subprocess.DEVNULL,
+        "stdin": subprocess.PIPE if stdin_text is not None else subprocess.DEVNULL,
         "stdout": subprocess.PIPE,
         "stderr": subprocess.PIPE,
     }
@@ -703,15 +763,40 @@ def run_process(
             )
         )
     timed_out = False
+    previous_handlers = _install_stop_handlers()
     try:
-        stdout, stderr = proc.communicate(timeout=timeout_seconds)
-    except subprocess.TimeoutExpired:
-        timed_out = True
+        try:
+            stdout, stderr = proc.communicate(input=stdin_text, timeout=timeout_seconds)
+        except subprocess.TimeoutExpired:
+            timed_out = True
+            _kill_tree(proc)
+            try:
+                stdout, stderr = proc.communicate(timeout=10)
+            except subprocess.TimeoutExpired:  # pragma: no cover - pipes held open
+                stdout, stderr = "", ""
+    except (KeyboardInterrupt, _Terminated) as exc:
         _kill_tree(proc)
         try:
-            stdout, stderr = proc.communicate(timeout=10)
-        except subprocess.TimeoutExpired:  # pragma: no cover - pipes held open
-            stdout, stderr = "", ""
+            proc.wait(timeout=10)
+        except subprocess.TimeoutExpired:  # pragma: no cover
+            pass
+        signum = exc.args[0] if isinstance(exc, _Terminated) and exc.args else None
+        return Err(
+            Failure(
+                RUNTIME_INTERRUPTED,
+                "sc-launchpad was interrupted; the child process tree was killed",
+                suggested_action=(
+                    "Retry the launch; use timeout_seconds instead of killing the runtime "
+                    "to bound run time."
+                ),
+                details={
+                    "signal": signum,
+                    "duration_seconds": round(time.monotonic() - started, 3),
+                },
+            )
+        )
+    finally:
+        _restore_handlers(previous_handlers)
     return Ok(
         ProcessOutcome(
             exit_code=proc.returncode,
@@ -751,6 +836,42 @@ UNSUPPORTED_FLAG_PATTERN = re.compile(
     r"unknown option|unknown feature flag|unexpected argument|unrecognized (?:option|argument)",
     re.IGNORECASE,
 )
+# Captures the rejected name: codex `Unknown feature flag: <name>` /
+# `unexpected argument '<flag>'`, claude `unknown option '<flag>'`.
+REJECTED_FLAG_PATTERN = re.compile(
+    r"(?:unknown feature flag:?\s*|unknown option\s*|unexpected argument\s*|"
+    r"unrecognized (?:option|argument):?\s*)['\"`]?([^'\"`\s]+)",
+    re.IGNORECASE,
+)
+
+
+def unsupported_flag_failure(
+    payload: "LaunchpadInput", stderr: str, base_details: Dict[str, Any]
+) -> Failure:
+    match = REJECTED_FLAG_PATTERN.search(stderr)
+    rejected = match.group(1) if match else None
+    details = dict(base_details, rejected=rejected)
+    if rejected is not None:
+        details["rejected_is_isolation_flag"] = rejected in isolation_flags(payload)
+    name = f" `{rejected}`" if rejected else ""
+    if rejected is not None and details["rejected_is_isolation_flag"]:
+        action = (
+            f"The installed {payload.tool} CLI does not accept isolation flag/feature{name}. "
+            f"Run `{payload.tool} --version` and compare with the versions in the "
+            "sc-launchpad README \"Isolation guarantees\"; upgrade the CLI or update "
+            "sc-launchpad's isolation flag set. Isolation is never weakened automatically."
+        )
+    else:
+        action = (
+            f"Remove or fix{name or ' the offending flag'} in extra_args, or compare the "
+            f"installed {payload.tool} CLI version with the versions in the sc-launchpad README."
+        )
+    return Failure(
+        CLI_UNSUPPORTED_FLAG,
+        f"{payload.tool} rejected command-line flag/feature{name or ' (unknown name)'}",
+        suggested_action=action,
+        details=details,
+    )
 
 
 def parse_claude_output(stdout: str) -> "Result[ParsedOutput, Failure]":
@@ -946,17 +1067,7 @@ def classify_structured(
                 )
             )
         if outcome.exit_code != 0 and UNSUPPORTED_FLAG_PATTERN.search(outcome.stderr):
-            return Err(
-                Failure(
-                    CLI_UNSUPPORTED_FLAG,
-                    f"{tool} rejected a command-line flag (CLI version drift?)",
-                    suggested_action=(
-                        "Compare the installed CLI version with the versions documented in "
-                        "the sc-launchpad README, or remove the offending extra_args."
-                    ),
-                    details=base_details,
-                )
-            )
+            return Err(unsupported_flag_failure(payload, outcome.stderr, base_details))
         if outcome.exit_code != 0:
             return Err(
                 Failure(
@@ -1045,6 +1156,9 @@ def run_payload(payload: LaunchpadInput, parent_env: Dict[str, str]) -> dict:
         parent_env, teammate_mode, team, identity, payload, normalized_model, cwd
     )
     if isinstance(member, Err):
+        if payload.isolation is not None and payload.isolation.cwd == "temp":
+            # No child ran and the directory was never reported: remove it.
+            shutil.rmtree(cwd, ignore_errors=True)
         return error_response(member.error)
     child_env = build_child_env(parent_env, teammate_mode, team, identity)
     command = build_command(payload, normalized_model)
@@ -1062,6 +1176,12 @@ def run_payload(payload: LaunchpadInput, parent_env: Dict[str, str]) -> dict:
         "tool": payload.tool,
         "model": normalized_model,
         "cwd": str(cwd),
+        # True when this launch created data.cwd (isolation.cwd="temp"). The
+        # directory is kept so later turns can resume in it; the caller owns
+        # deleting it after the last turn.
+        "temp_cwd_created": bool(
+            payload.isolation is not None and payload.isolation.cwd == "temp"
+        ),
         "teammate_mode": teammate_mode,
         "atm_team": team,
         "atm_identity": identity,
@@ -1079,7 +1199,9 @@ def run_payload(payload: LaunchpadInput, parent_env: Dict[str, str]) -> dict:
         "warnings": [],
     }
 
-    outcome_result = run_process(command, cwd, child_env, payload.timeout_seconds)
+    outcome_result = run_process(
+        command, cwd, child_env, payload.timeout_seconds, prompt_stdin(payload)
+    )
     if isinstance(outcome_result, Err):
         return error_response(outcome_result.error, data)
     outcome = outcome_result.value
@@ -1125,7 +1247,9 @@ def run_payload(payload: LaunchpadInput, parent_env: Dict[str, str]) -> dict:
 def read_raw_payload(args: argparse.Namespace) -> str:
     raw = " ".join(args.args).strip()
     if raw == "-":
-        return sys.stdin.read().strip()
+        # JSON is UTF-8 (RFC 8259); do not depend on the locale encoding
+        # (cp1252 on many Windows hosts). `utf-8-sig` drops a PowerShell BOM.
+        return sys.stdin.buffer.read().decode("utf-8-sig", errors="replace").strip()
     return raw
 
 
