@@ -7,7 +7,8 @@ opening a visible terminal window.
 
 - `skills/launchpad/SKILL.md`
 - `agents/launchpad.md`
-- `scripts/sc_launchpad_task.py`
+- `scripts/sc_launchpad_task.py` (entry point)
+- `scripts/launchpad_models.py`, `launchpad_commands.py`, `launchpad_process.py`, `launchpad_output.py`
 - `scripts/launchpad_shared.py`
 
 ## What It Does
@@ -85,41 +86,51 @@ surface where orchestrator skills or agents need background launch support.
 
 ## Sessions, Resume, and Isolation (claude and codex)
 
-Payloads that use none of the fields below behave exactly as before (text
-mode, same command line, same envelope keys).
+The fields below are additive: payloads that use none of them still run in
+text mode with the same envelope keys. Since 0.14.0 claude and codex receive
+the prompt on stdin in every mode (see "Prompt delivery").
 
 ### Input fields (all optional)
 
 | Field | Type | Meaning |
 |-------|------|---------|
-| `output_format` | `"text"` \| `"json"` | `json` runs the harness in its structured mode (`claude --print --output-format json`, `codex exec --json`) and fills `data.session_id` / `data.result_text`. Default: `json` when `resume_session_id` or `isolation` is present, otherwise `text`. |
+| `output_format` | `"text"` \| `"json"` | `json` runs the harness in its structured mode (`claude --print --output-format stream-json --verbose`, `codex exec --json`) and fills `data.session_id` / `data.result_text`. Default: `json` when `resume_session_id` or `isolation` is present, otherwise `text`. |
 | `resume_session_id` | string | Continue that session with `prompt` (`claude --print --resume <id>`, `codex exec resume <id> -`). Requires `isolation` (explicit keep/relax) and JSON output. Letters, digits, `.`, `_`, `:`, `-` only. |
 | `isolation.tools` | `"default"` \| `"none"` | `none` removes the harness tool surface (see guarantees below). |
 | `isolation.cwd` | `"given"` \| `"temp"` | `temp` creates a fresh empty directory for a **new** session and returns it as `data.cwd`; omit `cwd` in that case. |
 | `timeout_seconds` | number > 0 | Kill the child process tree after this many seconds and return `CLI.TIMEOUT`. |
+| `ephemeral` | bool | Do not persist the session (`claude --no-session-persistence`, `codex exec --ephemeral`); it cannot be resumed. |
 
-`cwd` stays required unless `isolation.cwd` is `"temp"`.
+`cwd` is required unless `isolation.cwd` is `"temp"`, and must be omitted then.
+`isolation.tools: "none"` rejects `extra_args` and `atm_identity`.
 
-**Prompt delivery.** In JSON mode (claude and codex) the prompt is written to
-the child's stdin (`claude --print` with no positional prompt; `codex exec ... -`),
-never put on the command line, so prompts of any size work on Windows (whose
-command line is limited to about 32K characters). Verified live with an 86 KB
-prompt on both harnesses. Text mode keeps the prompt on the command line exactly
-as before.
+**Prompt delivery.** claude and codex always get the prompt on stdin
+(`claude --print` with no positional prompt; `codex exec ... -`), never on the
+command line, so prompts of any size work on Windows (whose command line is
+limited to about 32K characters) and nothing passes through a `.cmd` shim's
+argument parsing. Gemini has no stdin mode and keeps `--prompt <text>`.
+
+**Windows `.cmd` shims.** cmd.exe re-parses the arguments of a `.cmd`/`.bat`
+file and Python cannot escape them safely. When the resolved CLI is such a shim,
+any argument containing `" % ! ^ & | < >` or a newline (from `model`,
+`extra_args`, or a gemini prompt) fails as `CLI.UNSAFE_ARGUMENT` before launch.
+sc-launchpad's own flags never contain these characters.
 
 ### Output fields added to `data`
 
 `output_format`, `session_id`, `result_text`, `resumed_session_id`,
 `isolation` (`{tools, cwd, flags}` or `null`), `timeout_seconds`, `timed_out`,
-`duration_seconds`, `warnings` (non-fatal harness notices), `temp_cwd_created`
-(`true` when this launch created `data.cwd` for `isolation.cwd: "temp"`). Existing keys
-(`tool`, `model`, `cwd`, `teammate_mode`, `atm_team`, `atm_identity`,
-`exit_code`, `stdout`, `stderr`) are unchanged; `stdout` is still the raw child
-stdout (the JSON / JSONL stream in structured mode).
+`duration_seconds`, `warnings` (non-fatal harness notices), `ephemeral`, and
+`cleanup_paths` (see below). Existing keys (`tool`, `model`, `cwd`,
+`teammate_mode`, `atm_team`, `atm_identity`, `exit_code`, `stdout`, `stderr`)
+keep their meaning in text mode. In JSON mode `stdout` is `null` (the answer is
+`result_text`) and `stderr` is its last 4000 characters; a failure carries
+`error.details.stdout_tail` / `stderr_tail`.
 
 On failure `error` gains an optional `details` object (for example
 `stderr_tail`, `exit_code`, `searched_path`, `reported_error`,
-`resume_session_id`, `partial_session_id`).
+`resume_session_id`, `stdout_tail`, `session_id`). On a timeout `data.session_id`
+holds the session id if the harness had already emitted it.
 
 ### Multi-turn example
 
@@ -155,13 +166,15 @@ Use `"isolation": {"tools": "default", "cwd": "given"}` on a resumed turn to
 relax isolation; a resume without `isolation` is rejected so isolation never
 changes implicitly.
 
-**Temp directory ownership.** The caller owns cleanup. When
-`data.temp_cwd_created` is `true`, sc-launchpad leaves `data.cwd` in place
-(every resumed turn must run in it) and never deletes it; delete it yourself
-after the last turn (for example `shutil.rmtree(cwd, ignore_errors=True)`). It is
-also kept, and reported in `data.cwd`, when the first turn fails after the child
-started (the session may exist). It is removed automatically only when the launch
-fails before any child process started.
+**Cleanup ownership.** The caller owns cleanup. `data.cleanup_paths` lists
+everything the session leaves behind: the temp `data.cwd`, the private
+`CODEX_HOME` of an isolated codex session, and claude's transcript directory
+for a temp cwd (`~/.claude/projects/<encoded cwd>`, honoring
+`CLAUDE_CONFIG_DIR`). sc-launchpad keeps them because every resumed turn needs
+them; after the last turn delete each one (for example
+`shutil.rmtree(path, ignore_errors=True)`). When a launch fails after the child
+started, the paths are in `error.details.cleanup_paths`. A temp cwd is removed
+automatically only when the launch fails before any child process started.
 
 Claude stores sessions per project directory, so always resume with the
 `data.cwd` the first turn reported. Codex resolves a thread id globally, but
@@ -169,11 +182,19 @@ the same rule keeps both harnesses uniform.
 
 ### Isolation guarantees
 
-Verified on macOS with `claude` 2.1.302 and `codex-cli` 0.162.1. Flags are
+Flags verified on macOS with `claude` 2.1.302 and `codex-cli` 0.162.1. Flags are
 listed in `data.isolation.flags`. If a future CLI rejects a flag, the launch
 fails with `CLI.UNSUPPORTED_FLAG` naming the rejected flag or feature
 (`error.details.rejected`, `error.details.rejected_is_isolation_flag`); nothing is
 silently dropped and there is no runtime probing that could weaken isolation.
+
+**Verified per turn.** With `tools: "none"` sc-launchpad does not trust the
+flags alone. It inspects the harness output and fails closed with
+`ISOLATION.VIOLATED` (no `result_text`, `recoverable: false`, evidence in
+`error.details.tool_activity`) when claude's `init` event lists any tool or MCP
+server, when claude did not report a tool-less `init` at all, when any
+`tool_use` block appears, or when codex emits any item other than
+`agent_message`, `reasoning`, `error`, or `todo_list`.
 
 **Claude, `tools: "none"`** — adds `--tools "" --strict-mcp-config --safe-mode
 --disable-slash-commands` and omits `--dangerously-skip-permissions`.
@@ -189,7 +210,7 @@ silently dropped and there is no runtime probing that could weaken isolation.
   so the directory reveals nothing.
 
 **Codex, `tools: "none"`** — adds `--skip-git-repo-check --ignore-user-config
---ignore-rules -c sandbox_mode="read-only" -c web_search="disabled"` and
+--ignore-rules -c sandbox_mode=read-only -c web_search=disabled` and
 `--disable` for `shell_tool unified_exec code_mode_host apps plugins
 multi_agent image_generation computer_use browser_use in_app_browser view_image
 goals tool_suggest skill_search`; `--yolo` is omitted.
@@ -202,24 +223,27 @@ goals tool_suggest skill_search`; `--yolo` is omitted.
 - Defense in depth: the read-only sandbox blocks writes and network for any
   command that did run, but **does not block reads**. Codex has no single
   "no tools" switch, so this guarantee depends on the feature names above.
-- `--ignore-user-config` skips `$CODEX_HOME/config.toml` (MCP servers, profiles,
-  custom providers); authentication still uses `CODEX_HOME`. Global
-  `AGENTS.md` instructions are not covered by this flag.
+- `--ignore-user-config` skips `config.toml` (MCP servers, profiles, custom
+  providers). It does not cover the global `AGENTS.md`, so sc-launchpad also
+  points `CODEX_HOME` at a private directory
+  (`$TMPDIR/sc-launchpad-codex-home-<hash of cwd>`, mode 0700) that contains
+  only a link to your `auth.json`. Global instructions, config, and session
+  history never reach the child (verified: a global `AGENTS.md` instruction is
+  followed without it and ignored with it). The directory is keyed by cwd so
+  resumed turns find the thread; it is listed in `data.cleanup_paths`.
 
 **Both, `cwd: "temp"`** — the child runs in a new empty directory from
 `tempfile.mkdtemp(prefix="sc-launchpad-")`, outside any git repository (codex
 gets `--skip-git-repo-check` whenever `isolation` is present).
 
-**`extra_args`** are appended after the isolation flags and are not filtered.
-Arguments that touch tools, permissions, sandbox, MCP, or config (for example
-`--tools`, `--allowed-tools`, `--dangerously-skip-permissions`, `--yolo`,
-`--enable`, `-c`, `--sandbox`, `--add-dir`) can override isolation; keep
-`extra_args` empty for isolated turns unless you have checked them.
+**`extra_args`** are rejected with `tools: "none"`: any flag that touches tools,
+permissions, sandbox, MCP, or config could override isolation. With
+`tools: "default"` they are appended unfiltered after the isolation flags.
 
 **`tools: "default"`** — the harness's normal tools and the existing automation
 flags (`--dangerously-skip-permissions`, `--yolo`).
 
-**Gemini** — `output_format: "json"`, `resume_session_id`, and `isolation` return
+**Gemini** — `output_format: "json"`, `resume_session_id`, `isolation`, and `ephemeral` return
 `CAPABILITY.UNSUPPORTED`. Gemini text-mode launches (and `timeout_seconds`)
 work as before.
 
@@ -231,7 +255,7 @@ work as before.
 | `CLI.NOT_FOUND` | The CLI (or `atm` in teammate mode) is not on PATH; `details.searched_path` lists the PATH directories. |
 | `CLI.LAUNCH_FAILED` | The executable could not be started. |
 | `CLI.NON_ZERO_EXIT` | The child exited non-zero for an unclassified reason. |
-| `CLI.TIMEOUT` | `timeout_seconds` elapsed; the child tree was killed. `details.partial_session_id` is set when the session id had already been emitted (codex). |
+| `CLI.TIMEOUT` | `timeout_seconds` elapsed; the child tree was killed. `data.session_id` is set when the session id had already been emitted. |
 | `CLI.OUTPUT_UNPARSEABLE` | Structured output was not valid JSON / JSONL. |
 | `CLI.SESSION_ID_MISSING` | Structured output had no session id. |
 | `CLI.RESULT_MISSING` | Structured output had no final assistant message. |
@@ -239,10 +263,12 @@ work as before.
 | `CLI.AUTH_FAILED` | Authentication failure detected (claude `api_error_status` 401/403 or auth text in stderr / error events). |
 | `CLI.REPORTED_ERROR` | Exit 0 but the harness reported an error (claude `is_error`, codex `turn.failed`). |
 | `CLI.UNSUPPORTED_FLAG` | The CLI rejected a flag or feature name (version drift or bad `extra_args`); `details.rejected` names it. |
+| `CLI.UNSAFE_ARGUMENT` | The CLI resolves to a Windows `.cmd`/`.bat` shim and an argument contains cmd.exe metacharacters. |
+| `ISOLATION.VIOLATED` | `tools: "none"` but the harness output shows tools were available or used; the answer is withheld. |
 | `CAPABILITY.UNSUPPORTED` | The tool does not support a requested field (gemini). |
 | `ATM.ADD_MEMBER_FAILED` | Teammate registration failed. |
 | `RUNTIME.INTERRUPTED` | The runtime received SIGINT/SIGTERM/SIGHUP (or Ctrl-Break) while the child ran; the child tree was killed. |
-| `RUNTIME.TEMP_CWD_FAILED` / `RUNTIME.UNEXPECTED` | Runtime problems. |
+| `RUNTIME.TEMP_CWD_FAILED` / `RUNTIME.CODEX_HOME_FAILED` / `RUNTIME.UNEXPECTED` | Runtime problems. |
 
 Every failure sets `success: false`, `error.code`, `error.message`,
 `error.suggested_action`, and, when a child ran, `error.details.stderr_tail`
@@ -250,8 +276,8 @@ plus the usual `data` block.
 
 ## Direct Script Invocation
 
-The agent path (skill -> `launchpad` agent -> one Bash call) is unchanged and
-remains the way an LLM session should launch background agents.
+The agent path (skill -> `launchpad` agent -> one Bash call) remains the way an
+LLM session should launch background agents.
 
 A **program** (not the main LLM session) may also invoke the runtime directly
 as a subprocess, for example to fan out the same prompt to several harnesses
@@ -261,6 +287,8 @@ in parallel:
 python3 .claude/scripts/sc_launchpad_task.py --json '<payload JSON>'
 python3 .claude/scripts/sc_launchpad_task.py --json - < payload.json   # large payloads
 ```
+
+With a plugin install the script is `$CLAUDE_PLUGIN_ROOT/scripts/sc_launchpad_task.py`.
 
 Contract:
 
@@ -274,10 +302,19 @@ Contract:
   `success`, never on the exit status.
 - Each invocation is one child process with its own working directory, so
   parallel invocations do not share state. The child never inherits the
-  caller's stdin: it receives the prompt through a pipe (JSON mode) or an
-  empty stdin (text mode).
+  caller's stdin: claude and codex receive the prompt through a pipe, gemini
+  an empty stdin.
 - The child runs in its own process group. `timeout_seconds` kills the whole
   tree; terminating the runtime with SIGTERM/SIGINT (POSIX) or Ctrl-Break
   (Windows) also kills the tree and still prints an envelope
   (`RUNTIME.INTERRUPTED`). A hard kill (SIGKILL / `TerminateProcess`) of the
   runtime cannot be intercepted, so bound run time with `timeout_seconds`.
+
+## Storage
+
+Each launch appends one line to
+`<CLAUDE_PROJECT_DIR or cwd>/.claude/state/logs/sc-launchpad/launch.jsonl`:
+`timestamp`, `event` (`launch`), `package`, `level`, `tool`, `model`,
+`output_format`, `isolation`, `ephemeral`, `session_id`, `resumed_session_id`,
+`exit_code`, `error_code`, `duration_seconds`. The prompt, the answer, and the
+environment are never logged. A log write failure never fails the launch.

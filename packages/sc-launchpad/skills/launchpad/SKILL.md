@@ -40,7 +40,7 @@ Required fields:
 - `description`
 - `prompt`
 - `tool`
-- `cwd` (omit only when `isolation.cwd` is `"temp"`)
+- `cwd` (required, except it must be omitted when `isolation.cwd` is `"temp"`)
 
 Optional fields:
 - `model`
@@ -50,11 +50,12 @@ Optional fields:
 - `resume_session_id`: continue a claude/codex session; requires an explicit `isolation` object
 - `isolation`: `{"tools": "none"|"default", "cwd": "temp"|"given"}`
 - `timeout_seconds`: kill the child and return `CLI.TIMEOUT` after this many seconds
+- `ephemeral`: `true` to keep claude/codex from persisting the session
 
 `output_format` defaults to `json` when `resume_session_id` or `isolation` is
 present, otherwise `text`. Payloads without the new fields behave exactly as
 before. Gemini returns `CAPABILITY.UNSUPPORTED` for `output_format: "json"`,
-`resume_session_id`, and `isolation`.
+`resume_session_id`, `isolation`, and `ephemeral`.
 
 ### Multi-turn isolated sessions
 
@@ -64,10 +65,14 @@ before. Gemini returns `CAPABILITY.UNSUPPORTED` for `output_format: "json"`,
    and `"isolation": {"tools": "none", "cwd": "given"}` to keep isolation, or
    `{"tools": "default", "cwd": "given"}` to relax it explicitly.
 
-In JSON mode the prompt is sent on the child's stdin (no command-line length
-limit). The temp directory is never deleted by sc-launchpad
-(`data.temp_cwd_created: true`); the caller deletes `data.cwd` after the last
-turn.
+claude and codex receive the prompt on stdin (no command-line length limit).
+sc-launchpad never deletes what a session needs to resume: after the last turn
+the caller deletes every path in `data.cleanup_paths` (temp cwd, private
+`CODEX_HOME`, claude transcripts). `"ephemeral": true` keeps claude/codex from
+persisting the session at all (it then cannot be resumed).
+
+With `tools: "none"` the runtime checks the harness output for any tool
+availability or use and fails closed with `ISOLATION.VIOLATED`.
 
 See the package README for the exact per-harness flags and what each
 isolation level guarantees.
@@ -103,12 +108,12 @@ The `launchpad` agent returns the runtime stdout exactly as-is. The runtime prin
     "tool": "claude",
     "model": "haiku",
     "cwd": "/abs/path/to/repo",
-    "temp_cwd_created": false,
+    "cleanup_paths": [],
     "teammate_mode": true,
     "atm_team": "annotations-test",
     "atm_identity": "reviewer-1",
     "exit_code": 0,
-    "stdout": "child stdout",
+    "stdout": null,
     "stderr": "",
     "output_format": "json",
     "session_id": "646130d0-5d6a-434c-95ed-b8d500fdc35f",
@@ -124,7 +129,9 @@ The `launchpad` agent returns the runtime stdout exactly as-is. The runtime prin
 }
 ```
 
-In text mode `session_id` and `result_text` are `null`.
+In text mode `session_id` and `result_text` are `null` and `stdout` holds the
+child's output. In JSON mode `stdout` is `null`; failures carry
+`error.details.stdout_tail`.
 
 Errors use the same envelope with `success: false` and a populated `error`
 object: `code`, `message`, `recoverable`, `suggested_action`, and optional
@@ -133,12 +140,14 @@ Codes include `CLI.NOT_FOUND`, `CLI.NON_ZERO_EXIT`, `CLI.TIMEOUT`,
 `CLI.OUTPUT_UNPARSEABLE`, `CLI.SESSION_ID_MISSING`, `CLI.RESULT_MISSING`,
 `CLI.RESUME_SESSION_NOT_FOUND`, `CLI.AUTH_FAILED`, `CLI.REPORTED_ERROR`,
 `CLI.UNSUPPORTED_FLAG` (names the rejected flag in `details.rejected`),
-`RUNTIME.INTERRUPTED`, and `CAPABILITY.UNSUPPORTED`.
+`CLI.UNSAFE_ARGUMENT`, `ISOLATION.VIOLATED`, `RUNTIME.INTERRUPTED`, and
+`CAPABILITY.UNSUPPORTED`.
 
 ## Direct Script Invocation (programs only)
 
 A program (not the main LLM session) may run
-`python3 .claude/scripts/sc_launchpad_task.py --json '<payload>'` (or
+`python3 .claude/scripts/sc_launchpad_task.py --json '<payload>'` (plugin
+install: `$CLAUDE_PLUGIN_ROOT/scripts/sc_launchpad_task.py`) (or
 `--json -` with the payload on stdin) as a subprocess, for example to fan out
 one prompt to several harnesses in parallel. It prints exactly one envelope on
 stdout and exits 0; branch on `success`. LLM sessions keep using the

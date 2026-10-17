@@ -25,6 +25,10 @@
     "./skills/launchpad/SKILL.md"
   ],
   "scripts": [
+    "./scripts/launchpad_commands.py",
+    "./scripts/launchpad_models.py",
+    "./scripts/launchpad_output.py",
+    "./scripts/launchpad_process.py",
     "./scripts/launchpad_shared.py",
     "./scripts/sc_launchpad_task.py"
   ]

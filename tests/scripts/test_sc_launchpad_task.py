@@ -1,202 +1,221 @@
-"""Tests for the sc-launchpad runtime."""
+"""Unit tests for the sc-launchpad modules: payload rules, models, command lines, parsers."""
 
+import json
+import sys
 from pathlib import Path
-import importlib.util
 
 import pytest
 
+SCRIPTS = Path(__file__).resolve().parents[2] / "packages" / "sc-launchpad" / "scripts"
+sys.path.insert(0, str(SCRIPTS))
 
-spec = importlib.util.spec_from_file_location(
-    "sc_launchpad_task",
-    Path(__file__).parent.parent.parent
-    / "packages"
-    / "sc-launchpad"
-    / "scripts"
-    / "sc_launchpad_task.py",
-)
-sc_launchpad_task = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(sc_launchpad_task)
+import launchpad_commands as commands  # noqa: E402
+import launchpad_output as output  # noqa: E402
+from launchpad_models import LaunchFailure, LaunchpadInput, normalize_tool_model, roster_model  # noqa: E402
+from launchpad_shared import build_child_env, resolve_teammate_mode  # noqa: E402
 
-
-def test_resolve_teammate_mode_requires_both_team_and_identity():
-    teammate_mode, team, identity = sc_launchpad_task.resolve_teammate_mode(
-        {"ATM_TEAM": "annotations-test"},
-        None,
-    )
-    assert teammate_mode is False
-    assert team is None
-    assert identity is None
+SESSION = "11111111-2222-4333-8444-555555555555"
+ISOLATED = {"tools": "none", "cwd": "temp"}
 
 
-def test_resolve_teammate_mode_enables_when_both_present():
-    teammate_mode, team, identity = sc_launchpad_task.resolve_teammate_mode(
-        {"ATM_TEAM": "annotations-test"},
-        "reviewer-1",
-    )
-    assert teammate_mode is True
-    assert team == "annotations-test"
-    assert identity == "reviewer-1"
+def payload(**fields):
+    base = {"description": "d", "prompt": "Answer the question", "tool": "claude", "cwd": "/tmp"}
+    base.update(fields)
+    if base.get("isolation", {}).get("cwd") == "temp":
+        base.pop("cwd")
+    return LaunchpadInput.model_validate({k: v for k, v in base.items() if v is not None})
 
 
-def test_build_child_env_clears_atm_vars_without_teammate_mode():
-    env = sc_launchpad_task.build_child_env(
-        {
-            "ATM_TEAM": "annotations-test",
-            "ATM_IDENTITY": "team-lead",
-            "KEEP_ME": "yes",
-        },
-        False,
-        None,
-        None,
-    )
-    assert "ATM_TEAM" not in env
-    assert "ATM_IDENTITY" not in env
-    assert env["KEEP_ME"] == "yes"
-
-
-def test_build_child_env_sets_both_atm_vars_in_teammate_mode():
-    env = sc_launchpad_task.build_child_env(
-        {"KEEP_ME": "yes"},
-        True,
-        "annotations-test",
-        "reviewer-1",
-    )
-    assert env["ATM_TEAM"] == "annotations-test"
-    assert env["ATM_IDENTITY"] == "reviewer-1"
-    assert env["KEEP_ME"] == "yes"
-
-
-def test_build_command_for_claude():
-    payload = sc_launchpad_task.LaunchpadInput(
-        description="Launch Claude",
-        prompt="Review the diff",
-        tool="claude",
-        model="haiku",
-        cwd="/tmp",
-        extra_args=["--append-system-prompt", "Focus on tests"],
-    )
-    command = sc_launchpad_task.build_command(payload, "haiku")
-    assert command == [
-        "claude",
-        "--dangerously-skip-permissions",
-        "--print",
-        "--model",
-        "haiku",
-        "--append-system-prompt",
-        "Focus on tests",
-        "Review the diff",
-    ]
-
-
-def test_normalize_fable_model_aliases():
-    for model in ("fable", "claude-fable-5", "claude-fable-5[1m]"):
-        payload = sc_launchpad_task.LaunchpadInput(
-            description="Launch Fable",
-            prompt="Review the diff",
-            tool="claude",
-            model=model,
-            cwd="/tmp",
-        )
-        assert sc_launchpad_task.normalize_tool_model(payload) == "fable"
-
-
-def test_build_command_for_codex():
-    payload = sc_launchpad_task.LaunchpadInput(
-        description="Launch Codex",
-        prompt="Implement the fix",
-        tool="codex",
-        model="max",
-        cwd="/tmp",
-        extra_args=["--skip-git-repo-check"],
-    )
-    command = sc_launchpad_task.build_command(payload, "gpt-5.1-codex-max")
-    assert command == [
-        "codex",
-        "exec",
-        "--yolo",
-        "--model",
-        "gpt-5.1-codex-max",
-        "--skip-git-repo-check",
-        "Implement the fix",
-    ]
+# --- teammate mode -----------------------------------------------------------
 
 
 @pytest.mark.parametrize(
-    ("alias", "model_id"),
+    ("env", "identity", "expected"),
     [
-        ("sol", "gpt-5.6-sol"),
-        ("terra", "gpt-5.6-terra"),
-        ("luna", "gpt-5.6-luna"),
-        ("codex", "gpt-5.6-terra"),
+        ({"ATM_TEAM": "t"}, None, (False, None, None)),
+        ({}, "r1", (False, None, None)),
+        ({"ATM_TEAM": "t"}, "r1", (True, "t", "r1")),
     ],
 )
-def test_normalize_codex_model_aliases(alias, model_id):
-    payload = sc_launchpad_task.LaunchpadInput(
-        description="Launch Codex",
-        prompt="Implement the fix",
-        tool="codex",
-        model=alias,
-        cwd="/tmp",
+def test_teammate_mode_needs_team_and_identity(env, identity, expected):
+    assert resolve_teammate_mode(env, identity) == expected
+
+
+def test_child_env_sets_or_clears_atm_vars():
+    parent = {"ATM_TEAM": "t", "ATM_IDENTITY": "lead", "KEEP": "1"}
+    assert build_child_env(parent, False, None, None) == {"KEEP": "1"}
+    assert build_child_env({"KEEP": "1"}, True, "t", "r1") == {"KEEP": "1", "ATM_TEAM": "t", "ATM_IDENTITY": "r1"}
+
+
+# --- payload rules -----------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "fields",
+    [
+        {"resume_session_id": SESSION},  # resume needs explicit isolation
+        {"resume_session_id": SESSION, "isolation": ISOLATED},
+        {"isolation": {"cwd": "temp"}},  # temp cwd forbids an explicit cwd
+        {"cwd": None},
+        {"resume_session_id": SESSION, "isolation": {}, "output_format": "text"},
+        {"isolation": {"tools": "some"}},
+        {"isolation": {"network": "off"}},
+        {"timeout_seconds": 0},
+        {"resume_session_id": ""},
+        {"session": "x"},
+        {"isolation": {"tools": "none"}, "extra_args": ["--x"]},
+        {"isolation": {"tools": "none"}, "atm_identity": "r1"},
+    ],
+)
+def test_invalid_payloads_are_rejected(fields):
+    with pytest.raises(ValueError):
+        base = {"description": "d", "prompt": "p", "tool": "claude", "cwd": "/tmp"}
+        base.update(fields)
+        LaunchpadInput.model_validate({k: v for k, v in base.items() if v is not None})
+
+
+@pytest.mark.parametrize("bad", ["-x", "a b", "id;rm", "id&calc", 'x"y', "%PATH%"])
+def test_resume_session_id_charset_is_restricted(bad):
+    with pytest.raises(ValueError):
+        payload(tool="codex", resume_session_id=bad, isolation={})
+
+
+def test_structured_output_defaults():
+    assert payload().structured is False
+    assert payload(isolation={}).structured is True
+    assert payload(resume_session_id=SESSION, isolation={"tools": "none"}).structured is True
+    assert payload(isolation={}, output_format="text").structured is False
+
+
+# --- models ------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("tool", "model", "expected"),
+    [
+        ("claude", None, "sonnet"),
+        ("claude", "claude-fable-5[1m]", "fable"),
+        ("codex", None, "gpt-5.6-terra"),
+        ("codex", "codex", "gpt-5.6-terra"),
+        ("codex", "luna", "gpt-5.6-luna"),
+        ("gemini", "gemini-2.5-pro", "gemini-2.5-pro"),
+    ],
+)
+def test_normalize_tool_model(tool, model, expected):
+    assert normalize_tool_model(payload(tool=tool, model=model)) == expected
+
+
+def test_unknown_model_is_a_typed_failure():
+    with pytest.raises(LaunchFailure) as exc:
+        normalize_tool_model(payload(model="gpt-4"))
+    assert exc.value.code == "VALIDATION.INVALID_MODEL"
+
+
+@pytest.mark.parametrize(
+    ("tool", "model", "expected"),
+    [("claude", "opus", "opus"), ("codex", "gpt-5.6-terra", "terra"), ("gemini", "x", "gemini")],
+)
+def test_roster_model(tool, model, expected):
+    assert roster_model(payload(tool=tool), model) == expected
+
+
+# --- command lines -----------------------------------------------------------
+
+
+def test_text_mode_commands_put_prompt_on_stdin():
+    claude = commands.build_command(payload(extra_args=["--x"]), "haiku")
+    assert claude.argv == ["claude", "--print", "--dangerously-skip-permissions", "--model", "haiku", "--x"]
+    codex = commands.build_command(payload(tool="codex", extra_args=["--x"]), "gpt-5.6-terra")
+    assert codex.argv == ["codex", "exec", "--yolo", "--model", "gpt-5.6-terra", "--x", "--", "-"]
+    assert claude.stdin == codex.stdin == "Answer the question"
+
+
+def test_gemini_keeps_prompt_on_argv():
+    command = commands.build_command(payload(tool="gemini", extra_args=["--y"]), "g")
+    assert command.argv == ["gemini", "--yolo", "--prompt", "Answer the question", "--model", "g", "--y"]
+    assert command.stdin is None
+
+
+def test_claude_isolated_command():
+    argv = commands.build_command(payload(isolation=ISOLATED, ephemeral=True), "haiku").argv
+    assert argv[:5] == ["claude", "--print", "--output-format", "stream-json", "--verbose"]
+    assert "--dangerously-skip-permissions" not in argv
+    assert argv[argv.index("--tools") + 1] == ""
+    assert {"--strict-mcp-config", "--safe-mode", "--disable-slash-commands", "--no-session-persistence"} <= set(argv)
+
+
+def test_claude_resume_with_default_tools_keeps_permissions_flag():
+    argv = commands.build_command(payload(resume_session_id=SESSION, isolation={}), "sonnet").argv
+    assert argv[argv.index("--resume") + 1] == SESSION
+    assert "--dangerously-skip-permissions" in argv and "--tools" not in argv
+
+
+def test_codex_isolated_command_is_shim_safe():
+    argv = commands.build_command(payload(tool="codex", isolation=ISOLATED, ephemeral=True), "m").argv
+    assert argv[:3] == ["codex", "exec", "--json"]
+    assert "--yolo" not in argv and "--ephemeral" in argv
+    assert {"--skip-git-repo-check", "sandbox_mode=read-only", "web_search=disabled"} <= set(argv)
+    for feature in commands.CODEX_DISABLED_FEATURES:
+        assert argv[argv.index(feature) - 1] == "--disable"
+    assert argv[-2:] == ["--", "-"]
+    commands.check_batch_shim("codex.cmd", argv)  # must not raise
+
+
+def test_codex_resume_places_session_before_stdin_marker():
+    argv = commands.build_command(payload(tool="codex", resume_session_id=SESSION, isolation={}), "m").argv
+    assert argv[:4] == ["codex", "exec", "resume", "--json"]
+    assert "--yolo" in argv
+    assert argv[-3:] == ["--", SESSION, "-"]
+
+
+@pytest.mark.parametrize("arg", ['say "hi"', "a&b", "50%", "x|y", "^", "line\nbreak"])
+def test_batch_shim_rejects_cmd_metacharacters(arg):
+    with pytest.raises(LaunchFailure) as exc:
+        commands.check_batch_shim(r"C:\bin\claude.CMD", ["claude", "--x", arg])
+    assert exc.value.code == "CLI.UNSAFE_ARGUMENT" and exc.value.recoverable is False
+    commands.check_batch_shim("/usr/local/bin/claude", ["claude", arg])  # native: fine
+
+
+def test_codex_private_home_links_auth(tmp_path, monkeypatch):
+    monkeypatch.setattr(commands.tempfile, "tempdir", str(tmp_path))
+    source = tmp_path / "real-codex"
+    source.mkdir()
+    (source / "auth.json").write_text("{}")
+    home = commands.codex_private_home(tmp_path / "cwd", {"CODEX_HOME": str(source)})
+    assert home.name.startswith(commands.CODEX_HOME_PREFIX)
+    assert (home / "auth.json").read_text() == "{}"
+    assert commands.codex_private_home(tmp_path / "cwd", {"CODEX_HOME": str(source)}) == home
+    assert commands.codex_private_home(tmp_path / "other", {}) != home
+
+
+# --- parsers -----------------------------------------------------------------
+
+
+def lines(*events):
+    return "\n".join(json.dumps(e) for e in events) + "\n"
+
+
+def test_claude_stream_parser_collects_tool_evidence():
+    parsed = output.parse_claude(
+        lines(
+            {"type": "system", "subtype": "init", "session_id": SESSION, "tools": ["Bash"], "mcp_servers": []},
+            {"type": "assistant", "message": {"content": [{"type": "tool_use", "name": "Bash"}]}},
+            {"type": "result", "is_error": False, "result": "ok", "session_id": SESSION},
+        )
     )
-    assert sc_launchpad_task.normalize_tool_model(payload) == model_id
+    assert (parsed.session_id, parsed.result_text, parsed.toolless_init) == (SESSION, "ok", False)
+    assert parsed.tool_activity == ["init.tools:Bash", "tool_use:Bash"]
 
 
-def test_build_command_for_terra_codex():
-    payload = sc_launchpad_task.LaunchpadInput(
-        description="Launch Terra",
-        prompt="Implement the fix",
-        tool="codex",
-        model="terra",
-        cwd="/tmp",
+def test_codex_parser_flags_tool_items_and_keeps_last_message():
+    parsed = output.parse_codex(
+        lines(
+            {"type": "thread.started", "thread_id": SESSION},
+            {"type": "item.started", "item": {"type": "command_execution"}},
+            {"type": "item.completed", "item": {"type": "agent_message", "text": "a"}},
+            {"type": "item.completed", "item": {"type": "agent_message", "text": "b"}},
+            {"type": "turn.completed"},
+        )
     )
-    command = sc_launchpad_task.build_command(payload, "gpt-5.6-terra")
-    assert command == [
-        "codex",
-        "exec",
-        "--yolo",
-        "--model",
-        "gpt-5.6-terra",
-        "Implement the fix",
-    ]
-
-
-def test_codex_defaults_to_terra():
-    payload = sc_launchpad_task.LaunchpadInput(
-        description="Launch Codex",
-        prompt="Implement the fix",
-        tool="codex",
-        cwd="/tmp",
-    )
-    assert sc_launchpad_task.normalize_tool_model(payload) == "gpt-5.6-terra"
-
-
-def test_build_command_for_gemini():
-    payload = sc_launchpad_task.LaunchpadInput(
-        description="Launch Gemini",
-        prompt="Summarize the issue",
-        tool="gemini",
-        model="gemini-2.5-pro",
-        cwd="/tmp",
-        extra_args=["--output-format", "json"],
-    )
-    command = sc_launchpad_task.build_command(payload, "gemini-2.5-pro")
-    assert command == [
-        "gemini",
-        "--yolo",
-        "--prompt",
-        "Summarize the issue",
-        "--model",
-        "gemini-2.5-pro",
-        "--output-format",
-        "json",
-    ]
-
-
-def test_roster_model_uses_canonical_alias_for_codex():
-    payload = sc_launchpad_task.LaunchpadInput(
-        description="Launch Codex",
-        prompt="Implement the fix",
-        tool="codex",
-        cwd="/tmp",
-    )
-    assert sc_launchpad_task.roster_model(payload, "gpt-5.6-terra") == "terra"
+    assert (parsed.session_id, parsed.result_text) == (SESSION, "b")
+    assert parsed.tool_activity == ["item:command_execution"]
