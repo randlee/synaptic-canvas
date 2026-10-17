@@ -133,7 +133,7 @@ Removes the stack **grouping** only — never deletes PRs/branches. No argument 
 
 No arg → current stack; PR# → that PR + everything below; stack# → every unmerged PR in it. **All-or-nothing.** Only open/not-draft checked pre-merge; branch protection/rules evaluated by GitHub at merge time. A merge queue on the base overrides: queued instead, queue picks the method (flag ignored with a warning), PRs may land in separate groups.
 
-**Field note:** `merge` blocks the whole set on "not a linear descendant" or "out-of-date with base" — it doesn't selectively skip a bad layer. A scoped `gh stack merge <lower-pr>` can sweep in an upper *empty* draft too (GitHub marks it merged, deletes its branch). Inspect complete `stacks[].branches[]` from sufficient evidence or scoped helper JSON before scoping.
+**Field note:** `merge` blocks the whole set on "not a linear descendant" or "out-of-date with base" — it doesn't selectively skip a bad layer. A scoped `gh stack merge <lower-pr>` can sweep in an upper *empty* draft too (GitHub marks it merged, deletes its branch). Inspect sufficient verified remote composition before scoping; otherwise use scoped `--refresh` and the compact projection in `recipe-evidence.md`. Ordinary local JSON and `--refresh-status` do not certify membership.
 
 **Field note:** `gh pr merge` on a stacked PR: `must be merged using the asynchronous merge REST API`. Working fallback (poll until `"merged"`; an abbreviated SHA fails with the misleading `Pull request head branch was modified` — always pass the full 40-char `headRefOid`):
 ```bash

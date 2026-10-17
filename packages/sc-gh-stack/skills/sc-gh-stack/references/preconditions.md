@@ -69,12 +69,15 @@ by a bypass-listed account, and that is the user's call.
 
 ## Before `gh stack merge`
 
-**Check:** inspect complete stack composition from existing evidence or
-`gh_stack_view.py --stack <branch> --json` (`stacks[].branches[]`) and confirm
+**Check:** inspect sufficient verified remote stack composition, or use scoped
+`--refresh` and the compact projection in `recipe-evidence.md`, and confirm
 nothing above the merge target would be swept in. **Failure:** a scoped
 `gh stack merge <lower-pr>` merged and deleted an upper draft that held only a
 merge-forward commit (#1386, 2026-09-10). **Recovery:** a fresh PR for the
 remaining work; the old one cannot be restored.
+
+Local catalog membership and `--refresh-status` do not establish remote
+completeness. Require fresh, complete `structure_observation`; stop on unknowns.
 
 **Check:** the top's CI is green and its QA verdict is PASS; every lower layer
 is frozen with its head SHA recorded; every lower head is an ancestor of the

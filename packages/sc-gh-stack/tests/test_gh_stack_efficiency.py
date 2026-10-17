@@ -215,11 +215,12 @@ class EfficiencyIntegrationTests(unittest.TestCase):
                 snapshot['fingerprint'] += '-changed'
             return snapshot
         with mock.patch.object(view, 'read_local_snapshot', side_effect=changing):
-            _, text, _ = self.cli(view, ['--no-fetch', '--no-pr', '--json'])
-        report = json.loads(text)['stacks'][0]
-        self.assertIsNone(report['coherent'])
-        self.assertIsNone(report['local_mergeability']['clean'])
-        self.assertIsNone(report['landing']['landable'])
+            code, text, _ = self.cli(view, ['--no-fetch', '--no-pr', '--json'])
+        report = json.loads(text)
+        self.assertEqual(code, 2)
+        self.assertFalse(report['success'])
+        self.assertEqual(report['error']['code'], 'STATE.SNAPSHOT_CHANGED')
+        self.assertNotIn('stacks', report)
 
     def test_intermediate_conflict_and_unknown_survive_clean_tip(self):
         actual = view.evaluate_stack_conflicts

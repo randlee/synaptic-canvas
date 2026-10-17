@@ -68,9 +68,9 @@ matching reality.
 
 1. Sufficient scoped evidence: LANDING green, bottom layers QA PASS, no open
    findings on them.
-2. Inspect complete `stacks[].branches[]` from
-   `gh_stack_view.py --stack <branch> --json` if not already known; confirm the layer above the
-   run has unique commits (an empty draft would be swept in and deleted).
+2. Inspect sufficient verified remote composition, or use scoped `--refresh`
+   and the compact projection in `recipe-evidence.md`; confirm the layer above
+   the run has unique commits (an empty draft would be swept in and deleted).
 3. If the bottom's own CI is red for a reason fixed above it, do **not** merge
    it: remove the red layer first (section 2) so the fixing layer carries its
    commits, then collapse. Merging #1492 alone put its red on `develop`.

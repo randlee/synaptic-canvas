@@ -7,15 +7,18 @@ docs or evidence layer. The layer is a new worktree cut from the current
 ## Inputs
 
 - `<trunk>`: the stack's trunk (for example `develop`, `integrate/phase-bc`).
-- `<top>`: the current top branch, from `/sc-gh-stack-view` (the last open
-  row). For the first layer of a new stack, `<top>` is the trunk.
+- `<top>`: the last active branch in the complete ordered composition, never
+  the last displayed summary row (summaries are prioritized and truncated).
+  For the first layer of a new stack, `<top>` is the trunk.
 - `<layer>`: the new branch name. Follow the repository's naming policy;
   names are used verbatim by gh-stack.
 
 ## Steps
 
-1. From sufficient existing observations, note the top branch and its remote
-   SHA. If missing, use `/sc-gh-stack-view --stack <branch> --json`.
+1. From sufficient verified complete composition, note the last active branch
+   and its exact pushed head. If missing, use the scoped refresh and compact
+   top/composition projection in `recipe-evidence.md`. Unknown membership or
+   lifecycle stops the cut; a local-only catalog is not remotely complete.
 
 2. Verify the top is pushed and contains every lower layer:
 

@@ -10,6 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Stack reports derive local state first, share bounded hosted observations across worktrees, and support scoped refreshes and complete JSON/full output. Recipes reuse sufficient evidence while preserving verification, ownership and recovery requirements.
 
+### Fixed
+- Correct bulk GraphQL branch filters; reconcile explicit view refreshes with remote membership and reject catalog races or incomplete structural observations.
+- Select the pushed top from complete ordered composition, not sorted/truncated summary rows; keep composition projections compact and fail closed on unknown evidence.
+
 ## [0.1.1] - 2026-09-23
 
 ### Changed

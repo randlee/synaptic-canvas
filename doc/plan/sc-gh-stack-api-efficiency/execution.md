@@ -86,3 +86,20 @@ Small equivalent REST lookups remain preferred without creating REST fanout.
 Live endpoint compatibility and hosted mutation/recovery outcomes were not
 exercised; recipe-equivalence evidence is a strategy/contract review, not a
 production landing test. No release or PR has been created for this work.
+
+## Post-review regression fixes
+
+The critical-review follow-up corrects bulk GraphQL branch filters, reconciles
+explicit view refreshes with verified remote membership, rejects catalog changes
+both during fetch and after hosted acquisition, and selects the pushed top from
+complete ordered composition rather than summary rows. Failed/incomplete
+structural pages and stale cached lifecycle cannot certify old composition.
+Ordinary reports add no structural scans; recipe strategy and write authorization
+remain unchanged. Shell-side projections keep full JSON out of agent context.
+
+Verification on 2026-10-17: **204 tests passed in 37.35 seconds**; compilation,
+temporary package installation/both entrypoints, and whitespace checks passed.
+Tests use local git, fake transports/clocks and the actual documented projection;
+no live GitHub API or 500-layer experiment was run. The earlier Jev development
+gate is historical evidence for `dc526cc`, not a rerun against this follow-up.
+The review's medium-priority findings remain outside this focused patch.

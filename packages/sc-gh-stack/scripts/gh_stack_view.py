@@ -11,7 +11,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from gh_stack_shared import ToolError, guarded, is_ancestor, origin_sha, run, short
-from gh_stack_local import read_local_snapshot, evaluate_stack_conflicts
+from gh_stack_local import read_local_snapshot, evaluate_stack_conflicts, _branch as valid_branch
 from gh_stack_remote import StackDataClient, _read as read_snapshot, _write as write_snapshot
 
 SKIPPED: list[str] = []
@@ -321,13 +321,15 @@ def legend() -> str:
     return "\n".join(lines)
 
 
-def add_refresh_options(ap):
+def add_refresh_options(ap, *, include_structure=False):
     ap.add_argument("--remote", default="origin", help="selected git remote")
     ap.add_argument("--stack", help="stack number, ID, or one of its branch names")
     ap.add_argument("--full", action="store_true", help="show every layer/issue; does not refresh")
     ap.add_argument("--refresh-git", action="store_true", help="refresh git refs once; no API requests unless combined with --refresh-status")
     ap.add_argument("--refresh-status", action="store_true", help="refresh required hosted fields without implying a git fetch")
-    ap.add_argument("--refresh", action="store_true", help="refresh both git refs and required hosted fields")
+    refresh_help = ("refresh selected stack membership, git refs and required hosted fields" if include_structure else
+                    "refresh git refs and required hosted fields")
+    ap.add_argument("--refresh", action="store_true", help=refresh_help)
 
 
 def main() -> int:
@@ -338,7 +340,7 @@ def main() -> int:
     ap.add_argument("--no-fetch", action="store_true", help="forbid fetching; reuse qualified cached refs")
     ap.add_argument("--no-pr", action="store_true", help="strictly no GitHub API calls; cached data is qualified")
     ap.add_argument("--json", action="store_true", help="complete structured snapshot")
-    add_refresh_options(ap)
+    add_refresh_options(ap, include_structure=True)
     args = ap.parse_args()
     if args.no_fetch and (args.refresh_git or args.refresh):
         ap.error("--no-fetch conflicts with an explicit git refresh")
@@ -360,27 +362,68 @@ def _selected(stack, selector):
         b["name"] == selector for b in stack["branches"])
 
 
-def _remote_shape(data, refs):
+def _remote_shape(data, refs, *, expected_number=None, local_stack=None):
     """Normalize native stacks REST data without importing/migrating its catalog."""
     if not isinstance(data, dict):
         return None
-    trunk = (data.get("base") or {}).get("ref") or data.get("trunk")
-    prs = data.get("pull_requests") or []
-    if not isinstance(trunk, str) or not isinstance(prs, list) or not prs:
+    number = data.get("number")
+    if type(number) is not int or number <= 0 or (expected_number is not None and number != expected_number):
         return None
+    base = data.get("base")
+    trunk = (base.get("ref") if isinstance(base, dict) else None) or data.get("trunk")
+    prs = data.get("pull_requests")
+    if not valid_branch(trunk) or not isinstance(prs, list) or not prs:
+        return None
+    local = {(branch["name"], (branch.get("pr") or {}).get("number")): branch
+             for branch in (local_stack or {}).get("branches", [])}
     branches = []
+    names, numbers = {trunk}, set()
     for pr in prs:
-        head = pr.get("head") or {}
-        name = head.get("ref")
-        if not isinstance(name, str) or type(pr.get("number")) is not int:
+        if not isinstance(pr, dict) or not isinstance(pr.get("head"), dict):
             return None
+        head = pr["head"]
+        name = head.get("ref")
+        if (not valid_branch(name) or name in names or type(pr.get("number")) is not int
+                or pr["number"] <= 0 or pr["number"] in numbers
+                or not isinstance(pr.get("state", "UNKNOWN"), str)
+                or pr.get("state", "UNKNOWN").upper() not in ("OPEN", "CLOSED", "MERGED", "UNKNOWN")
+                or ("merged" in pr and type(pr["merged"]) is not bool)
+                or (pr.get("merged_at") is not None and not isinstance(pr["merged_at"], str))):
+            return None
+        names.add(name)
+        numbers.add(pr["number"])
+        recorded = local.get((name, pr["number"]), {})
         merged = pr.get("state", "").upper() == "MERGED" or bool(pr.get("merged") or pr.get("merged_at"))
         branches.append({"name": name, "head": refs.get("refs/heads/" + name),
-                         "recorded_head": head.get("sha"), "base": None,
+                         "recorded_head": recorded.get("recorded_head"), "base": recorded.get("base"),
+                         "base_source": "local_catalog" if recorded.get("base") is not None else None,
                          "isMerged": merged, "isQueued": None, "needsRebase": None,
                          "pr": {"number": pr["number"], "state": "MERGED" if merged else str(pr.get("state", "UNKNOWN")).upper()}})
-    return {"trunk": trunk, "branches": branches, "number": data.get("number"),
-            "id": data.get("id"), "worktree": None, "source": "REST"}
+    return {"trunk": trunk, "branches": branches, "number": number,
+            "id": data.get("id"), "worktree": (local_stack or {}).get("worktree"), "source": "REST"}
+
+
+def _catalog_composition(snapshot):
+    """Exclude fetched refs, but retain all catalog identities and recorded state."""
+    return ([{"source_path": entry.get("source_path"), "digest": entry.get("digest")}
+             for entry in snapshot.get("catalogs", [])],
+            [{"trunk": stack["trunk"], "id": stack.get("id"), "number": stack.get("number"),
+              "branches": [{key: branch.get(key) for key in ("name", "recorded_head", "base", "pr", "isMerged")}
+                           for branch in stack["branches"]]}
+             for stack in snapshot["stacks"]])
+
+
+def _refresh_structure(client, number, refs, *, force, local_stack=None, require_fresh=False):
+    data = client.refresh_stack(number, force=force)
+    structural = _remote_shape(data, refs, expected_number=number, local_stack=local_stack)
+    observation = dict(getattr(client, "stack_observations", {}).get(number, {}))
+    if require_fresh and (structural is None or observation.get("freshness") != "fresh" or observation.get("complete") is not True):
+        raise ToolError(f"Stack #{number} membership refresh failed or is incomplete; retry the scoped --refresh before using its composition",
+                        "STATE.STACK_STRUCTURE_UNKNOWN", {"stack": number, "structure_observation": observation})
+    if structural is not None:
+        structural["structure_observation"] = observation or {
+            "source": "REST", "freshness": "unknown", "complete": False, "observed_at": None}
+    return structural
 
 
 def run_report(args: argparse.Namespace, trunk_filter: str | None) -> int:
@@ -396,9 +439,10 @@ def run_report(args: argparse.Namespace, trunk_filter: str | None) -> int:
     git_only = getattr(args, "refresh_git", False) and not getattr(args, "refresh_status", False) and not getattr(args, "refresh", False)
     offline = args.no_pr or git_only
     force_status = getattr(args, "refresh_status", False) or getattr(args, "refresh", False)
+    refresh_structure = getattr(args, "refresh", False)
     if not stacks and selector and selector.isdigit() and not offline:
-        data = client.refresh_stack(int(selector), force=force_status)
-        structural = _remote_shape(data, snapshot["refs"])
+        structural = _refresh_structure(client, int(selector), snapshot["refs"], force=force_status,
+                                        require_fresh=refresh_structure)
         if structural and (not trunk_filter or structural["trunk"] == trunk_filter):
             stacks = [structural]
             SKIPPED[:] = [w for w in SKIPPED if not w.startswith("No local gh-stack catalog")]
@@ -406,16 +450,43 @@ def run_report(args: argparse.Namespace, trunk_filter: str | None) -> int:
         raise ToolError("no locally tracked stack matches; inspect local catalog diagnostics or request --stack NUMBER for scoped remote discovery"
                         + ("; " + "; ".join(SKIPPED) if SKIPPED else ""), "STATE.STACK_UNKNOWN",
                         {"catalogs": snapshot.get("catalogs", []), "warnings": SKIPPED})
+    if refresh_structure:
+        refreshed_stacks = []
+        for stack in stacks:
+            if stack.get("source") == "REST":
+                refreshed_stacks.append(stack)
+                continue
+            number = stack.get("number")
+            if type(number) is not int or number <= 0:
+                raise ToolError("A numeric stack number is required to refresh membership; use --stack NUMBER for scoped remote discovery",
+                                "STATE.STACK_NUMBER_UNKNOWN")
+            structural = _refresh_structure(client, number, snapshot["refs"], force=True,
+                                            local_stack=stack, require_fresh=True)
+            if trunk_filter and structural["trunk"] != trunk_filter:
+                raise ToolError(f"Stack #{number} now targets {structural['trunk']!r}, outside requested trunk {trunk_filter!r}; inspect its new scope",
+                                "STATE.SNAPSHOT_CHANGED")
+            refreshed_stacks.append(structural)
+        stacks = refreshed_stacks
+    else:
+        for stack in stacks:
+            stack.setdefault("structure_observation", {"source": "local_catalog", "freshness": "unknown",
+                                                       "complete": False, "observed_at": None})
     status_only = getattr(args, "refresh_status", False) and not getattr(args, "refresh_git", False) and not getattr(args, "refresh", False)
     git_observation = client.refresh_git(
         force=getattr(args, "refresh_git", False) or getattr(args, "refresh", False),
         offline=args.no_fetch or status_only,
         refs=sorted({st["trunk"] for st in stacks} | {b["name"] for st in stacks for b in st["branches"] if not b.get("isMerged")}))
     if git_observation["source"] == "fetched":
-        snapshot = read_local_snapshot(remote, run_fn=run)
-        # Fresh refs, same local catalog shape; do not discard explicit REST discovery.
-        local_by_key = {tuple(b["name"] for b in s["branches"]): s for s in snapshot["stacks"]}
-        stacks = [local_by_key.get(tuple(b["name"] for b in s["branches"]), s) for s in stacks]
+        refreshed = read_local_snapshot(remote, run_fn=run)
+        if _catalog_composition(refreshed) != _catalog_composition(snapshot):
+            raise ToolError("Local catalog composition changed while refreshing refs; retry the scoped report",
+                            "STATE.SNAPSHOT_CHANGED")
+        snapshot = refreshed
+        # Membership may deliberately come from REST. Only refresh local heads;
+        # never replace that ordered composition with the historical catalog.
+        for stack in stacks:
+            for branch in stack["branches"]:
+                branch["head"] = snapshot["refs"].get("refs/heads/" + branch["name"])
     refs = snapshot["refs"]
     fetched = git_observation["fresh"]
     # Derive the local facts first. Hosted lifecycle can subsequently retire a
@@ -442,13 +513,27 @@ def run_report(args: argparse.Namespace, trunk_filter: str | None) -> int:
     previous = read_snapshot(previous_path)
     previous_rows = {(s["trunk"], r["branch"]): r for s in previous.get("stacks", []) for r in s.get("rows", [])}
     for stack_index, st in enumerate(stacks):
+        effective_prs = dict(prs)
         for b in st["branches"]:
-            detail = prs.get((b.get("pr") or {}).get("number"), {})
+            number = (b.get("pr") or {}).get("number")
+            detail = prs.get(number, {})
+            lifecycle = client.observations.get(number, {}).get("state", {})
+            fresh_state = lifecycle.get("freshness") == "fresh"
+            if st.get("source") == "REST" and not fresh_state:
+                # A failed forced detail refresh may return an old cached state.
+                # It must not retire or reactivate a layer from fresh REST scope.
+                b["lifecycle_observation"] = dict(st["structure_observation"])
+                if detail and b.get("pr"):
+                    detail = dict(detail, state=b["pr"]["state"])
+                    effective_prs[number] = detail
+                continue
+            if fresh_state:
+                b["lifecycle_observation"] = dict(lifecycle)
             if detail.get("state") == "MERGED":
                 b["isMerged"] = True
             if detail.get("state") and b.get("pr"):
                 b["pr"]["state"] = detail["state"]
-        rows, problems, notes = build_rows(st, prs, fetched=fetched, refs=refs, remote=remote)
+        rows, problems, notes = build_rows(st, effective_prs, fetched=fetched, refs=refs, remote=remote)
         conflicts = local_conflicts[stack_index]
         if tuple(bool(b.get("isMerged")) for b in st["branches"]) != merged_shapes[stack_index]:
             conflicts = evaluate_stack_conflicts(st, refs, remote, run_fn=run)
@@ -487,17 +572,13 @@ def run_report(args: argparse.Namespace, trunk_filter: str | None) -> int:
         coherent = False if problems else (None if any(chain_unknown(r) for r in active) else True)
         any_problem |= coherent is not True or conflicts["clean"] is not True
         entry = {"trunk": st["trunk"], "trunk_origin": trunk_origin, "id": st.get("id"), "number": st.get("number"),
+                 "structure_observation": st["structure_observation"],
                  "worktree": st.get("worktree"), "branches": st["branches"], "rows": rows, "problems": problems,
                  "notes": notes, "coherent": coherent, "landing": landing, "local_mergeability": conflicts}
         report.append(entry)
-    changed_epoch = read_local_snapshot(remote, run_fn=run)["fingerprint"] != snapshot["fingerprint"]
-    if changed_epoch:
-        any_problem = True
-        for entry in report:
-            entry["coherent"] = None
-            entry["landing"]["landable"] = None
-            entry["local_mergeability"]["clean"] = None
-            entry["problems"].append("snapshot changed during evaluation; retry local status")
+    if read_local_snapshot(remote, run_fn=run)["fingerprint"] != snapshot["fingerprint"]:
+        raise ToolError("Snapshot changed during evaluation; retry the scoped report",
+                        "STATE.SNAPSHOT_CHANGED")
     payload = {"schema_version": 1, "success": True, "stacks": report, "hidden": hidden, "coherent": not any_problem,
                "catalogs": snapshot.get("catalogs", []),
                "skipped_worktrees": SKIPPED, "warnings": list(dict.fromkeys(SKIPPED + client.warnings)),
@@ -518,8 +599,6 @@ def run_report(args: argparse.Namespace, trunk_filter: str | None) -> int:
             print("warning: " + warning)
         if len(payload["warnings"]) > 5:
             print(f"warnings: {len(payload['warnings'])} total; --json for all")
-        if changed_epoch:
-            print("snapshot changed: results are unknown; retry local status")
         print(legend())
     return 1 if any_problem else 0
 

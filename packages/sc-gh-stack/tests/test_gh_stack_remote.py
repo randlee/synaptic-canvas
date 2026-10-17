@@ -10,6 +10,7 @@ import threading
 import time
 import unittest
 from unittest.mock import patch
+from urllib.parse import parse_qs
 
 SCRIPTS = Path(__file__).resolve().parents[1] / 'scripts'
 sys.path.insert(0, str(SCRIPTS))
@@ -297,8 +298,8 @@ class RemoteTests(unittest.TestCase):
                 calls.append(cmd)
             repository = {}
             for alias, encoded in aliases:
-                owner, branch = json.loads(encoded).split(':', 1)
-                self.assertEqual(owner, 'org')
+                branch = json.loads(encoded)
+                self.assertNotIn(':', branch)
                 number = int(branch.removeprefix('topic'))
                 pr = dict(number=number, state='OPEN', isDraft=False, baseRefName='main', headRefName=branch, headRefOid=self.sha, headRepository={'nameWithOwner': 'org/repo'})
                 repository['b' + alias] = {'nodes': [pr], 'pageInfo': {'hasNextPage': False}}
@@ -316,6 +317,47 @@ class RemoteTests(unittest.TestCase):
             results = list(pool.map(lambda _: self.client(bulk).resolve_branches(branches, force=True), range(10)))
         self.assertTrue(all(len(result) == 120 for result in results))
         self.assertEqual(len(calls), 6)
+
+    def test_branch_mapping_rest_graphql_boundary_preserves_ref_contract(self):
+        branches = ['feature/one', 'fix/two', 'topic/three']
+        numbers = {branch: index + 1 for index, branch in enumerate(branches)}
+        for count in (2, 3):
+            with self.subTest(branch_count=count):
+                calls = []
+                def transport(cmd, **kwargs):
+                    calls.append(cmd)
+                    endpoint = cmd[cmd.index('-i') + 1]
+                    if endpoint == 'graphql':
+                        query = next(value[6:] for value in cmd if value.startswith('query='))
+                        aliases = re.findall(r'b(\d+):pullRequests\(headRefName:("[^"]*")', query)
+                        self.assertEqual({json.loads(encoded) for _, encoded in aliases}, set(branches))
+                        repository = {}
+                        for alias, encoded in aliases:
+                            branch = json.loads(encoded)
+                            pr = dict(number=numbers[branch], state='OPEN', isDraft=False,
+                                      baseRefName='main', headRefName=branch, headRefOid=self.sha,
+                                      headRepository={'nameWithOwner': 'org/repo'})
+                            repository['b' + alias] = {'nodes': [pr], 'pageInfo': {'hasNextPage': False}}
+                        return response({'data': {'repository': repository}})
+                    self.assertEqual(count, 2)
+                    self.assertTrue(endpoint.startswith('repos/org/repo/pulls?'))
+                    head = parse_qs(endpoint.partition('?')[2])['head'][0]
+                    self.assertTrue(head.startswith('org:'))
+                    branch = head.removeprefix('org:')
+                    self.assertIn(branch, branches[:count])
+                    return response([dict(number=numbers[branch], state='open', draft=False,
+                                          base={'ref': 'main'},
+                                          head={'ref': branch, 'sha': self.sha, 'repo': {'full_name': 'org/repo'}})])
+                client = StackDataClient(self.repo, cache_dir=self.root / ('boundary-' + str(count)),
+                                         run_fn=transport, clock=lambda: self.now[0])
+                result = client.resolve_branches(branches[:count])
+                self.assertEqual({branch: pr['number'] for branch, pr in result.items()},
+                                 {branch: numbers[branch] for branch in branches[:count]})
+                self.assertTrue(all(client.branch_observations[branch]['state'] == 'positive'
+                                    for branch in branches[:count]))
+                self.assertEqual(len(calls), 2 if count == 2 else 1)
+                self.assertEqual(client.metrics['rest_requests'], 2 if count == 2 else 0)
+                self.assertEqual(client.metrics['graphql_requests'], 1 if count == 3 else 0)
 
     def test_branch_absence_positive_unknown_and_head_repository_validation(self):
         def empty(cmd, **kwargs):
@@ -368,10 +410,95 @@ class RemoteTests(unittest.TestCase):
         self.assertEqual(len(self.client(pages).refresh_stack(42)['pull_requests']), 2)
         self.assertEqual(len(calls), 2)
         phase[0] = 1
+        def forced(_):
+            client = self.client(pages)
+            result = client.refresh_stack(42, force=True)
+            self.assertEqual((client.stack_observations[42]['freshness'], client.stack_observations[42]['complete']), ('fresh', True))
+            return result
         with concurrent.futures.ThreadPoolExecutor(max_workers=10) as pool:
-            results = list(pool.map(lambda _: self.client(pages).refresh_stack(42, force=True), range(10)))
+            results = list(pool.map(forced, range(10)))
         self.assertTrue(all(len(result['pull_requests']) == 1 for result in results))
         self.assertEqual(len(calls), 3)
+
+    def test_stack_provenance_failed_force_does_not_requalify_cached_structure(self):
+        calls = []
+        failed = [False]
+        def transport(cmd, **kwargs):
+            calls.append(cmd)
+            return response({'message': 'Forbidden'}, 403) if failed[0] else response({'number': 42, 'pull_requests': [{'number': 1}]})
+        cold = self.client(transport)
+        self.assertIsNotNone(cold.refresh_stack(42))
+        self.assertEqual(cold.stack_observations[42], {'source': 'REST', 'freshness': 'fresh',
+                         'complete': True, 'observed_at': self.now[0], 'reason': None})
+        warm = self.client(transport)
+        self.assertIsNotNone(warm.refresh_stack(42))
+        self.assertEqual(warm.stack_observations[42]['source'], 'cached')
+        self.assertEqual(len(calls), 1)
+        failed[0] = True
+        forced = self.client(transport)
+        self.assertIsNone(forced.refresh_stack(42, force=True))
+        self.assertEqual((forced.stack_observations[42]['freshness'], forced.stack_observations[42]['complete']), ('stale', False))
+        retry = self.client(transport)
+        self.assertIsNone(retry.refresh_stack(42))
+        self.assertEqual((retry.stack_observations[42]['source'], retry.stack_observations[42]['freshness']), ('cached', 'stale'))
+        self.assertEqual(len(calls), 2, 'cached failure must not cause automatic retry requests')
+        failed[0] = False
+        recovered = self.client(transport)
+        self.assertIsNotNone(recovered.refresh_stack(42, force=True))
+        self.assertEqual((recovered.stack_observations[42]['freshness'], recovered.stack_observations[42]['complete']), ('fresh', True))
+        self.assertEqual(len(calls), 3)
+
+    def test_stack_provenance_incomplete_pagination_is_not_fresh(self):
+        calls = []
+        def transport(cmd, **kwargs):
+            calls.append(cmd)
+            if len(calls) == 1:
+                return response({'number': 42, 'pull_requests': [{'number': 1}]},
+                                headers={'link': '<https://api.github.test/repos/org/repo/stacks/42?page=2>; rel="next"'})
+            return response({'message': 'Forbidden'}, 403)
+        client = self.client(transport)
+        self.assertIsNone(client.refresh_stack(42))
+        self.assertEqual((client.stack_observations[42]['freshness'], client.stack_observations[42]['complete']), ('stale', False))
+        warm = self.client(transport)
+        self.assertIsNone(warm.refresh_stack(42))
+        self.assertEqual(warm.stack_observations[42]['freshness'], 'stale')
+        self.assertEqual(len(calls), 2)
+
+    def test_stack_pagination_requires_native_list_and_consistent_identity(self):
+        for index, page in enumerate(({}, {'pull_requests': None}, {'prs': []},
+                                      {'number': 43, 'pull_requests': []},
+                                      {'number': True, 'pull_requests': []},
+                                      {'id': 99, 'pull_requests': []},
+                                      {'node_id': 'S_other', 'pull_requests': []})):
+            with self.subTest(page=page):
+                calls = []
+                def transport(cmd, **kwargs):
+                    calls.append(cmd)
+                    if len(calls) == 1:
+                        return response({'number': 42, 'id': 42, 'node_id': 'S_42',
+                                         'pull_requests': [{'number': 1}]},
+                                        headers={'link': '<https://api.github.test/repos/org/repo/stacks/42?page=2>; rel="next"'})
+                    return response(page)
+                client = StackDataClient(self.repo, cache_dir=self.root / ('pages-' + str(index)),
+                                         run_fn=transport, clock=lambda: self.now[0])
+                self.assertIsNone(client.refresh_stack(42))
+                self.assertEqual((client.stack_observations[42]['freshness'], client.stack_observations[42]['complete']), ('stale', False))
+                self.assertEqual(len(calls), 2)
+                self.assertIsNone(client.refresh_stack(42))
+                self.assertEqual(len(calls), 2, 'malformed cached pagination must not retry automatically')
+
+    def test_stack_pagination_allows_optional_identity_omission(self):
+        calls = []
+        def transport(cmd, **kwargs):
+            calls.append(cmd)
+            if len(calls) == 1:
+                return response({'number': 42, 'id': 42, 'node_id': 'S_42', 'pull_requests': [{'number': 1}]},
+                                headers={'link': '<https://api.github.test/repos/org/repo/stacks/42?page=2>; rel="next"'})
+            return response({'pull_requests': [{'number': 2}]})
+        client = self.client(transport)
+        self.assertEqual(client.refresh_stack(42)['pull_requests'], [{'number': 1}, {'number': 2}])
+        self.assertEqual((client.stack_observations[42]['freshness'], client.stack_observations[42]['complete']), ('fresh', True))
+        self.assertEqual(len(calls), 2)
 
     def test_enterprise_tokens_partition_without_public_token_interference(self):
         with patch.dict('os.environ', {'GH_ENTERPRISE_TOKEN': 'enterprise-one', 'GH_TOKEN': 'public-one'}):

@@ -93,6 +93,7 @@ class StackDataClient:
         self.warnings = []
         self.observations = {}
         self.branch_observations = {}
+        self.stack_observations = {}
         self.snapshot_id = None
         self._stopped = False
         self._valid_repository = bool(self.owner and self.name and repository.get('host'))
@@ -459,7 +460,7 @@ class StackDataClient:
                         for branch in batch:
                             observed(branch, {'reason': 'Acquisition stopped after a failed request'})
                         continue
-                    selection = ' '.join('b%s:pullRequests(headRefName:%s,states:OPEN,first:2){nodes{%s headRepository{nameWithOwner}} pageInfo{hasNextPage}}' % (i, json.dumps(self.owner + ':' + branch), ' '.join(COMMON)) for i, branch in enumerate(batch))
+                    selection = ' '.join('b%s:pullRequests(headRefName:%s,states:OPEN,first:2){nodes{%s headRepository{nameWithOwner}} pageInfo{hasNextPage}}' % (i, json.dumps(branch), ' '.join(COMMON)) for i, branch in enumerate(batch))
                     query = 'query{repository(owner:%s,name:%s){%s} rateLimit{cost remaining resetAt}}' % (json.dumps(self.owner), json.dumps(self.name), selection)
                     body, _, _ = self._request('graphql', query=query)
                     payload = body.get('data') or {} if isinstance(body, dict) else {}
@@ -484,27 +485,52 @@ class StackDataClient:
         with self._lock(self.lock_path) as acquired:
             if not acquired:
                 self._warn('Stack refresh in progress')
+                self.stack_observations[number] = {'source': None, 'freshness': 'unknown',
+                                                   'complete': False, 'observed_at': None,
+                                                   'reason': 'Stack refresh in progress'}
                 return None
             data = self._load()
             endpoint = 'repos/%s/%s/stacks/%s' % (self.owner, self.name, int(number))
+            first_endpoint = endpoint
+            requests_before = self.metrics['requests']
             scope = 'stack:' + str(number)
             coalesced = data.get('refreshes', {}).get(scope, -1e20) >= started
             force = force and not coalesced
             first = None
             complete = True
             seen = set()
+            observed_times = []
+            page_identity = {'number': number}
             while endpoint and endpoint not in seen:
                 seen.add(endpoint)
+                cached = data['rest'].get(endpoint, {})
+                reused = not force and 0 <= self.clock() - cached.get('time', -1e20) < 120
                 body = self._rest(data, endpoint, force=force)
+                entry = data['rest'].get(endpoint, {})
+                if entry.get('time') is not None:
+                    observed_times.append(entry['time'])
                 if body is None:
+                    complete = False
+                    break
+                if (not isinstance(body, dict) or not isinstance(body.get('pull_requests'), list)
+                        or ('number' in body and (type(body['number']) is not int or body['number'] != number))
+                        or any(key in body and key in page_identity and body[key] != page_identity[key]
+                               for key in ('id', 'node_id'))):
+                    self._warn('Malformed or inconsistent stack structural page')
+                    complete = False
+                    break
+                for key in ('id', 'node_id'):
+                    if key in body:
+                        page_identity[key] = body[key]
+                if not reused:
+                    entry.pop('stack_refresh_failed', None)
+                if entry.get('stack_refresh_failed'):
                     complete = False
                     break
                 if first is None:
                     first = json.loads(json.dumps(body))
-                elif isinstance(first, dict) and isinstance(body, dict):
-                    for key in ('pull_requests', 'pullRequests', 'prs'):
-                        if isinstance(body.get(key), list):
-                            first.setdefault(key, []).extend(body[key])
+                else:
+                    first['pull_requests'].extend(body['pull_requests'])
                 link = data['rest'].get(endpoint, {}).get('link') or ''
                 match = re.search(r'<([^>]+)>;\s*rel="next"', link)
                 endpoint = None
@@ -521,6 +547,17 @@ class StackDataClient:
             if endpoint in seen:
                 complete = False
                 self._warn('Stack pagination cycle; structural response incomplete')
+            if not complete and first_endpoint in data['rest']:
+                # A failed explicit refresh must not make the old structural
+                # response fresh again merely because its original TTL remains.
+                data['rest'][first_endpoint]['stack_refresh_failed'] = True
+            observed_at = min(observed_times) if observed_times else None
+            self.stack_observations[number] = {
+                'source': 'REST' if self.metrics['requests'] > requests_before else ('cached' if observed_at is not None else None),
+                'freshness': 'fresh' if complete else ('stale' if observed_at is not None else 'unknown'),
+                'complete': complete, 'observed_at': observed_at,
+                'reason': None if complete else 'Stack structural response incomplete or last refresh failed',
+            }
             data.setdefault('refreshes', {})[scope] = time.monotonic()
             self._save(data)
             if not complete:

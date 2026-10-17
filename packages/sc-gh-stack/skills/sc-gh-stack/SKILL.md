@@ -117,10 +117,10 @@ response or existing observation does not need a repeated full report.
    fix lives above (that puts the red on the trunk). Remove the red layer from
    the stack so the fixing layer above carries its commits
    (`recipe-restack.md`, section 2).
-6. Before any scoped `gh stack merge <pr>`, inspect the complete stack
-   composition (`gh_stack_view.py --stack <branch> --json`, `stacks[].branches[]`)
-   if not already known; an upper empty draft gets swept in and its branch
-   deleted.
+6. Before any scoped `gh stack merge <pr>`, inspect sufficient verified remote
+   composition, or acquire it with scoped `--refresh` (not `--refresh-status`);
+   use the compact projection in `references/recipe-evidence.md`. Local catalog membership
+   alone is not complete; an unseen upper empty draft can be swept in and deleted.
 7. Land with `gh stack merge <stack#> --yes --merge` (merge commits only, by
    stack number so stale local tracking cannot pick the wrong stack). Never
    `--squash`.

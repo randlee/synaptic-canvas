@@ -24,7 +24,7 @@ options:
   - name: --refresh-status
     description: Refresh required hosted observations for the selected scope.
   - name: --refresh
-    description: Refresh git refs and hosted observations.
+    description: Reconcile remote stack membership, git refs and hosted observations.
   - name: --json
     description: Emit complete stacks[].rows[] and branches[], problems[], notes[], landing, coherent and provenance as JSON.
   - name: --help

@@ -77,6 +77,13 @@ including numeric-identifier resolution. Failed fetches, missing objects or
 history, stale hosted facts and unavailable API budget remain explicit unknowns.
 Do not repeat reports when existing evidence answers the next operation.
 
+Ordinary membership is locally observed, not certified remotely complete.
+For missing structural evidence before a cut or scoped merge, scoped
+`--refresh --stack <number-or-branch>` reconciles remote membership (a known
+numeric stack number is required). Require `structure_observation.complete == true`
+and `freshness == "fresh"`; `--refresh-status` refreshes PR fields only.
+Use the compact projection in `../sc-gh-stack/references/recipe-evidence.md`.
+
 Text summaries show at most ten layer rows and count all blockers/unknowns.
 `--full` shows all rows without forcing refresh; `--json` is always complete and
 includes provenance, observation age, exact SHAs and unknown reasons.
@@ -98,13 +105,15 @@ Exit codes:
 |------|---------|
 | 0 | every shown chain coherent and local conflict checks complete/clean; not hosted merge authorization |
 | 1 | problems or unknown required local/chain observations |
-| 2 | nothing to show or the environment failed; stderr says which (see Errors) |
+| 2 | environment/discovery failure, incomplete explicit membership refresh, or snapshot changed; see Errors |
 
 ## Errors
 
 Environment/discovery failures produce one `gh-stack-view: ...` stderr line,
-never a traceback; `--json` also emits a structured error. Hosted failures
-retain useful local output with qualified observations rather than failing it:
+never a traceback; `--json` also emits a structured error. Hosted PR-field failures
+retain useful local output with qualified observations. An incomplete explicit
+membership refresh or changed snapshot refuses the report instead of certifying
+old composition:
 
 - `git` not on PATH or not inside a git repository. `gh` is needed only for requested hosted acquisition; the extension is not needed for reporting.
 - Hosted acquisition failure: inspect the reported auth/cooldown reason; `--no-pr` gives an API-free view meanwhile.

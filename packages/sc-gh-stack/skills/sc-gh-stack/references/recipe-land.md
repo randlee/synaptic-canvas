@@ -14,8 +14,9 @@ unless the user directed it.
       plain CI-trigger PR `top-head → trunk`, not linked into the stack, wait
       for its run on the landing SHA, then close it; check-runs are per
       commit, so the ruleset's required checks are satisfied.
-- [ ] No draft PR in the stack; complete `stacks[].branches[]` known from
-      sufficient evidence or scoped helper JSON; no empty upper
+- [ ] No draft PR in the stack; complete remote composition known from
+      sufficient verified evidence or scoped `--refresh` (see
+      `recipe-evidence.md`); no empty upper
       layer that would be swept in.
 - [ ] Sufficient evidence establishes coherence and local conflict checks on
       exact heads; top CI/QA meet the conditions above. Hosted executor policy

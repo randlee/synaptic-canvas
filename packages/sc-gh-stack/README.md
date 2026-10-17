@@ -63,11 +63,15 @@ Scripts (installed under `.claude/scripts/`). Both derive local state first,
 reuse shared observations, and acquire only required missing remote facts.
 `--refresh-git` refreshes relevant refs once; `--refresh-status` refreshes hosted
 facts; `--refresh` does both. `--no-fetch` forbids fetching and `--no-pr` forbids
-all GitHub API calls. Neither runs a `gh stack` write command:
+all GitHub API calls. Neither runs a `gh stack` write command.
+
+For the view, `--refresh` also reconciles selected remote stack membership.
+`stacks[].structure_observation` distinguishes verified remote composition from
+local tracking; `--refresh-status` alone does not establish complete membership.
 
 | Script | Purpose | Exit codes |
 |--------|---------|-----------|
-| `gh_stack_view.py` | Coherence (base == parent head), origin vs local vs PR head, `needsRebase`, `mergeStateStatus`, CI rollup, LANDING verdict | 0 coherent, 1 problems, 2 environment |
+| `gh_stack_view.py` | Coherence (base == parent head), origin vs local vs PR head, `needsRebase`, `mergeStateStatus`, CI rollup, LANDING verdict | 0 coherent, 1 problems/unknowns, 2 environment/state failure |
 | `gh_stack_chain_check.py --trunk <t> <bottom> ... <top>` | Pre-link check: pushed heads, linear ancestry, PR state and bases, clean merge into trunk; prints the exact link command | 0 linkable, 1 problems, 2 environment |
 
 Every layer's local content-conflict result is separate from hosted eligibility;
