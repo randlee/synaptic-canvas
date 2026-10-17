@@ -188,10 +188,16 @@ def codex_live() -> Optional[LiveCodex]:
 # --- claude --------------------------------------------------------------------
 
 
+def claude_probe_argv(exe: str, alias: str) -> List[str]:
+    """``--setting-sources ""`` keeps user/project settings files (whose ``env`` block can pin
+    models or a base URL) out of the probe; managed policy settings still apply."""
+    return [exe, "--print", "--output-format", "stream-json", "--verbose", "--model", alias,
+            "--setting-sources", "", "--tools", "", "--strict-mcp-config", "--safe-mode",
+            "--disable-slash-commands", "--no-session-persistence"]
+
+
 def _claude_resolve(exe: str, alias: str, cwd: str) -> Optional[str]:
-    argv = [exe, "--print", "--output-format", "stream-json", "--verbose", "--model", alias,
-            "--tools", "", "--strict-mcp-config", "--safe-mode", "--disable-slash-commands",
-            "--no-session-persistence"]
+    argv = claude_probe_argv(exe, alias)
     try:
         proc = subprocess.Popen(argv, cwd=cwd, env=_claude_env(), stdin=subprocess.PIPE,
                                 stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)

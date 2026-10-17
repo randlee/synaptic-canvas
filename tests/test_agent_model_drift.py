@@ -168,6 +168,12 @@ def test_claude_probe_env_drops_overrides_and_blocks_the_api(monkeypatch):
     assert env["ANTHROPIC_BASE_URL"] == discovery.NO_API and env["KEEP_ME"] == "1"
 
 
+def test_claude_probe_ignores_settings_files():
+    argv = discovery.claude_probe_argv("claude", "opus")
+    assert argv[argv.index("--setting-sources") + 1] == ""
+    assert argv[argv.index("--model") + 1] == "opus"
+
+
 @pytest.mark.parametrize(
     ("model", "accepted"),
     [("claude-fable-5-1", True), ("claude-haiku-5-5", True), ("claude-haiku-5-5[1m]", False),

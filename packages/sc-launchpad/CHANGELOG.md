@@ -48,6 +48,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   `data.model` is always the full model id. Claude ids outside the table (for example
   `claude-sonnet-4-6`, `claude-fable-5`) now fail with `VALIDATION.INVALID_MODEL`;
   append `[1m]` to any claude alias or id (`fable[1m]`) for the 1M-context variant.
+  The ATM roster records the alias with the suffix (`fable[1m]`, was `fable`).
 - The runtime is split into modules (`launchpad_models`, `launchpad_commands`,
   `launchpad_process`, `launchpad_output`) behind the unchanged
   `sc_launchpad_task.py` entry point.
