@@ -724,6 +724,13 @@ def _restore_handlers(previous: Dict[int, Any]) -> None:
             pass
 
 
+def _decode(raw: Optional[bytes]) -> str:
+    if not raw:
+        return ""
+    text = raw.decode("utf-8", errors="replace")
+    return text.replace("\r\n", "\n").replace("\r", "\n")
+
+
 def run_process(
     command: List[str],
     cwd: Path,
@@ -733,12 +740,11 @@ def run_process(
 ) -> "Result[ProcessOutcome, Failure]":
     # The child never inherits this process's stdin: it gets either the prompt
     # through a pipe or an empty stdin.
+    # Binary pipes: text-mode stdin would translate "\n" to "\r\n" on Windows
+    # and alter the prompt. Output is decoded as UTF-8 with universal newlines.
     popen_kwargs: Dict[str, Any] = {
         "cwd": str(cwd),
         "env": env,
-        "text": True,
-        "encoding": "utf-8",
-        "errors": "replace",
         "stdin": subprocess.PIPE if stdin_text is not None else subprocess.DEVNULL,
         "stdout": subprocess.PIPE,
         "stderr": subprocess.PIPE,
@@ -766,14 +772,17 @@ def run_process(
     previous_handlers = _install_stop_handlers()
     try:
         try:
-            stdout, stderr = proc.communicate(input=stdin_text, timeout=timeout_seconds)
+            stdout, stderr = proc.communicate(
+                input=stdin_text.encode("utf-8") if stdin_text is not None else None,
+                timeout=timeout_seconds,
+            )
         except subprocess.TimeoutExpired:
             timed_out = True
             _kill_tree(proc)
             try:
                 stdout, stderr = proc.communicate(timeout=10)
             except subprocess.TimeoutExpired:  # pragma: no cover - pipes held open
-                stdout, stderr = "", ""
+                stdout, stderr = b"", b""
     except (KeyboardInterrupt, _Terminated) as exc:
         _kill_tree(proc)
         try:
@@ -800,8 +809,8 @@ def run_process(
     return Ok(
         ProcessOutcome(
             exit_code=proc.returncode,
-            stdout=stdout or "",
-            stderr=stderr or "",
+            stdout=_decode(stdout),
+            stderr=_decode(stderr),
             timed_out=timed_out,
             duration_seconds=round(time.monotonic() - started, 3),
         )
