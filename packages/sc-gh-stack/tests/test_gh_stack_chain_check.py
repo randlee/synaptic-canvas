@@ -5,6 +5,7 @@ import importlib.util
 from pathlib import Path
 import sys
 import unittest
+from contextlib import contextmanager
 from unittest import mock
 
 SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "gh_stack_chain_check.py"
@@ -21,6 +22,20 @@ T0, A1, B2, C3, OLD = ("0" * 40, "a" * 40, "b" * 40, "c" * 40, "d" * 40)
 def pr(number: int, head: str, base: str, oid: str, *, draft: bool = False, state: str = "OPEN") -> dict:
     return {"number": number, "headRefName": head, "baseRefName": base, "headRefOid": oid,
             "isDraft": draft, "state": state}
+
+
+@contextmanager
+def report_dependencies(fetch_error=None):
+    snapshot = {'repository': {}, 'refs': {'refs/remotes/origin/' + TRUNK: T0}, 'stacks': [], 'warnings': [], 'fingerprint': 'fixture'}
+    client = mock.Mock()
+    client.refresh_git.return_value = {'fresh': fetch_error is None, 'source': 'cached', 'observed_at': 123, 'error': fetch_error}
+    client.pr_metadata.return_value = {}
+    client.resolve_branches.return_value = {}
+    client.warnings = [fetch_error] if fetch_error else []
+    client.observations, client.metrics, client.snapshot_id = {}, {}, 'fixture'
+    conflicts = {'layers': [], 'combined': {'clean': True, 'reason': 'clean'}, 'clean': True}
+    with mock.patch.object(gcc, 'read_local_snapshot', return_value=snapshot), mock.patch.object(gcc, 'StackDataClient', return_value=client), mock.patch.object(gcc, 'evaluate_stack_conflicts', return_value=conflicts), mock.patch.object(gcc, 'run', side_effect=AssertionError('unexpected subprocess')):
+        yield client
 
 
 class EvaluateTests(unittest.TestCase):
@@ -158,13 +173,13 @@ class MainContractTests(unittest.TestCase):
         return gcc.argparse.Namespace(**base)
 
     def test_exit_0_when_linkable(self) -> None:
-        with mock.patch.object(gcc, "preflight"), \
+        with report_dependencies(), mock.patch.object(gcc, "preflight"), \
              mock.patch.object(gcc, "evaluate", return_value={"trunk": TRUNK, "trunk_origin": T0, "rows": [], "problems": [], "notes": [], "landing": {"clean": None, "reason": "x"}, "linkable": True}), \
              mock.patch("builtins.print"):
             self.assertEqual(gcc.run_check(self._args()), 0)
 
     def test_exit_1_when_problems(self) -> None:
-        with mock.patch.object(gcc, "preflight"), \
+        with report_dependencies(), mock.patch.object(gcc, "preflight"), \
              mock.patch.object(gcc, "evaluate", return_value={"trunk": TRUNK, "trunk_origin": T0, "rows": [], "problems": ["p"], "notes": [], "landing": {"clean": None, "reason": "x"}, "linkable": False}), \
              mock.patch("builtins.print"):
             self.assertEqual(gcc.run_check(self._args()), 1)
@@ -207,26 +222,29 @@ class ErrorConditionTests(unittest.TestCase):
         self.assertEqual(list(by_branch), ["l1"])
 
     def test_view_pr_rejects_bad_shape(self) -> None:
-        cp = __import__("subprocess").CompletedProcess(["gh"], 0, stdout='{"number": 5}', stderr="")
-        with mock.patch.object(gcc, "run", return_value=cp):
+        client = mock.Mock()
+        client.pr_metadata.return_value = {5: {'number': 5}}
+        with mock.patch.object(gcc, "run", side_effect=AssertionError('unexpected subprocess')):
             with self.assertRaises(gcc.ToolError):
-                gcc.view_pr(5)
+                gcc.view_pr(5, client=client)
 
     def test_fetch_failure_is_a_warning_not_exit_2(self) -> None:
         import io
         failed = __import__("subprocess").CompletedProcess(["git"], 128, stdout="", stderr="fatal: could not read from remote")
-        with mock.patch.object(gcc, "preflight"), \
-             mock.patch.object(gcc, "run", return_value=failed), \
+        with report_dependencies(fetch_error='fatal: could not read from remote'), mock.patch.object(gcc, "preflight"), \
              mock.patch.object(gcc, "evaluate", return_value={"trunk": TRUNK, "trunk_origin": T0, "rows": [], "problems": [], "notes": [], "landing": {"clean": None, "reason": "x"}, "linkable": True}), \
-             mock.patch("builtins.print"), \
+             mock.patch("builtins.print") as output, \
              mock.patch.object(gcc.sys, "stderr", new=io.StringIO()) as err:
             args = gcc.argparse.Namespace(trunk=TRUNK, layers=["l1"], no_fetch=False, no_pr=True, json=False)
             self.assertEqual(gcc.run_check(args), 0)
-            self.assertIn("warning: git fetch origin failed", err.getvalue())
+            self.assertIn('could not read from remote', '\n'.join(str(call) for call in output.call_args_list))
 
     def test_run_hint_for_rate_limit_and_auth(self) -> None:
         shared = gcc.sys.modules[gcc.run.__module__]
-        self.assertIn("rate limit", shared.hint_for("HTTP 403: API rate limit exceeded"))
+        rate_hint = shared.hint_for("HTTP 403: API rate limit exceeded")
+        self.assertIn("rate limit", rate_hint)
+        self.assertNotIn('30 min', rate_hint)
+        self.assertIn('cooldown', rate_hint)
         self.assertIn("gh auth", shared.hint_for("gh: Not logged in (HTTP 401)"))
         self.assertEqual(shared.hint_for("something else"), "")
 

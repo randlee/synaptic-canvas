@@ -14,9 +14,12 @@ unless the user directed it.
       plain CI-trigger PR `top-head → trunk`, not linked into the stack, wait
       for its run on the landing SHA, then close it; check-runs are per
       commit, so the ruleset's required checks are satisfied.
-- [ ] No draft PR in the stack; `branches[]` read in full; no empty upper
+- [ ] No draft PR in the stack; complete `stacks[].branches[]` known from
+      sufficient evidence or scoped helper JSON; no empty upper
       layer that would be swept in.
-- [ ] `/sc-gh-stack-view`: COHERENT, LANDING ✅.
+- [ ] Sufficient evidence establishes coherence and local conflict checks on
+      exact heads; top CI/QA meet the conditions above. Hosted executor policy
+      checks remain authoritative; do not duplicate its preflight with a scan.
 - [ ] FREEZE sent to every trunk writer and acked. Anything for the trunk
       became a layer before the final sync or waits.
 
@@ -50,12 +53,18 @@ asynchronous merge REST API") and the synchronous `POST pulls/N/merge`
 returns 404. The working call:
 
 ```bash
-SHA=$(gh pr view <n> --json headRefOid -q .headRefOid)        # FULL 40 characters
+SHA=<observed-full-head-sha>                               # FULL 40 characters, exact target head
 gh api -X PUT repos/{owner}/{repo}/pulls/<n>/merge-async \
   -H "Accept: application/vnd.github+json" \
   -f merge_method=merge -f sha="$SHA"                        # returns a uuid
-gh api repos/{owner}/{repo}/pulls/<n>/merge-async/<uuid>     # poll until status == "merged"
+gh api repos/{owner}/{repo}/pulls/<n>/merge-async/<uuid>     # poll only this operation
 ```
+
+Reuse a sufficient exact-head observation; if absent, obtain only the target
+PR's `headRefOid` (`gh pr view <n> --json headRefOid -q .headRefOid`). Poll with
+backoff and a finite deadline; stop on terminal failure or auth/throttle error.
+At deadline report the outstanding UUID rather than resubmitting the write.
+Do not run full status/discovery inside the poll loop.
 
 An abbreviated SHA fails with the misleading "Pull request head branch was
 modified". After the parent merges, GitHub retargets **and rebases** the child
@@ -98,11 +107,11 @@ for b in <lower layers>; do git merge-base --is-ancestor origin/$b origin/<trunk
 
 ## After landing
 
-1. `/sc-gh-stack-view`: all PRs MERGED, or the remaining open stack coherent
-   on the new trunk head.
+1. Reuse operation completion and sufficient scoped observations to verify
+   affected PRs MERGED, or the remaining stack coherent on the new trunk head.
 2. Confirm no in-flight PR was closed as a side effect
-   (`gh pr list --state merged --limit 10` around the merge time, and the
-   specific PRs you know are in flight).
+   from the affected merge range and specific known in-flight PRs; acquire
+   only missing lifecycle facts, rather than listing unrelated recent merges.
 3. Send "landed"; lift the freeze; push any held trunk commits.
 4. Reset local refs to origin in every layer worktree; never force-push a
    landed branch.

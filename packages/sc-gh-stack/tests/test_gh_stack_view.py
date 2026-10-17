@@ -12,6 +12,7 @@ import importlib.util
 from pathlib import Path
 import sys
 import unittest
+from contextlib import contextmanager
 from unittest import mock
 
 SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "gh_stack_view.py"
@@ -117,7 +118,7 @@ class BuildRowsShapeTests(unittest.TestCase):
         rows, problems, notes = gsv.build_rows(stack, prs, fetched=True)
         landing = {"landable": None, "reason": "no open layer or trunk not fetched"}
         text = gsv.render_table(stack, rows, problems, notes, landing, trunk_origin=T0)
-        self.assertIn("VERDICT: ✅ COHERENT", text)
+        self.assertIn("coherence unknown", text)
         self.assertIn("note: L3 docs/top: gh stack reported no local head", text)
 
     def test_needs_rebase_and_base_mismatch_still_flagged(self) -> None:
@@ -126,6 +127,17 @@ class BuildRowsShapeTests(unittest.TestCase):
         _, problems, _ = gsv.build_rows(stack, prs, fetched=True)
         self.assertTrue(any("base ddddddddd != parent head aaaaaaaaa" in p for p in problems))
         self.assertTrue(any("gh stack reports needsRebase" in p for p in problems))
+
+    def test_summary_counts_and_prioritizes_hidden_stable_ci_failure(self):
+        stack, prs = self.coherent_stack()
+        rows, _, _ = gsv.build_rows(stack, prs, fetched=True)
+        rows = [dict(rows[0], layer=n, pr=n, branch=f'branch/{n}', local_merge_clean=True, changed=True)
+                for n in range(1, 121)]
+        rows[-1]['ci'] = 'ERROR'
+        text = gsv.render_table(stack, rows, [], [], {'landable': None, 'reason': 'fixture'}, trunk_origin=T0, coherent=True)
+        self.assertIn('1 hosted/check blockers', text)
+        self.assertIn('| 120/120 | #120 |', text)
+        self.assertEqual(sum(line.startswith('| ') and '/120 |' in line for line in text.splitlines()), 10)
 
 
 T1 = "1" * 40  # trunk head after the bottom layer merged
@@ -196,6 +208,16 @@ class MergedBottomLayerTests(unittest.TestCase):
         _rows, problems, _notes = gsv.build_rows(stack, prs, fetched=True)
         self.assertEqual(len(problems), 1)
         self.assertIn("L3 docs/top: base ddddddddd != parent head bbbbbbbbb -> needs rebase", problems[0])
+
+    def test_merged_middle_resets_next_open_parent_to_trunk(self) -> None:
+        stack, prs = self.merged_bottom_stack(middle_base=T1)
+        stack['branches'][0]['isMerged'] = False
+        stack['branches'][1]['isMerged'] = True
+        stack['branches'][2]['base'] = T1
+        prs[3]['baseRefName'] = TRUNK
+        rows, problems, _ = gsv.build_rows(stack, prs, fetched=True)
+        self.assertEqual(problems, [])
+        self.assertEqual(rows[2]['expected_base'], T1)
 
 
 def found_stack(trunk: str, branch: str, pr_num: int, *, merged: bool = False, closed: bool = False) -> dict:
@@ -288,31 +310,23 @@ class ErrorConditionTests(unittest.TestCase):
 
     def test_stack_json_at_records_unreadable_worktrees(self) -> None:
         gsv.SKIPPED.clear()
-        with mock.patch.object(gsv, "run", return_value=self._cp(6, err="branch belongs to multiple stacks")):
+        with mock.patch.object(gsv, "read_local_snapshot", side_effect=gsv.ToolError("worktree missing")), mock.patch.object(gsv, "run", side_effect=AssertionError("unexpected subprocess")):
             self.assertIsNone(gsv.stack_json_at("/wt/a"))
-        with mock.patch.object(gsv, "run", return_value=self._cp(2, err="not in a stack")):
+        with mock.patch.object(gsv, "read_local_snapshot", return_value={"stacks": [], "warnings": []}), mock.patch.object(gsv, "run", return_value=self._cp(1)):
             self.assertIsNone(gsv.stack_json_at("/wt/b"))
-        with mock.patch.object(gsv, "run", return_value=self._cp(0, out="not json")):
-            self.assertIsNone(gsv.stack_json_at("/wt/c"))
         joined = "\n".join(gsv.SKIPPED)
-        self.assertIn("/wt/a: gh stack view exit 6", joined)
-        self.assertIn("gh stack checkout <specific-branch>", joined)
-        self.assertNotIn("/wt/b", joined, "exit 2 (not in a stack) is normal and not reported")
-        self.assertIn("/wt/c: gh stack view --json returned non-JSON", joined)
+        self.assertIn("/wt/a: worktree missing", joined)
+        self.assertNotIn("/wt/b", joined)
         gsv.SKIPPED.clear()
 
     def test_pr_details_partial_graphql_errors_warn_and_continue(self) -> None:
-        import io
-        repo = self._cp(0, out='{"owner": {"login": "o"}, "name": "r"}')
-        payload = {"data": {"repository": {"pr1": {"number": 1, "headRefOid": A1}, "pr2": None}},
-                   "errors": [{"message": "Could not resolve to a PullRequest with the number of 2."}]}
-        gql = self._cp(0, out=__import__("json").dumps(payload))
-        with mock.patch.object(gsv, "run", side_effect=[repo, gql]), \
-             mock.patch.object(gsv.sys, "stderr", new=io.StringIO()) as err:
-            prs = gsv.pr_details([1, 2])
+        client = mock.Mock()
+        client.pr_details.return_value = {1: {"headRefOid": A1}, 2: {}}
+        with mock.patch.object(gsv, "run", side_effect=AssertionError("render/acquisition wrapper must use shared client")):
+            prs = gsv.pr_details([1, 2], client=client)
         self.assertEqual(prs[1]["headRefOid"], A1)
         self.assertEqual(prs[2], {}, "unresolved PR is falsy so rows render as unknown")
-        self.assertIn("warning: GraphQL reported", err.getvalue())
+        client.pr_details.assert_called_once_with([1, 2], force=False, offline=False, head_map=None)
 
     def test_pr_details_rejects_non_int_numbers(self) -> None:
         repo = self._cp(0, out='{"owner": {"login": "o"}, "name": "r"}')
@@ -331,6 +345,21 @@ class ReviewRegressionTests(unittest.TestCase):
     def setUp(self) -> None:
         gsv.SKIPPED.clear()
         self.addCleanup(gsv.SKIPPED.clear)
+
+    @contextmanager
+    def report_dependencies(self, warnings=(), fetch_error=None):
+        stack = {"trunk": TRUNK, "worktree": None, "branches": [layer("l1", 1, head=A1, base=T0)]}
+        snapshot = {"repository": {}, "refs": {'refs/heads/l1': A1}, "stacks": [stack], "warnings": list(warnings), "fingerprint": "epoch"}
+        client = mock.Mock()
+        client.cache_dir = Path('/unused-fixture-cache')
+        client.path = client.cache_dir / 'remote.json'
+        client.refresh_git.return_value = {"fresh": False, "source": "unknown", "observed_at": None, "error": fetch_error}
+        client.pr_details.return_value = {}
+        client.branch_observations = {}
+        client.observations, client.metrics, client.warnings, client.snapshot_id = {}, {}, [fetch_error] if fetch_error else [], 'fixture'
+        conflicts = {"layers": [{"branch": "l1", "base": T0, "head": A1, "clean": True, "reason": "clean"}], "combined": {"base": T0, "head": A1, "clean": True, "reason": "clean"}, "clean": True}
+        with mock.patch.object(gsv, 'preflight'), mock.patch.object(gsv, 'read_local_snapshot', return_value=snapshot), mock.patch.object(gsv, 'StackDataClient', return_value=client), mock.patch.object(gsv, 'evaluate_stack_conflicts', return_value=conflicts), mock.patch.object(gsv, 'read_snapshot', return_value={}), mock.patch.object(gsv, 'write_snapshot'), mock.patch.object(gsv, 'run', side_effect=AssertionError('unexpected subprocess')):
+            yield client
 
     def test_unresolved_pr_row_is_unknown_not_stale(self) -> None:
         stack = {"trunk": TRUNK, "currentBranch": "l1", "branches": [layer("l1", 1, head=A1, base=T0)]}
@@ -356,11 +385,8 @@ class ReviewRegressionTests(unittest.TestCase):
         import io, subprocess
         stack = {"trunk": TRUNK, "currentBranch": "l1", "worktree": "/wt/l1",
                  "branches": [layer("l1", 1, head=A1, base=T0)]}
-        gsv.SKIPPED.append("/wt/top: gh stack view exit 8: locked")
         args = gsv.argparse.Namespace(trunk=None, phase=None, all=False, no_fetch=True, no_pr=True, json=True)
-        with mock.patch.object(gsv, "preflight"), \
-             mock.patch.object(gsv, "discover_stacks", return_value=([stack], 0)), \
-             mock.patch.object(gsv, "origin_sha", return_value=None), \
+        with self.report_dependencies(warnings=['/wt/top: catalog unreadable']), \
              mock.patch("builtins.print") as out, \
              mock.patch.object(gsv.sys, "stderr", new=io.StringIO()) as err:
             rc = gsv.run_report(args, None)
@@ -369,18 +395,32 @@ class ReviewRegressionTests(unittest.TestCase):
         self.assertFalse(payload["coherent"])
         self.assertIn("discovery incomplete", payload["stacks"][0]["problems"][0])
         self.assertIsNone(payload["stacks"][0]["landing"]["landable"])
-        self.assertIn("skipped worktree /wt/top", err.getvalue())
+        self.assertIn('/wt/top: catalog unreadable', payload['warnings'])
 
     def test_fetch_timeout_degrades_to_unknown(self) -> None:
         import io
         stack = {"trunk": TRUNK, "currentBranch": "l1", "worktree": "/wt/l1",
                  "branches": [layer("l1", 1, head=A1, base=T0)]}
         args = gsv.argparse.Namespace(trunk=None, phase=None, all=False, no_fetch=False, no_pr=True, json=False)
-        with mock.patch.object(gsv, "preflight"), \
-             mock.patch.object(gsv, "discover_stacks", return_value=([stack], 0)), \
-             mock.patch.object(gsv, "run", side_effect=gsv.ToolError("git fetch timed out after 60s")), \
-             mock.patch("builtins.print"), \
+        with self.report_dependencies(fetch_error='git fetch timed out after 60s'), \
+             mock.patch("builtins.print") as output, \
              mock.patch.object(gsv.sys, "stderr", new=io.StringIO()) as err:
             rc = gsv.run_report(args, None)
-        self.assertEqual(rc, 0)
-        self.assertIn("git fetch origin failed (git fetch timed out", err.getvalue())
+        self.assertEqual(rc, 1)
+        self.assertIn('git fetch timed out', '\n'.join(str(call) for call in output.call_args_list))
+
+    def test_default_text_unknown_coherence_is_not_green(self):
+        args = gsv.argparse.Namespace(all=False, no_fetch=True, no_pr=True, json=False)
+        with self.report_dependencies(), mock.patch('builtins.print') as output:
+            gsv.run_report(args, None)
+        text = '\n'.join(str(call.args[0]) for call in output.call_args_list)
+        self.assertNotIn('VERDICT: ✅ COHERENT', text)
+        self.assertIn('unknown', text.lower())
+
+    def test_unknown_ci_icon_is_not_success(self):
+        self.assertNotEqual(gsv.ci_icon({'ci': None, 'pr_unresolved': True}), gsv.ICON_CI['SUCCESS'])
+        self.assertEqual(gsv.ci_icon({'ci': None, 'pr_unresolved': True}), gsv.ICON_SYNC['unknown'])
+
+    def test_stale_successful_ci_and_unknown_merge_are_not_green(self):
+        self.assertEqual(gsv.ci_icon({'ci': 'SUCCESS', 'hosted_stale': True}), gsv.ICON_SYNC['unknown'])
+        self.assertEqual(gsv.merge_icon({'merged': False, 'mergeable': 'UNKNOWN', 'merge_state': 'UNKNOWN'}), gsv.ICON_SYNC['unknown'])

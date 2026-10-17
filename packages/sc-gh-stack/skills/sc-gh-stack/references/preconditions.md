@@ -33,8 +33,8 @@ order. **Failure:** two layers cut from the same top (2026-09-13, both from
 conflict reports. **Recovery:** the declared sibling merges the other forward
 with a plain merge commit, then re-link the linear order.
 
-**Check:** after linking, verify every base with the view tool (one GraphQL
-query), not with per-PR `gh pr view` calls.
+**Check:** after linking, verify every affected base from sufficient mutation
+responses or scoped helper observations, not per-PR `gh pr view` calls.
 
 ## Before rewriting or rebasing a layer
 
@@ -69,7 +69,8 @@ by a bypass-listed account, and that is the user's call.
 
 ## Before `gh stack merge`
 
-**Check:** read the full `branches[]` from `gh stack view --json` and confirm
+**Check:** inspect complete stack composition from existing evidence or
+`gh_stack_view.py --stack <branch> --json` (`stacks[].branches[]`) and confirm
 nothing above the merge target would be swept in. **Failure:** a scoped
 `gh stack merge <lower-pr>` merged and deleted an upper draft that held only a
 merge-forward commit (#1386, 2026-09-10). **Recovery:** a fresh PR for the
@@ -101,11 +102,10 @@ cuts, no merges.
 
 ## Before trusting the view tool
 
-**Check:** the 🔄 icon or a NOT COHERENT verdict with `-` rows after an
-unstack is stale per-worktree tracking, not a real problem. gh-stack tracking
-lives per worktree; after an unstack or re-link, other worktrees still show
-the old stack number and layer list, and the view tool keeps the *longest*
-list it finds. **Recovery:** `recipe-stale-tracking.md`.
+**Check:** investigate catalog conflicts or stale heads after an unstack;
+legacy per-worktree tracking can retain an old stack number/list. The helper
+does not choose the longest conflicting list. Distinguish stale metadata from
+an actual content conflict. **Recovery:** `recipe-stale-tracking.md`.
 
 ## Before dispatching a fix for red CI
 

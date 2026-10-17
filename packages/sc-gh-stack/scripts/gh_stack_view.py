@@ -1,94 +1,38 @@
 #!/usr/bin/env python3
-"""One-call status table for a `gh stack`.
-
-Installed as ``.claude/scripts/gh_stack_view.py`` by the sc-gh-stack package
-(command: ``/sc-gh-stack-view``, skill: ``sc-gh-stack-view``).
-
-Combines exactly three data sources into one table:
-
-1. ``gh stack view --json``  - local stack tracking: layer order, head/base
-   SHAs, needsRebase, PR number.
-2. ``git rev-parse origin/<branch>`` (after one ``git fetch``) - what is
-   actually pushed.
-3. One batched GraphQL query - per-PR ``mergeable``, ``mergeStateStatus``,
-   ``baseRefName``, ``headRefOid``, ``isDraft`` and CI rollup.
-
-Coherence checks (the two metrics conventional per-branch calls never show):
-
-* ``base ok``  - each layer's base == the layer below's head (bottom == trunk).
-* ``origin ok`` - local head == origin head == PR head.
-* ``needsRebase`` straight from gh stack, plus GitHub's ``mergeable`` /
-  ``mergeStateStatus`` which reveal CONFLICTING / BEHIND / DIRTY layers.
-
-Read-only. Never runs ``gh stack sync`` or ``gh stack rebase``.
-"""
+"""Local-first stack coherence, content-conflict and cached GitHub status report."""
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import shutil
 import sys
-from concurrent.futures import ThreadPoolExecutor
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from gh_stack_shared import ToolError, guarded, is_ancestor, origin_sha, run, short  # noqa: E402
+from gh_stack_shared import ToolError, guarded, is_ancestor, origin_sha, run, short
+from gh_stack_local import read_local_snapshot, evaluate_stack_conflicts
+from gh_stack_remote import StackDataClient, _read as read_snapshot, _write as write_snapshot
 
-
-SKIPPED: list[str] = []  # worktrees the discovery could not read, reported once as warnings
+SKIPPED: list[str] = []
 
 
 def stack_json_at(path: str) -> dict | None:
-    """None when this worktree is not on a stack; unreadable worktrees are recorded in SKIPPED."""
+    """Compatibility reader: inspect catalogs locally, never run gh stack view."""
+    def local_run(cmd, **kwargs):
+        kwargs.setdefault("cwd", path)
+        if kwargs["cwd"] is None:
+            kwargs["cwd"] = path
+        return run(cmd, **kwargs)
     try:
-        proc = run(["gh", "stack", "view", "--json"], check=False, cwd=path)
+        snapshot = read_local_snapshot(run_fn=local_run)
+        branch = local_run(["git", "symbolic-ref", "--quiet", "--short", "HEAD"], check=False).stdout.strip()
+        matches = [s for s in snapshot["stacks"] if any(b["name"] == branch for b in s["branches"])]
+        SKIPPED.extend(snapshot["warnings"])
+        return matches[0] if len(matches) == 1 else None
     except ToolError as exc:
-        SKIPPED.append(f"{path}: {exc} (`git worktree prune` removes stale entries)")
+        SKIPPED.append(f"{path}: {exc}")
         return None
-    if proc.returncode == 2:
-        return None  # not in a stack: the normal case for develop/main worktrees
-    if proc.returncode != 0:
-        tail = (proc.stderr or proc.stdout).strip().splitlines()
-        why = tail[-1] if tail else "no output"
-        if proc.returncode == 6:
-            why += " (branch belongs to several stacks; `gh stack checkout <specific-branch>` there)"
-        elif proc.returncode == 8:
-            why += " (stack file locked by another gh stack process; retry in a few seconds)"
-        elif proc.returncode == 10:
-            why += " (interrupted `gh stack modify`; run `gh stack modify --abort` there)"
-        SKIPPED.append(f"{path}: gh stack view exit {proc.returncode}: {why}")
-        return None
-    try:
-        data = json.loads(proc.stdout)
-    except json.JSONDecodeError:
-        SKIPPED.append(f"{path}: gh stack view --json returned non-JSON ({proc.stdout[:80]!r}); upgrade gh-stack")
-        return None
-    if not isinstance(data, dict) or not isinstance(data.get("branches"), list) or not data["branches"]:
-        return None
-    if not isinstance(data.get("trunk"), str) or not all(
-        isinstance(b, dict) and isinstance(b.get("name"), str) for b in data["branches"]
-    ):
-        raise ToolError(f"gh stack view --json in {path} returned an unexpected shape; "
-                        "upgrade gh-stack (`gh extension upgrade stack`) or report the output")
-    return data
-
-
-def worktree_paths() -> list[str]:
-    """Every worktree of this repo that is checked out on a branch (cwd first)."""
-    out = run(["git", "worktree", "list", "--porcelain"]).stdout
-    paths: list[str] = []
-    cur: str | None = None
-    for line in out.splitlines():
-        if line.startswith("worktree "):
-            cur = line[len("worktree "):]
-        elif line.startswith("branch ") and cur:
-            paths.append(cur)
-            cur = None
-        elif line == "" :
-            cur = None
-    cwd = run(["git", "rev-parse", "--show-toplevel"]).stdout.strip()
-    paths.sort(key=lambda p: p != cwd)
-    return paths
 
 
 def select_stacks(found: list[dict], trunk_filter: str | None, *, include_all: bool) -> tuple[list[dict], int]:
@@ -118,85 +62,23 @@ def select_stacks(found: list[dict], trunk_filter: str | None, *, include_all: b
     return stacks, len(found) - len(stacks)
 
 
-def discover_stacks(trunk_filter: str | None, *, include_all: bool) -> tuple[list[dict], int]:
-    """Run `gh stack view --json` once per worktree, dedupe by branch set.
 
-    Works from any branch not part of a stack (e.g. develop/main): every
-    stack that has at least one worktree checked out is found. Concurrent,
-    read-only. Filtering/sorting of the deduped list is delegated to
-    ``select_stacks``. Returns (stacks, hidden_count).
-    """
-    paths = worktree_paths()
-    with ThreadPoolExecutor(max_workers=4) as pool:  # one gh call per worktree; keep bursts small (secondary rate limit)
-        results = list(pool.map(stack_json_at, paths))
-    found: list[dict] = []
-    for path, data in zip(paths, results):
-        if data:
-            data["worktree"] = path
-            found.append(data)
-
-    # Each worktree only knows the layers linked from it; the same stack seen
-    # from a lower layer is a prefix of the view from the top. Keep the longest.
-    def names(d: dict) -> tuple[str, ...]:
-        return tuple(b["name"] for b in d["branches"])
-    found = [d for d in found if not any(
-        o is not d and len(names(o)) > len(names(d)) and names(o)[: len(names(d))] == names(d)
-        for o in found)]
-    uniq: dict[tuple[str, ...], dict] = {}
-    for d in found:
-        uniq.setdefault(names(d), d)
-    found = list(uniq.values())
-
-    return select_stacks(found, trunk_filter, include_all=include_all)
+def discover_stacks(trunk_filter: str | None, *, include_all: bool, snapshot=None) -> tuple[list[dict], int]:
+    """Read each common/legacy catalog once, then filter before remote reads."""
+    snapshot = snapshot if snapshot is not None else read_local_snapshot(run_fn=run)
+    SKIPPED.extend(w for w in snapshot["warnings"] if w not in SKIPPED)
+    return select_stacks(snapshot["stacks"], trunk_filter, include_all=include_all)
 
 
-def pr_details(numbers: list[int]) -> dict[int, dict]:
-    """One GraphQL round-trip for every PR in the stack."""
+def pr_details(numbers: list[int], *, client=None, force=False, offline=False, head_map=None) -> dict[int, dict]:
+    """Required hosted fields only, scoped/reused/batched by the shared adapter."""
+    if any(type(n) is not int or n <= 0 for n in numbers):
+        raise ToolError("PR numbers must be positive integers")
     if not numbers:
         return {}
-    remote = run(["gh", "repo", "view", "--json", "owner,name"]).stdout
-    try:
-        repo = json.loads(remote)
-    except json.JSONDecodeError as exc:
-        raise ToolError(f"gh repo view returned non-JSON: {remote[:200]!r}") from exc
-    try:
-        owner, name = repo["owner"]["login"], repo["name"]
-    except (KeyError, TypeError) as exc:
-        raise ToolError(f"gh repo view returned an unexpected shape: {remote[:200]!r}; run `gh auth status`") from exc
-    if not all(isinstance(n, int) and n > 0 for n in numbers):
-        raise ToolError(f"non-integer PR number in gh stack view output: {numbers!r}; upgrade gh-stack")
-    fields = (
-        "number isDraft mergeable mergeStateStatus baseRefName headRefOid "
-        "reviewDecision state "
-        "commits(last:1){nodes{commit{statusCheckRollup{state}}}}"
-    )
-    aliases = " ".join(f"pr{n}: pullRequest(number:{n}) {{ {fields} }}" for n in numbers)
-    query = f'query($owner:String!,$name:String!){{ repository(owner:$owner,name:$name) {{ {aliases} }} }}'
-    proc = run(["gh", "api", "graphql", "-f", f"query={query}", "-F", f"owner={owner}", "-F", f"name={name}"])
-    try:
-        payload = json.loads(proc.stdout)
-    except json.JSONDecodeError as exc:
-        raise ToolError(f"gh api graphql returned non-JSON: {proc.stdout[:200]!r}") from exc
-    data = (payload.get("data") or {}).get("repository")
-    if payload.get("errors"):
-        msgs = "; ".join(str(e.get("message", "?")) for e in payload["errors"][:3])
-        if not data:
-            raise ToolError(f"GraphQL errors: {msgs} (PRs {numbers}; use --no-pr for a local-only view)")
-        sys.stderr.write(f"gh-stack-view: warning: GraphQL reported: {msgs}; affected PRs show as unknown\n")
-    if not data:
-        raise ToolError("GraphQL returned no repository data; run `gh auth status` or use --no-pr")
-    out: dict[int, dict] = {}
-    for n in numbers:
-        pr = data.get(f"pr{n}")
-        if not isinstance(pr, dict):
-            out[n] = {}  # unresolved on GitHub: falsy, rendered as unknown
-            continue
-        nodes = ((pr.get("commits") or {}).get("nodes") or [None])
-        first = nodes[0] if isinstance(nodes[0], dict) else {}
-        rollup = ((first.get("commit") or {}).get("statusCheckRollup") or {}).get("state")
-        pr["ci"] = rollup or "NONE"
-        out[n] = pr
-    return out
+    if client is None:
+        client = StackDataClient(read_local_snapshot(run_fn=run)["repository"], run_fn=run)
+    return client.pr_details(numbers, force=force, offline=offline, head_map=head_map)
 
 
 def landing_verdict(stack: dict, rows: list[dict], trunk_origin: str | None) -> dict:
@@ -231,9 +113,10 @@ def landing_verdict(stack: dict, rows: list[dict], trunk_origin: str | None) -> 
             "reason": f"top head contains all {len(open_rows)} open layer(s) and merges clean into {stack['trunk']}"}
 
 
-def build_rows(stack: dict, prs: dict[int, dict], *, fetched: bool) -> tuple[list[dict], list[str], list[str]]:
+def build_rows(stack: dict, prs: dict[int, dict], *, fetched: bool, refs=None, remote="origin") -> tuple[list[dict], list[str], list[str]]:
     trunk = stack["trunk"]
-    trunk_origin = origin_sha(trunk) if fetched else None
+    resolve = (lambda name: refs.get(f"refs/remotes/{remote}/{name}")) if refs is not None else origin_sha
+    trunk_origin = resolve(trunk) if fetched else None
     rows: list[dict] = []
     problems: list[str] = []
     notes: list[str] = []
@@ -255,13 +138,14 @@ def build_rows(stack: dict, prs: dict[int, dict], *, fetched: bool) -> tuple[lis
             # Merged: its head is (an ancestor of) the trunk head now.  The next
             # open layer must sit on the trunk; ``parent`` stays at the trunk.
             expected_base = trunk_origin or br.get("head") or expected_base
+            parent = trunk
             continue
         # gh stack omits ``head``/``base`` for a layer that has no local branch
         # (e.g. viewed from a sibling worktree before the branch was fetched).
         # Never subscript them directly: a missing key must degrade to ❓, not crash.
         head = br.get("head")
         base = br.get("base")
-        origin = origin_sha(name) if fetched else None
+        origin = resolve(name) if fetched else None
         if (br.get("pr") or {}).get("number") is not None and prs and not pr:
             notes.append(f"L{idx} {name}: PR #{(br.get('pr') or {}).get('number')} could not be resolved on GitHub (deleted, or no access); merge and CI shown as unknown")
         base_ok = (base == expected_base) if (expected_base and base) else None
@@ -298,6 +182,9 @@ def build_rows(stack: dict, prs: dict[int, dict], *, fetched: bool) -> tuple[lis
             "behind_trunk": False,
             "pr_unresolved": bool((br.get("pr") or {}).get("number") is not None and prs and not pr),
         }
+        if refs is not None and expected_base and (origin or head):
+            row["needs_rebase"] = not is_ancestor(expected_base, origin or head)
+            br["needsRebase"] = row["needs_rebase"]
         parent_is_trunk = parent == trunk
         if pr and pr.get("baseRefName") not in (None, parent):
             problems.append(f"L{idx} {name}: PR #{row['pr']} base is {pr['baseRefName']}, expected {parent}")
@@ -324,6 +211,8 @@ def build_rows(stack: dict, prs: dict[int, dict], *, fetched: bool) -> tuple[lis
             problems.append(f"L{idx} {name}: PR #{row['pr']} CONFLICTING")
         if pr.get("isDraft"):
             problems.append(f"L{idx} {name}: PR #{row['pr']} is DRAFT (blocks stack merge)")
+        if pr.get("state") == "CLOSED":
+            problems.append(f"L{idx} {name}: PR #{row['pr']} is CLOSED")
         rows.append(row)
         # The next layer must be based on THIS layer's pushed head (fall back to local, then PR).
         expected_base = origin or head or pr.get("headRefOid") or expected_base
@@ -346,6 +235,8 @@ def sync_icon(r: dict) -> str:
         return ICON_SYNC["behind"]
     if r.get("pr_unresolved"):
         return ICON_SYNC["unknown"]
+    if r.get("hosted_stale") and r.get("pr"):
+        return ICON_SYNC["unknown"]
     if r["base_ok"] is False or r["needs_rebase"]:
         return ICON_SYNC["rebase"]
     if r["base_ok"] is None or r["origin_ok"] is None:
@@ -359,13 +250,17 @@ def merge_icon(r: dict) -> str:
         return ICON_MERGE["MERGED"]
     if r.get("pr_unresolved"):
         return ICON_SYNC["unknown"]
+    if r.get("mergeable") in (None, "UNKNOWN") or r.get("merge_state") in (None, "UNKNOWN"):
+        return ICON_SYNC["unknown"]
+    if r.get("hosted_stale"):
+        return ICON_SYNC["unknown"]
     if r["draft"] or r["queued"] or r["mergeable"] != "MERGEABLE":
         return ICON_MERGE["BLOCKED"]
     return ICON_MERGE["OK"] if r["merge_state"] in ("CLEAN", "HAS_HOOKS", "UNSTABLE") else ICON_MERGE["BLOCKED"]
 
 
 def ci_icon(r: dict) -> str:
-    if r.get("pr_unresolved"):
+    if r.get("pr_unresolved") or r.get("hosted_stale"):
         return ICON_SYNC["unknown"]
     return ICON_CI.get(r["ci"] or "NONE", ICON_CI["NONE"])
 
@@ -374,119 +269,257 @@ def render_landing(landing: dict) -> str:
     if landing["landable"] is None:
         return f"LANDING: ❓ not judged - {landing['reason']}"
     if landing["landable"]:
-        return f"LANDING: ✅ one merge of {landing['top']} @ {short(landing['top_sha'])} lands the stack - {landing['reason']}"
+        return f"LANDING: ✅ local content prediction for {landing['top']} @ {short(landing['top_sha'])}; hosted policy is separate - {landing['reason']}"
     return f"LANDING: ❌ {landing['top']} @ {short(landing.get('top_sha'))} cannot land as one merge - {landing['reason']}"
 
 
-def render_table(stack: dict, rows: list[dict], problems: list[str], notes: list[str], landing: dict, *, trunk_origin: str | None) -> str:
-    hdr = ["L", "PR", "rebase", "merge", "CI"]
+def render_table(stack: dict, rows: list[dict], problems: list[str], notes: list[str], landing: dict, *, trunk_origin: str | None, full=False, coherent=None) -> str:
+    hdr = ["L", "PR", "rebase", "local conflict", "GitHub", "CI"]
     lines = [f"stack: {stack['branches'][-1]['name']} -> {stack['trunk']} @ {short(trunk_origin)}", ""]
     lines.append("| " + " | ".join(hdr) + " |")
     lines.append("|" + "|".join("---" for _ in hdr) + "|")
-    for r in rows:
+    def hosted_blocked(row):
+        return not row.get("merged") and (merge_icon(row) == ICON_MERGE["BLOCKED"] or ci_icon(row) == "⛔")
+    visible = rows if full else sorted(rows, key=lambda r: (
+        not (r.get("local_merge_clean") is False or r.get("needs_rebase") or r.get("origin_ok") is False or hosted_blocked(r)),
+        not ((not r.get("merged") and r.get("local_merge_clean") is None) or r.get("pr_unresolved") or r.get("hosted_stale")),
+        not r.get("changed"), r["layer"]))[:10]
+    for r in visible:
         pr = f"#{r['pr']}" if r["pr"] else "-"
         lines.append("| " + " | ".join([
-            f"{r['layer']}/{len(rows)}", pr, sync_icon(r), merge_icon(r), ci_icon(r),
+            f"{r['layer']}/{len(rows)}", pr, sync_icon(r),
+            {True: "clean", False: "CONFLICT", None: "unknown"}[r.get("local_merge_clean")],
+            merge_icon(r), ci_icon(r),
         ]) + " |")
     lines.append("")
     if problems:
         lines.append(f"VERDICT: ❌ NOT COHERENT ({len(problems)} issue(s))")
-        lines.extend(f"- {p}" for p in problems)
+        lines.extend(f"- {p}" for p in (problems if full else problems[:10]))
+    elif coherent is True:
+        lines.append("VERDICT: ✅ COHERENT - observed local/fetched chain; hosted eligibility is separate")
     else:
-        lines.append("VERDICT: ✅ COHERENT - every base == parent head, every head pushed and on its PR")
+        lines.append("VERDICT: ❓ coherence unknown - incomplete or stale observations; hosted eligibility is separate")
+    unknown = sum(r.get("local_merge_clean") is None for r in rows if not r.get("merged"))
+    conflicts = sum(r.get("local_merge_clean") is False for r in rows)
+    hosted_unknown = sum(bool(r.get("hosted_stale") or r.get("pr_unresolved") or r.get("mergeable") in (None, "UNKNOWN")) for r in rows if not r.get("merged"))
+    blocked = sum(hosted_blocked(r) for r in rows)
+    lines.append(f"scope: {len(rows)} layers; {conflicts} local conflicts; {unknown} local unknowns; {blocked} hosted/check blockers; {hosted_unknown} hosted unknown/stale; showing {len(visible)} rows")
+    if len(visible) < len(rows) or (not full and len(problems) > 10):
+        lines.append("output truncated; --full or --json returns all layers and issues")
     lines.append(render_landing(landing))
-    lines.extend(f"- note: {n}" for n in notes)
+    lines.extend(f"- note: {n}" for n in (notes if full else notes[:3]))
+    if not full and len(notes) > 3:
+        lines.append(f"notes: {len(notes)} total; --full to show all")
     return "\n".join(lines)
 
 
 def legend() -> str:
     lines = []
     lines.append("rebase: ✅ not needed (base==parent head, local==origin==PR)  ⚠️ needed  ⏳ behind a moved trunk, no action  🔄 local tracking stale: fetch+reset before any sync  ❓ unknown (--no-fetch, or PR unresolved)  🏁 merged")
-    lines.append("merge: ✅ mergeable now  🚧 blocked (conflicting, behind, draft, queued, required checks, or still computing)  🏁 merged")
+    lines.append("GitHub: ✅ observed mergeable (not an authorization or policy guarantee)  🚧 blocked  ❓ stale/unknown  🏁 merged; local conflict is separate")
     lines.append("CI: ✅ green  🌀 running  ⛔ failed, do not enter  — none")
     return "\n".join(lines)
 
 
-def main() -> int:
-    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--trunk", help="only stacks whose trunk is this branch (e.g. develop, integrate/phase-bc)")
-    ap.add_argument("--phase", help="shorthand for --trunk integrate/phase-<PHASE>")
-    ap.add_argument("--all", action="store_true", help="show every stack, including merged/closed ones and other trunks")
-    ap.add_argument("--no-fetch", action="store_true", help="skip `git fetch origin` and origin comparison")
-    ap.add_argument("--no-pr", action="store_true", help="skip the GraphQL PR query (offline / local-only view)")
-    ap.add_argument("--json", action="store_true", help="emit the merged rows as JSON instead of tables")
-    args = ap.parse_args()
-    trunk_filter = args.trunk or (f"integrate/phase-{args.phase.lower()}" if args.phase else None)
+def add_refresh_options(ap):
+    ap.add_argument("--remote", default="origin", help="selected git remote")
+    ap.add_argument("--stack", help="stack number, ID, or one of its branch names")
+    ap.add_argument("--full", action="store_true", help="show every layer/issue; does not refresh")
+    ap.add_argument("--refresh-git", action="store_true", help="refresh git refs once; no API requests unless combined with --refresh-status")
+    ap.add_argument("--refresh-status", action="store_true", help="refresh required hosted fields without implying a git fetch")
+    ap.add_argument("--refresh", action="store_true", help="refresh both git refs and required hosted fields")
 
-    return guarded("gh-stack-view", lambda: run_report(args, trunk_filter))
+
+def main() -> int:
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--trunk", help="only stacks with this trunk")
+    ap.add_argument("--phase", help="shorthand for --trunk integrate/phase-<PHASE>")
+    ap.add_argument("--all", action="store_true", help="include merged/closed stacks")
+    ap.add_argument("--no-fetch", action="store_true", help="forbid fetching; reuse qualified cached refs")
+    ap.add_argument("--no-pr", action="store_true", help="strictly no GitHub API calls; cached data is qualified")
+    ap.add_argument("--json", action="store_true", help="complete structured snapshot")
+    add_refresh_options(ap)
+    args = ap.parse_args()
+    if args.no_fetch and (args.refresh_git or args.refresh):
+        ap.error("--no-fetch conflicts with an explicit git refresh")
+    if args.no_pr and (args.refresh_status or args.refresh):
+        ap.error("--no-pr conflicts with an explicit hosted refresh")
+    trunk_filter = args.trunk or (f"integrate/phase-{args.phase.lower()}" if args.phase else None)
+    return guarded("gh-stack-view", lambda: run_report(args, trunk_filter), json_errors=args.json)
 
 
 def preflight() -> None:
-    for tool in ("git", "gh"):
-        if not shutil.which(tool):
-            raise ToolError(f"`{tool}` not on PATH")
-    if run(["gh", "stack", "--help"], check=False).returncode != 0:
-        raise ToolError("gh-stack extension missing: `gh extension install github/gh-stack`")
+    if not shutil.which("git"):
+        raise ToolError("`git` not on PATH")
     if run(["git", "rev-parse", "--git-dir"], check=False).returncode != 0:
         raise ToolError("not inside a git repository")
 
 
+def _selected(stack, selector):
+    return not selector or str(stack.get("number", "")) == selector or stack.get("id") == selector or any(
+        b["name"] == selector for b in stack["branches"])
+
+
+def _remote_shape(data, refs):
+    """Normalize native stacks REST data without importing/migrating its catalog."""
+    if not isinstance(data, dict):
+        return None
+    trunk = (data.get("base") or {}).get("ref") or data.get("trunk")
+    prs = data.get("pull_requests") or []
+    if not isinstance(trunk, str) or not isinstance(prs, list) or not prs:
+        return None
+    branches = []
+    for pr in prs:
+        head = pr.get("head") or {}
+        name = head.get("ref")
+        if not isinstance(name, str) or type(pr.get("number")) is not int:
+            return None
+        merged = pr.get("state", "").upper() == "MERGED" or bool(pr.get("merged") or pr.get("merged_at"))
+        branches.append({"name": name, "head": refs.get("refs/heads/" + name),
+                         "recorded_head": head.get("sha"), "base": None,
+                         "isMerged": merged, "isQueued": None, "needsRebase": None,
+                         "pr": {"number": pr["number"], "state": "MERGED" if merged else str(pr.get("state", "UNKNOWN")).upper()}})
+    return {"trunk": trunk, "branches": branches, "number": data.get("number"),
+            "id": data.get("id"), "worktree": None, "source": "REST"}
+
+
 def run_report(args: argparse.Namespace, trunk_filter: str | None) -> int:
     preflight()
-    stacks, hidden = discover_stacks(trunk_filter, include_all=args.all)
+    SKIPPED.clear()
+    remote = getattr(args, "remote", "origin")
+    snapshot = read_local_snapshot(remote, run_fn=run)
+    stacks, hidden = discover_stacks(trunk_filter, include_all=args.all, snapshot=snapshot)
+    selector = getattr(args, "stack", None)
+    stacks = [s for s in stacks if _selected(s, selector)]
+    repository = snapshot["repository"]
+    client = StackDataClient(repository, run_fn=run)
+    git_only = getattr(args, "refresh_git", False) and not getattr(args, "refresh_status", False) and not getattr(args, "refresh", False)
+    offline = args.no_pr or git_only
+    force_status = getattr(args, "refresh_status", False) or getattr(args, "refresh", False)
+    if not stacks and selector and selector.isdigit() and not offline:
+        data = client.refresh_stack(int(selector), force=force_status)
+        structural = _remote_shape(data, snapshot["refs"])
+        if structural and (not trunk_filter or structural["trunk"] == trunk_filter):
+            stacks = [structural]
+            SKIPPED[:] = [w for w in SKIPPED if not w.startswith("No local gh-stack catalog")]
     if not stacks:
-        where = f" with trunk {trunk_filter}" if trunk_filter else ""
-        hint = f" ({hidden} merged/closed/other-trunk stack(s) hidden; --all to show)" if hidden else ""
-        sys.stderr.write(
-            f"gh-stack-view: no open gh stack found{where}{hint}. Stacks are discovered through `git worktree list`; a stack "
-            "needs at least one of its layers checked out in a worktree (never `git checkout` in the main repo).\n"
-        )
-        for line in SKIPPED:
-            sys.stderr.write(f"gh-stack-view: warning: skipped worktree {line}\n")
-        return 2
-    fetched = not args.no_fetch
-    if fetched:
-        try:
-            fetch = run(["git", "fetch", "--quiet", "origin"], check=False)
-            why = None if fetch.returncode == 0 else ((fetch.stderr or fetch.stdout).strip().splitlines() or ["no output"])[-1]
-        except ToolError as exc:  # timeout
-            why = str(exc)
-        if why:
-            fetched = False
-            sys.stderr.write(f"gh-stack-view: warning: git fetch origin failed ({why}); rebase column reported as unknown (❓)\n")
-    numbers = sorted({(b.get("pr") or {}).get("number") for st in stacks for b in st["branches"] if (b.get("pr") or {}).get("number") is not None})
-    prs = {} if args.no_pr else pr_details(numbers)
-
-    report: list[dict] = []
-    blocks: list[str] = []
-    any_problem = False
+        raise ToolError("no locally tracked stack matches; inspect local catalog diagnostics or request --stack NUMBER for scoped remote discovery"
+                        + ("; " + "; ".join(SKIPPED) if SKIPPED else ""), "STATE.STACK_UNKNOWN",
+                        {"catalogs": snapshot.get("catalogs", []), "warnings": SKIPPED})
+    status_only = getattr(args, "refresh_status", False) and not getattr(args, "refresh_git", False) and not getattr(args, "refresh", False)
+    git_observation = client.refresh_git(
+        force=getattr(args, "refresh_git", False) or getattr(args, "refresh", False),
+        offline=args.no_fetch or status_only,
+        refs=sorted({st["trunk"] for st in stacks} | {b["name"] for st in stacks for b in st["branches"] if not b.get("isMerged")}))
+    if git_observation["source"] == "fetched":
+        snapshot = read_local_snapshot(remote, run_fn=run)
+        # Fresh refs, same local catalog shape; do not discard explicit REST discovery.
+        local_by_key = {tuple(b["name"] for b in s["branches"]): s for s in snapshot["stacks"]}
+        stacks = [local_by_key.get(tuple(b["name"] for b in s["branches"]), s) for s in stacks]
+    refs = snapshot["refs"]
+    fetched = git_observation["fresh"]
+    # Derive the local facts first. Hosted lifecycle can subsequently retire a
+    # layer; only that changed parent sequence requires another local pass.
+    local_conflicts = [evaluate_stack_conflicts(st, refs, remote, run_fn=run) for st in stacks]
+    merged_shapes = [tuple(bool(b.get("isMerged")) for b in st["branches"]) for st in stacks]
+    unmapped = [b["name"] for st in stacks for b in st["branches"] if not b.get("pr") and not b.get("isMerged")]
+    mappings = client.resolve_branches(unmapped, offline=offline, force=force_status) if unmapped else {}
     for st in stacks:
-        rows, problems, notes = build_rows(st, prs, fetched=fetched)
-        trunk_origin = origin_sha(st["trunk"]) if fetched else None
-        if fetched and trunk_origin is None:
-            notes.append(f"trunk {st['trunk']} is not on origin; base coherence for L1 and LANDING cannot be judged (push the trunk or check its name)")
+        for branch in st["branches"]:
+            mapped = mappings.get(branch["name"])
+            if not branch.get("pr") and mapped:
+                branch["pr"] = {"number": mapped["number"], "state": mapped.get("state", "UNKNOWN")}
+    numbers = sorted({b["pr"]["number"] for st in stacks for b in st["branches"] if b.get("pr") and not b.get("isMerged")})
+    head_map = {b["pr"]["number"]: refs.get(f"refs/remotes/{remote}/{b['name']}")
+                for st in stacks for b in st["branches"] if b.get("pr") and not b.get("isMerged")}
+    head_map = {n: sha for n, sha in head_map.items() if sha}
+    prs = pr_details(numbers, client=client, force=force_status, offline=offline, head_map=head_map)
+    prs = {n: prs.get(n, {}) for n in numbers}
+    report = []
+    any_problem = False
+    scope = hashlib.sha256(json.dumps([selector, trunk_filter, args.all], sort_keys=True).encode()).hexdigest()[:16]
+    previous_path = client.cache_dir / (client.path.stem + "-view-" + scope + ".json")
+    previous = read_snapshot(previous_path)
+    previous_rows = {(s["trunk"], r["branch"]): r for s in previous.get("stacks", []) for r in s.get("rows", [])}
+    for stack_index, st in enumerate(stacks):
+        for b in st["branches"]:
+            detail = prs.get((b.get("pr") or {}).get("number"), {})
+            if detail.get("state") == "MERGED":
+                b["isMerged"] = True
+            if detail.get("state") and b.get("pr"):
+                b["pr"]["state"] = detail["state"]
+        rows, problems, notes = build_rows(st, prs, fetched=fetched, refs=refs, remote=remote)
+        conflicts = local_conflicts[stack_index]
+        if tuple(bool(b.get("isMerged")) for b in st["branches"]) != merged_shapes[stack_index]:
+            conflicts = evaluate_stack_conflicts(st, refs, remote, run_fn=run)
+        by_branch = {r["branch"]: r for r in conflicts["layers"]}
+        for row in rows:
+            local = by_branch.get(row["branch"], {})
+            row["local_merge_clean"] = local.get("clean")
+            row["local_merge_reason"] = local.get("reason", "merged layer")
+            row["provenance"] = client.observations.get(row["pr"], {})
+            row["branch_observation"] = getattr(client, "branch_observations", {}).get(row["branch"], {})
+            row["hosted_stale"] = (not row["provenance"] or any(v.get("freshness") != "fresh" for v in row["provenance"].values())) if row["pr"] else True
+            if local.get("clean") is False:
+                problems.append(f"L{row['layer']} {row['branch']}: local content conflict against intended parent")
+            before = previous_rows.get((st["trunk"], row["branch"]), {})
+            keys = ("head", "origin", "base", "ci", "mergeable", "merge_state", "needs_rebase", "local_merge_clean")
+            row["changed"] = any(row.get(k) != before.get(k) for k in keys)
+        trunk_origin = refs.get(f"refs/remotes/{remote}/{st['trunk']}") if fetched else None
+        active = [r for r in rows if not r.get("merged")]
+        combined = conflicts["combined"]
+        top = active[-1] if active else {}
+        missing = [r["branch"] for r in active[:-1] if not (r.get("origin") or r.get("head")) or not combined.get("head") or not is_ancestor(r.get("origin") or r["head"], combined["head"])]
+        landing = {"landable": False if missing else combined["clean"], "top": top.get("branch"),
+                   "top_sha": combined.get("head"), "reason": "top does not contain: " + ", ".join(missing) if missing else combined["reason"]}
         if SKIPPED:
-            # A skipped worktree may have held the longest (true) view of this stack: the table
-            # could be a truncated prefix, so neither coherence nor landing can be trusted.
-            problems.append(f"discovery incomplete: {len(SKIPPED)} worktree(s) unreadable (see warnings); fix them and re-run before trusting this stack's shape")
-        any_problem |= bool(problems)
-        landing = landing_verdict(st, rows, trunk_origin)
-        if SKIPPED:
-            landing = {"landable": None, "top": landing.get("top"), "top_sha": landing.get("top_sha"),
-                       "reason": "not judged while a worktree is unreadable"}
-        report.append({"trunk": st["trunk"], "trunk_origin": trunk_origin, "worktree": st["worktree"],
-                       "rows": rows, "problems": problems, "notes": notes, "coherent": not problems,
-                       "landing": landing})
-        blocks.append(render_table(st, rows, problems, notes, landing, trunk_origin=trunk_origin))
-    for line in SKIPPED:
-        sys.stderr.write(f"gh-stack-view: warning: skipped worktree {line}\n")
+            problems.append(f"discovery incomplete: {len(SKIPPED)} catalog/worktree diagnostic(s)")
+            landing["landable"] = None
+            landing["reason"] = "local catalog discovery incomplete"
+        def chain_unknown(row):
+            if row.get("base_ok") is None or row.get("origin_ok") is None:
+                return True
+            if row["pr"]:
+                return any(row["provenance"].get(field, {}).get("freshness") != "fresh"
+                           for field in ("state", "baseRefName", "headRefOid"))
+            absent = row["branch_observation"]
+            return absent.get("exists") is not False or absent.get("freshness") != "fresh"
+        coherent = False if problems else (None if any(chain_unknown(r) for r in active) else True)
+        any_problem |= coherent is not True or conflicts["clean"] is not True
+        entry = {"trunk": st["trunk"], "trunk_origin": trunk_origin, "id": st.get("id"), "number": st.get("number"),
+                 "worktree": st.get("worktree"), "branches": st["branches"], "rows": rows, "problems": problems,
+                 "notes": notes, "coherent": coherent, "landing": landing, "local_mergeability": conflicts}
+        report.append(entry)
+    changed_epoch = read_local_snapshot(remote, run_fn=run)["fingerprint"] != snapshot["fingerprint"]
+    if changed_epoch:
+        any_problem = True
+        for entry in report:
+            entry["coherent"] = None
+            entry["landing"]["landable"] = None
+            entry["local_mergeability"]["clean"] = None
+            entry["problems"].append("snapshot changed during evaluation; retry local status")
+    payload = {"schema_version": 1, "success": True, "stacks": report, "hidden": hidden, "coherent": not any_problem,
+               "catalogs": snapshot.get("catalogs", []),
+               "skipped_worktrees": SKIPPED, "warnings": list(dict.fromkeys(SKIPPED + client.warnings)),
+               "git_observation": git_observation, "observations": client.observations, "metrics": client.metrics,
+               "snapshot_id": hashlib.sha256((snapshot["fingerprint"] + str(client.snapshot_id)).encode()).hexdigest()[:24]}
+    write_snapshot(previous_path, payload)
     if args.json:
-        print(json.dumps({"stacks": report, "hidden": hidden, "coherent": not any_problem, "skipped_worktrees": SKIPPED}, indent=2))
+        print(json.dumps(payload, indent=2))
     else:
+        blocks = [render_table(entry, entry["rows"], entry["problems"], entry["notes"], entry["landing"],
+                               trunk_origin=entry["trunk_origin"], full=getattr(args, "full", False), coherent=entry["coherent"])
+                  for entry in report]
         print("\n\n".join(blocks))
-        print()
+        print(f"snapshot {payload['snapshot_id']}; git {git_observation['source']}; {len(report)} stack(s); hosted observations age/source in --json")
         if hidden:
             print(f"hidden: {hidden} merged/closed/other-trunk stack(s); --all to show")
+        for warning in payload["warnings"][:5]:
+            print("warning: " + warning)
+        if len(payload["warnings"]) > 5:
+            print(f"warnings: {len(payload['warnings'])} total; --json for all")
+        if changed_epoch:
+            print("snapshot changed: results are unknown; retry local status")
         print(legend())
     return 1 if any_problem else 0
 

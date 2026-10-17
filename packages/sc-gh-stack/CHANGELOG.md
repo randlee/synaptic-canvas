@@ -5,6 +5,11 @@ All notable changes to the **sc-gh-stack** package will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- Stack reports derive local state first, share bounded hosted observations across worktrees, and support scoped refreshes and complete JSON/full output. Recipes reuse sufficient evidence while preserving verification, ownership and recovery requirements.
+
 ## [0.1.1] - 2026-09-23
 
 ### Changed

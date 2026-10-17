@@ -82,7 +82,7 @@ Bottom-to-top arguments; each a branch name, PR#, or PR URL (numeric tries PR# f
 
 Order: fetch → reconcile GitHub's stack (pulls remotely-added branches; non-interactive divergence aborts) → fast-forward trunk → cascade-rebase (handles squash-merges via `--onto`; conflict restores all branches, exits **3**) → push atomically → refresh PR state → sync stack object (additive, 2+ PRs only) → prune (only with `--prune`, non-interactive).
 
-**Field note:** on divergence, sync prints `ℹ Sync aborted`, changes nothing, and **exits 0** — not a success signal here. Check stderr for that message, or diff `view --json` before/after.
+**Field note:** on divergence, sync prints `ℹ Sync aborted`, changes nothing, and **exits 0** — not a success signal here. Check stderr and the affected local catalog/heads; use scoped helper JSON if the outcome is not already known.
 
 ## rebase
 
@@ -93,6 +93,10 @@ Order: fetch → reconcile GitHub's stack (pulls remotely-added branches; non-in
 ## view
 
 `gh stack view --json` — always `--json`; bare/`--short` are for humans, may open a TUI.
+
+This upstream command refreshes remote state; routine status uses
+`gh_stack_view.py --stack <number-or-branch> --json` instead, which derives
+local state and shares observations before acquiring missing hosted facts.
 
 ```json
 {
@@ -129,7 +133,7 @@ Removes the stack **grouping** only — never deletes PRs/branches. No argument 
 
 No arg → current stack; PR# → that PR + everything below; stack# → every unmerged PR in it. **All-or-nothing.** Only open/not-draft checked pre-merge; branch protection/rules evaluated by GitHub at merge time. A merge queue on the base overrides: queued instead, queue picks the method (flag ignored with a warning), PRs may land in separate groups.
 
-**Field note:** `merge` blocks the whole set on "not a linear descendant" or "out-of-date with base" — it doesn't selectively skip a bad layer. A scoped `gh stack merge <lower-pr>` can sweep in an upper *empty* draft too (GitHub marks it merged, deletes its branch). Read full `branches[]` from `view --json` before scoping.
+**Field note:** `merge` blocks the whole set on "not a linear descendant" or "out-of-date with base" — it doesn't selectively skip a bad layer. A scoped `gh stack merge <lower-pr>` can sweep in an upper *empty* draft too (GitHub marks it merged, deletes its branch). Inspect complete `stacks[].branches[]` from sufficient evidence or scoped helper JSON before scoping.
 
 **Field note:** `gh pr merge` on a stacked PR: `must be merged using the asynchronous merge REST API`. Working fallback (poll until `"merged"`; an abbreviated SHA fails with the misleading `Pull request head branch was modified` — always pass the full 40-char `headRefOid`):
 ```bash
@@ -163,12 +167,11 @@ Status messages go to **stderr** (`✓`/`✗`/`⚠`/`ℹ` prefixes); data output
 ## Parsing `--json` with jq
 
 ```bash
-output=$(gh stack view --json)
-echo "$output" | jq '[.branches[] | select(.needsRebase)] | length'      # needs rebase?
-echo "$output" | jq -r '.branches[] | select(.pr.state=="OPEN") | .pr.url'
-echo "$output" | jq -r '.branches[] | select(.isMerged) | .name'         # merged branches
-echo "$output" | jq -r '.currentBranch, .trunk'
-echo "$output" | jq '[.branches[] | .isMerged] | all'                    # fully merged?
+output=$(python3 .claude/scripts/gh_stack_view.py --stack <branch> --json)
+echo "$output" | jq '[.stacks[].branches[] | select(.needsRebase)] | length'
+echo "$output" | jq -r '.stacks[].branches[] | select(.isMerged) | .name'
+echo "$output" | jq -r '.stacks[].trunk'
+# Unknown/missing lifecycle is not proof of merged state; inspect provenance.
 ```
 
 ## Known limitations

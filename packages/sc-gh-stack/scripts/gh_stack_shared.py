@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import subprocess
 import sys
+import json
 from typing import Callable
 
 GIT_TIMEOUT = 60
@@ -18,9 +19,14 @@ GH_TIMEOUT = 120
 class ToolError(Exception):
     """A required external command is missing or failed; message is actionable."""
 
+    def __init__(self, message: str, code: str = "TOOL.ERROR", details=None):
+        super().__init__(message)
+        self.code = code
+        self.details = details
 
-def run(cmd: list[str], *, check: bool = True, cwd: str | None = None) -> subprocess.CompletedProcess[str]:
-    timeout = GH_TIMEOUT if cmd and cmd[0] == "gh" else GIT_TIMEOUT
+
+def run(cmd: list[str], *, check: bool = True, cwd: str | None = None, timeout: float | None = None) -> subprocess.CompletedProcess[str]:
+    timeout = timeout if timeout is not None else (GH_TIMEOUT if cmd and cmd[0] == "gh" else GIT_TIMEOUT)
     try:
         proc = subprocess.run(cmd, text=True, capture_output=True, cwd=cwd, timeout=timeout)
     except subprocess.TimeoutExpired as exc:
@@ -42,7 +48,7 @@ def hint_for(text: str) -> str:
     """Append the next action for the failure signatures gh and git actually produce."""
     low = text.lower()
     if "rate limit" in low or "secondary" in low or "abuse" in low:
-        return "; GitHub rate limit: stop all gh calls for 30 min, or use --no-pr for a local-only view"
+        return "; GitHub rate limit: honor Retry-After/reset and shared cooldown; --no-pr avoids API calls"
     if "auth" in low or "401" in low or "token" in low or "not logged" in low:
         return "; run `gh auth status` / `gh auth login`"
     if "could not resolve host" in low or "network" in low or "timed out" in low or "connection" in low:
@@ -58,9 +64,9 @@ def short(sha: str | None) -> str:
     return (sha or "")[:9] or "-"
 
 
-def origin_sha(ref: str) -> str | None:
+def origin_sha(ref: str, remote: str = "origin") -> str | None:
     """None when the branch is not on origin (unpushed or deleted after merge)."""
-    proc = run(["git", "rev-parse", "--verify", "--quiet", f"origin/{ref}"], check=False)
+    proc = run(["git", "rev-parse", "--verify", "--quiet", f"refs/remotes/{remote}/{ref}"], check=False)
     return proc.stdout.strip() or None
 
 
@@ -79,17 +85,26 @@ def utf8_stdout() -> None:
                 pass
 
 
-def guarded(tag: str, body: Callable[[], int]) -> int:
+def guarded(tag: str, body: Callable[[], int], *, json_errors: bool = False) -> int:
     """Run ``body``; every failure is one ``<tag>: ...`` line on stderr and exit 2, never a traceback."""
     utf8_stdout()
     try:
         return body()
     except ToolError as exc:
+        if json_errors:
+            error = {"code": exc.code, "message": str(exc)}
+            if exc.details is not None:
+                error["details"] = exc.details
+            print(json.dumps({"schema_version": 1, "success": False,
+                              "error": error}))
         sys.stderr.write(f"{tag}: {exc}\n")
         return 2
     except KeyboardInterrupt:
         sys.stderr.write(f"{tag}: interrupted\n")
         return 2
     except Exception as exc:  # noqa: BLE001 - the contract is "never a traceback"
+        if json_errors:
+            print(json.dumps({"schema_version": 1, "success": False,
+                              "error": {"code": "INTERNAL.ERROR", "message": str(exc)}}))
         sys.stderr.write(f"{tag}: unexpected {type(exc).__name__}: {exc} (report this with the command you ran)\n")
         return 2

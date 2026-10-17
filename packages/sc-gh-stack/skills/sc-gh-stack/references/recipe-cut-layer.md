@@ -14,12 +14,13 @@ docs or evidence layer. The layer is a new worktree cut from the current
 
 ## Steps
 
-1. Status: `/sc-gh-stack-view`. Note the top branch and its origin SHA.
+1. From sufficient existing observations, note the top branch and its remote
+   SHA. If missing, use `/sc-gh-stack-view --stack <branch> --json`.
 
 2. Verify the top is pushed and contains every lower layer:
 
    ```bash
-   git fetch origin
+   git fetch origin                       # once, if relevant refs are not already current
    git rev-parse --verify origin/<top>
    for lower in <every open layer below top>; do
      git merge-base --is-ancestor origin/$lower origin/<top> && echo "ok $lower" || echo "MISSING $lower"
@@ -69,5 +70,6 @@ appended commit.
 
 ## Finish
 
-`/sc-gh-stack-view` after the link. Record the stack number if the link
-printed a new one.
+Verify the affected bases and pushed heads after the link using its response
+and sufficient observations, or a scoped `/sc-gh-stack-view --stack <layer>`.
+Record the stack number if the link printed a new one.

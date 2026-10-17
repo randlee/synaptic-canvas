@@ -48,8 +48,9 @@ Delegates to the `sc-gh-stack` skill. For `--cut`, `--link`, `--restack` and
 Rules the command enforces regardless of option:
 
 - Every `gh stack` write command (`link`, `unstack`, `sync`, `rebase`,
-  `merge`) is run only by the stack writer, only after `/sc-gh-stack-view`,
-  and is followed by `/sc-gh-stack-view` again.
+  `merge`) is run only by the stack writer with sufficient evidence for its
+  preconditions. Reconcile affected facts before dependent work; reuse
+  sufficient observations and mutation responses instead of repeating scans.
 - Creating or re-creating a stack is one `gh stack link --base <trunk>` with
   the full ordered list; `gh stack link <stack#> <pr#>` only appends on top.
   Landing is `gh stack merge <stack#> --yes --merge`, never `--squash`.

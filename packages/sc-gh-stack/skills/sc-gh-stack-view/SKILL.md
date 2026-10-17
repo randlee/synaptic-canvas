@@ -1,7 +1,7 @@
 ---
 name: sc-gh-stack-view
 version: 0.1.1
-description: One-call coherence, mergeability, CI and LANDING table for every open gh stack. Use for any stacked-PR status question, before and after every link, unstack, rebase or merge, or /sc-gh-stack-view. Never check layers one branch at a time.
+description: Report local stack coherence and content conflicts, hosted merge eligibility and CI. Use for stacked-PR status questions or /sc-gh-stack-view; reuse sufficient observations rather than checking layers individually.
 entry_point: /sc-gh-stack-view
 ---
 
@@ -11,12 +11,13 @@ Read-only stack status. One command replaces the "one `gh pr view` per branch"
 habit, which never shows the two things that actually break stacks:
 
 1. **Base coherence** - is each layer's base SHA the head SHA of the layer
-   below (and the bottom layer's base the trunk head)? Only
-   `gh stack view --json` exposes `head` and `base`; `gh pr view` does not.
-2. **Rebase / mergeability** - `needsRebase` from gh stack plus GitHub's
+   below (and the bottom layer's base the trunk head)? Local catalogs and
+   git refs provide recorded bases and actual heads without extension views.
+2. **Rebase / mergeability** - local content-conflict checks for every
+   intended base/head pair and top/trunk, separately from GitHub's
    `mergeable` and `mergeStateStatus` (`CONFLICTING`, `BEHIND`, `DIRTY`,
-   `BLOCKED`, `CLEAN`). `gh pr list` and `gh pr checks` do not return
-   `needsRebase`, and `gh pr checks` output must never be text-parsed.
+   `BLOCKED`, `CLEAN`). Clean git merges do not establish hosted policy
+   eligibility. Missing evidence is unknown; never text-parse `gh pr checks`.
 
 The script also compares every local head against `origin/<branch>` and the
 PR's `headRefOid`, so stale local tracking (someone else rebased the stack) is
@@ -24,14 +25,15 @@ caught before anyone runs `gh stack sync` on top of it.
 
 ## Step 1 — Verify gh, gh-stack extension, git, python3
 
-Before running the script, confirm the toolchain is present:
+Check tool availability once at setup or after a version change/failure.
+Local reports need git and Python; gh/auth is needed only for hosted reads,
+and the extension only for extension operations:
 
 ```bash
 which gh && gh --version            # >= 2.0
 gh extension list | grep -i stack && gh stack --version   # github/gh-stack v0.1.0
 which git && git --version          # >= 2.38
 python3 --version                   # >= 3.9
-gh auth status                      # needed unless --no-pr
 ```
 
 If any is missing, probe the usual off-PATH locations first (Claude Code's
@@ -48,23 +50,39 @@ done
 
 Found off-PATH: `export PATH="<dir>:$PATH"` for this session. Still missing,
 below the floors (git < 2.38, gh < 2.0, python3 < 3.9), or no gh-stack
-extension: read `references/installation-and-troubleshooting.md` and stop;
-do not work around a missing `gh`, `gh-stack` or `git`.
+extension for an extension operation: read
+`references/installation-and-troubleshooting.md` and stop dependent work.
+API-free reporting can still expose useful local evidence and unknowns.
 
 ## Usage
 
 ```
-/sc-gh-stack-view [--trunk <branch> | --phase aw] [--all] [--no-fetch] [--no-pr] [--json]
+/sc-gh-stack-view [--trunk <branch> | --phase aw] [--stack <number-or-branch>] [--remote origin] [--all] [--full] [--refresh-git] [--refresh-status] [--refresh] [--no-fetch] [--no-pr] [--json]
 ```
 
 Run from anywhere in the repo, normally the main checkout on `develop` or
-`main`. The script discovers every stack by running `gh stack view --json` in
-each worktree from `git worktree list` (concurrently), keeps the longest view
-of each stack (a lower-layer worktree only sees the layers linked from it),
-and joins them into one report. The default view shows every stack that still
+`main`. The script reads common and legacy worktree catalogs locally, validates
+their composition, and derives git state before selecting missing hosted facts.
+It never invokes `gh stack view` per worktree. The default view shows every stack that still
 has an open layer, on any trunk. `--trunk`/`--phase` narrows to one trunk
 (`--phase` is shorthand for `--trunk integrate/phase-<x>`); `--all` also shows
 merged/closed stacks. Hidden stacks are counted on a `hidden:` line.
+
+Default reports reuse sufficient shared observations and acquire only required
+missing or stale remote facts in bounded batches. `--refresh-git` coordinates
+one fetch for the selected remote (default `origin`); `--refresh-status` renews
+hosted observations; `--refresh` does both. A fetch does not refresh CI or
+reviews. `--no-fetch` forbids fetching; `--no-pr` forbids GitHub API calls,
+including numeric-identifier resolution. Failed fetches, missing objects or
+history, stale hosted facts and unavailable API budget remain explicit unknowns.
+Do not repeat reports when existing evidence answers the next operation.
+
+Text summaries show at most ten layer rows and count all blockers/unknowns.
+`--full` shows all rows without forcing refresh; `--json` is always complete and
+includes provenance, observation age, exact SHAs and unknown reasons.
+Shared observations live under the common repository's
+`.sc/sc-gh-stack/output/`; nonsecret cooldowns under `~/.sc/sc-gh-stack/`.
+No tokens are stored. Respect reported cooldowns; do not retry via another protocol.
 
 ```bash
 python3 .claude/scripts/gh_stack_view.py --trunk develop
@@ -78,24 +96,25 @@ Exit codes:
 
 | Code | Meaning |
 |------|---------|
-| 0 | every shown stack coherent |
-| 1 | problems listed under a VERDICT |
+| 0 | every shown chain coherent and local conflict checks complete/clean; not hosted merge authorization |
+| 1 | problems or unknown required local/chain observations |
 | 2 | nothing to show or the environment failed; stderr says which (see Errors) |
 
 ## Errors
 
-Every failure is one `gh-stack-view: ...` line on stderr with the next action,
-never a traceback. Exit 2 covers all of these, so read the line:
+Environment/discovery failures produce one `gh-stack-view: ...` stderr line,
+never a traceback; `--json` also emits a structured error. Hosted failures
+retain useful local output with qualified observations rather than failing it:
 
-- `git`/`gh` not on PATH, gh-stack extension missing (`gh extension install github/gh-stack`), not inside a git repository.
-- `gh repo view` / `gh api graphql` failure: run `gh auth status`; `--no-pr` gives a local-only view meanwhile.
+- `git` not on PATH or not inside a git repository. `gh` is needed only for requested hosted acquisition; the extension is not needed for reporting.
+- Hosted acquisition failure: inspect the reported auth/cooldown reason; `--no-pr` gives an API-free view meanwhile.
 - GraphQL errors, null data or non-JSON output: same, with the PR numbers named.
-- `gh stack view --json` returning an unexpected shape: upgrade gh-stack.
+- Malformed or conflicting local catalogs: reconcile tracking using the stale-tracking recipe.
 - No open stack found: the line reports how many merged/closed/other-trunk stacks were hidden; use `--trunk`, `--phase` or `--all`.
 
-Non-fatal: a failed `git fetch origin` is warned once and the rebase column
-shows ❓ instead of comparing against stale refs. Pruned or unreadable
-worktrees are skipped silently (`git worktree prune` cleans them up).
+Non-fatal: a failed requested fetch is qualified explicitly rather than
+claiming fresh remote heads. Missing refs/history and hosted failures retain
+useful local evidence with unknown reasons.
 
 ## Output
 
@@ -106,26 +125,29 @@ substituting its own per-branch lookups. Example (as it should appear):
 
 stack: fix/aw-pool-read-migration -> integrate/phase-aw @ 0e640b20a
 
-| L | PR | rebase | merge | CI |
-|---|---|---|---|---|
-| 1/2 | #1242 | ✅ | 🚧 | 🌀 |
-| 2/2 | #1244 | ✅ | 🚧 | 🌀 |
+| L | PR | rebase | local conflict | GitHub | CI |
+|---|---|---|---|---|---|
+| 1/2 | #1242 | ✅ | clean | 🚧 | 🌀 |
+| 2/2 | #1244 | ✅ | clean | 🚧 | 🌀 |
 
-VERDICT: ✅ COHERENT - every base == parent head, every head pushed and on its PR
+VERDICT: ✅ COHERENT - observed local/fetched chain; hosted eligibility is separate
 
 | Column | Source | Icons |
 |--------|--------|-------|
 | L | layer / stack depth, bottom first | |
-| rebase | `gh stack view --json` `head`/`base`/`needsRebase`, `origin/<branch>` after one fetch, PR `headRefOid` | ✅ not needed (base==parent head and local==origin==PR) · ⚠️ needed · 🔄 local tracking stale, fetch+reset before any sync · ❓ unknown (`--no-fetch`) · 🏁 merged |
-| merge | one GraphQL query: `mergeable`, `mergeStateStatus`, `isDraft`; gh stack `isMerged`/`isQueued` | ✅ mergeable now · 🚧 blocked (conflicting, behind, draft, queued, required checks, still computing) · 🏁 merged |
-| CI | same query, `statusCheckRollup.state` of the head commit | ✅ green · 🌀 running · ⛔ failed, do not enter · — none |
+| rebase | local catalog bases, git heads and remote-tracking refs; hosted `headRefOid` when available | ✅ coherent · ⚠️ drift · 🔄 stale tracking · ❓ unknown · 🏁 merged |
+| local conflict | every intended parent/head and combined top/trunk git merge probe | clean · CONFLICT · unknown; not hosted eligibility |
+| GitHub | cached/batched `mergeable`, `mergeStateStatus`, draft/lifecycle facts | ✅ observed mergeable, not authorization · 🚧 blocked · ❓ stale/unknown · 🏁 merged |
+| CI | hosted `statusCheckRollup.state` with provenance and age | ✅ green · 🌀 running · ⛔ failed, do not enter · ❓ unknown · — none |
 
 `VERDICT` names the branch and the owner action for every problem (SHAs
 appear there, not in the table). The lowest OPEN layer (layer 1, or the first
 layer above already-merged ones) merely behind trunk is a note, not a problem:
 do not rebase a layer whose CI could go green just to catch up with trunk. The legend is printed once at the end. `--json` emits
-`stacks[].rows[]`, `problems[]`, `notes[]`, `coherent` for agents that need to
-branch on the result.
+`stacks[].rows[]`, `problems[]`, `notes[]`, `coherent` plus complete
+`stacks[].branches[]` (`name`, actual `head`, `recorded_head`, `base`,
+`isMerged`, `isQueued`, `needsRebase`, `pr`) for agents that need to branch on
+the result. Inspect exact SHAs and unknown reasons before acting.
 
 If you see stale local tracking (🔄, or a false `NOT COHERENT` with `-` rows
 right after an `unstack`), that is fixed by the recipe in
@@ -137,11 +159,11 @@ script harder.
 - This is **the** status call for stacks. Do not fan out `gh pr view` per
   branch; that costs N calls and still misses base coherence and needsRebase.
 - The script is read-only. `gh stack sync` and `gh stack rebase` rewrite and
-  force-push every layer; only the stack writer runs them, and only after this
-  rebase column shows ✅ on every layer (otherwise sync re-rebases stale local
+  force-push every layer; only the stack writer runs them, and only with
+  sufficient exact-head evidence for every layer (otherwise sync re-rebases stale local
   heads over someone else's push and turns PRs CONFLICTING).
-- After ANY merge or rebase on a stack, run this again and reconcile before
-  dispatching dev or QA against a layer.
+- After a mutation, reconcile affected facts before dependent work. Reuse
+  sufficient mutation responses; refresh only missing or invalidated evidence.
 - Draft PRs block `gh stack merge`; the table flags them.
 
 ## Related

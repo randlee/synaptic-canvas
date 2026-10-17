@@ -1,0 +1,962 @@
+{
+  "schema": "plan-anchoring/run/1",
+  "run_id": "plan-20261015T071301Z-E1",
+  "gate": "plan",
+  "created_at": "2026-10-15T07:13:01+00:00",
+  "anchors_path": "/Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sc-gh-stack-api-efficiency/doc/plan/sc-gh-stack-api-efficiency/anchors.json",
+  "plan": "sc-gh-stack-api-efficiency",
+  "item": {
+    "id": "E1",
+    "title": "Economical stack state",
+    "source": "/Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sc-gh-stack-api-efficiency/doc/plan/sc-gh-stack-api-efficiency/sprint-E1.md",
+    "chars": 9459,
+    "truncated": false,
+    "chars_before_reduction": 9459,
+    "code_reduced": {
+      "blocks": 0,
+      "lines": 0
+    }
+  },
+  "model_requested": "jev-latest",
+  "model_answered": "jev-1.13.0",
+  "threshold": 0.6,
+  "max_request_bytes": 24000,
+  "min_item_chars": 2000,
+  "dry_run": false,
+  "fixture": false,
+  "results": [
+    {
+      "anchor_id": "ANC-001",
+      "source_type": "ANC",
+      "source_ref": null,
+      "statement": "The sc-gh-stack redesign must reduce burst GraphQL request volume for the same stack operations compared with the current scripts.",
+      "quote": "we need to redesign the scripts & recommended sc-gh-stack and sc-gh-stack-view to be more conservative on gh graphql budget, particularly burst.",
+      "stated_by": "randlee",
+      "stated_at": "2026-10-14",
+      "context": "Explicit user instruction: yes, lock down the approved statements; recipe git-call substitution clarification applies. Prior inconclusive capture results remain recorded, not passes.",
+      "anchor_version": 1,
+      "question_set": {
+        "gate": "plan",
+        "version": 1,
+        "overridden": true
+      },
+      "questions_sha256": "33aed55c56d3b8a176dcb8639d27041f08ef100eea2e5e10202cb6b9ea6fc987",
+      "deterministic_check": "Compare documented request paths and mocked request counts for equivalent operations.",
+      "kind": "directive",
+      "leaning": "satisfied",
+      "questions": {
+        "relevant": {
+          "criteria": {
+            "no": "The item concerns unrelated work outside that scope.",
+            "unclear": "The item is too vague to determine scope overlap.",
+            "yes": "The item changes or discusses work governed by this scope: Changes to API scheduling or status recommendations in sc-gh-stack scripts and the sc-gh-stack/sc-gh-stack-view skills."
+          },
+          "instructions": "Would the work described in `item.text` fall within the scope of this anchor? Decide only applicability. Obligation: The sc-gh-stack redesign must reduce burst GraphQL request volume for the same stack operations compared with the current scripts.",
+          "type": "choice"
+        },
+        "addressed": {
+          "criteria": {
+            "no": "The item omits this obligation, only mentions its topic, or explicitly chooses an incompatible approach. Silence is no.",
+            "unclear": "The wording leaves whether the specific obligation is included unresolved.",
+            "yes": "The item explicitly commits to this specific obligation: The sc-gh-stack redesign must reduce burst GraphQL request volume for the same stack operations compared with the current scripts."
+          },
+          "instructions": "Is the specific required behavior expressly planned in `item.text`, allowing equivalent wording? Generic topic mention and silence do not include it. Obligation: The sc-gh-stack redesign must reduce burst GraphQL request volume for the same stack operations compared with the current scripts.",
+          "type": "choice"
+        },
+        "contradicted": {
+          "criteria": {
+            "no": "No incompatible decision is stated. Silence, topical discussion, and permitted necessary remote calls are not conflict.",
+            "unclear": "An explicit decision is ambiguous as to whether it conflicts.",
+            "yes": "The item explicitly adopts an approach incompatible with this obligation: The sc-gh-stack redesign must reduce burst GraphQL request volume for the same stack operations compared with the current scripts."
+          },
+          "instructions": "Is there an express plan in `item.text` that breaks the required behavior? A missing commitment alone does not break it. Obligation: The sc-gh-stack redesign must reduce burst GraphQL request volume for the same stack operations compared with the current scripts.",
+          "type": "choice"
+        }
+      },
+      "verdict": "satisfied",
+      "answers": {
+        "relevant": {
+          "type": "choice",
+          "choice": "yes",
+          "confidence": 1.0,
+          "probabilities": {
+            "no": 0.0,
+            "unclear": 0.0,
+            "yes": 1.0
+          }
+        },
+        "addressed": {
+          "type": "choice",
+          "choice": "yes",
+          "confidence": 1.0,
+          "probabilities": {
+            "no": 0.0,
+            "unclear": 0.0,
+            "yes": 1.0
+          }
+        },
+        "contradicted": {
+          "type": "choice",
+          "choice": "no",
+          "confidence": 1.0,
+          "probabilities": {
+            "no": 1.0,
+            "unclear": 0.0,
+            "yes": 0.0
+          }
+        }
+      },
+      "min_confidence": 1.0,
+      "explanation": "The directive is carried forward.",
+      "usage": {
+        "input_tokens": 2898,
+        "output_tokens": 117
+      },
+      "attempts": 1,
+      "item_chars_sent": 9459,
+      "item_shortened": false,
+      "request_bytes": 12193
+    },
+    {
+      "anchor_id": "ANC-002",
+      "source_type": "ANC",
+      "source_ref": null,
+      "statement": "Remote information gathering in sc-gh-stack must be limited to information still required for the current operation.",
+      "quote": "We want to eliminate redundant/conservative information gathering.",
+      "stated_by": "randlee",
+      "stated_at": "2026-10-14",
+      "context": "Explicit user instruction: yes, lock down the approved statements; recipe git-call substitution clarification applies. Prior inconclusive capture results remain recorded, not passes.",
+      "anchor_version": 1,
+      "question_set": {
+        "gate": "plan",
+        "version": 1,
+        "overridden": true
+      },
+      "questions_sha256": "cf87712facfc0486ea89edd3e64494792ffa7b30f50393ba9a4fe9529ecb0690",
+      "deterministic_check": "Trace each planned remote read to a consumer and identify whether existing sufficient observations can supply it.",
+      "kind": "directive",
+      "leaning": "satisfied",
+      "questions": {
+        "relevant": {
+          "criteria": {
+            "no": "The item concerns unrelated work outside that scope.",
+            "unclear": "The item is too vague to determine scope overlap.",
+            "yes": "The item changes or discusses work governed by this scope: Adds or changes information gathering in stack scripts or the two stack skills' recommendations."
+          },
+          "instructions": "Determine whether `item.text` concerns the script behavior or recommendation governed here. Ignore whether it obeys the requirement. Obligation: Remote information gathering in sc-gh-stack must be limited to information still required for the current operation.",
+          "type": "choice"
+        },
+        "addressed": {
+          "criteria": {
+            "no": "The item omits this obligation, only mentions its topic, or explicitly chooses an incompatible approach. Silence is no.",
+            "unclear": "The wording leaves whether the specific obligation is included unresolved.",
+            "yes": "The item explicitly commits to this specific obligation: Remote information gathering in sc-gh-stack must be limited to information still required for the current operation."
+          },
+          "instructions": "Look for a concrete commitment in `item.text` to the required behavior below. Merely reviewing its subject is insufficient. Obligation: Remote information gathering in sc-gh-stack must be limited to information still required for the current operation.",
+          "type": "choice"
+        },
+        "contradicted": {
+          "criteria": {
+            "no": "No incompatible decision is stated. Silence, topical discussion, and permitted necessary remote calls are not conflict.",
+            "unclear": "An explicit decision is ambiguous as to whether it conflicts.",
+            "yes": "The item explicitly adopts an approach incompatible with this obligation: Remote information gathering in sc-gh-stack must be limited to information still required for the current operation."
+          },
+          "instructions": "Identify whether `item.text` commits to an incompatible behavior below. Do not treat silence or an unspecified detail as an opposing commitment. Obligation: Remote information gathering in sc-gh-stack must be limited to information still required for the current operation.",
+          "type": "choice"
+        }
+      },
+      "verdict": "satisfied",
+      "answers": {
+        "relevant": {
+          "type": "choice",
+          "choice": "yes",
+          "confidence": 1.0,
+          "probabilities": {
+            "no": 0.0,
+            "unclear": 0.0,
+            "yes": 1.0
+          }
+        },
+        "addressed": {
+          "type": "choice",
+          "choice": "yes",
+          "confidence": 1.0,
+          "probabilities": {
+            "no": 0.0,
+            "unclear": 0.0,
+            "yes": 1.0
+          }
+        },
+        "contradicted": {
+          "type": "choice",
+          "choice": "no",
+          "confidence": 1.0,
+          "probabilities": {
+            "no": 1.0,
+            "unclear": 0.0,
+            "yes": 0.0
+          }
+        }
+      },
+      "min_confidence": 1.0,
+      "explanation": "The directive is carried forward.",
+      "usage": {
+        "input_tokens": 2856,
+        "output_tokens": 117
+      },
+      "attempts": 1,
+      "item_chars_sent": 9459,
+      "item_shortened": false,
+      "request_bytes": 12089
+    },
+    {
+      "anchor_id": "ANC-003",
+      "source_type": "ANC",
+      "source_ref": null,
+      "statement": "The sc-gh-stack scripts must evaluate locally derivable state before requesting that state through GraphQL.",
+      "quote": "we want to determine state locally if possible before graphql calls.",
+      "stated_by": "randlee",
+      "stated_at": "2026-10-14",
+      "context": "Explicit user instruction: yes, lock down the approved statements; recipe git-call substitution clarification applies. Prior inconclusive capture results remain recorded, not passes.",
+      "anchor_version": 1,
+      "question_set": {
+        "gate": "plan",
+        "version": 1,
+        "overridden": true
+      },
+      "questions_sha256": "adb2366ad93f71d1e7c86446192192d0699fb7dbc7270b91924cb0c684c3585f",
+      "deterministic_check": "Inspect call ordering and branch conditions for local state resolution before GraphQL selection.",
+      "kind": "directive",
+      "leaning": "satisfied",
+      "questions": {
+        "relevant": {
+          "criteria": {
+            "no": "The item concerns unrelated work outside that scope.",
+            "unclear": "The item is too vague to determine scope overlap.",
+            "yes": "The item changes or discusses work governed by this scope: Changes stack discovery, state derivation, or a GraphQL request path in the stack scripts."
+          },
+          "instructions": "Determine whether `item.text` concerns the script behavior or recommendation governed here. Ignore whether it obeys the requirement. Obligation: The sc-gh-stack scripts must evaluate locally derivable state before requesting that state through GraphQL.",
+          "type": "choice"
+        },
+        "addressed": {
+          "criteria": {
+            "no": "The item omits this obligation, only mentions its topic, or explicitly chooses an incompatible approach. Silence is no.",
+            "unclear": "The wording leaves whether the specific obligation is included unresolved.",
+            "yes": "The item explicitly commits to this specific obligation: The sc-gh-stack scripts must evaluate locally derivable state before requesting that state through GraphQL."
+          },
+          "instructions": "Look for a concrete commitment in `item.text` to the required behavior below. Merely reviewing its subject is insufficient. Obligation: The sc-gh-stack scripts must evaluate locally derivable state before requesting that state through GraphQL.",
+          "type": "choice"
+        },
+        "contradicted": {
+          "criteria": {
+            "no": "No incompatible decision is stated. Silence, topical discussion, and permitted necessary remote calls are not conflict.",
+            "unclear": "An explicit decision is ambiguous as to whether it conflicts.",
+            "yes": "The item explicitly adopts an approach incompatible with this obligation: The sc-gh-stack scripts must evaluate locally derivable state before requesting that state through GraphQL."
+          },
+          "instructions": "Identify whether `item.text` commits to an incompatible behavior below. Do not treat silence or an unspecified detail as an opposing commitment. Obligation: The sc-gh-stack scripts must evaluate locally derivable state before requesting that state through GraphQL.",
+          "type": "choice"
+        }
+      },
+      "verdict": "satisfied",
+      "answers": {
+        "relevant": {
+          "type": "choice",
+          "choice": "yes",
+          "confidence": 1.0,
+          "probabilities": {
+            "no": 0.0,
+            "unclear": 0.0,
+            "yes": 1.0
+          }
+        },
+        "addressed": {
+          "type": "choice",
+          "choice": "yes",
+          "confidence": 1.0,
+          "probabilities": {
+            "no": 0.0,
+            "unclear": 0.0,
+            "yes": 1.0
+          }
+        },
+        "contradicted": {
+          "type": "choice",
+          "choice": "no",
+          "confidence": 1.0,
+          "probabilities": {
+            "no": 1.0,
+            "unclear": 0.0,
+            "yes": 0.0
+          }
+        }
+      },
+      "min_confidence": 1.0,
+      "explanation": "The directive is carried forward.",
+      "usage": {
+        "input_tokens": 2878,
+        "output_tokens": 117
+      },
+      "attempts": 1,
+      "item_chars_sent": 9459,
+      "item_shortened": false,
+      "request_bytes": 12023
+    },
+    {
+      "anchor_id": "ANC-004",
+      "source_type": "ANC",
+      "source_ref": null,
+      "statement": "The sc-gh-stack redesign must prefer REST to GraphQL when REST supplies the required information at lower quota cost.",
+      "quote": "use cheap rest calls to conserve budget.",
+      "stated_by": "randlee",
+      "stated_at": "2026-10-14",
+      "context": "Explicit user instruction: yes, lock down the approved statements; recipe git-call substitution clarification applies. Prior inconclusive capture results remain recorded, not passes.",
+      "anchor_version": 1,
+      "question_set": {
+        "gate": "plan",
+        "version": 1,
+        "overridden": true
+      },
+      "questions_sha256": "5ebbc50da4fd764a1889ac66b102cf9734f565bade48874d72a9bcf135688843",
+      "deterministic_check": "Inspect source selection decisions for equivalent required information and their documented request costs.",
+      "kind": "directive",
+      "leaning": "satisfied",
+      "questions": {
+        "relevant": {
+          "criteria": {
+            "no": "The activity is unrelated.",
+            "unclear": "The activity cannot be identified.",
+            "yes": "The item touches the governed activity or its clear prerequisite."
+          },
+          "instructions": "Would the item modify the component that remotely gathers stack information or the decisions that choose REST versus GraphQL? Implementation maintenance of that reader counts as subject overlap; silence about source preference does not remove relevance. Prefer REST over GraphQL only when it provides equivalent required stack information at lower quota cost without equivalent request fanout.",
+          "type": "choice"
+        },
+        "addressed": {
+          "criteria": {
+            "no": "The commitment is absent or explicitly rejected.",
+            "unclear": "Only the topic is raised and the required commitment remains unresolved.",
+            "yes": "The required commitment is explicitly present, including legitimate conditional boundaries."
+          },
+          "instructions": "Does the item explicitly include the anchor obligation as a constraint or action? Silence is no; a topic mention with an unresolved policy is unclear. Prefer REST over GraphQL only when it provides equivalent required stack information at lower quota cost without equivalent request fanout.",
+          "type": "choice"
+        },
+        "contradicted": {
+          "criteria": {
+            "no": "No incompatible decision is present; silence and legitimate exceptions do not conflict.",
+            "unclear": "Described behavior is ambiguous between compatible and incompatible choices.",
+            "yes": "An explicit decision conflicts with the requirement under its applicable conditions."
+          },
+          "instructions": "Does the item explicitly adopt behavior incompatible with the anchor? Silence and an unresolved choice alone are no. Prefer REST over GraphQL only when it provides equivalent required stack information at lower quota cost without equivalent request fanout.",
+          "type": "choice"
+        }
+      },
+      "verdict": "satisfied",
+      "answers": {
+        "relevant": {
+          "type": "choice",
+          "choice": "yes",
+          "confidence": 1.0,
+          "probabilities": {
+            "no": 0.0,
+            "unclear": 0.0,
+            "yes": 1.0
+          }
+        },
+        "addressed": {
+          "type": "choice",
+          "choice": "yes",
+          "confidence": 1.0,
+          "probabilities": {
+            "no": 0.0,
+            "unclear": 0.0,
+            "yes": 1.0
+          }
+        },
+        "contradicted": {
+          "type": "choice",
+          "choice": "no",
+          "confidence": 1.0,
+          "probabilities": {
+            "no": 1.0,
+            "unclear": 0.0,
+            "yes": 0.0
+          }
+        }
+      },
+      "min_confidence": 1.0,
+      "explanation": "The directive is carried forward.",
+      "usage": {
+        "input_tokens": 2796,
+        "output_tokens": 117
+      },
+      "attempts": 1,
+      "item_chars_sent": 9459,
+      "item_shortened": false,
+      "request_bytes": 11803
+    },
+    {
+      "anchor_id": "ANC-005",
+      "source_type": "ANC",
+      "source_ref": null,
+      "statement": "The sc-gh-stack redesign must preserve reporting of stack mergeability.",
+      "quote": "is-mergeable is important and if it can be determined for entire stack locally is preferred.",
+      "stated_by": "randlee",
+      "stated_at": "2026-10-14",
+      "context": "Explicit user instruction: yes, lock down the approved statements; recipe git-call substitution clarification applies. Prior inconclusive capture results remain recorded, not passes.",
+      "anchor_version": 1,
+      "question_set": {
+        "gate": "plan",
+        "version": 1,
+        "overridden": true
+      },
+      "questions_sha256": "d87d238e7852b18dd3d50b5748437bf008809ed177df927c1307045a83b26ecd",
+      "deterministic_check": "Inspect the resulting report contract for a mergeability result rather than its removal to save quota.",
+      "kind": "directive",
+      "leaning": "satisfied",
+      "questions": {
+        "relevant": {
+          "criteria": {
+            "no": "The activity is unrelated.",
+            "unclear": "The activity cannot be identified.",
+            "yes": "The item touches the governed activity or its clear prerequisite."
+          },
+          "instructions": "Does the item concern the activity governed by this anchor? Judge subject overlap only. Preserve reporting of stack content-conflict mergeability, distinct from hosted checks, approvals and policy eligibility.",
+          "type": "choice"
+        },
+        "addressed": {
+          "criteria": {
+            "no": "The commitment is absent or explicitly rejected.",
+            "unclear": "Only the topic is raised and the required commitment remains unresolved.",
+            "yes": "The required commitment is explicitly present, including legitimate conditional boundaries."
+          },
+          "instructions": "Does the item explicitly include the anchor obligation as a constraint or action? Silence is no; a topic mention with an unresolved policy is unclear. Preserve reporting of stack content-conflict mergeability, distinct from hosted checks, approvals and policy eligibility.",
+          "type": "choice"
+        },
+        "contradicted": {
+          "criteria": {
+            "no": "No incompatible decision is present; silence and legitimate exceptions do not conflict.",
+            "unclear": "Described behavior is ambiguous between compatible and incompatible choices.",
+            "yes": "An explicit decision conflicts with the requirement under its applicable conditions."
+          },
+          "instructions": "Does the item explicitly adopt behavior incompatible with the anchor? Silence and an unresolved choice alone are no. Preserve reporting of stack content-conflict mergeability, distinct from hosted checks, approvals and policy eligibility.",
+          "type": "choice"
+        }
+      },
+      "verdict": "satisfied",
+      "answers": {
+        "relevant": {
+          "type": "choice",
+          "choice": "yes",
+          "confidence": 1.0,
+          "probabilities": {
+            "no": 0.0,
+            "unclear": 0.0,
+            "yes": 1.0
+          }
+        },
+        "addressed": {
+          "type": "choice",
+          "choice": "yes",
+          "confidence": 1.0,
+          "probabilities": {
+            "no": 0.0,
+            "unclear": 0.0,
+            "yes": 1.0
+          }
+        },
+        "contradicted": {
+          "type": "choice",
+          "choice": "no",
+          "confidence": 1.0,
+          "probabilities": {
+            "no": 1.0,
+            "unclear": 0.0,
+            "yes": 0.0
+          }
+        }
+      },
+      "min_confidence": 1.0,
+      "explanation": "The directive is carried forward.",
+      "usage": {
+        "input_tokens": 2755,
+        "output_tokens": 117
+      },
+      "attempts": 1,
+      "item_chars_sent": 9459,
+      "item_shortened": false,
+      "request_bytes": 11532
+    },
+    {
+      "anchor_id": "ANC-006",
+      "source_type": "ANC",
+      "source_ref": null,
+      "statement": "The sc-gh-stack redesign must prefer local computation of whole-stack mergeability when the required state can be determined locally.",
+      "quote": "is-mergeable is important and if it can be determined for entire stack locally is preferred.",
+      "stated_by": "randlee",
+      "stated_at": "2026-10-14",
+      "context": "Explicit user instruction: yes, lock down the approved statements; recipe git-call substitution clarification applies. Prior inconclusive capture results remain recorded, not passes.",
+      "anchor_version": 1,
+      "question_set": {
+        "gate": "plan",
+        "version": 1,
+        "overridden": true
+      },
+      "questions_sha256": "eaca8c45a79249e141371f01208a3e1ba574c697d9a6e5a27a03d5064e5feb9c",
+      "deterministic_check": "Inspect local mergeability coverage across the stack and reasons retained remote information cannot be derived locally.",
+      "kind": "directive",
+      "leaning": "satisfied",
+      "questions": {
+        "relevant": {
+          "criteria": {
+            "no": "The activity is unrelated.",
+            "unclear": "The activity cannot be identified.",
+            "yes": "The item touches the governed activity or its clear prerequisite."
+          },
+          "instructions": "Is the work within the anchor scope, including a clear prerequisite? Decide overlap, using the concrete obligation as context. Prefer local computation of content-conflict mergeability across the whole stack when the necessary state is locally available; scoped refresh of missing refs is allowed.",
+          "type": "choice"
+        },
+        "addressed": {
+          "criteria": {
+            "no": "The commitment is absent or explicitly rejected.",
+            "unclear": "Only the topic is raised and the required commitment remains unresolved.",
+            "yes": "The required commitment is explicitly present, including legitimate conditional boundaries."
+          },
+          "instructions": "Is the concrete requirement present in this item, in equivalent words? A step or constraint counts; topic-only deliberation is unclear and silence is no. Prefer local computation of content-conflict mergeability across the whole stack when the necessary state is locally available; scoped refresh of missing refs is allowed.",
+          "type": "choice"
+        },
+        "contradicted": {
+          "criteria": {
+            "no": "No incompatible decision is present; silence and legitimate exceptions do not conflict.",
+            "unclear": "Described behavior is ambiguous between compatible and incompatible choices.",
+            "yes": "An explicit decision conflicts with the requirement under its applicable conditions."
+          },
+          "instructions": "Does the item require an approach ruled out by this obligation? Missing coverage is no; unresolved possible conflict is unclear only when the described behavior itself is ambiguous. Prefer local computation of content-conflict mergeability across the whole stack when the necessary state is locally available; scoped refresh of missing refs is allowed.",
+          "type": "choice"
+        }
+      },
+      "verdict": "satisfied",
+      "answers": {
+        "relevant": {
+          "type": "choice",
+          "choice": "yes",
+          "confidence": 1.0,
+          "probabilities": {
+            "no": 0.0,
+            "unclear": 0.0,
+            "yes": 1.0
+          }
+        },
+        "addressed": {
+          "type": "choice",
+          "choice": "yes",
+          "confidence": 1.0,
+          "probabilities": {
+            "no": 0.0,
+            "unclear": 0.0,
+            "yes": 1.0
+          }
+        },
+        "contradicted": {
+          "type": "choice",
+          "choice": "no",
+          "confidence": 1.0,
+          "probabilities": {
+            "no": 1.0,
+            "unclear": 0.0,
+            "yes": 0.0
+          }
+        }
+      },
+      "min_confidence": 1.0,
+      "explanation": "The directive is carried forward.",
+      "usage": {
+        "input_tokens": 2817,
+        "output_tokens": 117
+      },
+      "attempts": 1,
+      "item_chars_sent": 9459,
+      "item_shortened": false,
+      "request_bytes": 11867
+    },
+    {
+      "anchor_id": "ANC-007",
+      "source_type": "ANC",
+      "source_ref": null,
+      "statement": "The sc-gh-stack redesign must preserve the stacking strategies and intended outcomes of established recipes when changing their git calls.",
+      "quote": "untouched may be a bit strong.  the recipe are strategies for stacking in challenging conditions.  we can change the git calls and accomplish the same goals.",
+      "stated_by": "randlee",
+      "stated_at": "2026-10-14",
+      "context": "Explicit user instruction: yes, lock down the approved statements; recipe git-call substitution clarification applies. Prior inconclusive capture results remain recorded, not passes.",
+      "anchor_version": 1,
+      "question_set": {
+        "gate": "plan",
+        "version": 1,
+        "overridden": true
+      },
+      "questions_sha256": "a18ccb0cef37d70cfec97fc1aa820798b34d1db06bf010843faade8c41aef263",
+      "deterministic_check": "Compare each changed recipe with its baseline strategy and intended outcome; prove git-call substitutions retain those goals and challenging-condition behavior.",
+      "kind": "prohibition",
+      "leaning": "satisfied",
+      "questions": {
+        "relevant": {
+          "criteria": {
+            "no": "The item is about a different part of the system or a different activity, and completing it would neither follow nor break the anchor.",
+            "unclear": "The item text is too vague to tell what part of the system it touches.",
+            "yes": "The item plans, changes, or depends on the thing the anchor statement is about, directly or as a clear prerequisite."
+          },
+          "instructions": "Does item.text discuss, optimize, or change established stacking recipes? This is subject overlap: information-gathering optimization inside an established recipe touches the recipe even when its exact git substitutions are not specified. Unrelated wallpaper changes are outside scope. Judge only applicability. Use the work area named in the item.",
+          "type": "choice"
+        },
+        "addressed": {
+          "criteria": {
+            "no": "The item text is silent about the directive: it neither includes the directive's specific content nor references it.",
+            "unclear": "The item text alludes to the directive's topic but it is not possible to tell whether the directive itself is included.",
+            "yes": "The item text contains the directive's specific content, in its own words or the user's, as a step, constraint, or stated starting point."
+          },
+          "instructions": "Does item.text explicitly include preserving established recipe stacking strategies and intended outcomes under challenging conditions; equivalent git-call substitutions are permitted? Judge presence of the obligation only. A positive plan or concrete preservation qualifies. Silence is no; explicitly undecided inclusion is unclear. A proposal that rejects the obligation without including it is no.",
+          "type": "choice"
+        },
+        "contradicted": {
+          "criteria": {
+            "no": "Nothing in the item text conflicts with the directive, whether or not the directive is mentioned.",
+            "unclear": "The item text is ambiguous enough that it might or might not conflict with the directive.",
+            "yes": "The item text states a plan, approach, or decision that cannot be reconciled with the directive in the anchor statement."
+          },
+          "instructions": "Does item.text affirmatively choose to discard or alter an established recipe stacking strategy or intended outcome? Equivalent git substitutions are allowed. An unresolved future choice is not an adopted conflicting decision. Silence or discussion without an adopted incompatible behavior is no. Choose unclear only when an actual adopted decision has ambiguous compatibility.",
+          "type": "choice"
+        }
+      },
+      "verdict": "satisfied",
+      "answers": {
+        "relevant": {
+          "type": "choice",
+          "choice": "yes",
+          "confidence": 1.0,
+          "probabilities": {
+            "no": 0.0,
+            "unclear": 0.0,
+            "yes": 1.0
+          }
+        },
+        "addressed": {
+          "type": "choice",
+          "choice": "yes",
+          "confidence": 1.0,
+          "probabilities": {
+            "no": 0.0,
+            "unclear": 0.0,
+            "yes": 1.0
+          }
+        },
+        "contradicted": {
+          "type": "choice",
+          "choice": "no",
+          "confidence": 1.0,
+          "probabilities": {
+            "no": 1.0,
+            "unclear": 0.0,
+            "yes": 0.0
+          }
+        }
+      },
+      "min_confidence": 1.0,
+      "explanation": "The directive is carried forward.",
+      "usage": {
+        "input_tokens": 2935,
+        "output_tokens": 117
+      },
+      "attempts": 1,
+      "item_chars_sent": 9459,
+      "item_shortened": false,
+      "request_bytes": 12486
+    },
+    {
+      "anchor_id": "ANC-008",
+      "source_type": "ANC",
+      "source_ref": null,
+      "statement": "The sc-gh-stack redesign must support stacks with more than 100 layers.",
+      "quote": "we are using this on stacks w/ 100+ layers, do you see a problem there?",
+      "stated_by": "randlee",
+      "stated_at": "2026-10-14",
+      "context": "Explicit user instruction: yes, lock down the approved statements; recipe git-call substitution clarification applies. Prior inconclusive capture results remain recorded, not passes.",
+      "anchor_version": 1,
+      "question_set": {
+        "gate": "plan",
+        "version": 1,
+        "overridden": true
+      },
+      "questions_sha256": "8d492608580925fc1137068ba4febbe2f3ff92d998efdb9fcddfdd3f51be96ec",
+      "deterministic_check": "Inspect limits and pagination for assumptions that exclude stacks exceeding 100 layers.",
+      "kind": "directive",
+      "leaning": "satisfied",
+      "questions": {
+        "relevant": {
+          "criteria": {
+            "no": "The item is about a different part of the system or a different activity, and completing it would neither follow nor break the anchor.",
+            "unclear": "The item text is too vague to tell what part of the system it touches.",
+            "yes": "The item plans, changes, or depends on the thing the anchor statement is about, directly or as a clear prerequisite."
+          },
+          "instructions": "Does item.text concern the work governed by anchor.scope and anchor.statement, specifically supporting stacks with more than 100 layers; finite pagination and batching are allowed and unlimited capacity is not required? Judge subject overlap only, including implementation choices that could affect this duty.",
+          "type": "choice"
+        },
+        "addressed": {
+          "criteria": {
+            "no": "The item text is silent about the directive: it neither includes the directive's specific content nor references it.",
+            "unclear": "The item text alludes to the directive's topic but it is not possible to tell whether the directive itself is included.",
+            "yes": "The item text contains the directive's specific content, in its own words or the user's, as a step, constraint, or stated starting point."
+          },
+          "instructions": "Does item.text explicitly include supporting stacks with more than 100 layers; finite pagination and batching are allowed and unlimited capacity is not required? Judge presence of the obligation only. A positive plan or concrete preservation qualifies. Silence is no; explicitly undecided inclusion is unclear. A proposal that rejects the obligation without including it is no.",
+          "type": "choice"
+        },
+        "contradicted": {
+          "criteria": {
+            "no": "Nothing in the item text conflicts with the directive, whether or not the directive is mentioned.",
+            "unclear": "The item text is ambiguous enough that it might or might not conflict with the directive.",
+            "yes": "The item text states a plan, approach, or decision that cannot be reconciled with the directive in the anchor statement."
+          },
+          "instructions": "Does item.text explicitly choose behavior incompatible with supporting stacks with more than 100 layers; finite pagination and batching are allowed and unlimited capacity is not required? Silence or undecided implementation is no conflict. Equivalent permitted alternatives do not conflict. Judge conflict only.",
+          "type": "choice"
+        }
+      },
+      "verdict": "satisfied",
+      "answers": {
+        "relevant": {
+          "type": "choice",
+          "choice": "yes",
+          "confidence": 1.0,
+          "probabilities": {
+            "no": 0.0,
+            "unclear": 0.0,
+            "yes": 1.0
+          }
+        },
+        "addressed": {
+          "type": "choice",
+          "choice": "yes",
+          "confidence": 1.0,
+          "probabilities": {
+            "no": 0.0,
+            "unclear": 0.0,
+            "yes": 1.0
+          }
+        },
+        "contradicted": {
+          "type": "choice",
+          "choice": "no",
+          "confidence": 1.0,
+          "probabilities": {
+            "no": 1.0,
+            "unclear": 0.0,
+            "yes": 0.0
+          }
+        }
+      },
+      "min_confidence": 1.0,
+      "explanation": "The directive is carried forward.",
+      "usage": {
+        "input_tokens": 2917,
+        "output_tokens": 117
+      },
+      "attempts": 1,
+      "item_chars_sent": 9459,
+      "item_shortened": false,
+      "request_bytes": 12264
+    },
+    {
+      "anchor_id": "ANC-009",
+      "source_type": "ANC",
+      "source_ref": null,
+      "statement": "The sc-gh-stack design must document how to obtain the required information when local repository state is out of date.",
+      "quote": "3.b. how to get same info if repo is out of date",
+      "stated_by": "randlee",
+      "stated_at": "2026-10-14",
+      "context": "Explicit user instruction: yes, lock down the approved statements; recipe git-call substitution clarification applies. Prior inconclusive capture results remain recorded, not passes.",
+      "anchor_version": 1,
+      "question_set": {
+        "gate": "plan",
+        "version": 1,
+        "overridden": true
+      },
+      "questions_sha256": "eb184769ae29945a5dd39dc2b7834b46b9f3899527d03e05d86a8c86303e2b6a",
+      "deterministic_check": "Inspect the design's stale-state acquisition path for each required information category.",
+      "kind": "directive",
+      "leaning": "satisfied",
+      "questions": {
+        "relevant": {
+          "criteria": {
+            "no": "The item is about a different part of the system or a different activity, and completing it would neither follow nor break the anchor.",
+            "unclear": "The item text is too vague to tell what part of the system it touches.",
+            "yes": "The item plans, changes, or depends on the thing the anchor statement is about, directly or as a clear prerequisite."
+          },
+          "instructions": "Does item.text concern the work governed by anchor.scope and anchor.statement, specifically documenting how required information is obtained when local repository state is out of date; targeted refresh and necessary remote reads are permitted? Judge subject overlap only, including implementation choices that could affect this duty.",
+          "type": "choice"
+        },
+        "addressed": {
+          "criteria": {
+            "no": "The item text is silent about the directive: it neither includes the directive's specific content nor references it.",
+            "unclear": "The item text alludes to the directive's topic but it is not possible to tell whether the directive itself is included.",
+            "yes": "The item text contains the directive's specific content, in its own words or the user's, as a step, constraint, or stated starting point."
+          },
+          "instructions": "Does item.text explicitly include documenting how required information is obtained when local repository state is out of date; targeted refresh and necessary remote reads are permitted? Judge presence of the obligation only. A positive plan or concrete preservation qualifies. Silence is no; explicitly undecided inclusion is unclear. A proposal that rejects the obligation without including it is no.",
+          "type": "choice"
+        },
+        "contradicted": {
+          "criteria": {
+            "no": "Nothing in the item text conflicts with the directive, whether or not the directive is mentioned.",
+            "unclear": "The item text is ambiguous enough that it might or might not conflict with the directive.",
+            "yes": "The item text states a plan, approach, or decision that cannot be reconciled with the directive in the anchor statement."
+          },
+          "instructions": "Does item.text explicitly choose behavior incompatible with documenting how required information is obtained when local repository state is out of date; targeted refresh and necessary remote reads are permitted? Silence or undecided implementation is no conflict. Equivalent permitted alternatives do not conflict. Judge conflict only.",
+          "type": "choice"
+        }
+      },
+      "verdict": "satisfied",
+      "answers": {
+        "relevant": {
+          "type": "choice",
+          "choice": "yes",
+          "confidence": 1.0,
+          "probabilities": {
+            "no": 0.0,
+            "unclear": 0.0,
+            "yes": 1.0
+          }
+        },
+        "addressed": {
+          "type": "choice",
+          "choice": "yes",
+          "confidence": 1.0,
+          "probabilities": {
+            "no": 0.0,
+            "unclear": 0.0,
+            "yes": 1.0
+          }
+        },
+        "contradicted": {
+          "type": "choice",
+          "choice": "no",
+          "confidence": 1.0,
+          "probabilities": {
+            "no": 1.0,
+            "unclear": 0.0,
+            "yes": 0.0
+          }
+        }
+      },
+      "min_confidence": 1.0,
+      "explanation": "The directive is carried forward.",
+      "usage": {
+        "input_tokens": 2923,
+        "output_tokens": 117
+      },
+      "attempts": 1,
+      "item_chars_sent": 9459,
+      "item_shortened": false,
+      "request_bytes": 12388
+    },
+    {
+      "anchor_id": "ANC-010",
+      "source_type": "ANC",
+      "source_ref": null,
+      "statement": "The sc-gh-stack redesign must include automated tests.",
+      "quote": "we want tests, graphql tests will be hard due to quota",
+      "stated_by": "randlee",
+      "stated_at": "2026-10-14",
+      "context": "Explicit user instruction: yes, lock down the approved statements; recipe git-call substitution clarification applies. Prior inconclusive capture results remain recorded, not passes.",
+      "anchor_version": 1,
+      "question_set": {
+        "gate": "plan",
+        "version": 1,
+        "overridden": true
+      },
+      "questions_sha256": "2ab5cea3f876619c96a93f373f24dc7c3dab8bcb533a6a2ce4baa0946c8a8c00",
+      "deterministic_check": "Inspect planned test coverage and eventual test artifacts; distinguish mocked/local tests from quota-constrained live checks.",
+      "kind": "directive",
+      "leaning": "satisfied",
+      "questions": {
+        "relevant": {
+          "criteria": {
+            "no": "The item is about a different part of the system or a different activity, and completing it would neither follow nor break the anchor.",
+            "unclear": "The item text is too vague to tell what part of the system it touches.",
+            "yes": "The item plans, changes, or depends on the thing the anchor statement is about, directly or as a clear prerequisite."
+          },
+          "instructions": "Does item.text concern the work governed by anchor.scope and anchor.statement, specifically including automated tests for the redesign; local fixtures and mocked API tests qualify and live GraphQL tests are not mandatory? Judge subject overlap only, including implementation choices that could affect this duty.",
+          "type": "choice"
+        },
+        "addressed": {
+          "criteria": {
+            "no": "The item text is silent about the directive: it neither includes the directive's specific content nor references it.",
+            "unclear": "The item text alludes to the directive's topic but it is not possible to tell whether the directive itself is included.",
+            "yes": "The item text contains the directive's specific content, in its own words or the user's, as a step, constraint, or stated starting point."
+          },
+          "instructions": "Does item.text explicitly include including automated tests for the redesign; local fixtures and mocked API tests qualify and live GraphQL tests are not mandatory? Judge presence of the obligation only. A positive plan or concrete preservation qualifies. Silence is no; explicitly undecided inclusion is unclear. A proposal that rejects the obligation without including it is no.",
+          "type": "choice"
+        },
+        "contradicted": {
+          "criteria": {
+            "no": "Nothing in the item text conflicts with the directive, whether or not the directive is mentioned.",
+            "unclear": "The item text is ambiguous enough that it might or might not conflict with the directive.",
+            "yes": "The item text states a plan, approach, or decision that cannot be reconciled with the directive in the anchor statement."
+          },
+          "instructions": "Does item.text explicitly choose behavior incompatible with including automated tests for the redesign; local fixtures and mocked API tests qualify and live GraphQL tests are not mandatory? Silence or undecided implementation is no conflict. Equivalent permitted alternatives do not conflict. Judge conflict only.",
+          "type": "choice"
+        }
+      },
+      "verdict": "satisfied",
+      "answers": {
+        "relevant": {
+          "type": "choice",
+          "choice": "yes",
+          "confidence": 1.0,
+          "probabilities": {
+            "no": 0.0,
+            "unclear": 0.0,
+            "yes": 1.0
+          }
+        },
+        "addressed": {
+          "type": "choice",
+          "choice": "yes",
+          "confidence": 1.0,
+          "probabilities": {
+            "no": 0.0,
+            "unclear": 0.0,
+            "yes": 1.0
+          }
+        },
+        "contradicted": {
+          "type": "choice",
+          "choice": "no",
+          "confidence": 1.0,
+          "probabilities": {
+            "no": 1.0,
+            "unclear": 0.0,
+            "yes": 0.0
+          }
+        }
+      },
+      "min_confidence": 1.0,
+      "explanation": "The directive is carried forward.",
+      "usage": {
+        "input_tokens": 2901,
+        "output_tokens": 117
+      },
+      "attempts": 1,
+      "item_chars_sent": 9459,
+      "item_shortened": false,
+      "request_bytes": 12217
+    }
+  ],
+  "summary": {
+    "counts": {
+      "satisfied": 10
+    },
+    "failing": [],
+    "leaning_counts": {
+      "satisfied": 10
+    },
+    "unstable": [],
+    "errors": [],
+    "shortened": [],
+    "pass": true
+  }
+}

@@ -10,11 +10,23 @@ options:
   - name: --all
     description: Show every stack, including merged/closed ones.
   - name: --no-fetch
-    description: Skip git fetch origin; rebase column shows ❓.
+    description: Forbid git fetch; qualify remote-tracking freshness.
   - name: --no-pr
-    description: Skip the GraphQL PR query (offline / local-only view).
+    description: Forbid GitHub API calls, including numeric identifier resolution.
+  - name: --remote
+    description: Select the git remote (default origin).
+  - name: --stack
+    description: Select a stack by number, ID or branch name before acquisition.
+  - name: --full
+    description: Print all layer rows without forcing refresh.
+  - name: --refresh-git
+    description: Refresh relevant git refs once; does not refresh hosted status.
+  - name: --refresh-status
+    description: Refresh required hosted observations for the selected scope.
+  - name: --refresh
+    description: Refresh git refs and hosted observations.
   - name: --json
-    description: Emit stacks[].rows[], problems[], notes[], landing, coherent as JSON.
+    description: Emit complete stacks[].rows[] and branches[], problems[], notes[], landing, coherent and provenance as JSON.
   - name: --help
     description: Show options.
 ---
@@ -27,8 +39,10 @@ Read-only status table for one or more `gh stack`s (under a plugin install subst
 python3 .claude/scripts/gh_stack_view.py <args>
 ```
 
-from the repo root, passing through whichever of `--trunk`, `--phase`,
-`--all`, `--no-fetch`, `--no-pr`, `--json` were given. If the script is not
+from the repo root, passing through the supplied scope, output and refresh
+options. Default acquisition derives local state and reuses shared observations
+before requesting missing hosted facts. Text summaries contain at most ten
+layer rows; `--full` and `--json` retain all layers. If the script is not
 found at that path, locate it with `find .claude ~/.claude -name gh_stack_view.py`
 and use that path instead.
 
