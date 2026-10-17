@@ -1,0 +1,15 @@
+Invoke the resolved `anchor-sprint-review` definition at `.codex/agents/anchor-sprint-review.md` with the harness **Agent** tool. Pass exactly this one fenced JSON params object and no prose:
+
+```json
+{
+  "schema_version": "1.0.0",
+  "runtime": {"agent":"anchor-sprint-review","harness":"codex","model":"luna","path":".codex/agents/anchor-sprint-review.md","sha256":"edef191368eb10e3057344d611fc7c7f0483a2eb041d41711789c938ee23505c","version":"0.5.0"},
+  "operation": "sprint_review",
+  "correlation_id": "sc-stack-dev-E1-2",
+  "params": {"anchor_ids":"all","anchors_path":"/Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sc-gh-stack-api-efficiency/doc/plan/sc-gh-stack-api-efficiency/anchors.json","authorized_gate_runner":"/Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sc-gh-stack-api-efficiency/doc/plan/sc-gh-stack-api-efficiency/anchor-runs/0.5.0/development-gate-E1-r2/execute-approved-gate.py","correlation_id":"sc-stack-dev-E1-2","dry_run":false,"evidence":["/Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sc-gh-stack-api-efficiency/doc/plan/sc-gh-stack-api-efficiency/execution.md","/Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sc-gh-stack-api-efficiency/doc/plan/sc-gh-stack-api-efficiency/anchor-runs/0.5.0/development-gate-E1/evidence-map.md","/Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sc-gh-stack-api-efficiency/doc/plan/sc-gh-stack-api-efficiency/anchor-runs/0.5.0/development-gate-E1/files-changed.md","/Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sc-gh-stack-api-efficiency/doc/plan/sc-gh-stack-api-efficiency/anchor-runs/0.5.0/development-gate-E1/test-summary.md"],"parent_authorization":"New authorized run after a report-assembly defect: the prior account omitted evidence-map.md entirely. Assemble ALL FOUR supplied evidence files verbatim in the account; do not replace any with a summary. The parent-authored authorized_gate_runner validates that all input file texts are present before making one call with child-only consent. Invoke it once with the canonical composed item.txt; never set consent yourself. Preserve item/account and final fenced response in this run_dir. Do not tune questions. Keep the same sprint, anchors, default dev questions, model and threshold.","plugin_root":"/Users/randlee/.codex/plugins/cache/plan-anchor/sc-plan-anchor/0.5.0","run_dir":"/Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sc-gh-stack-api-efficiency/doc/plan/sc-gh-stack-api-efficiency/anchor-runs/0.5.0/development-gate-E1-r2","script":"/Users/randlee/.codex/plugins/cache/plan-anchor/sc-plan-anchor/0.5.0/skills/plan-anchoring/scripts/jev_judge.py","sprint_id":"sc-stack-review-p68","threshold":0.6,"workspace":"/Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sc-gh-stack-api-efficiency"}
+}
+```
+
+Accept exactly one fenced JSON result. Save the response unchanged and validate
+it with `anchor_runner_contract.py validate-fence --kind result --file
+<response-file> --correlation-id <correlation-id>` before using its data.

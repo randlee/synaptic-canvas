@@ -1,0 +1,23 @@
+{
+  "run": "dev-20261017T185026Z-sc-stack-review-p68",
+  "classifications": [
+    {
+      "anchor_id": "ANC-004",
+      "classification": "report_defect",
+      "finding": "The account lists REST and batch routing but does not distinguish the equivalent metadata fields, GraphQL-budget savings for small reads, and non-equivalent CI rollup requirements. The selected question remains sealed; no scope or threshold change is justified.",
+      "to_fix": {
+        "sentence": "gh_stack_remote.py uses REST for at most two missing PRs; bulk metadata/status and bulk missing branch mappings use bounded GraphQL rather than REST fanout.",
+        "action": "replace",
+        "replacement": "State the delivered metadata/status field requirements and measured fake-transport request counts, including why a metadata REST result cannot substitute for CI rollup.",
+        "authority": "ANC-004 v1 and the approved plan section 3.3 predate every development run."
+      }
+    },
+    {
+      "anchor_id": "ANC-002",
+      "classification": "work_defect",
+      "finding": "A residual mandatory post-link view in the skill's hard precondition contradicted its sufficient-evidence reuse policy.",
+      "resolution": "Commit 518b4d3 replaces the mandatory call with affected-base verification from sufficient mutation responses or existing observations, and a scoped view only for missing facts. Recipe outcomes are unchanged."
+    }
+  ],
+  "next_iteration": "Keep the same sealed development questions, intent, anchor versions and production threshold 0.6; review the updated immutable commit and focused routing test."
+}

@@ -1,0 +1,29 @@
+{
+  "previous_run": "development-gate-E1/run.json",
+  "classification": "report_defect",
+  "finding": "The account omitted the entire supplied evidence-map.md. No question or code change is justified by these low-confidence results alone.",
+  "to_fix": [
+    {
+      "anchor_id": "ANC-005",
+      "sentence": "The existing supplied evidence-map.md row was omitted from the account.",
+      "action": "add",
+      "replacement": "Include the already-written evidence map verbatim, together with every supplied evidence file.",
+      "authority": "ANC-005 locked before the failed run; evidence-map.md also predates that run."
+    },
+    {
+      "anchor_id": "ANC-006",
+      "sentence": "The existing supplied evidence-map.md row was omitted from the account.",
+      "action": "add",
+      "replacement": "Include the already-written evidence map verbatim, together with every supplied evidence file.",
+      "authority": "ANC-006 locked before the failed run; evidence-map.md also predates that run."
+    },
+    {
+      "anchor_id": "ANC-009",
+      "sentence": "The existing supplied evidence-map.md row was omitted from the account.",
+      "action": "add",
+      "replacement": "Include the already-written evidence map verbatim, together with every supplied evidence file.",
+      "authority": "ANC-009 locked before the failed run; evidence-map.md also predates that run."
+    }
+  ],
+  "additional_guard": "Require all supplied evidence texts in item.txt before remote call; retain unchanged threshold, questions and anchors."
+}

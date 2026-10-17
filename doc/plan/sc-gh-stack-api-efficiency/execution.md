@@ -1,6 +1,7 @@
 # E1 implementation evidence
 
-Implemented on `feature/sc-gh-stack-api-efficiency`; baseline `fc702b1`.
+Implemented and pushed on `feature/sc-gh-stack-api-efficiency` at `dc526cc`;
+baseline `fc702b1`.
 The locked intent/anchors and the reviewed sprint remain the design authority.
 This execution record supersedes their historical planning-only status, not
 their requirements. No live GitHub API or load test was run.
@@ -29,15 +30,20 @@ tip, missing history, numeric offline cache misses, partial errors, throttles,
 auth partitions, pagination, deadlines, and snapshot changes. Git fixtures
 verify refs/index/work files remain unchanged by reporting.
 
-Result: **134 tests passed** locally on 2026-10-17 (37.14 seconds); compilation, installed-entrypoint smoke
+Result: **135 tests passed** locally on 2026-10-17 (37.62 seconds); compilation, installed-entrypoint smoke
 checks and `git diff --check` also passed. A dedicated Linux CI job is
 configured for this quota-independent suite; that hosted job has not run yet.
 
-Development-gate status: pending. The initial account omitted a supplied
-evidence map; the corrected second run left ANC-004 and ANC-008 inconclusive.
-Independent authority-only question calibration is in progress; no gate pass
-or acceptance is claimed. Paired recipe review also added API-free catalog
-source/composition diagnostics, including when no disputed stack is accepted.
+Development gate: **passed all ten anchors**, run
+`dev-20261017T185300Z-sc-stack-review-p68`, at production threshold 0.6.
+All forty raw role confidences meet that threshold; paired deterministic checks
+were completed. [Report and checks](anchor-runs/0.5.0/development-gate-E1-r4/posted-report.md)
+retain the earlier failures and their triage. Independent authority-only tuning
+calibrated ANC-004/008 development questions without changing intent, scope or
+threshold. Paired review added API-free catalog recovery diagnostics and removed
+one residual mandatory post-link report, preserving affected-base verification.
+The focused source-selection test distinguishes equivalent metadata REST reads
+from CI rollup acquisition and bulk batching.
 
 ## Observed comparison
 
@@ -79,4 +85,4 @@ Bulk branch lookup uses GitHub's documented
 Small equivalent REST lookups remain preferred without creating REST fanout.
 Live endpoint compatibility and hosted mutation/recovery outcomes were not
 exercised; recipe-equivalence evidence is a strategy/contract review, not a
-production landing test. No release, commit, push or PR is implied by this record.
+production landing test. No release or PR has been created for this work.

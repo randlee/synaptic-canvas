@@ -1,0 +1,37 @@
+{
+  "threshold": 0.6,
+  "independent_of_implementation": true,
+  "authority_unchanged": true,
+  "selected": [
+    {
+      "anchor_id": "ANC-004",
+      "question_sha256": "e7d3bb7e41bfc2a9ec0a577c6f8cffb4d0d46f321753c7e1ba6a1c7f614f3034",
+      "oracle_sha256": "e28b6e8911467821107294cf321b752675fde029879e7db50c059f66d58c5d36",
+      "semantic_score": {
+        "exact_role_cells": 72,
+        "exact_semantic_verdicts": 18,
+        "regressions": 0,
+        "stable_cases": 9,
+        "total_cases": 9,
+        "total_role_cells": 72,
+        "total_semantic_verdicts": 18
+      },
+      "source": "doc/plan/sc-gh-stack-api-efficiency/anchor-runs/0.5.0/development-question-tuning/ANC-004/result.json"
+    },
+    {
+      "anchor_id": "ANC-008",
+      "question_sha256": "46d4a07f3a5c4ec71d7f41c3d24c64cd87c8e814dcba453f66fdd3f0915f02c4",
+      "oracle_sha256": "a86da7b0c1a6263c55199d7d2a44760ceb712fec9cfb9a445973fdbe2b92e0ec",
+      "semantic_score": {
+        "exact_role_cells": 44,
+        "exact_semantic_verdicts": 11,
+        "regressions": 0,
+        "stable_cases": 11,
+        "total_cases": 11,
+        "total_role_cells": 44,
+        "total_semantic_verdicts": 11
+      },
+      "source": "doc/plan/sc-gh-stack-api-efficiency/anchor-runs/0.5.0/development-question-tuning/ANC-008/result.json"
+    }
+  ]
+}

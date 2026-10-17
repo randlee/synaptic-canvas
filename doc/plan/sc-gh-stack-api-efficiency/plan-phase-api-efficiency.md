@@ -2,8 +2,8 @@
 
 Status: all ten anchor-specific planning-question sets are calibrated; the
 complete E1 planning gate passed all ten anchors at production threshold 0.6.
-Implementation is complete in the feature worktree; development-gate acceptance
-is pending. Local/mocked verification
+Implementation is pushed; the development gate passed all ten anchors with
+paired deterministic checks completed. Local/mocked verification
 and limitations are recorded in [execution.md](execution.md). The locked authority is `anchors.json` and
 approved intent version 2. The detailed call inventory, alternatives, rationale,
 and information contracts are retained in
@@ -19,4 +19,4 @@ this index nor the intent is concatenated into its Jev review item.
 
 | Sprint | Authoritative plan | Tracker | Relation | Closure |
 |---|---|---|---|---|
-| E1 | [Economical stack state](sprint-E1.md) | none | root | Implemented; local/mocked evidence in execution.md; unreleased |
+| E1 | [Economical stack state](sprint-E1.md) | review: sc-stack-review-p68 | root | Implemented; planning/development gates passed; unreleased |

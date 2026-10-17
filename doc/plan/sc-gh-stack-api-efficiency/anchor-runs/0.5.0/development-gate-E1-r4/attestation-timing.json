@@ -1,0 +1,1 @@
+{"basis":"Outer invocation timing is bracketed by the parent-authored invocation/request file mtime and the saved response file mtime, not the narrower judge-only duration.","gate_pass":true,"live_github_api_tests":false,"paired_checks_completed":true,"reviewed_commit":"dc526cc"}
