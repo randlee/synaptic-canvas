@@ -67,16 +67,25 @@ RED = "\033[0;31m"
 NC = "\033[0m"
 
 
+def _print_status(symbol: str, msg: str, color: str, stream) -> None:
+    # Captured Windows pipes may use cp1252, which cannot encode the status
+    # glyphs (or arbitrary destination names). Keep that stream's encoding so
+    # callers can decode normally, escaping only unrepresentable characters.
+    text = f"{color}{symbol}{NC} {msg}"
+    encoding = getattr(stream, "encoding", None) or "utf-8"
+    print(text.encode(encoding, errors="backslashreplace").decode(encoding), file=stream)
+
+
 def info(msg: str) -> None:
-    print(f"{GREEN}✓{NC} {msg}")
+    _print_status("✓", msg, GREEN, sys.stdout)
 
 
 def warn(msg: str) -> None:
-    print(f"{YELLOW}⚠{NC} {msg}", file=sys.stderr)
+    _print_status("⚠", msg, YELLOW, sys.stderr)
 
 
 def error(msg: str) -> None:
-    print(f"{RED}✗{NC} {msg}", file=sys.stderr)
+    _print_status("✗", msg, RED, sys.stderr)
 
 
 # Determine repository root robustly (supports src/ layout)

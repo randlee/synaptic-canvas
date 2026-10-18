@@ -5,16 +5,102 @@
   },
   "plugins": [
     {
-      "name": "sc-manage",
+      "name": "process-porn",
       "source": {
-        "source": "local",
-        "path": "./packages/sc-manage"
+        "source": "git-subdir",
+        "url": "https://github.com/randlee/process-porn.git",
+        "path": "./packages/process-porn",
+        "ref": "main"
       },
       "policy": {
         "installation": "AVAILABLE",
         "authentication": "ON_INSTALL"
       },
-      "category": "Productivity"
+      "category": "tools"
+    },
+    {
+      "name": "sc-ai-cli",
+      "source": {
+        "source": "local",
+        "path": "./packages/sc-ai-cli"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "tools"
+    },
+    {
+      "name": "sc-ci-automation",
+      "source": {
+        "source": "local",
+        "path": "./packages/sc-ci-automation"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "tools"
+    },
+    {
+      "name": "sc-codex",
+      "source": {
+        "source": "local",
+        "path": "./packages/sc-codex"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "tools"
+    },
+    {
+      "name": "sc-coding-agent-hardening",
+      "source": {
+        "source": "local",
+        "path": "./packages/sc-coding-agent-hardening"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "tools"
+    },
+    {
+      "name": "sc-commit-push-pr",
+      "source": {
+        "source": "local",
+        "path": "./packages/sc-commit-push-pr"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "tools"
+    },
+    {
+      "name": "sc-delay-tasks",
+      "source": {
+        "source": "local",
+        "path": "./packages/sc-delay-tasks"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "tools"
+    },
+    {
+      "name": "sc-docling-pdf",
+      "source": {
+        "source": "local",
+        "path": "./packages/sc-docling-pdf"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "tools"
     },
     {
       "name": "sc-gh-stack",
@@ -26,7 +112,193 @@
         "installation": "AVAILABLE",
         "authentication": "ON_INSTALL"
       },
-      "category": "Productivity"
+      "category": "tools"
+    },
+    {
+      "name": "sc-git-worktree",
+      "source": {
+        "source": "local",
+        "path": "./packages/sc-git-worktree"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "tools"
+    },
+    {
+      "name": "sc-github-issue",
+      "source": {
+        "source": "local",
+        "path": "./packages/sc-github-issue"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "tools"
+    },
+    {
+      "name": "sc-just",
+      "source": {
+        "source": "local",
+        "path": "./packages/sc-just"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "tools"
+    },
+    {
+      "name": "sc-kanban",
+      "source": {
+        "source": "local",
+        "path": "./packages/sc-kanban"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "tools"
+    },
+    {
+      "name": "sc-launch-term",
+      "source": {
+        "source": "local",
+        "path": "./packages/sc-launch-term"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "tools"
+    },
+    {
+      "name": "sc-launchpad",
+      "source": {
+        "source": "local",
+        "path": "./packages/sc-launchpad"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "tools"
+    },
+    {
+      "name": "sc-lint-adoption",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/randlee/sc-lint.git",
+        "path": "./packages/sc-lint-adoption",
+        "ref": "main"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "tools"
+    },
+    {
+      "name": "sc-lint-version-adoption",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/randlee/sc-lint.git",
+        "path": "./packages/sc-lint-version-adoption",
+        "ref": "main"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "tools"
+    },
+    {
+      "name": "sc-manage",
+      "source": {
+        "source": "local",
+        "path": "./packages/sc-manage"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "tools"
+    },
+    {
+      "name": "sc-observability",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/randlee/sc-observability.git",
+        "path": "./packages/sc-observability",
+        "ref": "main"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "tools"
+    },
+    {
+      "name": "sc-refactory",
+      "source": {
+        "source": "local",
+        "path": "./packages/sc-refactory"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "tools"
+    },
+    {
+      "name": "sc-repomix-nuget",
+      "source": {
+        "source": "local",
+        "path": "./packages/sc-repomix-nuget"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "tools"
+    },
+    {
+      "name": "sc-roslyn-diff",
+      "source": {
+        "source": "local",
+        "path": "./packages/sc-roslyn-diff"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "tools"
+    },
+    {
+      "name": "sc-rust",
+      "source": {
+        "source": "local",
+        "path": "./packages/sc-rust"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "tools"
+    },
+    {
+      "name": "sc-startup",
+      "source": {
+        "source": "local",
+        "path": "./packages/sc-startup"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "tools"
     }
   ]
 }

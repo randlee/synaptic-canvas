@@ -1,7 +1,7 @@
 ---
 name: managing-sc-packages
 description: List, install, or uninstall Synaptic Canvas packages (sc-manage). Use when the user wants /sc-manage, /managing-sc-packages, or to install package skills and scripts for Claude, Codex, Cursor, or Hermes.
-version: 0.14.1
+version: 0.14.2
 ---
 
 # Managing Synaptic Canvas Packages
@@ -30,8 +30,11 @@ only if the marketplace is missing and installation/setup is requested. Preserve
 an existing source/ref; refresh it with `codex plugin marketplace upgrade
 synaptic-canvas` when requested. During review, use the feature ref supplied by
 the user instead of develop. Do not upgrade, install or remove during a status query.
-The curated native catalog currently contains `sc-manage` and `sc-gh-stack`
-(including `sc-gh-stack-view`); do not claim every Claude package is ported.
+The Codex catalog mirrors every existing marketplace plugin, including forwarded
+sources. Prefer inclusion: unverified host-specific workflows are caveats, not
+grounds to hide a plugin or block a requested install. Report concrete missing
+dependencies or execution errors without claiming an untested workflow is broken.
+Catalog presence and successful installation do not certify end-to-end behavior.
 For package docs, read the bundled README relative to this skill's plugin root.
 
 These are native installed/enabled plugins in the current `CODEX_HOME`, not loose

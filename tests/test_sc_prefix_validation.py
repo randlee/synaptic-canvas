@@ -2,7 +2,8 @@
 Comprehensive SC- Prefix Validation Test Suite
 
 This test suite validates the Synaptic Canvas package sc- prefix refactoring across 4 packages.
-Uses single source of truth (PACKAGES dict) to track package metadata, agents, commands, and skills.
+Uses PACKAGES to track expected names and artifact counts; package manifests are
+the version source of truth, and registry versions must agree with them.
 
 On develop: Uses OLD names (without sc- prefix)
 On feature branches: Edit PACKAGES dict to use NEW sc-prefixed names for each branch
@@ -26,7 +27,6 @@ PACKAGES = {
         'agents': ['sc-delay-once', 'sc-delay-poll', 'sc-git-pr-check-delay'],
         'commands': ['sc-delay'],
         'skills': ['sc-delaying-tasks'],
-        'version': '0.13.0',  # package versions are independent of version.yaml
         'path': 'packages/sc-delay-tasks',
         'artifact_counts': {'agents': 3, 'commands': 1, 'skills': 1}
     },
@@ -35,7 +35,6 @@ PACKAGES = {
         'agents': ['sc-git-worktree-create', 'sc-git-worktree-create-stacked', 'sc-git-worktree-scan', 'sc-git-worktree-cleanup', 'sc-git-worktree-abort', 'sc-git-worktree-update'],
         'commands': ['sc-git-worktree'],
         'skills': ['sc-managing-worktrees'],
-        'version': '0.14.0',  # stack-aware release; ahead of the marketplace-wide version
         'path': 'packages/sc-git-worktree',
         'artifact_counts': {'agents': 6, 'commands': 1, 'skills': 1}
     },
@@ -44,7 +43,6 @@ PACKAGES = {
         'agents': ['sc-repomix-nuget-analyze', 'sc-repomix-nuget-generate', 'sc-repomix-nuget-validate'],
         'commands': ['sc-repomix-nuget'],
         'skills': ['sc-generating-nuget-context'],
-        'version': '0.13.0',  # package versions are independent of version.yaml
         'path': 'packages/sc-repomix-nuget',
         'artifact_counts': {'agents': 3, 'commands': 1, 'skills': 1}
     },
@@ -53,7 +51,6 @@ PACKAGES = {
         'agents': ['sc-packages-list', 'sc-package-install', 'sc-package-uninstall', 'sc-package-docs'],
         'commands': ['sc-manage'],
         'skills': ['sc-managing-sc-packages'],
-        'version': '0.13.0',  # package versions are independent of version.yaml
         'path': 'packages/sc-manage',
         'artifact_counts': {'agents': 4, 'commands': 1, 'skills': 1}
     }
@@ -82,14 +79,13 @@ class TestPackageDiscoveryAndInstallation:
                 f"expected {pkg_info['package_name']}, got {manifest['name']}"
 
     def test_package_versions_in_manifest(self):
-        """Package versions should match PACKAGES dict."""
+        """Manifests declare valid release versions, independent of the platform."""
         for pkg_key, pkg_info in PACKAGES.items():
             manifest_path = Path(pkg_info['path']) / 'manifest.yaml'
             with open(manifest_path) as f:
                 manifest = yaml.safe_load(f)
-            assert manifest['version'] == pkg_info['version'], \
-                f"Version mismatch in {pkg_info['path']}: " \
-                f"expected {pkg_info['version']}, got {manifest['version']}"
+            assert re.fullmatch(r'\d+\.\d+\.\d+', str(manifest['version'])), \
+                f"Invalid package version in {manifest_path}: {manifest['version']}"
 
     def test_agents_files_exist(self):
         """All agent files listed in manifest should exist."""
@@ -159,7 +155,7 @@ class TestRegistryValidation:
                 f"Package {pkg_name} not found in registry"
 
     def test_package_versions_in_registry(self):
-        """Package versions in registry should match PACKAGES dict."""
+        """Registry versions must match each package's authoritative manifest."""
         registry_path = Path('docs/registries/nuget/registry.json')
         with open(registry_path) as f:
             registry = json.load(f)
@@ -167,7 +163,9 @@ class TestRegistryValidation:
         packages = registry.get('packages', {})
         for pkg_key, pkg_info in PACKAGES.items():
             pkg_name = pkg_info['package_name']
-            expected_version = pkg_info['version']
+            manifest_path = Path(pkg_info['path']) / 'manifest.yaml'
+            with open(manifest_path) as f:
+                expected_version = yaml.safe_load(f)['version']
             actual_version = packages[pkg_name].get('version')
             assert actual_version == expected_version, \
                 f"Version mismatch for {pkg_name}: " \

@@ -1,0 +1,10 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "sc-repomix-nuget",
+  "version": "0.13.0",
+  "description": "Generate AI-optimized NuGet package context using Repomix with NuGet metadata (dependencies, dependents, namespaces, frameworks). Produces a compressed API surface.",
+  "author": {
+    "name": "synaptic-canvas"
+  },
+  "license": "MIT"
+}

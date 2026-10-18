@@ -1,11 +1,31 @@
 from __future__ import annotations
 
 import os
+import io
 import subprocess
 from pathlib import Path
 
 from sc_cli import sc_install
 from sc_cli import install as _install_mod
+
+
+def test_status_messages_support_legacy_windows_encoding(monkeypatch):
+    out_buffer, err_buffer = io.BytesIO(), io.BytesIO()
+    stdout = io.TextIOWrapper(out_buffer, encoding="cp1252")
+    stderr = io.TextIOWrapper(err_buffer, encoding="cp1252")
+    monkeypatch.setattr(_install_mod.sys, "stdout", stdout)
+    monkeypatch.setattr(_install_mod.sys, "stderr", stderr)
+    for emit in (_install_mod.info, _install_mod.warn, _install_mod.error):
+        emit("Installing to package-\u6d4b\u8bd5")
+    stdout.flush()
+    stderr.flush()
+    assert b"Installing to package-" in out_buffer.getvalue()
+    assert err_buffer.getvalue().count(b"Installing to package-") == 2
+
+
+def test_status_messages_preserve_unicode_on_utf8_streams(capsys):
+    _install_mod.info("package-\u6d4b\u8bd5")
+    assert "✓" in capsys.readouterr().out
 
 def _init_git_repo(path: Path) -> None:
     subprocess.run(["git", "init", "-q", str(path)], check=True)

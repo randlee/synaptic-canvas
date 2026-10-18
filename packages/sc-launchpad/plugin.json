@@ -1,0 +1,10 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "sc-launchpad",
+  "version": "0.14.2",
+  "description": "Launch Claude (including Fable), Codex (including Astra, Sol, Terra, and Luna), or Gemini as a separate background sub-agent runtime, with explicit ATM teammate-mode normalization and roster registration.",
+  "author": {
+    "name": "synaptic-canvas"
+  },
+  "license": "MIT"
+}

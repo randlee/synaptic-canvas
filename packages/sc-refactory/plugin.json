@@ -1,0 +1,10 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "sc-refactory",
+  "version": "0.2.0",
+  "description": "Design and install a rule-driven refactoring toolkit with startup policy injection, approved-fix lookup, curated rule authoring, and named-teammate orchestration for large migration campaigns.",
+  "author": {
+    "name": "synaptic-canvas"
+  },
+  "license": "MIT"
+}

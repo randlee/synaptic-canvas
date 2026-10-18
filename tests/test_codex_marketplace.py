@@ -32,29 +32,45 @@ def test_generated_files_are_current():
 def test_catalog_paths_and_packaged_resources():
     catalog = json.loads((ROOT / ".agents/plugins/marketplace.json").read_text())
     assert catalog["name"] == "synaptic-canvas"
-    assert {p["name"] for p in catalog["plugins"]} == {"sc-manage", "sc-gh-stack"}
+    upstream = json.loads((ROOT / ".claude-plugin/marketplace.json").read_text())
+    assert {p["name"] for p in catalog["plugins"]} == {p["name"] for p in upstream["plugins"]}
+    originals = {p["name"]: p for p in upstream["plugins"]}
     for entry in catalog["plugins"]:
         source = entry["source"]
-        assert source["source"] == "local"
+        assert entry["policy"]["installation"] == "AVAILABLE"
+        if source["source"] != "local":
+            original = dict(originals[entry["name"]]["source"])
+            if original.get("path"):
+                original["path"] = "./" + original["path"].removeprefix("./")
+            assert source == original
+            continue
         assert source["path"].startswith("./")
         package = (ROOT / source["path"]).resolve()
         assert package.is_relative_to(ROOT)
         manifest = yaml.safe_load((package / "manifest.yaml").read_text())
-        plugin = json.loads((package / "plugin.json").read_text())
+        plugin_path = package / "plugin.json"
+        portable = plugin_path.exists()
+        if not portable:
+            plugin_path = package / ".claude-plugin/plugin.json"
+        plugin = json.loads(plugin_path.read_text())
         assert plugin["name"] == entry["name"] == manifest["name"]
         assert plugin["version"] == manifest["version"]
-        assert plugin["$schema"] == "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json"
-        for rel in manifest["artifacts"]["skills"]:
+        if portable:
+            assert plugin["$schema"] == "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json"
+        for rel in manifest["artifacts"].get("skills", []):
             assert (package / rel).is_file()
         assert entry["policy"]["installation"] == "AVAILABLE"
-        assert "hooks" not in plugin and "mcpServers" not in plugin
 
 
 def test_drift_detection_and_repair(tmp_path):
     sync = load_script("sync-codex-marketplace")
-    for name in sync.PACKAGES:
+    names = ("sc-manage", "sc-gh-stack")
+    for name in names:
         shutil.copytree(ROOT / "packages" / name, tmp_path / "packages" / name)
-    assert sync.sync(tmp_path, check=False) == [".agents/plugins/marketplace.json"]
+    (tmp_path / ".claude-plugin").mkdir()
+    marketplace = {"plugins": [{"name": n, "source": f"./packages/{n}"} for n in names]}
+    (tmp_path / ".claude-plugin/marketplace.json").write_text(json.dumps(marketplace))
+    assert sync.sync(tmp_path, check=False) == [".agents/plugins/marketplace.json", "docs/CODEX-PLUGIN-INVENTORY.md"]
     path = tmp_path / "packages/sc-manage/manifest.yaml"
     data = yaml.safe_load(path.read_text())
     data["version"] = "9.9.9"
@@ -64,6 +80,18 @@ def test_drift_detection_and_repair(tmp_path):
     assert json.loads((tmp_path / changed[0]).read_text())["version"] != "9.9.9"
     assert sync.sync(tmp_path, check=False) == changed
     assert sync.sync(tmp_path, check=True) == []
+
+
+def test_catalog_mirrors_added_forwarded_plugins_and_ref_selectors(tmp_path):
+    sync = load_script("sync-codex-marketplace")
+    (tmp_path / ".claude-plugin").mkdir()
+    forwarded = {"name": "external-test", "source": {"source": "git-subdir",
+        "url": "https://github.com/example/plugins.git", "path": "packages/tool", "sha": "a" * 40}}
+    (tmp_path / ".claude-plugin/marketplace.json").write_text(json.dumps({"plugins": [forwarded]}))
+    sync.sync(tmp_path, check=False)
+    catalog = json.loads((tmp_path / ".agents/plugins/marketplace.json").read_text())
+    assert catalog["plugins"][0]["name"] == "external-test"
+    assert catalog["plugins"][0]["source"] == {**forwarded["source"], "path": "./packages/tool"}
 
 
 def test_version_bump_updates_both_hosts(tmp_path):
@@ -151,7 +179,10 @@ def test_native_cli_install_load_remove(tmp_path, source_kind):
     assert cli("marketplace", "add", source, *extra)["marketplaceName"] == "synaptic-canvas"
     assert cli("marketplace", "add", source, *extra)["alreadyAdded"]
     available = cli("list", "--available", "--marketplace", "synaptic-canvas")["available"]
-    assert {p["name"] for p in available} == {"sc-manage", "sc-gh-stack"}
+    assert {"sc-manage", "sc-gh-stack"} <= {p["name"] for p in available}
+    if source_kind == "local":
+        upstream = json.loads((ROOT / ".claude-plugin/marketplace.json").read_text())
+        assert {p["name"] for p in available} == {p["name"] for p in upstream["plugins"]}
     installed = {}
     for name in ("sc-manage", "sc-gh-stack"):
         result = cli("add", f"{name}@synaptic-canvas")
@@ -200,3 +231,43 @@ def test_native_cli_install_load_remove(tmp_path, source_kind):
     assert cli("list")["installed"] == []
     cli("marketplace", "remove", "synaptic-canvas")
     assert not any(m["name"] == "synaptic-canvas" for m in cli("marketplace", "list")["marketplaces"])
+
+
+@pytest.mark.skipif(os.environ.get("SC_TEST_CODEX_CLI") != "1", reason="opt-in installed Codex CLI test")
+def test_full_catalog_local_plugins_load_all_declared_skills(tmp_path):
+    profile = tmp_path / "profile"
+    profile.mkdir()
+    env = dict(os.environ, CODEX_HOME=str(profile))
+    entries = json.loads((ROOT / ".agents/plugins/marketplace.json").read_text())["plugins"]
+
+    def cli(*args):
+        result = subprocess.run(["codex", "plugin", *args, "--json"], env=env, cwd=tmp_path,
+                                capture_output=True, text=True, timeout=60)
+        assert result.returncode == 0, result.stdout + result.stderr
+        return json.loads(result.stdout)
+
+    cli("marketplace", "add", str(ROOT))
+    expected = set()
+    installed = set()
+    for entry in entries:
+        if entry["source"]["source"] != "local":
+            if os.environ.get("SC_TEST_CODEX_FORWARDED") == "1":
+                cli("add", entry["name"] + "@synaptic-canvas")
+                installed.add(entry["name"])
+            continue
+        cli("add", entry["name"] + "@synaptic-canvas")
+        installed.add(entry["name"])
+        package = ROOT / entry["source"]["path"]
+        for skill in (package / "skills").glob("*/SKILL.md"):
+            metadata = yaml.safe_load(skill.read_text().split("---", 2)[1])
+            expected.add(entry["name"] + ":" + metadata["name"])
+    assert {p["name"] for p in cli("list")["installed"]} == installed
+    response = loaded_skills(env, tmp_path)
+    found = set()
+    for group in response["data"]:
+        assert not group.get("errors"), group["errors"]
+        for skill in group["skills"]:
+            if Path(skill["path"]).resolve().is_relative_to(profile.resolve() / "plugins/cache"):
+                if skill["enabled"]:
+                    found.add(skill["name"])
+    assert expected <= found, f"Installed but undiscoverable skills: {sorted(expected - found)}"

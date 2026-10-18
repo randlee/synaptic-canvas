@@ -1,0 +1,10 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "sc-roslyn-diff",
+  "version": "0.13.0",
+  "description": "Semantic diffing for .NET source using roslyn-diff with JSON-first outputs, HTML reports, and git/PR-aware comparisons.",
+  "author": {
+    "name": "randlee"
+  },
+  "license": "MIT"
+}
