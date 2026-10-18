@@ -119,6 +119,10 @@ class ValidationSummary(BaseModel):
 
 DEFAULT_VALIDATORS: list[ValidatorConfig] = [
     ValidatorConfig(
+        name="Native Codex Marketplace",
+        command=["python3", "scripts/sync-codex-marketplace.py", "--check"],
+    ),
+    ValidatorConfig(
         name="Version Consistency",
         command=["python3", "scripts/audit-versions.py", "--verbose"],
     ),

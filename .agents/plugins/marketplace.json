@@ -1,0 +1,32 @@
+{
+  "name": "synaptic-canvas",
+  "interface": {
+    "displayName": "Synaptic Canvas"
+  },
+  "plugins": [
+    {
+      "name": "sc-manage",
+      "source": {
+        "source": "local",
+        "path": "./packages/sc-manage"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    },
+    {
+      "name": "sc-gh-stack",
+      "source": {
+        "source": "local",
+        "path": "./packages/sc-gh-stack"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

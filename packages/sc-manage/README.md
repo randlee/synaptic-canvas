@@ -3,7 +3,7 @@
 [![Publisher Verified](https://img.shields.io/badge/publisher-verified-brightgreen)](https://github.com/randlee/synaptic-canvas/blob/main/docs/PUBLISHER-VERIFICATION.md)
 [![Security Scanned](https://img.shields.io/badge/security-scanned-blue)](https://github.com/randlee/synaptic-canvas/blob/main/SECURITY.md)
 [![License MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-[![Version 0.14.0](https://img.shields.io/badge/version-0.14.0-blue)](CHANGELOG.md)
+[![Version 0.14.1](https://img.shields.io/badge/version-0.14.1-blue)](CHANGELOG.md)
 
 Scope: User (recommended) or Project
 Requires: python3, git
@@ -19,6 +19,19 @@ Security: See [SECURITY.md](../../../SECURITY.md) for security policy and practi
 - Enforces package policy (e.g., sc-git-worktree is local-only)
 
 ## Quick Start (Global install)
+
+For native Codex plugins (no Claude or Python bootstrap), use:
+
+```bash
+codex plugin marketplace add randlee/synaptic-canvas --ref develop
+codex plugin add sc-manage@synaptic-canvas
+codex plugin add sc-gh-stack@synaptic-canvas
+```
+
+Select `sc-manage:managing-sc-packages` in Codex's skill picker. This route uses `codex plugin` for
+installation status, installation and removal, not the artifact dispatcher.
+See [native Codex marketplace guidance](../../docs/CODEX-MARKETPLACE.md) for
+review refs, updates and the distinction from the copying route below.
 
 `sc-manage` is the package/plugin name and the installer other packages need:
 many skills ship scripts (and some `install.py` hooks) rather than a standalone

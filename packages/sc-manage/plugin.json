@@ -1,0 +1,10 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "sc-manage",
+  "version": "0.14.1",
+  "description": "Manage Synaptic Canvas packages for Claude, Codex, Cursor, and Hermes. List per-target installation status and install or uninstall at project or user/global scope.",
+  "author": {
+    "name": "synaptic-canvas"
+  },
+  "license": "MIT"
+}

@@ -1,6 +1,6 @@
 ---
 name: sc-package-uninstall
-version: 0.14.0
+version: 0.14.1
 description: Uninstall a Synaptic Canvas package from selected agent targets according to package policy.
 model: sonnet
 color: blue

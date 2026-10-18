@@ -1,21 +1,52 @@
 ---
 name: managing-sc-packages
 description: List, install, or uninstall Synaptic Canvas packages (sc-manage). Use when the user wants /sc-manage, /managing-sc-packages, or to install package skills and scripts for Claude, Codex, Cursor, or Hermes.
-version: 0.14.0
+version: 0.14.1
 ---
 
 # Managing Synaptic Canvas Packages
 
 Use this skill to manage Synaptic Canvas packages on this machine or in the current repo.
-Packages are more than a `SKILL.md` file: many skills need their scripts, and some
-run `install.py` at install time. Always go through this installer rather than
-copying skill files by hand.
+Packages are more than a `SKILL.md` file: many skills need their scripts. Use the
+native plugin manager or the artifact installer below, not hand-copied skill files.
+
+## Native Codex plugins
+
+On Codex, prefer its native plugin commands for marketplace discovery and
+profile-level plugin installation unless the user explicitly requests artifact
+copying, project scope, or other hosts. No Claude session or source checkout is
+required for this route. Check `codex plugin --help` if these commands are absent;
+report the unsupported CLI rather than silently switching installation models.
+
+```bash
+codex plugin marketplace list --json
+codex plugin list --available --marketplace synaptic-canvas --json
+codex plugin add sc-gh-stack@synaptic-canvas --json
+codex plugin remove sc-gh-stack@synaptic-canvas --json
+```
+
+Register `codex plugin marketplace add randlee/synaptic-canvas --ref develop`
+only if the marketplace is missing and installation/setup is requested. Preserve
+an existing source/ref; refresh it with `codex plugin marketplace upgrade
+synaptic-canvas` when requested. During review, use the feature ref supplied by
+the user instead of develop. Do not upgrade, install or remove during a status query.
+The curated native catalog currently contains `sc-manage` and `sc-gh-stack`
+(including `sc-gh-stack-view`); do not claim every Claude package is ported.
+For package docs, read the bundled README relative to this skill's plugin root.
+
+These are native installed/enabled plugins in the current `CODEX_HOME`, not loose
+artifact installations. Do not use dispatcher status to describe native plugin
+state or dispatcher uninstall to remove a native plugin. Native installation
+does not run this repository's Python install hooks. For cross-host or project
+artifact installs from a native cached plugin, set `SC_REPO_PATH` to a full
+Synaptic Canvas checkout containing `tools/sc-install.py` first.
 
 ## Execution
 
 Resolve `../../scripts/sc_manage_dispatch.py` relative to this skill directory
 and run it with the user's flags unchanged. Use the absolute path; do not assume
-`.claude`. This is the installer on every host.
+`.claude`. This is the artifact installer on every host, not Codex's native
+plugin manager. The following flags and scope conventions apply to that route.
 
 Do not delegate to Task/subagents named `sc-package-list`, `sc-package-install`,
 `sc-package-uninstall`, or `sc-package-docs` unless those Claude agent files are

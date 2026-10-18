@@ -377,7 +377,7 @@
     },
     "sc-manage": {
       "name": "sc-manage",
-      "version": "0.14.0",
+      "version": "0.14.1",
       "status": "beta",
       "tier": 0,
       "description": "Manage Synaptic Canvas packages for Claude, Codex, Cursor, and Hermes. List per-target installation status and install or uninstall at project or user/global scope.\n",
@@ -729,7 +729,7 @@
       "readme": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-gh-stack/README.md",
       "changelog": "https://raw.githubusercontent.com/randlee/synaptic-canvas/main/packages/sc-gh-stack/CHANGELOG.md",
       "dependents": [],
-      "version": "0.2.1",
+      "version": "0.2.2",
       "description": "Stacked pull requests with the gh-stack GitHub CLI extension, run the way that lands: an append-only, linear stack of frozen layers above a named trunk, one stack writer, QA and CI on the top only, one atomic merge. Ships the sc-gh-stack skill (model, preconditions, recipes, full command guide) and the sc-gh-stack-view skill (one-call coherence, mergeability, CI and landing table). Supersedes the generic gh-stack skill.\n",
       "license": "MIT",
       "author": {

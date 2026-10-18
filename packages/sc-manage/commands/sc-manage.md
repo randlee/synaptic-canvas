@@ -2,7 +2,7 @@
 allowed-tools: Bash(python3 scripts/sc_manage_dispatch.py*)
 name: sc-manage
 description: List, install, or uninstall Synaptic Canvas packages for Claude, Codex, Cursor, or Hermes.
-version: 0.14.0
+version: 0.14.1
 options:
   - name: --list
     description: List available packages and show install status (no/global/local) with a summary table.

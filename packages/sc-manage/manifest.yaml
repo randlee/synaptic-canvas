@@ -1,5 +1,5 @@
 name: sc-manage
-version: 0.14.0
+version: 0.14.1
 description: >
   Manage Synaptic Canvas packages for Claude, Codex, Cursor, and Hermes. List
   per-target installation status and install or uninstall at project or user/global scope.

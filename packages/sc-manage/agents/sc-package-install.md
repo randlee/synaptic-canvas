@@ -1,6 +1,6 @@
 ---
 name: sc-package-install
-version: 0.14.0
+version: 0.14.1
 description: Install a Synaptic Canvas package for selected agent targets at project or user/global scope.
 model: sonnet
 color: blue
