@@ -554,7 +554,19 @@ def update_marketplace_version(repo_root: Path, new_version: str, dry_run: bool 
 # ============================================================================
 
 
+def utf8_stdout() -> None:
+    """The check marks must not raise on a non-UTF-8 console (Windows legacy code pages)."""
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is not None:
+            try:
+                reconfigure(encoding="utf-8", errors="replace")
+            except (ValueError, OSError):
+                pass
+
+
 def main():
+    utf8_stdout()
     parser = argparse.ArgumentParser(
         description='Set package versions and regenerate registries',
         formatter_class=argparse.RawDescriptionHelpFormatter,
