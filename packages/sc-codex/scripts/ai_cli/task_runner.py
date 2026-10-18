@@ -211,13 +211,16 @@ def _preview(text: str, limit: int = 200) -> str:
 
 
 def child_env() -> dict:
-    """The runner's environment minus ATM_IDENTITY.
+    """The runner's environment minus ATM_IDENTITY and BEADS_ACTOR.
 
     The launched agent is a separate process and must never take on the caller's
-    ATM identity. ATM_TEAM is kept: the child is still part of the caller's team.
+    ATM identity, nor its BEADS_ACTOR (`bd` would attribute the child's work to the
+    caller). The child has no identity of its own, so both are cleared. ATM_TEAM is
+    kept: the child is still part of the caller's team.
     """
     env = os.environ.copy()
     env.pop("ATM_IDENTITY", None)
+    env.pop("BEADS_ACTOR", None)
     return env
 
 

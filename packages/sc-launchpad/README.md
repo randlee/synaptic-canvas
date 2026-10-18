@@ -362,6 +362,12 @@ Contract:
 Each launch appends one line to
 `<CLAUDE_PROJECT_DIR or cwd>/.claude/state/logs/sc-launchpad/launch.jsonl`:
 `timestamp`, `event` (`launch`), `package`, `level`, `tool`, `model`, `effort`,
-`output_format`, `isolation`, `ephemeral`, `env_file`, `env_keys`, `session_id`,
-`resumed_session_id`, `exit_code`, `error_code`, `duration_seconds`. The prompt, the
-answer, and environment values (including `env_file` values) are never logged. A log write failure never fails the launch.
+`output_format`, `isolation`, `ephemeral`, `atm_team`, `atm_identity`,
+`atm_identity_generated`, `env_file`, `env_keys`, `session_id`, `resumed_session_id`,
+`exit_code`, `error_code`, `duration_seconds`. `atm_team` is the child's `ATM_TEAM`
+(null without a team), `atm_identity` the child's explicit or generated identity
+(null when it has none, e.g. no team or `isolation.tools: none`), and
+`atm_identity_generated` is true when launchpad generated that identity. They are
+recorded for failed launches too (a launch that fails before the team is resolved
+logs the parent's `ATM_TEAM` and no identity). The prompt, the answer, and other
+environment values (including `env_file` values) are never logged. A log write failure never fails the launch.

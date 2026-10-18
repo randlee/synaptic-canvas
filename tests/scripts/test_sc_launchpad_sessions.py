@@ -491,6 +491,85 @@ def test_teammate_child_beads_actor_is_its_explicit_atm_identity(
     assert child["beads_actor"] == child["atm_identity"]
 
 
+# --- audit log: the child's ATM team and identity -----------------------------
+
+
+def audit_launch(monkeypatch, capsys, env, **fields):
+    """Run main() in-process (so stubbed randomness applies) and return (response, audit record)."""
+    for name in list(os.environ):
+        monkeypatch.delenv(name)
+    for name, value in env.items():
+        monkeypatch.setenv(name, value)
+    body = {"description": "d", "prompt": "p", "tool": "claude"}
+    body.update(fields)
+    assert lp.main(["--json", json.dumps(body)]) == 0
+    response = json.loads(capsys.readouterr().out)
+    log = Path(env["CLAUDE_PROJECT_DIR"]) / ".claude" / "state" / "logs" / "sc-launchpad" / "launch.jsonl"
+    lines = log.read_text(encoding="utf-8").splitlines()
+    assert len(lines) == 1
+    return response, json.loads(lines[0])
+
+
+def atm_fields(record):
+    return record["atm_team"], record["atm_identity"], record["atm_identity_generated"]
+
+
+def test_audit_records_generated_identity(
+    fake_bin, tmp_path, workdir, fake_atm, stub_identity, monkeypatch, capsys
+):
+    agent_identity, _ = stub_identity
+    env = atm_env(fake_bin, tmp_path, fake_atm, **PARENT_ATM)
+    response, record = audit_launch(monkeypatch, capsys, env, model="opus", cwd=str(workdir))
+    assert response["success"] is True, response
+    expected = f"{agent_identity._IDENTITY_NAMES['opus'][-1]}-beef"
+    assert atm_fields(record) == ("team-a", expected, True)
+    # Only the child's team and identity are logged: never the parent's ATM values.
+    raw = json.dumps(record)
+    assert "Parent-1234" not in raw and "Parent-Actor" not in raw
+
+
+def test_audit_records_explicit_identity(
+    fake_bin, tmp_path, workdir, fake_atm, stub_identity, monkeypatch, capsys
+):
+    env = atm_env(fake_bin, tmp_path, fake_atm, **PARENT_ATM)
+    response, record = audit_launch(monkeypatch, capsys, env, model="opus", cwd=str(workdir), atm_identity="r1")
+    assert response["success"] is True, response
+    assert atm_fields(record) == ("team-a", "r1", False)
+
+
+def test_audit_records_no_team_as_null(fake_bin, tmp_path, workdir, fake_atm, stub_identity, monkeypatch, capsys):
+    env = atm_env(fake_bin, tmp_path, fake_atm, ATM_IDENTITY="Parent-1234", BEADS_ACTOR="Parent-Actor")
+    response, record = audit_launch(monkeypatch, capsys, env, cwd=str(workdir), atm_identity="r1")
+    assert response["success"] is True, response
+    assert atm_fields(record) == (None, None, False)
+
+
+def test_audit_records_tools_none_team_without_identity(
+    fake_bin, tmp_path, fake_atm, stub_identity, monkeypatch, capsys
+):
+    env = atm_env(fake_bin, tmp_path, fake_atm, {"stdout": CLAUDE_OK}, **PARENT_ATM)
+    response, record = audit_launch(monkeypatch, capsys, env, isolation=ISOLATED)
+    assert response["success"] is True, response
+    assert atm_fields(record) == ("team-a", None, False)
+
+
+def test_audit_records_generated_identity_when_add_member_fails(
+    fake_bin, tmp_path, workdir, fake_atm, stub_identity, monkeypatch, capsys
+):
+    agent_identity, _ = stub_identity
+    failing = "import sys\nsys.exit(3)\n"
+    if os.name == "nt":
+        script = tmp_path / "fake_atm.py"
+        script.write_text(failing, encoding="utf-8")
+    else:
+        (fake_bin / "atm").write_text(f"#!{sys.executable}\n" + failing, encoding="utf-8")
+    env = atm_env(fake_bin, tmp_path, fake_atm, **PARENT_ATM)
+    response, record = audit_launch(monkeypatch, capsys, env, model="opus", cwd=str(workdir))
+    assert response["data"] is None and error_code(response) == "ATM.ADD_MEMBER_FAILED"
+    expected = f"{agent_identity._IDENTITY_NAMES['opus'][-1]}-beef"
+    assert atm_fields(record) == ("team-a", expected, True)
+
+
 def test_missing_env_file_fails_before_launch(fake_bin, tmp_path, workdir):
     response = run(fake_bin, tmp_path, {"stdout": CLAUDE_OK}, cwd=str(workdir), env_file="nope.env")
     assert error_code(response) == "VALIDATION.ENV_FILE_NOT_FOUND"

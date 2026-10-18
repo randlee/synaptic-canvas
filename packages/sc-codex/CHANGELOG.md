@@ -3,6 +3,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.14.2] - 2026-10-18
+### Fixed
+- The launched `codex`/`claude` process no longer inherits the caller's
+  `BEADS_ACTOR` either. `bd` (beads) attributes audit-trail entries and slot
+  holders to `$BEADS_ACTOR`, which must equal the child's `ATM_IDENTITY`; the
+  child has none, so both are dropped. `ATM_TEAM` is still kept.
+
 ## [0.14.1] - 2026-10-17
 ### Fixed
 - The launched `codex`/`claude` process no longer inherits the caller's

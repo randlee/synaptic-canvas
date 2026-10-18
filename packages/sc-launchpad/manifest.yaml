@@ -1,5 +1,5 @@
 name: sc-launchpad
-version: 0.14.2
+version: 0.14.3
 description: >
   Launch Claude (including Fable), Codex (including Astra, Sol, Terra, and Luna), or
   Gemini as a separate background

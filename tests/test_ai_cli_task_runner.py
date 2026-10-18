@@ -14,6 +14,13 @@ FAKE_CODEX = "/fake/bin/codex"
 FAKE_CLAUDE = "/fake/bin/claude"
 
 
+@pytest.fixture(autouse=True)
+def _cwd_outside_checkout(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """ai_cli logs to `<cwd>/.claude/state/logs/sc-codex/`; run each test from a temp
+    folder so those logs never land in the checkout. Repo files resolve from ROOT."""
+    monkeypatch.chdir(tmp_path)
+
+
 def test_resolve_model_codex_aliases() -> None:
     assert task_runner.resolve_model("codex", None) == "gpt-6.1-sol"
     assert task_runner.resolve_model("codex", "codex") == "gpt-6.1-sol"
@@ -237,6 +244,21 @@ def test_run_sync_child_never_inherits_atm_identity(monkeypatch: pytest.MonkeyPa
     assert "Parent-1234" not in env.values()
     assert env["ATM_TEAM"] == "atm-core"  # still on the caller's team
     assert task_runner.os.environ["ATM_IDENTITY"] == "Parent-1234"  # caller's env untouched
+
+
+@pytest.mark.parametrize("runner", ["codex", "claude"])
+def test_run_sync_child_never_inherits_beads_actor(monkeypatch: pytest.MonkeyPatch, runner) -> None:
+    # BEADS_ACTOR always equals the child's ATM_IDENTITY; the child has none, so it is cleared.
+    monkeypatch.setenv("ATM_IDENTITY", "Parent-1234")
+    monkeypatch.setenv("BEADS_ACTOR", "Parent-Actor")
+    monkeypatch.setenv("ATM_TEAM", "atm-core")
+    calls = _capture_run(monkeypatch)
+    task_runner.run_sync(runner, task_runner.resolve_model(runner, None), "hi")
+    env = calls[0]["env"]
+    assert "BEADS_ACTOR" not in env
+    assert "Parent-Actor" not in env.values()
+    assert env["ATM_TEAM"] == "atm-core"  # still on the caller's team
+    assert task_runner.os.environ["BEADS_ACTOR"] == "Parent-Actor"  # caller's env untouched
 
 
 def test_run_sync_raises_with_stderr(monkeypatch: pytest.MonkeyPatch) -> None:

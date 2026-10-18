@@ -1,7 +1,7 @@
 ---
 name: codex-agent
 description: Run Codex tasks via the ai_cli Task Tool runner.
-version: 0.14.1
+version: 0.14.2
 ---
 
 # Codex Agent

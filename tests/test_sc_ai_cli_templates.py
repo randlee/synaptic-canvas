@@ -10,7 +10,6 @@ import yaml
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 FIXTURE_ROOT = REPO_ROOT / "test-packages" / "fixtures" / "sc-ai-cli"
-GENERATED_ROOT = REPO_ROOT / "test-packages" / "generated" / "sc-ai-cli"
 
 
 def _platform_binary(path: Path) -> Path:
@@ -165,8 +164,8 @@ def _assert_simulator_controls(
     controls_file.unlink(missing_ok=True)
 
 
-def _prepare_case(case: dict) -> tuple[Path, dict]:
-    output_root = GENERATED_ROOT / case["id"]
+def _prepare_case(case: dict, generated_root: Path) -> tuple[Path, dict]:
+    output_root = generated_root / case["id"]
     if output_root.exists():
         shutil.rmtree(output_root)
     output_root.mkdir(parents=True, exist_ok=True)
@@ -182,8 +181,8 @@ def _prepare_case(case: dict) -> tuple[Path, dict]:
     return output_root, vars_data
 
 
-def _verify_rust(case: dict) -> None:
-    output_root, vars_data = _prepare_case(case)
+def _verify_rust(case: dict, generated_root: Path) -> None:
+    output_root, vars_data = _prepare_case(case, generated_root)
     state_file = output_root / vars_data["state_file_name"]
     binary_name = vars_data["package_name"]
 
@@ -251,8 +250,8 @@ def _verify_rust(case: dict) -> None:
     )
 
 
-def _verify_dotnet(case: dict) -> None:
-    output_root, vars_data = _prepare_case(case)
+def _verify_dotnet(case: dict, generated_root: Path) -> None:
+    output_root, vars_data = _prepare_case(case, generated_root)
     state_file = output_root / vars_data["state_file_name"]
 
     _write_dotnet_global_json(output_root)
@@ -318,8 +317,8 @@ def _verify_dotnet(case: dict) -> None:
     )
 
 
-def _verify_go(case: dict) -> None:
-    output_root, vars_data = _prepare_case(case)
+def _verify_go(case: dict, generated_root: Path) -> None:
+    output_root, vars_data = _prepare_case(case, generated_root)
     state_file = output_root / vars_data["state_file_name"]
     binary = _platform_binary(output_root / vars_data["binary_name"])
 
@@ -386,7 +385,9 @@ def _verify_go(case: dict) -> None:
     )
 
 
-def test_sc_ai_cli_templates_render_build_and_run() -> None:
+def test_sc_ai_cli_templates_render_build_and_run(tmp_path: Path) -> None:
+    # Generated projects and their build output go to a temp folder, never into the checkout.
+    generated_root = tmp_path / "generated" / "sc-ai-cli"
     fixture = _load_fixture()
     verifiers = {
         "rust": _verify_rust,
@@ -399,7 +400,7 @@ def test_sc_ai_cli_templates_render_build_and_run() -> None:
     for case in fixture["cases"]:
         case_id = case["id"]
         try:
-            verifiers[case["language"]](case)
+            verifiers[case["language"]](case, generated_root)
         except Exception as exc:  # pragma: no cover - failure path
             failures.append(f"{case_id}: {exc}")
 

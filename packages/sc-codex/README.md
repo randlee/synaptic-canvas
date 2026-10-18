@@ -77,7 +77,7 @@ Runtime and hook events are written to:
 - Hook commands are executed as configured in agent frontmatter; review them before running.
 - JSON schemas should be treated as untrusted input validation aids, not execution controls.
 - Background outputs are written to `.sc/sessions` or `$CODEX_HOME/sessions`; avoid storing secrets there.
-- The launched `codex`/`claude` process inherits the caller's environment except `ATM_IDENTITY`, which is dropped so the child never takes on the caller's ATM identity. `ATM_TEAM` is kept.
+- The launched `codex`/`claude` process inherits the caller's environment except `ATM_IDENTITY` and `BEADS_ACTOR`, which are dropped so the child never takes on the caller's ATM identity and `bd` (beads) never attributes the child's work to the caller. `ATM_TEAM` is kept.
 
 ## Changelog
 See `CHANGELOG.md`.

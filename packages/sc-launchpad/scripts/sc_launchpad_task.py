@@ -134,9 +134,20 @@ def add_team_member(env: Dict[str, str], team: str, identity: str, model: str, c
         )
 
 
-def audit(env: Dict[str, str], payload: LaunchpadInput, response: dict, started: float) -> None:
-    """Append one line per launch to the package log; never the prompt, never fatal."""
+def audit(
+    env: Dict[str, str],
+    payload: LaunchpadInput,
+    response: dict,
+    started: float,
+    atm: Optional[Dict[str, Any]] = None,
+) -> None:
+    """Append one line per launch to the package log; never the prompt, never fatal.
+
+    `atm` is the child's resolved ATM_TEAM/identity from run_payload; it is empty when
+    the launch failed before resolution, and then the parent's ATM_TEAM is logged.
+    """
     data, error = response.get("data") or {}, response.get("error") or {}
+    atm = atm or {"atm_team": env.get("ATM_TEAM", "").strip() or None}
     record = {
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "event": "launch",
@@ -148,6 +159,10 @@ def audit(env: Dict[str, str], payload: LaunchpadInput, response: dict, started:
         "output_format": "json" if payload.structured else "text",
         "isolation": payload.isolation.model_dump() if payload.isolation else None,
         "ephemeral": payload.ephemeral,
+        # The child's team and identity (explicit or generated); no other ATM/env values.
+        "atm_team": data.get("atm_team") or atm.get("atm_team"),
+        "atm_identity": data.get("atm_identity") or atm.get("atm_identity"),
+        "atm_identity_generated": bool(atm.get("atm_identity_generated")),
         # Path and names only; values never leave the process.
         "env_file": data.get("env_file", payload.env_file),
         "env_keys": data.get("env_keys"),
@@ -167,7 +182,11 @@ def audit(env: Dict[str, str], payload: LaunchpadInput, response: dict, started:
         pass
 
 
-def run_payload(payload: LaunchpadInput, parent_env: Dict[str, str]) -> dict:
+def run_payload(
+    payload: LaunchpadInput, parent_env: Dict[str, str], atm: Optional[Dict[str, Any]] = None
+) -> dict:
+    """Run one launch. When given, `atm` is filled with the child's resolved ATM_TEAM,
+    identity and whether the identity was generated, for the audit log (also on failure)."""
     check_capabilities(payload)
     model = normalize_tool_model(payload)
     given_cwd = None if payload.temp_cwd else resolve_given_cwd(payload.cwd or "")
@@ -184,6 +203,14 @@ def run_payload(payload: LaunchpadInput, parent_env: Dict[str, str]) -> dict:
     # child is its own addressable agent; a tools-less child never joins the team.
     identity_pool = None if payload.no_tools else identity_family(payload, model)
     teammate_mode, team, identity = resolve_teammate_mode(parent_env, payload.atm_identity, identity_pool)
+    if atm is not None:
+        explicit = bool(payload.atm_identity and payload.atm_identity.strip())
+        atm.update(
+            # Outside teammate mode the child keeps the parent's ATM_TEAM (build_child_env).
+            atm_team=team or parent_env.get("ATM_TEAM", "").strip() or None,
+            atm_identity=identity,
+            atm_identity_generated=identity is not None and not explicit,
+        )
 
     cwd = given_cwd or create_temp_cwd()
     # Paths this launch's sessions leave behind; the caller deletes them after the last turn.
@@ -286,6 +313,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     started = time.monotonic()
     env = dict(os.environ)
     payload = None
+    atm: Dict[str, Any] = {}
     try:
         if not raw:
             raise LaunchFailure(
@@ -294,13 +322,13 @@ def main(argv: Optional[List[str]] = None) -> int:
                 "Pass a JSON object with --json (or `--json -` to read stdin).",
             )
         payload = load_payload(raw)
-        response = run_payload(payload, env)
+        response = run_payload(payload, env, atm)
     except LaunchFailure as failure:
         response = envelope(None, failure)
     except Exception as exc:  # pragma: no cover - safety net keeps the one-envelope contract
         response = envelope(None, LaunchFailure("RUNTIME.UNEXPECTED", str(exc), recoverable=False))
     if payload is not None:
-        audit(env, payload, response, started)
+        audit(env, payload, response, started, atm)
     print(json.dumps(response, indent=2))
     return 0
 

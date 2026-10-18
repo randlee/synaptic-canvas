@@ -94,7 +94,7 @@ agents:
     version: 0.13.0
   sc-codex:
     path: packages/sc-codex/agents/sc-codex.md
-    version: 0.14.1
+    version: 0.14.2
 skills:
   ci-automation:
     depends_on:

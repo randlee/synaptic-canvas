@@ -5,6 +5,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.14.3] - 2026-10-18
+### Added
+- The audit log (`.claude/state/logs/sc-launchpad/launch.jsonl`) records the
+  child's ATM membership: `atm_team`, `atm_identity` (explicit or generated, null
+  when there is none) and `atm_identity_generated`. Failed launches record them
+  too, including a generated identity whose `atm teams add-member` failed. No
+  other environment values are logged.
+
 ## [0.14.2] - 2026-10-17
 ### Changed
 - A team member launching without `atm_identity` now gets a new agent: when the

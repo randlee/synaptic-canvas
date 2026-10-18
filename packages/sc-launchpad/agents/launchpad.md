@@ -1,6 +1,6 @@
 ---
 name: launchpad
-version: 0.14.2
+version: 0.14.3
 description: Thin background-launch forwarding agent for the sc-launchpad runtime.
 tools: Bash
 ---
