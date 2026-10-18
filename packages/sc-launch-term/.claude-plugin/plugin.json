@@ -1,7 +1,7 @@
 {
   "name": "sc-launch-term",
-  "description": "Launch Claude (including Fable), Codex (including Sol, Terra, and Luna), and Gemini sessions in supported terminals with platform-aware autodetect, cmux workspace tabs, and optional tmux session management.",
-  "version": "0.13.0",
+  "description": "Launch Claude (including Fable), Codex (including Sol, Astra, Terra, and Luna), and Gemini sessions in supported terminals with platform-aware autodetect, cmux workspace tabs, and optional tmux session management.",
+  "version": "0.14.2",
   "author": {
     "name": "randlee"
   },
@@ -17,11 +17,14 @@
     "fable",
     "codex",
     "sol",
+    "astra",
     "terra",
     "luna",
     "gemini"
   ],
   "scripts": [
+    "./scripts/agent_identity.py",
+    "./scripts/agent_models.py",
     "./scripts/launch_term_shared.py",
     "./scripts/sc-term-launch.sh",
     "./scripts/sc-term-launch.py"
@@ -32,6 +35,7 @@
     "./commands/sc/opus.md",
     "./commands/sc/fable.md",
     "./commands/sc/sol.md",
+    "./commands/sc/astra.md",
     "./commands/sc/terra.md",
     "./commands/sc/luna.md",
     "./commands/sc/codex.md",

@@ -19,46 +19,64 @@ import uuid
 from datetime import datetime, timezone
 from functools import lru_cache
 from pathlib import Path
-from typing import Literal, Optional
+from typing import List, Literal, Optional, Tuple
 
 import yaml
 
 from ai_cli.logging import write_log
 from ai_cli.task_tool import TaskToolInput, TaskToolOutputBackground, TaskToolOutputForeground
 
+from .agent_models import (
+    DEFAULT_ALIAS,
+    EFFORTS,  # noqa: F401  (re-exported for the CLIs)
+    MODELS,
+    ModelError,  # noqa: F401  (re-exported for the CLIs)
+    model_choices,
+    model_flags,
+    resolve_effort,
+)
+from .agent_models import resolve_model as resolve_model_spec
+
 RunnerType = Literal["claude", "codex"]
 
-_CODEX_MODEL_MAP = {
-    "codex": "gpt-5.2-codex",
-    "gpt-5.2-codex": "gpt-5.2-codex",
-    "codex-max": "gpt-5.1-codex-max",
-    "max": "gpt-5.1-codex-max",
-    "gpt-5.1-codex-max": "gpt-5.1-codex-max",
-    "codex-mini": "gpt-5.1-codex-mini",
-    "mini": "gpt-5.1-codex-mini",
-    "gpt-5.1-codex-mini": "gpt-5.1-codex-mini",
-    "gpt-5": "gpt-5.2",
-    "gpt-5.2": "gpt-5.2",
-    "gtp-5": "gpt-5.2",
-}
 
-_CLAUDE_MODELS = {"haiku", "sonnet", "opus"}
-_CODEX_ACCOUNT_FALLBACK = "gpt-5.2"
-_CODEX_NATIVE_MODELS = {
-    "gpt-5.2-codex",
-    "gpt-5.1-codex-max",
-    "gpt-5.1-codex-mini",
-}
+def model_help(tool: RunnerType = "codex") -> str:
+    """``--model`` help text, generated from the shared model table."""
+    default = resolve_model_spec(tool)
+    return (
+        f"{tool} model alias or full id: {', '.join(model_choices(tool))} "
+        f"(default: {DEFAULT_ALIAS[tool]} -> {default.id})"
+    )
+
+
+def effort_help(*tools: RunnerType) -> str:
+    """``--effort`` help text for ``tools`` (default: both), generated from the shared model table."""
+    per_model = "; ".join(
+        f"{spec.id}: {spec.efforts[0]}..{spec.efforts[-1]}"
+        for tool in (tools or ("codex", "claude"))
+        for spec in MODELS[tool].values()
+    )
+    return (
+        "Reasoning effort (overrides the payload's reasoning_effort). When omitted, no effort "
+        "flag is passed and the CLI's own config applies."
+        f" Supported per model: {per_model}."
+    )
+
+
+def _runner_executable(runner: RunnerType) -> str:
+    """Full path of the CLI. On Windows npm installs ``codex.cmd``/``claude.cmd``, which
+    only ``shutil.which`` finds; a bare-name subprocess call fails there."""
+    path = shutil.which(runner)
+    if path is None:
+        raise FileNotFoundError(f"{runner} not found on PATH")
+    return path
 
 
 @lru_cache(maxsize=None)
 def _check_runner_available(runner: RunnerType) -> str:
-    binary = "codex" if runner == "codex" else "claude"
-    if shutil.which(binary) is None:
-        raise FileNotFoundError(f"{binary} not found on PATH")
-    res = subprocess.run([binary, "--version"], text=True, capture_output=True)
+    res = subprocess.run([_runner_executable(runner), "--version"], text=True, capture_output=True)
     if res.returncode != 0:
-        raise RuntimeError(res.stderr.strip() or f"{binary} --version failed")
+        raise RuntimeError(res.stderr.strip() or f"{runner} --version failed")
     return res.stdout.strip() or res.stderr.strip()
 
 
@@ -75,18 +93,55 @@ def resolve_runner(preferred: Optional[str]) -> RunnerType:
 
 
 def resolve_model(runner: RunnerType, model: Optional[str]) -> str:
-    if runner == "claude":
-        if model is None:
-            return "sonnet"
-        if model not in _CLAUDE_MODELS:
-            raise ValueError(f"Unsupported Claude model: {model}")
-        return model
-    if model is None:
-        return "gpt-5.2-codex"
-    resolved = _CODEX_MODEL_MAP.get(model)
-    if resolved is None:
-        raise ValueError(f"Unsupported Codex model: {model}")
-    return resolved
+    """Alias or full id (None = the runner's default) -> full model id.
+
+    Raises ``agent_models.ModelError`` (a ``ValueError``) listing the valid choices.
+    """
+    return resolve_model_spec(runner, model).id
+
+
+def resolve_reasoning_effort(runner: RunnerType, model: str, effort: Optional[str]) -> Optional[str]:
+    """Validate ``effort`` for ``model``; None means pass no effort flag."""
+    return resolve_effort(resolve_model_spec(runner, model), effort)
+
+
+def apply_cli_overrides(data: dict, model: Optional[str] = None, effort: Optional[str] = None) -> dict:
+    """Return a copy of the raw payload with command-line ``--model``/``--effort`` applied.
+
+    Runs before validation, so a flag wins even over an invalid payload value.
+    """
+    data = dict(data)
+    if model is not None:
+        data["model"] = model
+    if effort is not None:
+        data["reasoning_effort"] = effort
+    return data
+
+
+def prepare_payload(
+    data: dict, runner: RunnerType, model: Optional[str] = None, effort: Optional[str] = None
+) -> Tuple[TaskToolInput, str]:
+    """Apply CLI overrides, validate the payload, and resolve model and effort.
+
+    The resolved full model id is written back into the payload, so background runs and logs
+    record what actually runs. Raises ``ModelError`` for an unknown model or an effort the model
+    does not support, and pydantic ``ValidationError`` for a malformed payload.
+    """
+    payload = TaskToolInput.model_validate(apply_cli_overrides(data, model, effort))
+    model_id = resolve_model(runner, payload.model)
+    resolve_reasoning_effort(runner, model_id, payload.reasoning_effort)
+    payload.model = model_id
+    return payload, model_id
+
+
+def build_command(runner: RunnerType, executable: str, model: str, effort: Optional[str]) -> List[str]:
+    """CLI argv. The prompt is not in argv: it goes on stdin (``codex exec -`` reads stdin;
+    ``claude --print`` with no prompt argument reads stdin)."""
+    spec = resolve_model_spec(runner, model)
+    flags = model_flags(runner, spec, resolve_effort(spec, effort))
+    if runner == "codex":
+        return [executable, "exec", "--yolo", *flags, "-"]
+    return [executable, *flags, "--print"]
 
 
 def _resume_context(payload: TaskToolInput, runner: RunnerType) -> Optional[str]:
@@ -155,39 +210,28 @@ def _preview(text: str, limit: int = 200) -> str:
     return cleaned[: limit - 1] + "…"
 
 
-def run_sync(runner: RunnerType, model: str, prompt: str) -> str:
+def child_env() -> dict:
+    """The runner's environment minus ATM_IDENTITY.
+
+    The launched agent is a separate process and must never take on the caller's
+    ATM identity. ATM_TEAM is kept: the child is still part of the caller's team.
+    """
+    env = os.environ.copy()
+    env.pop("ATM_IDENTITY", None)
+    return env
+
+
+def run_sync(runner: RunnerType, model: str, prompt: str, reasoning_effort: Optional[str] = None) -> str:
+    """Run one prompt to completion. The prompt is sent as UTF-8 bytes on stdin (binary
+    mode, so newlines are never translated on Windows)."""
     _check_runner_available(runner)
-    attempted_model = model
-    if runner == "codex":
-        res = subprocess.run(
-            ["codex", "exec", "--yolo", "--model", attempted_model, prompt],
-            text=True,
-            capture_output=True,
-        )
-        if res.returncode != 0 and _should_fallback_codex_model(attempted_model, res.stderr):
-            attempted_model = _CODEX_ACCOUNT_FALLBACK
-            res = subprocess.run(
-                ["codex", "exec", "--yolo", "--model", attempted_model, prompt],
-                text=True,
-                capture_output=True,
-            )
-    else:
-        res = subprocess.run(
-            ["claude", "--model", attempted_model, "--print", prompt],
-            text=True,
-            capture_output=True,
-        )
-
+    cmd = build_command(runner, _runner_executable(runner), model, reasoning_effort)
+    res = subprocess.run(cmd, input=prompt.encode("utf-8"), capture_output=True, env=child_env())
+    stdout = res.stdout.decode("utf-8", errors="replace")
+    stderr = res.stderr.decode("utf-8", errors="replace")
     if res.returncode != 0:
-        raise RuntimeError(res.stderr.strip() or f"{runner} exited with code {res.returncode}")
-    return res.stdout.strip()
-
-
-def _should_fallback_codex_model(model: str, stderr: str) -> bool:
-    if model not in _CODEX_NATIVE_MODELS:
-        return False
-    lowered = (stderr or "").lower()
-    return "not supported when using codex with a chatgpt account" in lowered
+        raise RuntimeError(stderr.strip() or f"{runner} exited with code {res.returncode}")
+    return stdout.strip()
 
 
 def _timestamp() -> str:
@@ -357,6 +401,7 @@ def run_background(payload: TaskToolInput, runner: RunnerType, model: str, outpu
                 "mode": "background",
                 "runner": runner,
                 "model": model,
+                "reasoning_effort": payload.reasoning_effort,
                 "agentId": agent_id,
                 "error": str(exc),
             }
@@ -369,6 +414,7 @@ def run_background(payload: TaskToolInput, runner: RunnerType, model: str, outpu
             "mode": "background",
             "runner": runner,
             "model": model,
+            "reasoning_effort": payload.reasoning_effort,
             "agentId": agent_id,
             "output_file": str(output_file),
             "prompt_preview": _preview(payload.prompt),
@@ -426,7 +472,7 @@ def run_background_child_with_payload(
     try:
         agent_path = resolve_agent_path(payload.subagent_type, runner)
         run_pretool_hooks(agent_path, payload)
-        output = run_sync(runner, model, build_prompt(payload, runner))
+        output = run_sync(runner, model, build_prompt(payload, runner), payload.reasoning_effort)
         assistant_entry = _jsonl_entry(agent_id, "assistant", output, None)
         write_log(
             {
@@ -435,6 +481,7 @@ def run_background_child_with_payload(
                 "mode": "background",
                 "runner": runner,
                 "model": model,
+                "reasoning_effort": payload.reasoning_effort,
                 "agentId": agent_id,
                 "output_file": str(output_file),
                 "status": "success",
@@ -451,6 +498,7 @@ def run_background_child_with_payload(
                 "mode": "background",
                 "runner": runner,
                 "model": model,
+                "reasoning_effort": payload.reasoning_effort,
                 "agentId": agent_id,
                 "output_file": str(output_file),
                 "status": "error",
@@ -470,6 +518,8 @@ def run_task(
     output_dir: Optional[Path] = None,
     raise_on_error: bool = True,
 ) -> TaskToolOutputForeground | TaskToolOutputBackground:
+    # Fail on an unknown model or unsupported effort before anything is launched.
+    resolve_reasoning_effort(runner, model, payload.reasoning_effort)
     if run_in_background:
         return run_background(payload, runner, model, output_dir or _default_output_dir(runner))
     agent_id = str(uuid.uuid4())
@@ -480,6 +530,7 @@ def run_task(
             "mode": "blocking",
             "runner": runner,
             "model": model,
+            "reasoning_effort": payload.reasoning_effort,
             "agentId": agent_id,
             "prompt_preview": _preview(payload.prompt),
             "params": payload.model_dump(),
@@ -489,7 +540,7 @@ def run_task(
     try:
         agent_path = resolve_agent_path(payload.subagent_type, runner)
         run_pretool_hooks(agent_path, payload)
-        output = run_sync(runner, model, build_prompt(payload, runner))
+        output = run_sync(runner, model, build_prompt(payload, runner), payload.reasoning_effort)
         write_log(
             {
                 "component": "ai_cli",
@@ -497,6 +548,7 @@ def run_task(
                 "mode": "blocking",
                 "runner": runner,
                 "model": model,
+                "reasoning_effort": payload.reasoning_effort,
                 "agentId": agent_id,
                 "status": "success",
                 "duration_ms": int((time.monotonic() - start) * 1000),
@@ -511,6 +563,7 @@ def run_task(
                 "mode": "blocking",
                 "runner": runner,
                 "model": model,
+                "reasoning_effort": payload.reasoning_effort,
                 "agentId": agent_id,
                 "status": "error",
                 "error": str(exc),

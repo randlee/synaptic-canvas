@@ -1,7 +1,14 @@
 #!/usr/bin/env python3
-"""Background launch runtime for Claude, Codex, and Gemini."""
+"""Background launch runtime for Claude, Codex, and Gemini.
 
-from __future__ import annotations
+Invocation (agent path or direct subprocess)::
+
+    python3 sc_launchpad_task.py --json '<payload JSON>'
+    python3 sc_launchpad_task.py --json - < payload.json
+
+The runtime always prints exactly one JSON envelope on stdout and exits 0;
+callers must branch on ``success`` (see README "Direct script invocation").
+"""
 
 import argparse
 import json
@@ -9,346 +16,291 @@ import os
 import shutil
 import subprocess
 import sys
+import time
+from datetime import datetime, timezone
 from pathlib import Path
-from typing import Literal
+from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import ValidationError
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from launchpad_shared import build_child_env, resolve_teammate_mode
+from launchpad_commands import (  # noqa: E402
+    build_command,
+    check_batch_shim,
+    claude_project_dir,
+    codex_private_home,
+    create_temp_cwd,
+    is_launchpad_temp,
+    isolation_flags,
+)
+from launchpad_env import load_env_file  # noqa: E402
+from launchpad_models import (  # noqa: E402
+    LaunchFailure,
+    LaunchpadInput,
+    identity_family,
+    normalize_tool_model,
+    roster_model,
+)
+from launchpad_output import classify, tail  # noqa: E402
+from launchpad_process import run_process  # noqa: E402
+from launchpad_shared import build_child_env, resolve_teammate_mode  # noqa: E402
 
 
-ToolName = Literal["claude", "codex", "gemini"]
-ClaudeModel = Literal["sonnet", "haiku", "opus", "fable"]
-CodexModel = Literal[
-    "codex",
-    "sol",
-    "terra",
-    "luna",
-    "gpt-5.6-sol",
-    "gpt-5.6-terra",
-    "gpt-5.6-luna",
-    "gpt-5.6",
-    "codex-max",
-    "max",
-    "codex-mini",
-    "mini",
-    "gpt-5",
-    "gpt-5.2-codex",
-    "gpt-5.1-codex-max",
-    "gpt-5.1-codex-mini",
-    "gpt-5.2",
-]
-
-CODEX_MODEL_MAP = {
-    # `codex` remains a deprecated compatibility alias for Terra.
-    "codex": "gpt-5.6-terra",
-    "sol": "gpt-5.6-sol",
-    "terra": "gpt-5.6-terra",
-    "luna": "gpt-5.6-luna",
-    "gpt-5.6-sol": "gpt-5.6-sol",
-    "gpt-5.6-terra": "gpt-5.6-terra",
-    "gpt-5.6-luna": "gpt-5.6-luna",
-    "gpt-5.6": "gpt-5.6-sol",
-    # Preserve explicit legacy model requests without using them as defaults.
-    "gpt-5.2-codex": "gpt-5.2-codex",
-    "codex-max": "gpt-5.1-codex-max",
-    "max": "gpt-5.1-codex-max",
-    "gpt-5.1-codex-max": "gpt-5.1-codex-max",
-    "codex-mini": "gpt-5.1-codex-mini",
-    "mini": "gpt-5.1-codex-mini",
-    "gpt-5.1-codex-mini": "gpt-5.1-codex-mini",
-    "gpt-5": "gpt-5.2",
-    "gpt-5.2": "gpt-5.2",
-}
-
-CODEX_ROSTER_MODEL_MAP = {
-    "gpt-5.6-sol": "sol",
-    "gpt-5.6-terra": "terra",
-    "gpt-5.6-luna": "luna",
-}
-
-CLAUDE_MODEL_MAP = {
-    "sonnet": "sonnet",
-    "haiku": "haiku",
-    "opus": "opus",
-    "fable": "fable",
-    "claude-sonnet-4-6": "sonnet",
-    "claude-haiku-4-5": "haiku",
-    "claude-opus-4-1": "opus",
-    "claude-fable-5": "fable",
-    "claude-fable-5[1m]": "fable",
-}
-
-
-class LaunchpadInput(BaseModel):
-    description: str = Field(min_length=1)
-    prompt: str = Field(min_length=1)
-    tool: ToolName
-    model: str | None = None
-    cwd: str = Field(min_length=1)
-    atm_identity: str | None = None
-    extra_args: list[str] = Field(default_factory=list)
-
-    model_config = {"extra": "forbid"}
-
-
-LaunchpadInput.model_rebuild()
-
-
-class LaunchpadError(Exception):
-    def __init__(
-        self,
-        code: str,
-        message: str,
-        *,
-        recoverable: bool = True,
-        suggested_action: str | None = None,
-    ) -> None:
-        super().__init__(message)
-        self.code = code
-        self.message = message
-        self.recoverable = recoverable
-        self.suggested_action = suggested_action
-
-
-def success_response(data: dict) -> dict:
-    return {"success": True, "data": data, "error": None}
-
-
-def error_response(error: LaunchpadError, data: dict | None = None) -> dict:
+def envelope(data: Optional[dict], failure: Optional[LaunchFailure] = None) -> dict:
     return {
-        "success": False,
+        "success": failure is None,
         "data": data,
-        "error": {
-            "code": error.code,
-            "message": error.message,
-            "recoverable": error.recoverable,
-            "suggested_action": error.suggested_action,
-        },
+        "error": failure.to_error() if failure else None,
     }
-
-
-def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "--json", action="store_true", help="Treat remaining args as JSON payload"
-    )
-    parser.add_argument("args", nargs="*", help="JSON payload")
-    return parser.parse_args()
 
 
 def load_payload(raw: str) -> LaunchpadInput:
     try:
-        data = json.loads(raw)
+        return LaunchpadInput.model_validate(json.loads(raw))
     except json.JSONDecodeError as exc:
-        raise LaunchpadError(
+        raise LaunchFailure(
             "VALIDATION.INVALID_JSON",
             f"Invalid JSON payload: {exc}",
-            suggested_action="Pass one valid JSON object to --json.",
-        ) from exc
-    try:
-        return LaunchpadInput.model_validate(data)
+            "Pass one valid JSON object to --json.",
+        )
     except ValidationError as exc:
-        raise LaunchpadError(
+        raise LaunchFailure(
             "VALIDATION.INVALID_PAYLOAD",
             f"Invalid launch payload: {exc}",
-            suggested_action="Provide required fields: description, prompt, tool, and cwd.",
-        ) from exc
+            "Provide description, prompt, tool, and cwd (unless isolation.cwd='temp'); "
+            "use only documented optional fields.",
+        )
 
 
-def resolve_cwd(cwd: str) -> Path:
+def check_capabilities(payload: LaunchpadInput) -> None:
+    if payload.tool != "gemini":
+        return
+    requested = [
+        name
+        for name, present in (
+            ("output_format='json'", payload.output_format == "json"),
+            ("resume_session_id", payload.resume_session_id is not None),
+            ("isolation", payload.isolation is not None),
+            ("ephemeral", payload.ephemeral),
+            ("effort", payload.effort is not None),
+        )
+        if present
+    ]
+    if requested:
+        raise LaunchFailure(
+            "CAPABILITY.UNSUPPORTED",
+            "gemini does not support " + ", ".join(requested) + " in sc-launchpad",
+            "Use tool 'claude' or 'codex' for session ids, resume, isolation, "
+            "ephemeral sessions, and effort, or launch gemini in text mode without these fields.",
+            recoverable=False,
+            details={"tool": "gemini", "unsupported_fields": requested},
+        )
+
+
+def which(name: str, env: Dict[str, str]) -> str:
+    found = shutil.which(name, path=env.get("PATH", ""))
+    if found is None:
+        raise LaunchFailure(
+            "CLI.NOT_FOUND",
+            f"Required CLI is not available on PATH: {name}",
+            f"Install `{name}` or adjust PATH before launching.",
+            details={"cli": name, "searched_path": [d for d in env.get("PATH", "").split(os.pathsep) if d]},
+        )
+    return found
+
+
+def resolve_given_cwd(cwd: str) -> Path:
     path = Path(cwd).expanduser().resolve()
-    if not path.exists() or not path.is_dir():
-        raise LaunchpadError(
+    if not path.is_dir():
+        raise LaunchFailure(
             "VALIDATION.INVALID_CWD",
             f"Working directory does not exist: {path}",
-            suggested_action="Pass an existing directory in the `cwd` field.",
+            "Pass an existing directory in the `cwd` field.",
         )
     return path
 
 
-def normalize_tool_model(payload: LaunchpadInput) -> str | None:
-    if payload.tool == "claude":
-        if payload.model is None:
-            return "sonnet"
-        normalized = CLAUDE_MODEL_MAP.get(payload.model)
-        if normalized is None:
-            raise LaunchpadError(
-                "VALIDATION.INVALID_MODEL",
-                f"Unsupported Claude model: {payload.model}",
-                suggested_action="Use one of: sonnet, haiku, opus.",
-            )
-        return normalized
-    if payload.tool == "codex":
-        if payload.model is None:
-            return "gpt-5.6-terra"
-        normalized = CODEX_MODEL_MAP.get(payload.model)
-        if normalized is None:
-            raise LaunchpadError(
-                "VALIDATION.INVALID_MODEL",
-                f"Unsupported Codex model: {payload.model}",
-                suggested_action="Use sol, terra, luna, codex (deprecated), or a known Codex model alias.",
-            )
-        return normalized
-    return payload.model
-
-
-def roster_model(payload: LaunchpadInput, normalized_model: str | None) -> str:
-    if payload.tool == "claude":
-        return normalized_model or "sonnet"
-    if payload.tool == "codex":
-        return CODEX_ROSTER_MODEL_MAP.get(
-            normalized_model or "", normalized_model or "terra"
-        )
-    return payload.tool
-
-
-def ensure_command(name: str) -> None:
-    if shutil.which(name) is None:
-        raise LaunchpadError(
-            "CLI.NOT_FOUND",
-            f"Required CLI is not available on PATH: {name}",
-            suggested_action=f"Install `{name}` or adjust PATH before launching.",
-        )
-
-
-def maybe_add_member(
-    parent_env: dict[str, str],
-    teammate_mode: bool,
-    team: str | None,
-    identity: str | None,
-    payload: LaunchpadInput,
-    normalized_model: str | None,
-    cwd: Path,
-) -> None:
-    if not teammate_mode:
-        return
-    ensure_command("atm")
-    command = [
-        "atm",
-        "teams",
-        "add-member",
-        team or "",
-        identity or "",
-        "--model",
-        roster_model(payload, normalized_model),
-        "--cwd",
-        str(cwd),
-    ]
-    # TODO: When pane-aware launchpad mode exists, append `--pane-id <pane-id>` here.
-    result = subprocess.run(command, text=True, capture_output=True, env=parent_env)
+def add_team_member(env: Dict[str, str], team: str, identity: str, model: str, cwd: Path) -> None:
+    # TODO: When pane-aware launchpad mode exists, append `--pane-id <pane-id>`.
+    command = [which("atm", env), "teams", "add-member", team, identity, "--model", model, "--cwd", str(cwd)]
+    result = subprocess.run(command, text=True, capture_output=True, env=env, stdin=subprocess.DEVNULL)
     if result.returncode != 0:
-        message = (
-            result.stderr.strip()
-            or result.stdout.strip()
-            or "atm teams add-member failed"
-        )
-        raise LaunchpadError(
+        raise LaunchFailure(
             "ATM.ADD_MEMBER_FAILED",
-            message,
-            suggested_action="Ensure the team exists and the identity can be added before retrying.",
+            result.stderr.strip() or result.stdout.strip() or "atm teams add-member failed",
+            "Ensure the team exists and the identity can be added before retrying.",
+            details={"stderr_tail": tail(result.stderr)},
         )
 
 
-def build_command(payload: LaunchpadInput, normalized_model: str | None) -> list[str]:
-    extra = list(payload.extra_args)
-    if payload.tool == "claude":
-        command = ["claude", "--dangerously-skip-permissions", "--print"]
-        if normalized_model:
-            command.extend(["--model", normalized_model])
-        command.extend(extra)
-        command.append(payload.prompt)
-        return command
-    if payload.tool == "codex":
-        command = ["codex", "exec", "--yolo"]
-        if normalized_model:
-            command.extend(["--model", normalized_model])
-        command.extend(extra)
-        command.append(payload.prompt)
-        return command
-    command = ["gemini", "--yolo", "--prompt", payload.prompt]
-    if normalized_model:
-        command.extend(["--model", normalized_model])
-    command.extend(extra)
-    return command
-
-
-def run_payload(payload: LaunchpadInput, parent_env: dict[str, str]) -> dict:
-    cwd = resolve_cwd(payload.cwd)
-    ensure_command(payload.tool)
-    normalized_model = normalize_tool_model(payload)
-    teammate_mode, team, identity = resolve_teammate_mode(
-        parent_env, payload.atm_identity
-    )
-    maybe_add_member(
-        parent_env, teammate_mode, team, identity, payload, normalized_model, cwd
-    )
-    child_env = build_child_env(parent_env, teammate_mode, team, identity)
-    command = build_command(payload, normalized_model)
-    result = subprocess.run(
-        command,
-        cwd=str(cwd),
-        env=child_env,
-        text=True,
-        capture_output=True,
-    )
-    data = {
+def audit(env: Dict[str, str], payload: LaunchpadInput, response: dict, started: float) -> None:
+    """Append one line per launch to the package log; never the prompt, never fatal."""
+    data, error = response.get("data") or {}, response.get("error") or {}
+    record = {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "event": "launch",
+        "package": "sc-launchpad",
+        "level": "info" if response["success"] else "error",
         "tool": payload.tool,
-        "model": normalized_model,
+        "model": data.get("model", payload.model),
+        "effort": payload.effort,
+        "output_format": "json" if payload.structured else "text",
+        "isolation": payload.isolation.model_dump() if payload.isolation else None,
+        "ephemeral": payload.ephemeral,
+        # Path and names only; values never leave the process.
+        "env_file": data.get("env_file", payload.env_file),
+        "env_keys": data.get("env_keys"),
+        "session_id": data.get("session_id"),
+        "resumed_session_id": payload.resume_session_id,
+        "exit_code": data.get("exit_code"),
+        "error_code": error.get("code"),
+        "duration_seconds": round(time.monotonic() - started, 3),
+    }
+    root = Path(env.get("CLAUDE_PROJECT_DIR") or os.getcwd())
+    log = root / ".claude" / "state" / "logs" / "sc-launchpad" / "launch.jsonl"
+    try:
+        log.parent.mkdir(parents=True, exist_ok=True)
+        with log.open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps(record) + "\n")
+    except OSError:
+        pass
+
+
+def run_payload(payload: LaunchpadInput, parent_env: Dict[str, str]) -> dict:
+    check_capabilities(payload)
+    model = normalize_tool_model(payload)
+    given_cwd = None if payload.temp_cwd else resolve_given_cwd(payload.cwd or "")
+    env_file, env_keys = None, []
+    if payload.env_file:
+        # The file wins over inherited variables; launchpad's own (ATM_*, BEADS_ACTOR,
+        # an isolated CODEX_HOME) are applied after it and win over both.
+        base = given_cwd or Path(parent_env.get("CLAUDE_PROJECT_DIR") or os.getcwd())
+        parent_env, env_file, env_keys = load_env_file(payload.env_file, base, parent_env)
+    command = build_command(payload, model)
+    executable = which(payload.tool, parent_env)
+    check_batch_shim(executable, [executable] + command.argv[1:])
+    # A team member launched without `atm_identity` gets a generated identity, so the
+    # child is its own addressable agent; a tools-less child never joins the team.
+    identity_pool = None if payload.no_tools else identity_family(payload, model)
+    teammate_mode, team, identity = resolve_teammate_mode(parent_env, payload.atm_identity, identity_pool)
+
+    cwd = given_cwd or create_temp_cwd()
+    # Paths this launch's sessions leave behind; the caller deletes them after the last turn.
+    cleanup_paths: List[Path] = [cwd] if is_launchpad_temp(cwd) else []
+    child_started = False
+    try:
+        if teammate_mode:
+            add_team_member(parent_env, team or "", identity or "", roster_model(payload, model), cwd)
+        env = build_child_env(parent_env, teammate_mode, team, identity)
+        if payload.tool == "codex" and payload.no_tools:
+            env["CODEX_HOME"] = str(codex_private_home(cwd, parent_env))
+            cleanup_paths.append(Path(env["CODEX_HOME"]))
+        child_started = True
+        outcome = run_process(
+            [executable] + command.argv[1:], cwd, env, payload.timeout_seconds, command.stdin
+        )
+    except LaunchFailure as failure:
+        if failure.code == "RUNTIME.INTERRUPTED":
+            child_started = failure.details.get("child_started", False)
+        if payload.temp_cwd and not child_started:
+            # Nothing ran and nothing was reported: leave no trace.
+            for path in cleanup_paths:
+                shutil.rmtree(path, ignore_errors=True)
+            raise
+        failure.details.setdefault("cleanup_paths", [str(p) for p in cleanup_paths])
+        raise
+
+    if payload.tool == "claude" and is_launchpad_temp(cwd):
+        transcripts = claude_project_dir(cwd, parent_env)
+        if transcripts.exists():
+            cleanup_paths.append(transcripts)
+    data: Dict[str, Any] = {
+        "tool": payload.tool,
+        "model": model,
+        "effort": payload.effort,
         "cwd": str(cwd),
+        "cleanup_paths": [str(p) for p in cleanup_paths],
         "teammate_mode": teammate_mode,
         "atm_team": team,
         "atm_identity": identity,
-        "exit_code": result.returncode,
-        "stdout": result.stdout,
-        "stderr": result.stderr,
-    }
-    if result.returncode == 0:
-        return success_response(data)
-    return error_response(
-        LaunchpadError(
-            "CLI.NON_ZERO_EXIT",
-            f"{payload.tool} exited with code {result.returncode}",
-            suggested_action="Inspect stdout/stderr in the returned payload and retry with adjusted prompt or args.",
+        "output_format": "json" if payload.structured else "text",
+        "isolation": (
+            dict(payload.isolation.model_dump(), flags=isolation_flags(payload))
+            if payload.isolation
+            else None
         ),
-        data,
-    )
+        "ephemeral": payload.ephemeral,
+        "env_file": str(env_file) if env_file else None,
+        "env_keys": env_keys,
+        "exit_code": outcome.exit_code,
+        # Structured runs carry the answer in result_text; raw output only in error details.
+        "stdout": None if payload.structured else outcome.stdout,
+        "stderr": tail(outcome.stderr) if payload.structured else outcome.stderr,
+        "session_id": None,
+        "result_text": None,
+        "resumed_session_id": payload.resume_session_id,
+        "timeout_seconds": payload.timeout_seconds,
+        "timed_out": outcome.timed_out,
+        "duration_seconds": outcome.duration_seconds,
+        "warnings": [],
+    }
 
-
-def main() -> int:
-    args = parse_args()
-    raw = " ".join(args.args).strip()
-    if not raw:
-        print(
-            json.dumps(
-                error_response(
-                    LaunchpadError(
-                        "VALIDATION.MISSING_INPUT",
-                        "No launch payload was provided.",
-                        suggested_action="Pass a JSON object with --json.",
-                    )
-                ),
-                indent=2,
+    if not payload.structured:
+        if outcome.timed_out or outcome.exit_code != 0:
+            failure = LaunchFailure(
+                "CLI.TIMEOUT" if outcome.timed_out else "CLI.NON_ZERO_EXIT",
+                f"{payload.tool} did not finish within {payload.timeout_seconds}s and was killed"
+                if outcome.timed_out
+                else f"{payload.tool} exited with code {outcome.exit_code}",
+                "Increase timeout_seconds or shorten the prompt."
+                if outcome.timed_out
+                else "Inspect data.stdout/data.stderr and retry with an adjusted prompt or args.",
+                details={"stderr_tail": tail(outcome.stderr), "exit_code": outcome.exit_code},
             )
-        )
-        return 0
+            return envelope(data, failure)
+        return envelope(data)
 
     try:
-        payload = load_payload(raw)
-        response = run_payload(payload, dict(os.environ))
-    except LaunchpadError as exc:
-        response = error_response(exc)
-    except Exception as exc:  # pragma: no cover - safety net
-        response = error_response(
-            LaunchpadError(
-                "RUNTIME.UNEXPECTED",
-                str(exc),
-                recoverable=False,
-            )
-        )
+        parsed, warnings = classify(payload, outcome)
+    except LaunchFailure as failure:
+        data["session_id"] = failure.details.get("session_id")
+        return envelope(data, failure)
+    data.update(session_id=parsed.session_id, result_text=parsed.result_text, warnings=warnings)
+    return envelope(data)
 
+
+def read_raw_payload(args: List[str]) -> str:
+    raw = " ".join(args).strip()
+    if raw == "-":
+        # JSON is UTF-8 (RFC 8259); `utf-8-sig` drops a PowerShell BOM.
+        return sys.stdin.buffer.read().decode("utf-8-sig", errors="replace").strip()
+    return raw
+
+
+def main(argv: Optional[List[str]] = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--json", action="store_true", help="Treat remaining args as the JSON payload ('-' reads stdin)")
+    parser.add_argument("args", nargs="*", help="JSON payload")
+    raw = read_raw_payload(parser.parse_args(argv).args)
+    started = time.monotonic()
+    env = dict(os.environ)
+    payload = None
+    try:
+        if not raw:
+            raise LaunchFailure(
+                "VALIDATION.MISSING_INPUT",
+                "No launch payload was provided.",
+                "Pass a JSON object with --json (or `--json -` to read stdin).",
+            )
+        payload = load_payload(raw)
+        response = run_payload(payload, env)
+    except LaunchFailure as failure:
+        response = envelope(None, failure)
+    except Exception as exc:  # pragma: no cover - safety net keeps the one-envelope contract
+        response = envelope(None, LaunchFailure("RUNTIME.UNEXPECTED", str(exc), recoverable=False))
+    if payload is not None:
+        audit(env, payload, response, started)
     print(json.dumps(response, indent=2))
     return 0
 

@@ -11,10 +11,13 @@ from pydantic import TypeAdapter, ValidationError as SchemaValidationError
 
 from ai_cli.logging import write_log
 from ai_cli.task_runner import (
+    EFFORTS,
+    effort_help,
+    model_help,
+    prepare_payload,
     run_background_child_with_payload,
     resolve_runner,
     run_task,
-    resolve_model,
 )
 from ai_cli.task_tool import TaskToolInput, TaskToolOutput, task_tool_input_schema
 
@@ -42,9 +45,10 @@ def cmd_validate(args: argparse.Namespace) -> int:
 
 def cmd_run(args: argparse.Namespace) -> int:
     data = _read_json(args.file)
-    payload = TaskToolInput.model_validate(data)
     runner = resolve_runner(args.runner)
-    model = resolve_model(runner, args.model or payload.model)
+    # CLI flags override payload fields before validation; model and effort are checked here,
+    # before anything is launched.
+    payload, model = prepare_payload(data, runner, args.model, args.effort)
     if args.background is None:
         run_in_background = bool(payload.run_in_background)
     else:
@@ -71,6 +75,7 @@ def cmd_run(args: argparse.Namespace) -> int:
                 "event": "output_schema_invalid",
                 "runner": runner,
                 "model": model,
+                "reasoning_effort": payload.reasoning_effort,
                 "agentId": output_dict.get("agentId"),
                 "error": err,
             }
@@ -85,9 +90,8 @@ def cmd_run(args: argparse.Namespace) -> int:
 
 def cmd_run_child(args: argparse.Namespace) -> int:
     data = _read_json(args.input_file)
-    payload = TaskToolInput.model_validate(data)
     runner = resolve_runner(args.runner)
-    model = resolve_model(runner, args.model or payload.model)
+    payload, model = prepare_payload(data, runner, args.model)
     run_background_child_with_payload(
         payload=payload,
         runner=runner,
@@ -112,7 +116,11 @@ def main() -> int:
     p_run = sub.add_parser("run", help="Execute Task Tool request via CLI runner")
     p_run.add_argument("--file", help="Path to JSON file (defaults to stdin)")
     p_run.add_argument("--runner", choices=["claude", "codex"], help="Override runner selection")
-    p_run.add_argument("--model", help="Override model (default derived from runner or input)")
+    p_run.add_argument(
+        "--model",
+        help="Override the payload model. " + "; ".join(model_help(tool) for tool in ("codex", "claude")),
+    )
+    p_run.add_argument("--effort", choices=EFFORTS, help=effort_help())
     bg_group = p_run.add_mutually_exclusive_group()
     bg_group.add_argument("--background", dest="background", action="store_true", help="Force background mode")
     bg_group.add_argument("--no-background", dest="background", action="store_false", help="Force blocking mode")

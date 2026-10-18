@@ -21,7 +21,7 @@
         "scripts": 0,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T06:05:07.118783+00:00"
+      "lastUpdated": "2026-10-18T03:32:51.658181+00:00"
     },
     {
       "name": "sc-ci-automation",
@@ -38,11 +38,11 @@
         "scripts": 1,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T06:05:07.119819+00:00"
+      "lastUpdated": "2026-10-18T03:32:51.659109+00:00"
     },
     {
       "name": "sc-codex",
-      "version": "0.13.0",
+      "version": "0.14.1",
       "description": "Run Codex agents via a Task Tool-compatible runner, with hooks emulation and background execution support.\n",
       "author": "synaptic-canvas",
       "license": "MIT",
@@ -55,7 +55,7 @@
         "scripts": 2,
         "schemas": 2
       },
-      "lastUpdated": "2026-09-23T06:05:07.120619+00:00"
+      "lastUpdated": "2026-10-18T03:32:51.659980+00:00"
     },
     {
       "name": "sc-coding-agent-hardening",
@@ -72,7 +72,7 @@
         "scripts": 0,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T06:05:07.121081+00:00"
+      "lastUpdated": "2026-10-18T03:32:51.660429+00:00"
     },
     {
       "name": "sc-commit-push-pr",
@@ -89,7 +89,7 @@
         "scripts": 9,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T06:05:07.121745+00:00"
+      "lastUpdated": "2026-10-18T03:32:51.661046+00:00"
     },
     {
       "name": "sc-delay-tasks",
@@ -106,7 +106,7 @@
         "scripts": 2,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T06:05:07.122357+00:00"
+      "lastUpdated": "2026-10-18T03:32:51.661624+00:00"
     },
     {
       "name": "sc-docling-pdf",
@@ -123,7 +123,7 @@
         "scripts": 0,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T06:05:07.123165+00:00"
+      "lastUpdated": "2026-10-18T03:32:51.662425+00:00"
     },
     {
       "name": "sc-gh-stack",
@@ -140,7 +140,7 @@
         "scripts": 3,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T06:05:07.124081+00:00"
+      "lastUpdated": "2026-10-18T03:32:51.663374+00:00"
     },
     {
       "name": "sc-git-worktree",
@@ -157,7 +157,7 @@
         "scripts": 7,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T06:05:07.125067+00:00"
+      "lastUpdated": "2026-10-18T03:32:51.664253+00:00"
     },
     {
       "name": "sc-github-issue",
@@ -174,7 +174,7 @@
         "scripts": 1,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T06:05:07.126099+00:00"
+      "lastUpdated": "2026-10-18T03:32:51.665247+00:00"
     },
     {
       "name": "sc-just",
@@ -191,7 +191,7 @@
         "scripts": 0,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T06:05:07.127102+00:00"
+      "lastUpdated": "2026-10-18T03:32:51.666266+00:00"
     },
     {
       "name": "sc-kanban",
@@ -208,12 +208,12 @@
         "scripts": 5,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T06:05:07.127868+00:00"
+      "lastUpdated": "2026-10-18T03:32:51.666945+00:00"
     },
     {
       "name": "sc-launch-term",
-      "version": "0.13.0",
-      "description": "Launch Claude (including Fable), Codex (including Sol, Terra, and Luna), and Gemini sessions in supported terminals with platform-aware autodetect, cmux workspace tabs, and optional tmux session management.\n",
+      "version": "0.14.2",
+      "description": "Launch Claude (including Fable), Codex (including Sol, Astra, Terra, and Luna), and Gemini sessions in supported terminals with platform-aware autodetect, cmux workspace tabs, and optional tmux session management.\n",
       "author": "randlee",
       "license": "MIT",
       "keywords": [],
@@ -222,15 +222,15 @@
         "commands": 0,
         "skills": 0,
         "agents": 0,
-        "scripts": 3,
+        "scripts": 4,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T06:05:07.128494+00:00"
+      "lastUpdated": "2026-10-18T03:32:51.667684+00:00"
     },
     {
       "name": "sc-launchpad",
-      "version": "0.13.0",
-      "description": "Launch Claude (including Fable), Codex (including Sol, Terra, and Luna), or Gemini as a separate background sub-agent runtime, with explicit ATM teammate-mode normalization and roster registration.\n",
+      "version": "0.14.2",
+      "description": "Launch Claude (including Fable), Codex (including Astra, Sol, Terra, and Luna), or Gemini as a separate background sub-agent runtime, with explicit ATM teammate-mode normalization and roster registration.\n",
       "author": "synaptic-canvas",
       "license": "MIT",
       "keywords": [],
@@ -239,10 +239,10 @@
         "commands": 0,
         "skills": 1,
         "agents": 1,
-        "scripts": 2,
+        "scripts": 8,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T06:05:07.129165+00:00"
+      "lastUpdated": "2026-10-18T03:32:51.668513+00:00"
     },
     {
       "name": "sc-manage",
@@ -259,7 +259,7 @@
         "scripts": 8,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T06:05:07.129845+00:00"
+      "lastUpdated": "2026-10-18T03:32:51.669204+00:00"
     },
     {
       "name": "sc-refactory",
@@ -276,7 +276,7 @@
         "scripts": 10,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T06:05:07.130913+00:00"
+      "lastUpdated": "2026-10-18T03:32:51.670282+00:00"
     },
     {
       "name": "sc-repomix-nuget",
@@ -293,7 +293,7 @@
         "scripts": 3,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T06:05:07.131556+00:00"
+      "lastUpdated": "2026-10-18T03:32:51.670971+00:00"
     },
     {
       "name": "sc-roslyn-diff",
@@ -310,7 +310,7 @@
         "scripts": 6,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T06:05:07.132277+00:00"
+      "lastUpdated": "2026-10-18T03:32:51.671679+00:00"
     },
     {
       "name": "sc-rust",
@@ -327,7 +327,7 @@
         "scripts": 0,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T06:05:07.133451+00:00"
+      "lastUpdated": "2026-10-18T03:32:51.672824+00:00"
     },
     {
       "name": "sc-startup",
@@ -344,7 +344,7 @@
         "scripts": 1,
         "schemas": 0
       },
-      "lastUpdated": "2026-09-23T06:05:07.134183+00:00"
+      "lastUpdated": "2026-10-18T03:32:51.673523+00:00"
     }
   ],
   "metadata": {
@@ -352,9 +352,9 @@
     "totalCommands": 17,
     "totalSkills": 29,
     "totalAgents": 52,
-    "totalScripts": 63,
+    "totalScripts": 70,
     "totalSchemas": 2
   },
-  "generated": "2026-09-23T06:05:07.134194+00:00",
-  "lastUpdated": "2026-09-23T06:05:07.134195+00:00"
+  "generated": "2026-10-18T03:32:51.673536+00:00",
+  "lastUpdated": "2026-10-18T03:32:51.673538+00:00"
 }

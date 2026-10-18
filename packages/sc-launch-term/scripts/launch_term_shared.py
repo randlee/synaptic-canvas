@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 import os
 import secrets
 import shlex
@@ -39,138 +39,6 @@ def resolve_team() -> str | None:
     return team or None
 
 
-# Per-tool identity name pools.
-_IDENTITY_NAMES: dict[str, list[str]] = {
-    "gemini": [
-        "Gamma",
-        "Galaxian",
-        "Grimaldi",
-        "Ganymede",
-        "Grogu",
-        "Grievous",
-        "Greedo",
-        "Glitch",
-        "Gauss",
-        "Glimmer",
-    ],
-    "haiku": [
-        "Homer",
-        "Helix",
-        "Helios",
-        "Horus",
-        "Halo",
-        "Hal",
-        "Hex",
-        "Hive",
-        "Heretic",
-        "Hydra",
-    ],
-    "sonnet": [
-        "Sinatra",
-        "Santana",
-        "Slash",
-        "Spock",
-        "Skynet",
-        "Striker",
-        "Siren",
-        "Sentinel",
-        "Sting",
-        "Synth",
-    ],
-    "opus": [
-        "Orion",
-        "Oracle",
-        "Omega",
-        "Orwell",
-        "Obiwan",
-        "Optimus",
-        "Oblivion",
-        "Onyx",
-        "Odyssey",
-        "Octane",
-    ],
-    "fable": [
-        "Fable",
-        "Folklore",
-        "Fiction",
-        "Fairytale",
-        "Fantasy",
-        "Fathom",
-        "Fresco",
-        "Fableton",
-        "Figment",
-        "Fablewood",
-    ],
-    # Codex model identities use the model alias initial and a sci-fi/cyberpunk
-    # vocabulary. The deprecated `codex` alias is normalized to `terra` below.
-    "sol": [
-        "Smith",
-        "Switch",
-        "Spoon",
-        "Saito",
-        "Sark",
-        "Seraph",
-        "Sombra",
-        "Synth",
-        "Specter",
-        "Sentinel",
-    ],
-    "terra": [
-        "Trinity",
-        "Tank",
-        "Turing",
-        "Tyrell",
-        "Tessier",
-        "Talon",
-        "Tracer",
-        "Titan",
-        "Terminal",
-        "Turin",
-    ],
-    "luna": [
-        "Lamb",
-        "Link",
-        "Lucy",
-        "Lyra",
-        "Lambda",
-        "Lazarus",
-        "Lumen",
-        "Lotus",
-        "Lucid",
-        "Legion",
-    ],
-}
-
-_IDENTITY_ALIASES = {"codex": "terra"}
-
-_FALLBACK_NAMES: list[str] = [
-    "Amber",
-    "Bold",
-    "Calm",
-    "Deft",
-    "Eager",
-    "Fleet",
-    "Gold",
-    "Hale",
-    "Iron",
-    "Jade",
-]
-
-
-def generate_identity(tool: str | None = None) -> str:
-    pool_key = _IDENTITY_ALIASES.get(tool or "", tool or "")
-    pool = _IDENTITY_NAMES.get(pool_key, _FALLBACK_NAMES)
-    name = secrets.choice(pool)
-    suffix = secrets.token_hex(2)
-    return f"{name}-{suffix}"
-
-
-def resolve_identity(identity: str | None, tool: str | None = None) -> str | None:
-    if not identity:
-        identity = generate_identity(tool)
-    return identity
-
-
 def _encode_crockford(value: int, length: int) -> str:
     chars = ["0"] * length
     for index in range(length - 1, -1, -1):
@@ -187,7 +55,7 @@ def _decode_crockford(value: str) -> int:
 
 
 def generate_ulid(now: datetime | None = None) -> str:
-    timestamp = now or datetime.now(UTC)
+    timestamp = now or datetime.now(timezone.utc)
     timestamp_ms = int(timestamp.timestamp() * 1000)
     entropy = int.from_bytes(secrets.token_bytes(10), "big")
     return _encode_crockford(timestamp_ms, 10) + _encode_crockford(entropy, 16)
@@ -197,7 +65,7 @@ def ulid_timestamp(launch_id: str) -> datetime:
     if len(launch_id) != 26:
         raise ValueError(f"Invalid ULID length: {launch_id}")
     timestamp_ms = _decode_crockford(launch_id[:10])
-    return datetime.fromtimestamp(timestamp_ms / 1000, tz=UTC)
+    return datetime.fromtimestamp(timestamp_ms / 1000, tz=timezone.utc)
 
 
 def session_filename_from_launch_id(launch_id: str) -> str:
