@@ -60,7 +60,8 @@ hooks:
 
 ## Constraints
 - Uninstall only package-owned artifacts in the selected target destinations.
-  Non-Claude targets use their portable artifact subset; leave peer targets and
-  unrelated files untouched. Per-target roots accept `global_<target>_dir` and
+  Non-Claude targets use their portable artifact subset (plus sc-manage's
+  Cursor `/sc-manage` command); leave peer targets and unrelated files
+  untouched. Per-target roots accept `global_<target>_dir` and
   `user_<target>_dir` overrides. Report partial completion on failure.
 - Return ONLY fenced JSON.

@@ -34,7 +34,7 @@ options:
   - name: --codex
     description: Select Codex skills, scripts, and assets.
   - name: --cursor
-    description: Select Cursor skills, scripts, and assets.
+    description: Select Cursor skills, scripts, and assets. sc-manage also installs a Cursor-native /sc-manage command.
   - name: --hermes
     description: Select Hermes skills, scripts, and assets; project skills require explicit Hermes trust.
 ---
@@ -48,6 +48,7 @@ Manage Synaptic Canvas packages:
 - Add any combination of `--claude`, `--codex`, `--cursor`, `--hermes` to install,
   uninstall, or list. With no target flag, only Claude is selected. Unknown or
   conflicting flags fail before installation; scopes and targets are separate.
+  A Cursor install of this package also provides `/sc-manage` as a Cursor command.
 
 Notes:
 - Some packages are local-only (e.g., sc-git-worktree). The manager will block global installation for those.

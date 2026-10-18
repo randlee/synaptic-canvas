@@ -20,9 +20,12 @@ Security: See [SECURITY.md](../../../SECURITY.md) for security policy and practi
 
 ## Quick Start (Global install)
 
-`sc-manage` is the package/plugin name. Its installable skill is named
-**`managing-sc-packages`**; `/sc-manage` is its Claude command. Finding the package
-in a repository or cache is not proof that a host has loaded or enabled it.
+`sc-manage` is the package/plugin name and the installer other packages need:
+many skills ship scripts (and some `install.py` hooks) rather than a standalone
+`SKILL.md`. Its skill is **`managing-sc-packages`**. `/sc-manage` is the Claude
+slash command and, after a Cursor install, the Cursor command at
+`.cursor/commands/sc-manage.md` (or `~/.cursor/commands/sc-manage.md`). Finding
+the package in a repository or cache is not proof that a host has loaded it.
 
 From a Synaptic Canvas checkout, install its artifacts for selected hosts:
 
@@ -64,17 +67,27 @@ existing manager behavior. Unknown flags and conflicting scopes are errors.
 Project installs stay under the repository root regardless of profile settings.
 The agent JSON interface also accepts `global_<target>_dir` and `user_<target>_dir`.
 
-Non-Claude targets receive skills, scripts, and assets only. Claude commands,
-agents, plugin manifests and `agents/registry.yaml` are not installed there.
-This does not automatically port arbitrary Claude-specific agent workflows.
-[Cursor supports project and user skill directories](https://cursor.com/docs/skills).
+Non-Claude targets receive skills, scripts, and assets. Claude Task agents,
+plugin manifests and `agents/registry.yaml` are not installed there. Cursor
+also has native [commands](https://cursor.com/docs/reference/plugins) and
+[subagents](https://cursor.com/docs/subagents); Claude's command bang-syntax
+and Task-agent files are not drop-in, so other packages are invoked as skills
+(`/skill-name`). sc-manage additionally writes a Cursor-native `/sc-manage`
+command because its skill folder is `managing-sc-packages`.
+[Cursor loads `.cursor/skills/` and `~/.cursor/skills/`](https://cursor.com/docs/skills),
+and for compatibility also `.claude/skills/` and `.codex/skills/`. Dual Claude
+and Cursor project installs can therefore list the same skill twice.
+User-level Cursor skills reach Cloud Agents only with Sync Skills; `~/.cursor/scripts/`
+does not sync, so prefer `--local --cursor` when Cloud Agents must run the installer.
 [Hermes project skills require explicit trust](https://hermes-agent.nousresearch.com/docs/user-guide/features/skills):
 run `hermes skills trust` from the repository after reviewing its skills.
 The installer never grants trust or modifies Hermes configuration automatically.
 
-Without Claude's Task tool, invoke `sc_manage_dispatch.py` directly from the
-installed target's `scripts/` directory. If the remembered source is unavailable,
-set `SC_REPO_PATH` to the checkout containing the source packages and installer.
+On Cursor, Codex, and Hermes, run `sc_manage_dispatch.py` from the installed
+target's `scripts/` directory (from the skill, `../../scripts/`; from the Cursor
+command, `../scripts/`). Do not use Claude Task agents. If the remembered source
+is unavailable, set `SC_REPO_PATH` to the checkout containing the source packages
+and installer.
 
 Install/uninstall JSON includes `targets` and `destinations`. The legacy `dest`
 field is a string for a single target and null for multiple. Failure output
@@ -88,10 +101,10 @@ Its existing no-target scoped default remains Claude+Codex; the manager always
 passes an explicit target choice and therefore retains its Claude-only default.
 
 ## Components
-- Command: `commands/sc-manage.md`
+- Command: `commands/sc-manage.md` (Claude); `cursor/sc-manage.md` is written to `.cursor/commands/sc-manage.md` on Cursor installs
 - Skill: `skills/managing-sc-packages/SKILL.md`
-- Agents: `sc-packages-list`, `sc-package-install`, `sc-package-uninstall`, `sc-package-docs`
-- Scripts: `scripts/sc_manage_*.py` (JSON in/out; validated by a PreToolUse hook)
+- Agents: `sc-packages-list`, `sc-package-install`, `sc-package-uninstall`, `sc-package-docs` (Claude Task only)
+- Scripts: `scripts/sc_manage_*.py` (JSON in/out; the Cursor/Codex/Hermes execution path)
 
 ## Notes
 - Project scope (`--local`/`--project`) requires being inside a Git repo (used to resolve `REPO_NAME` for token expansion).

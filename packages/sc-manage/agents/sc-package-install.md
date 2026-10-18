@@ -60,7 +60,8 @@ hooks:
 
 ## Constraints
 - Install only into the selected target's resolved destination. Non-Claude
-  targets receive skills/scripts/assets, not Claude-specific artifacts.
+  targets receive skills/scripts/assets, not Claude Task agents or plugin
+  manifests. sc-manage's Cursor hook also writes `/sc-manage`.
 - Per-target root overrides are `global_<target>_dir` / `user_<target>_dir`.
   Hermes project trust is a separate user decision, not an install side effect.
 - Do not echo secrets; return JSON only.
