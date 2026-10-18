@@ -1,6 +1,6 @@
 ---
 name: sc-gh-stack-view
-version: 0.1.1
+version: 0.2.0
 description: Report local stack coherence and content conflicts, hosted merge eligibility and CI. Use for stacked-PR status questions or /sc-gh-stack-view; reuse sufficient observations rather than checking layers individually.
 entry_point: /sc-gh-stack-view
 ---

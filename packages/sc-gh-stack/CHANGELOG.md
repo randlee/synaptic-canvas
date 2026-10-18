@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-17
+
 ### Changed
 - Stack reports derive local state first, share bounded hosted observations across worktrees, and support scoped refreshes and complete JSON/full output. Recipes reuse sufficient evidence while preserving verification, ownership and recovery requirements.
 - Add explicitly truncated `--compact-json` presentation while retaining complete `--json`; coordinate adapter API starts across repositories and start the hosted deadline only with API acquisition.
