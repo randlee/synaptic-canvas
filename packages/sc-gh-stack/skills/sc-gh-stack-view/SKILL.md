@@ -1,6 +1,6 @@
 ---
 name: sc-gh-stack-view
-version: 0.2.0
+version: 0.2.1
 description: Report local stack coherence and content conflicts, hosted merge eligibility and CI. Use for stacked-PR status questions or /sc-gh-stack-view; reuse sufficient observations rather than checking layers individually.
 entry_point: /sc-gh-stack-view
 ---
@@ -107,9 +107,11 @@ No tokens are stored. Respect reported cooldowns; do not retry via another proto
 python3 .claude/scripts/gh_stack_view.py --trunk develop
 ```
 
-Under a plugin install the script is at `$CLAUDE_PLUGIN_ROOT/scripts/gh_stack_view.py`.
-If it is at neither path, locate it with `find .claude ~/.claude -name gh_stack_view.py`
-and use the newest match.
+Resolve `../../scripts/gh_stack_view.py` relative to this skill's directory and
+use its absolute path in the example above. This works for Claude, Codex, Cursor,
+and Hermes installs, including custom profile roots, and in source checkouts.
+Do not choose an unrelated host's stale helper. Claude plugin installs may also
+use `$CLAUDE_PLUGIN_ROOT/scripts/gh_stack_view.py`.
 
 Exit codes:
 

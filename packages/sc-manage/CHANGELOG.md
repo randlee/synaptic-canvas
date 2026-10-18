@@ -5,6 +5,20 @@ All notable changes to the **sc-manage** package will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.14.0] - 2026-10-17
+
+### Added
+- Explicit, combinable `--claude`, `--codex`, `--cursor`, and `--hermes` targets
+  for installation, listing and uninstallation. The default remains Claude only.
+- Per-target destination/provenance fields, profile-home overrides, and a Hermes
+  project-trust reminder without changing trust configuration automatically.
+
+### Fixed
+- Reject unknown/conflicting flags before acquisition or installation, rather
+  than silently ignoring `--codex`. Keep unselected targets untouched and report
+  completed targets on partial failure.
+- Portable-host execution instructions no longer require Claude's Task agents.
+
 ## [0.10.0] - 2026-04-18
 
 ### Planned

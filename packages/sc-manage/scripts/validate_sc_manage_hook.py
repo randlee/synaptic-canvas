@@ -3,6 +3,8 @@ import json
 import re
 import sys
 
+from sc_manage_common import selected_targets
+
 payload = json.load(sys.stdin)
 command = (payload.get("tool_input") or {}).get("command", "")
 
@@ -26,6 +28,13 @@ if "sc_manage_install.py" in command or "sc_manage_uninstall.py" in command:
         sys.exit(2)
     if data.get("scope") not in {"local", "project", "global", "user"}:
         print("Missing or invalid 'scope' (local|project|global|user)", file=sys.stderr)
+        sys.exit(2)
+
+if any(script in command for script in ("sc_manage_install.py", "sc_manage_uninstall.py", "sc_manage_list.py")):
+    try:
+        selected_targets(data)
+    except ValueError as exc:
+        print(str(exc), file=sys.stderr)
         sys.exit(2)
 
 if "sc_manage_docs.py" in command:

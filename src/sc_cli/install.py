@@ -5,12 +5,9 @@ Python rewrite of tools/sc-install.sh
 Commands:
   list
   info <package>
-  install <package> --dest <path/to/.claude> [--force] [--no-expand] [--set K=V ...]
-  install <package> --global [--claude|--codex] [--force] [--no-expand] [--set K=V ...]
-  install <package> --local [--claude|--codex] [--force] [--no-expand] [--set K=V ...]
-  install <package> --user [--claude|--codex] [--force] [--no-expand] [--set K=V ...]
-  install <package> --project [--claude|--codex] [--force] [--no-expand] [--set K=V ...]
-  uninstall <package> --dest <path/to/.claude>
+  install <package> --dest <path> [--claude|--codex|--cursor|--hermes] [--force] [--no-expand]
+  install <package> --global|--local|--user|--project [--claude] [--codex] [--cursor] [--hermes]
+  uninstall <package> --dest <path> [--claude|--codex|--cursor|--hermes]
   registry add <name> <url> [--path <path>]
   registry list
   registry remove <name>
@@ -36,12 +33,11 @@ Notes:
 - Local-install templating: any artifact with a sibling <path>.local.j2 file (any
   category: commands, skills, agents, scripts, assets, plugin) is rendered via
   sc-compose (auto-installed on demand) instead of copied verbatim, for any
-  install that isn't --global/--user, and never for the .codex target (Codex
-  has no install-time repo-specific customization).
-- --claude/--codex select which target(s) get installed under the chosen
-  scope (--global/--local/--user/--project): symmetric flags, either alone
-  means only that target, neither means both .claude and .codex are
-  installed. An explicit --dest is always .claude-only.
+  Claude install that isn't --global/--user. Other targets copy plain artifacts.
+- --claude/--codex/--cursor/--hermes select one or more targets. With no target
+  flags, scoped installs retain the legacy Claude+Codex default; sc-manage
+  explicitly selects Claude by default. --dest accepts exactly one target
+  (Claude when omitted), with no implicit peer destination.
 - Scripts are made executable on install (artifacts under scripts/*)
 - Config file manages marketplace registries with metadata (url, path, status, added_date)
 - Phase 1: Basic registry commands (add, list, remove) and config persistence
@@ -1033,13 +1029,15 @@ def _git_repo_basename(dest_dir: Path) -> str:
         return ""
 
 
-def _iter_artifacts(m: Manifest, *, codex: bool = False) -> Iterable[str]:
-    # Codex has no equivalent of Claude Code's slash-commands, subagents, or
-    # plugin manifests, and no registry.yaml, so only skills/scripts/assets
-    # are meaningful there.
+INSTALL_TARGETS = ("claude", "codex", "cursor", "hermes")
+
+
+def _iter_artifacts(m: Manifest, *, codex: bool = False, target: str = "claude") -> Iterable[str]:
+    # Non-Claude targets receive portable skills/scripts/assets, not Claude's
+    # command/agent formats, plugin manifests, or agents/registry.yaml.
     order = (
         ["skills", "scripts", "assets"]
-        if codex
+        if codex or target != "claude"
         else ["commands", "skills", "agents", "scripts", "assets", "plugin"]
     )
     for key in order:
@@ -1117,16 +1115,16 @@ def _resolve_install_scope(
     user_flag: bool = False,
     project_flag: bool = False,
     dest: Optional[str] = None,
+    *,
+    target: str = "claude",
 ) -> Optional[Path]:
     """Resolve the install *scope* (global/user/local/project/dest) to a base path.
 
     Phase 1: Support for --global, --local, --user, and --project flags.
 
     For --global/--user/--local/--project this is the *parent* directory that
-    a `.claude` and/or `.codex` subdirectory is installed into (see
-    `_resolve_install_targets`). For --dest it is the exact, single directory
-    to install into (dest is always claude-only; there is no sibling `.codex`
-    to mirror into, since the path was explicitly chosen by the caller).
+    a target subdirectory is installed into. --dest names one exact directory
+    for the selected target (Claude by default), without mirroring to peers.
 
     Returns:
         Path, or None if invalid combination (an error has already been reported).
@@ -1149,7 +1147,7 @@ def _resolve_install_scope(
 
     # dest flag
     if dest:
-        if ".claude" not in dest:
+        if target == "claude" and ".claude" not in dest:
             error("--dest must point to a .claude directory")
             return None
         return Path(dest).expanduser().resolve()
@@ -1158,21 +1156,19 @@ def _resolve_install_scope(
 
 
 def _resolve_install_targets(
-    claude_flag: bool, codex_flag: bool, *, dest: Optional[str] = None
+    claude_flag: bool, codex_flag: bool, *, dest: Optional[str] = None,
+    cursor_flag: bool = False, hermes_flag: bool = False,
 ) -> List[str]:
-    """Resolve which of "claude"/"codex" to install, mirroring --global/--local
-    symmetry: --claude or --codex alone installs only that target; with
-    neither given, both install. An explicit --dest is always claude-only,
-    since it names one exact directory rather than a `.claude`/`.codex`-suffixed
-    base.
+    """Explicit flags select only those targets; scope defaults remain legacy.
+
+    --dest selects one exact target directory, Claude when no flag is given.
     """
+    targets = [target for target, enabled in zip(INSTALL_TARGETS,
+               (claude_flag, codex_flag, cursor_flag, hermes_flag)) if enabled]
     if dest:
-        return ["claude"]
-    targets = []
-    if claude_flag:
-        targets.append("claude")
-    if codex_flag:
-        targets.append("codex")
+        if len(targets) > 1:
+            raise ValueError("--dest accepts one target only; use a scope flag for multiple targets")
+        return targets or ["claude"]
     return targets or ["claude", "codex"]
 
 
@@ -1344,10 +1340,12 @@ def cmd_install(
     project_flag: bool = False,
     claude_flag: bool = False,
     codex_flag: bool = False,
+    cursor_flag: bool = False,
+    hermes_flag: bool = False,
     registry: Optional[str] = None,
     hook_args: Optional[Dict[str, str]] = None,
 ) -> int:
-    """Install a package to a .claude and/or .codex directory.
+    """Install a package to explicitly selected agent directories.
 
     Phase 3 Enhancement: Remote Registry Support
     - Support --registry flag to install from remote registry
@@ -1356,7 +1354,7 @@ def cmd_install(
 
     Args:
         pkg: Package name
-        dest: Explicit destination path (always .claude-only; no .codex mirror)
+        dest: Explicit destination path for one target (Claude by default)
         force: Overwrite existing files
         expand: Perform token expansion
         global_flag: Install under ~/ (i.e. ~/.claude and/or ~/.codex)
@@ -1367,6 +1365,8 @@ def cmd_install(
             --claude nor --codex is given)
         codex_flag: Install the .codex target (skills/scripts/assets only;
             no commands, agents, or registry.yaml)
+        cursor_flag: Install portable skills/scripts/assets under .cursor
+        hermes_flag: Install portable skills/scripts/assets under .hermes
         registry: Optional registry name to install from
         hook_args: Extra key=value pairs (from repeatable --set) passed through
             to the package's install.py hooks as options["args"]. Lets a
@@ -1415,17 +1415,19 @@ def cmd_install(
         error(f"Package not found: {pkg}")
         return 1
 
-    if dest and codex_flag:
-        error("--dest does not support --codex (an explicit --dest path is always .claude-only)")
+    try:
+        targets = _resolve_install_targets(claude_flag, codex_flag, dest=dest,
+                                          cursor_flag=cursor_flag, hermes_flag=hermes_flag)
+    except ValueError as exc:
+        error(str(exc))
         return 1
 
     # Resolve scope (Phase 1: --global/--local/--user/--project/--dest) and
-    # targets (--claude/--codex, symmetric: either alone means only that one,
-    # neither means both).
-    base_path = _resolve_install_scope(global_flag, local_flag, user_flag, project_flag, dest)
+    # Explicit flags are additive; no flags retain the legacy scoped default.
+    base_path = _resolve_install_scope(global_flag, local_flag, user_flag, project_flag, dest,
+                                       target=targets[0])
     if base_path is None:
         return 1
-    targets = _resolve_install_targets(claude_flag, codex_flag, dest=dest)
 
     manifest = _parse_manifest(pkg_dir)
 
@@ -1435,7 +1437,7 @@ def cmd_install(
 
     # .local.j2 templating (sc-compose): available for any artifact, in any
     # category, for any install that isn't --global/--user, and never for
-    # codex (codex has no install-time repo-specific customization).
+    # non-Claude targets (which copy the plain portable artifacts).
     allow_local_templates = not (global_flag or user_flag)
 
     # Optional package-supplied install.py: prepare() runs right before the
@@ -1444,10 +1446,10 @@ def cmd_install(
     # work sc-install's generic copy/.local.j2 mechanism doesn't cover.
     install_hook = _load_install_hook(pkg_dir)
 
-    def install_target(dest_path: Path, is_codex: bool) -> int:
+    def install_target(dest_path: Path, target: str) -> int:
         dest_path.mkdir(parents=True, exist_ok=True)
         installed_artifacts: List[str] = []
-        use_local_templates = allow_local_templates and not is_codex
+        use_local_templates = allow_local_templates and target == "claude"
 
         repo_name = ""
         if use_local_templates or (expand and declares_repo_name_var):
@@ -1458,7 +1460,8 @@ def cmd_install(
             "local": local_flag,
             "user": user_flag,
             "project": project_flag,
-            "codex": is_codex,
+            "target": target,
+            **{name: name == target for name in INSTALL_TARGETS},
             "force": force,
             "expand": expand,
             "args": dict(hook_args or {}),
@@ -1517,12 +1520,12 @@ def cmd_install(
             info(f"Installed: {rel_file}")
             return True
 
-        for rel in _iter_artifacts(manifest, codex=is_codex):
+        for rel in _iter_artifacts(manifest, target=target):
             if not install_one(rel):
                 return 1
 
-        # Codex has no registry.yaml concept (no agents/subagent roster to track)
-        if not is_codex:
+        # Only Claude uses the package's agent roster registry.
+        if target == "claude":
             rc = _update_registry(
                 dest_path,
                 installed_artifacts,
@@ -1540,16 +1543,23 @@ def cmd_install(
         return 0
 
     for target in targets:
-        is_codex = target == "codex"
         target_dest = base_path if dest else (base_path / f".{target}")
-        rc = install_target(target_dest, is_codex)
+        if not dest and (global_flag or user_flag) and target in ("codex", "hermes"):
+            override = os.environ.get(f"{target.upper()}_HOME")
+            if override:
+                target_dest = Path(override).expanduser().resolve()
+        rc = install_target(target_dest, target)
         if rc != 0:
             return rc
 
     return 0
 
 
-def cmd_uninstall(pkg: str, dest: str, *, hook_args: Optional[Dict[str, str]] = None) -> int:
+def cmd_uninstall(pkg: str, dest: str, *, hook_args: Optional[Dict[str, str]] = None,
+                  target: str = "claude") -> int:
+    if target not in INSTALL_TARGETS:
+        error(f"Unsupported target: {target}")
+        return 1
     pkg_dir = PACKAGES_DIR / pkg
     if not pkg_dir.is_dir():
         error(f"Package not found: {pkg}")
@@ -1561,7 +1571,8 @@ def cmd_uninstall(pkg: str, dest: str, *, hook_args: Optional[Dict[str, str]] = 
     manifest = _parse_manifest(pkg_dir)
     info(f"Uninstalling {pkg} from {dest_path}")
 
-    for rel in _iter_artifacts(manifest):
+    failed = False
+    for rel in _iter_artifacts(manifest, target=target):
         dst = dest_path / rel
         if dst.exists():
             try:
@@ -1569,6 +1580,11 @@ def cmd_uninstall(pkg: str, dest: str, *, hook_args: Optional[Dict[str, str]] = 
                 info(f"Removed: {rel}")
             except Exception:
                 warn(f"Could not remove: {rel}")
+                failed = True
+
+    if failed:
+        error("Uninstall incomplete; some package artifacts could not be removed")
+        return 1
 
     # Optional install.py cleanup(): removes hook-created files (e.g.
     # rendered .local.j2/.j2 output) that aren't manifest artifacts, so
@@ -1579,7 +1595,8 @@ def cmd_uninstall(pkg: str, dest: str, *, hook_args: Optional[Dict[str, str]] = 
         "local": False,
         "user": False,
         "project": False,
-        "codex": False,
+        "target": target,
+        **{name: name == target for name in INSTALL_TARGETS},
         "force": False,
         "expand": False,
         "args": dict(hook_args or {}),
@@ -1623,10 +1640,11 @@ def build_parser() -> argparse.ArgumentParser:
     dest_group.add_argument("--user", dest="user_flag", action="store_true")
     dest_group.add_argument("--local", dest="local_flag", action="store_true")
     dest_group.add_argument("--project", dest="project_flag", action="store_true")
-    # Target flags: independent of scope, symmetric with each other. Neither
-    # given means install both; either alone means only that one.
+    # Explicit targets are additive. No flags preserve Claude+Codex scoped installs.
     p_install.add_argument("--claude", dest="claude_flag", action="store_true")
     p_install.add_argument("--codex", dest="codex_flag", action="store_true")
+    p_install.add_argument("--cursor", dest="cursor_flag", action="store_true")
+    p_install.add_argument("--hermes", dest="hermes_flag", action="store_true")
     p_install.add_argument("--force", action="store_true")
     p_install.add_argument("--no-expand", action="store_true")
     p_install.add_argument("--registry", help="Install from remote registry")
@@ -1643,6 +1661,10 @@ def build_parser() -> argparse.ArgumentParser:
     p_uninstall = sub.add_parser("uninstall")
     p_uninstall.add_argument("package")
     p_uninstall.add_argument("--dest", required=True)
+    uninstall_targets = p_uninstall.add_mutually_exclusive_group()
+    for target in INSTALL_TARGETS:
+        uninstall_targets.add_argument(f"--{target}", dest="target", action="store_const", const=target)
+    p_uninstall.set_defaults(target="claude")
     p_uninstall.add_argument(
         "--set",
         dest="hook_args",
@@ -1702,6 +1724,8 @@ def main(argv: Optional[list[str]] = None) -> int:
             project_flag=getattr(args, 'project_flag', False),
             claude_flag=getattr(args, 'claude_flag', False),
             codex_flag=getattr(args, 'codex_flag', False),
+            cursor_flag=getattr(args, 'cursor_flag', False),
+            hermes_flag=getattr(args, 'hermes_flag', False),
             registry=getattr(args, 'registry', None),
             hook_args=_parse_hook_args(getattr(args, 'hook_args', []) or []),
         )
@@ -1710,6 +1734,7 @@ def main(argv: Optional[list[str]] = None) -> int:
         return cmd_uninstall(
             args.package,
             args.dest,
+            target=args.target,
             hook_args=_parse_hook_args(getattr(args, 'hook_args', []) or []),
         )
     

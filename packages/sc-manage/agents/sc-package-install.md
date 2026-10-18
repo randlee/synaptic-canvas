@@ -1,7 +1,7 @@
 ---
 name: sc-package-install
-version: 0.13.0
-description: Install a Synaptic Canvas package locally (repo .claude) or globally according to package policy.
+version: 0.14.0
+description: Install a Synaptic Canvas package for selected agent targets at project or user/global scope.
 model: sonnet
 color: blue
 hooks:
@@ -17,6 +17,8 @@ hooks:
 ## Inputs
 - `package`: required package name (e.g., sc-delay-tasks, sc-git-worktree)
 - `scope`: required `local` | `project` | `global` | `user` (ask if missing)
+- `targets`: optional nonempty list drawn from `claude`, `codex`, `cursor`, `hermes`;
+  defaults to `["claude"]`. Forward every selected target unchanged.
 - `sc_repo_path`: absolute path to the Synaptic Canvas repo. Default: `SC_REPO_PATH` or repo root.
 - `global_claude_dir`: absolute path to the global `.claude`. Default: `~/.claude` (or `GLOBAL_CLAUDE_DIR`).
 - `user_claude_dir`: absolute path to the user `.claude`. Default: `~/.claude` (or `USER_CLAUDE_DIR`).
@@ -57,5 +59,8 @@ hooks:
 ````
 
 ## Constraints
-- Do not attempt to install outside `.claude` directories.
+- Install only into the selected target's resolved destination. Non-Claude
+  targets receive skills/scripts/assets, not Claude-specific artifacts.
+- Per-target root overrides are `global_<target>_dir` / `user_<target>_dir`.
+  Hermes project trust is a separate user decision, not an install side effect.
 - Do not echo secrets; return JSON only.

@@ -1,7 +1,7 @@
 ---
 name: sc-package-uninstall
-version: 0.13.0
-description: Uninstall a Synaptic Canvas package locally (repo .claude) or globally according to package policy.
+version: 0.14.0
+description: Uninstall a Synaptic Canvas package from selected agent targets according to package policy.
 model: sonnet
 color: blue
 hooks:
@@ -17,6 +17,8 @@ hooks:
 ## Inputs
 - `package`: required package name
 - `scope`: required `local` | `project` | `global` | `user`
+- `targets`: optional nonempty list of `claude`, `codex`, `cursor`, `hermes`;
+  defaults to `["claude"]`. Unselected targets must remain untouched.
 - `sc_repo_path`: absolute path to the Synaptic Canvas repo. Default: `SC_REPO_PATH` or repo root.
 - `global_claude_dir`: absolute path to the global `.claude`. Default: `~/.claude` (or `GLOBAL_CLAUDE_DIR`).
 - `user_claude_dir`: absolute path to the user `.claude`. Default: `~/.claude` (or `USER_CLAUDE_DIR`).
@@ -57,5 +59,8 @@ hooks:
 ````
 
 ## Constraints
-- Do not attempt to uninstall outside `.claude` directories.
+- Uninstall only package-owned artifacts in the selected target destinations.
+  Non-Claude targets use their portable artifact subset; leave peer targets and
+  unrelated files untouched. Per-target roots accept `global_<target>_dir` and
+  `user_<target>_dir` overrides. Report partial completion on failure.
 - Return ONLY fenced JSON.

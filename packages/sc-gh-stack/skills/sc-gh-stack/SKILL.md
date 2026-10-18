@@ -1,6 +1,6 @@
 ---
 name: sc-gh-stack
-version: 0.2.0
+version: 0.2.1
 description: Run stacked PRs with the gh stack extension the way that lands (append-only frozen layers on a named trunk, one stack writer, QA/CI on the top, one atomic merge). Use for any stack, stacked/dependent PRs, gh stack link/unstack/merge, landing, a red layer, or /sc-gh-stack. Supersedes /gh-stack.
 entry_point: /sc-gh-stack
 ---
@@ -142,10 +142,12 @@ response or existing observation does not need a repeated full report.
 | `gh_stack_view.py` | Coherence, mergeability, CI and LANDING table for every open stack | no |
 | `gh_stack_chain_check.py --trunk <trunk> <bottom> ... <top>` | Pre-link check: every head pushed, linear ancestry, PR bases as expected, top merges clean into trunk | no |
 
-If `CLAUDE_PLUGIN_ROOT` is set (plugin install), the scripts are at
-`$CLAUDE_PLUGIN_ROOT/scripts/`. Otherwise, if a script is not at
-`.claude/scripts/`, locate it with `find .claude ~/.claude -name 'gh_stack_*.py'`
-and use the newest match. Never reproduce the checks by hand.
+Resolve helpers in `../../scripts/` relative to this skill's directory and use
+their absolute paths. This works in source checkouts and installs under
+`.claude`, `.codex`, `.cursor`, or `.hermes`, including custom profile roots.
+Substitute that resolved path wherever examples or recipes say `.claude/scripts/`;
+do not select a different host's stale copy. Claude plugin installs may also use
+`$CLAUDE_PLUGIN_ROOT/scripts/`. Never reproduce the checks by hand.
 
 ## Storage
 
