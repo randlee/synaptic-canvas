@@ -9,12 +9,19 @@ package versions (see `docs/versioning-strategy.md`).
 ## [Unreleased]
 
 ### Added
+- Full Codex catalog parity (24 plugins, including forwarded sources), generated
+  plugin inventory, three-agent Luna inclusion review, and native discovery
+  checks for every local skill package.
 - Native Codex marketplace for sc-manage and sc-gh-stack, generated manifests,
   drift validation, isolated CLI install/load/remove tests and install guidance.
 - Explicit Claude, Codex, Cursor and Hermes target flags for `sc-manage` and
   the installer; non-Claude targets receive portable skills/scripts/assets.
   Cursor sc-manage also writes a native `/sc-manage` command. `--dest` accepts
   one explicit target, while legacy defaults are preserved.
+
+### Fixed
+- Windows installer status encoding and native catalog path normalization.
+  Version tests now check registry/manifest consistency instead of stale pins.
 
 ## [0.14.0] - 2026-10-17
 ### Added

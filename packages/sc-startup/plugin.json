@@ -1,0 +1,10 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "sc-startup",
+  "version": "0.13.0",
+  "description": "Startup runner for Synaptic Canvas: read startup prompt, sync master checklist, optional PR triage, worktree hygiene, and CI pull, then emit a concise status with next steps. Supports read-only mode.",
+  "author": {
+    "name": "randlee"
+  },
+  "license": "MIT"
+}

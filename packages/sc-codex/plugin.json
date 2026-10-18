@@ -1,0 +1,10 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "sc-codex",
+  "version": "0.14.1",
+  "description": "Run Codex agents via a Task Tool-compatible runner, with hooks emulation and background execution support.",
+  "author": {
+    "name": "synaptic-canvas"
+  },
+  "license": "MIT"
+}

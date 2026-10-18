@@ -1,0 +1,10 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "sc-rust",
+  "version": "0.13.0",
+  "description": "Rust development toolkit: idiomatic guidelines, service hardening guidance, design pattern enforcement, and specialized agents for architecture, code review, exploration, implementation, and QA. Includes cross-platform portability guidelines for Ubuntu, macOS, and Windows.",
+  "author": {
+    "name": "randlee"
+  },
+  "license": "MIT"
+}

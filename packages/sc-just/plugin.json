@@ -1,0 +1,10 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "sc-just",
+  "version": "0.1.0",
+  "description": "Set up repo-local just task runners with a curated Justfile, optional .just/ helper scripts, and starter templates for minimal, Python, Go, .NET, and Rust repos.",
+  "author": {
+    "name": "randlee"
+  },
+  "license": "MIT"
+}

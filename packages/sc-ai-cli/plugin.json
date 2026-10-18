@@ -1,0 +1,10 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "sc-ai-cli",
+  "version": "0.13.0",
+  "description": "AI-first CLI design toolkit: create, review, and harden JSON-first CLIs with MCP-ready contract seams, typed error contracts, auditable mutations, repeatable scaffolding patterns, and stateful simulator design guidance.",
+  "author": {
+    "name": "randlee"
+  },
+  "license": "MIT"
+}

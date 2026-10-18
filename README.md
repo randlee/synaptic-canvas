@@ -42,9 +42,10 @@ codex plugin add sc-gh-stack@synaptic-canvas
 ```
 
 This registers real Codex plugins; no Claude session or Python bootstrap is
-needed. The native catalog currently includes `sc-manage` (`managing-sc-packages`)
-and `sc-gh-stack` (both `sc-gh-stack` and `sc-gh-stack-view`). Other packages
-remain in the Claude marketplace until their host workflows are verified.
+needed. The Codex catalog mirrors the complete marketplace, including forwarded
+plugins. See the [plugin inventory](docs/CODEX-PLUGIN-INVENTORY.md) and
+[inclusion review and caveats](docs/CODEX-PLUGIN-REVIEW.md). Installation and
+skill discovery do not certify every host-specific workflow end-to-end.
 See [Codex installation, review refs, updates and removal](docs/CODEX-MARKETPLACE.md).
 
 ---
@@ -107,7 +108,7 @@ python3 tools/sc-install.py install sc-delay-tasks
 
 ### [sc-manage](packages/sc-manage/)
 [![Beta](https://img.shields.io/badge/status-beta-yellow)](packages/sc-manage/CHANGELOG.md)
-[![v0.14.1](https://img.shields.io/badge/version-0.14.1-blue)](packages/sc-manage/CHANGELOG.md)
+[![v0.14.2](https://img.shields.io/badge/version-0.14.2-blue)](packages/sc-manage/CHANGELOG.md)
 [![Tier 0](https://img.shields.io/badge/tier-0-green)](README.md#-package-tiers-explained)
 [![MIT License](https://img.shields.io/badge/license-MIT-green)](packages/sc-manage/LICENSE)
 
