@@ -242,3 +242,35 @@ def test_backend_combined_local_flags_are_explicit_only(tmp_path, monkeypatch, t
     assert (tmp_path / f'.{target}/skills/sc-gh-stack/SKILL.md').exists()
     assert not (tmp_path / '.claude').exists()
     assert not (tmp_path / '.codex').exists()
+
+
+def test_cursor_sc_manage_writes_native_command_and_keeps_installer_scripts(tmp_path):
+    dest = tmp_path / '.cursor'
+    assert installer.main(['install', 'sc-manage', '--dest', str(dest), '--cursor']) == 0
+    skill = dest / 'skills/managing-sc-packages/SKILL.md'
+    command = dest / 'commands/sc-manage.md'
+    dispatch = dest / 'scripts/sc_manage_dispatch.py'
+    assert skill.is_file() and command.is_file() and dispatch.is_file()
+    text = command.read_text(encoding='utf-8')
+    assert 'name: sc-manage' in text
+    assert 'allowed-tools' not in text
+    assert '!`' not in text
+    assert 'sc_manage_dispatch.py' in text
+    assert (command.parent / '../scripts/sc_manage_dispatch.py').resolve() == dispatch.resolve()
+    assert not (dest / 'agents').exists()
+    keep = dest / 'commands/keep.md'
+    keep.write_text('unrelated')
+    assert installer.main(['uninstall', 'sc-manage', '--dest', str(dest), '--cursor']) == 0
+    assert not command.exists()
+    assert not (dest / 'scripts/sc_manage_source.json').exists()
+    assert keep.read_text() == 'unrelated'
+
+
+def test_claude_sc_manage_keeps_bang_command(tmp_path):
+    dest = tmp_path / '.claude'
+    assert installer.main(['install', 'sc-manage', '--dest', str(dest), '--claude']) == 0
+    text = (dest / 'commands/sc-manage.md').read_text(encoding='utf-8')
+    assert 'allowed-tools' in text
+    assert '!`python3 scripts/sc_manage_dispatch.py' in text
+    cursor_template = (ROOT / 'packages/sc-manage/cursor/sc-manage.md').read_text(encoding='utf-8')
+    assert text != cursor_template

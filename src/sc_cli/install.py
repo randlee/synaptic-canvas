@@ -1033,8 +1033,10 @@ INSTALL_TARGETS = ("claude", "codex", "cursor", "hermes")
 
 
 def _iter_artifacts(m: Manifest, *, codex: bool = False, target: str = "claude") -> Iterable[str]:
-    # Non-Claude targets receive portable skills/scripts/assets, not Claude's
-    # command/agent formats, plugin manifests, or agents/registry.yaml.
+    # Cursor has native skills, commands, and subagents, but Claude command
+    # bang-syntax, Task agents, plugin manifests, and agents/registry.yaml are
+    # not drop-in. Copy the portable skill/script/asset subset. Package hooks
+    # may add a Cursor-native command (sc-manage writes /sc-manage).
     order = (
         ["skills", "scripts", "assets"]
         if codex or target != "claude"

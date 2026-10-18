@@ -12,12 +12,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   for installation, listing and uninstallation. The default remains Claude only.
 - Per-target destination/provenance fields, profile-home overrides, and a Hermes
   project-trust reminder without changing trust configuration automatically.
+- Cursor installs of sc-manage write a native `/sc-manage` command so the
+  installer is invocable as a Cursor command, not only as `/managing-sc-packages`.
 
 ### Fixed
 - Reject unknown/conflicting flags before acquisition or installation, rather
   than silently ignoring `--codex`. Keep unselected targets untouched and report
   completed targets on partial failure.
-- Portable-host execution instructions no longer require Claude's Task agents.
+- Portable-host execution instructions run `sc_manage_dispatch.py` directly.
+  Cursor has its own Task tool; Claude `sc-package-*` agents are not installed
+  there and must not be used.
 
 ## [0.10.0] - 2026-04-18
 

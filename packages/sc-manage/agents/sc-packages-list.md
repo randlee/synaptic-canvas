@@ -36,9 +36,10 @@ List packages and their project/user-global install status for each selected tar
 5. Return a list ordered by package name with `installed` = `no` | `local` | `global` | `both`.
 
 For non-Claude targets inspect `.<target>` and the selected profile root, using
-only skills/scripts/assets. Return `installed_by_target` for every selected
-target; `installed` is `mixed` when their states differ. Do not infer Codex,
-Cursor or Hermes installation from files under `.claude`.
+skills/scripts/assets (Cursor sc-manage may also have `commands/sc-manage.md`).
+Return `installed_by_target` for every selected target; `installed` is `mixed`
+when their states differ. Do not infer Codex, Cursor or Hermes installation
+from files under `.claude`.
 
 ## Output
 

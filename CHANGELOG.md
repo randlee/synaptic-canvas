@@ -11,7 +11,8 @@ package versions (see `docs/versioning-strategy.md`).
 ### Added
 - Explicit Claude, Codex, Cursor and Hermes target flags for `sc-manage` and
   the installer; non-Claude targets receive portable skills/scripts/assets.
-  `--dest` accepts one explicit target, while legacy defaults are preserved.
+  Cursor sc-manage also writes a native `/sc-manage` command. `--dest` accepts
+  one explicit target, while legacy defaults are preserved.
 
 ## [0.14.0] - 2026-10-17
 ### Added
