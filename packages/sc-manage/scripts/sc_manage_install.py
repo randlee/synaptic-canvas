@@ -8,14 +8,16 @@ import sys
 from pathlib import Path
 
 from sc_manage_common import (
-    default_global_claude_dir,
-    default_user_claude_dir,
     default_sc_repo_path,
     normalize_scope,
     parse_manifest,
     read_json_stdin,
     resolve_dest,
     run_install,
+    report_error,
+    selected_targets,
+    target_roots,
+    valid_package,
 )
 
 
@@ -42,15 +44,17 @@ def _install_python_deps(requires: dict) -> tuple[bool, str]:
 
 def main() -> int:
     params = read_json_stdin()
+    try:
+        targets = selected_targets(params)
+    except ValueError as exc:
+        return report_error("INPUT_INVALID", str(exc))
     package = params.get("package")
     scope = params.get("scope")
     sc_repo_path = Path(params.get("sc_repo_path", default_sc_repo_path()))
-    global_claude_dir = Path(params.get("global_claude_dir", default_global_claude_dir()))
-    user_claude_dir = Path(params.get("user_claude_dir", default_user_claude_dir()))
 
     scope = normalize_scope(scope) if isinstance(scope, str) else scope
 
-    if not package or scope not in {"local", "global", "user"}:
+    if not valid_package(package) or scope not in {"local", "global", "user"}:
         print(
             json.dumps(
                 {
@@ -87,7 +91,7 @@ def main() -> int:
 
     manifest = parse_manifest(manifest_path)
     install_scope = (manifest.get("install") or {}).get("scope", "both")
-    if install_scope == "local-only" and scope in {"global", "user"}:
+    if (install_scope == "local-only" and scope in {"global", "user"}) or (install_scope == "global-only" and scope == "local"):
         print(
             json.dumps(
                 {
@@ -95,7 +99,7 @@ def main() -> int:
                     "data": None,
                     "error": {
                         "code": "SCOPE_NOT_ALLOWED",
-                        "message": f"Package '{package}' may only be installed locally",
+                        "message": f"Package '{package}' does not allow {scope} installation",
                         "recoverable": False,
                         "suggested_action": "Use --local scope",
                     },
@@ -103,6 +107,15 @@ def main() -> int:
             )
         )
         return 1
+
+    destinations = {}
+    for target in targets:
+        dest, err = resolve_dest(scope, *target_roots(params, target), target)
+        if dest is None:
+            return report_error("DEST_INVALID", err or "Failed to resolve destination")
+        destinations[target] = dest
+    if len({dest.resolve() for dest in destinations.values()}) != len(destinations):
+        return report_error("DEST_INVALID", "Selected targets must use distinct destination directories")
 
     ok, err = _install_python_deps(manifest.get("requires") or {})
     if not ok:
@@ -122,47 +135,23 @@ def main() -> int:
         )
         return 1
 
-    dest, err = resolve_dest(scope, global_claude_dir, user_claude_dir)
-    if dest is None:
-        print(
-            json.dumps(
-                {
-                    "success": False,
-                    "data": None,
-                    "error": {
-                        "code": "DEST_INVALID",
-                        "message": err or "Failed to resolve destination",
-                        "recoverable": False,
-                        "suggested_action": "Run inside a git repo for local installs",
-                    },
-                }
-            )
-        )
-        return 1
-
-    code, stdout, stderr = run_install(sc_repo_path, package, dest)
-    if code != 0:
-        print(
-            json.dumps(
-                {
-                    "success": False,
-                    "data": None,
-                    "error": {
-                        "code": "INSTALL_FAILED",
-                        "message": stderr.strip() or stdout.strip() or "Install failed",
-                        "recoverable": True,
-                        "suggested_action": "Check permissions and retry",
-                    },
-                }
-            )
-        )
-        return 1
+    completed = []
+    for target, dest in destinations.items():
+        code, stdout, stderr = run_install(sc_repo_path, package, dest, target)
+        if code != 0:
+            return report_error("INSTALL_FAILED", stderr.strip() or stdout.strip() or "Install failed",
+                                data={"completed_targets": completed, "failed_target": target})
+        completed.append(target)
 
     print(
         json.dumps(
             {
                 "success": True,
-                "data": {"package": package, "scope": scope, "dest": str(dest)},
+                "data": {"package": package, "scope": scope,
+                         "dest": str(next(iter(destinations.values()))) if len(targets) == 1 else None,
+                         "targets": targets, "destinations": {key: str(value) for key, value in destinations.items()},
+                         "notes": (["Hermes project skills require explicit trust: run hermes skills trust from this repository"]
+                                   if "hermes" in targets and scope == "local" else [])},
                 "error": None,
             }
         )

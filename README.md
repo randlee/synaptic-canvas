@@ -90,7 +90,7 @@ python3 tools/sc-install.py install sc-delay-tasks
 
 ### [sc-manage](packages/sc-manage/)
 [![Beta](https://img.shields.io/badge/status-beta-yellow)](packages/sc-manage/CHANGELOG.md)
-[![v0.6.0](https://img.shields.io/badge/version-0.6.0-blue)](packages/sc-manage/CHANGELOG.md)
+[![v0.14.0](https://img.shields.io/badge/version-0.14.0-blue)](packages/sc-manage/CHANGELOG.md)
 [![Tier 0](https://img.shields.io/badge/tier-0-green)](README.md#-package-tiers-explained)
 [![MIT License](https://img.shields.io/badge/license-MIT-green)](packages/sc-manage/LICENSE)
 

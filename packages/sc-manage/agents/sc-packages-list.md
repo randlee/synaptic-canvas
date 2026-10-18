@@ -1,6 +1,6 @@
 ---
 name: sc-packages-list
-version: 0.13.0
+version: 0.14.0
 description: Enumerate available Synaptic Canvas packages, detect install scope (no/local/global), and return a machine-readable table.
 model: sonnet
 color: blue
@@ -15,11 +15,13 @@ hooks:
 # sc-packages-list
 
 ## Purpose
-List available packages and detect whether each is installed locally (current repo .claude) or globally.
+List packages and their project/user-global install status for each selected target.
 
 ## Inputs (optional)
 - `sc_repo_path`: absolute path to the Synaptic Canvas repo. Default: `SC_REPO_PATH` or repo root.
 - `global_claude_dir`: absolute path to the global `.claude`. Default: `~/.claude` (or `GLOBAL_CLAUDE_DIR`).
+- `targets`: optional nonempty list of `claude`, `codex`, `cursor`, `hermes`;
+  defaults to `["claude"]`.
 
 ## Execution
 1. Run: `python3 scripts/sc_manage_list.py` with JSON stdin.
@@ -32,6 +34,11 @@ List available packages and detect whether each is installed locally (current re
    - Local: `<repo_root>/.claude/` has any of the manifest's artifacts (commands/skills/agents/scripts)
    - Global: `<global_claude_dir>/` has any of the manifest's artifacts
 5. Return a list ordered by package name with `installed` = `no` | `local` | `global` | `both`.
+
+For non-Claude targets inspect `.<target>` and the selected profile root, using
+only skills/scripts/assets. Return `installed_by_target` for every selected
+target; `installed` is `mixed` when their states differ. Do not infer Codex,
+Cursor or Hermes installation from files under `.claude`.
 
 ## Output
 

@@ -8,6 +8,11 @@ package versions (see `docs/versioning-strategy.md`).
 
 ## [Unreleased]
 
+### Added
+- Explicit Claude, Codex, Cursor and Hermes target flags for `sc-manage` and
+  the installer; non-Claude targets receive portable skills/scripts/assets.
+  `--dest` accepts one explicit target, while legacy defaults are preserved.
+
 ## [0.14.0] - 2026-10-17
 ### Added
 - sc-launchpad sessions, `env_file` support, and model/effort selection from the

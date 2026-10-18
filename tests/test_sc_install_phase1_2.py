@@ -308,13 +308,14 @@ class TestCodexFlag:
         assert (temp_home / ".claude" / "agents" / "sc-delay-once.md").exists()
         assert not (temp_home / ".codex").exists()
 
-    def test_install_codex_and_dest_conflict_error(self, temp_home, capsys):
-        """--dest is always .claude-only; combining it with --codex is an error."""
-        dest = temp_home / "custom" / ".claude"
+    def test_install_codex_and_explicit_dest(self, temp_home, capsys):
+        """An explicit target makes --dest unambiguous, including profile roots."""
+        dest = temp_home / "custom-codex-profile"
         rc = sc_install.main(["install", "sc-delay-tasks", "--codex", "--dest", str(dest)])
-        assert rc == 1
-        err = capsys.readouterr().err
-        assert "--codex" in err
+        assert rc == 0
+        assert (dest / "skills/sc-delaying-tasks/SKILL.md").exists()
+        assert not (dest / "commands").exists()
+        assert not (dest / "agents").exists()
 
     def test_install_codex_skips_local_j2_template(self, temp_home, local_template_pkg):
         """--codex must never consult `.local.j2` siblings, exactly like --global."""

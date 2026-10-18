@@ -1,8 +1,8 @@
 ---
 allowed-tools: Bash(python3 scripts/sc_manage_dispatch.py*)
 name: sc-manage
-description: List, install, or uninstall Synaptic Canvas Claude packages for the current machine or this repo.
-version: 0.13.0
+description: List, install, or uninstall Synaptic Canvas packages for Claude, Codex, Cursor, or Hermes.
+version: 0.14.0
 options:
   - name: --list
     description: List available packages and show install status (no/global/local) with a summary table.
@@ -22,13 +22,21 @@ options:
         description: "Package name whose documentation to display (alias: --doc)."
     description: Show package documentation (README) for review and Q&A.
   - name: --local
-    description: Target the current repository's .claude directory.
+    description: Use the current repository's selected target directories.
   - name: --project
     description: Alias for --local.
   - name: --global
-    description: Target the global .claude directory.
+    description: Use the selected targets' global/profile directories.
   - name: --user
-    description: "Alias for --global (defaults to ~/.claude)."
+    description: Use the selected targets' user/profile directories.
+  - name: --claude
+    description: Select Claude (the default when no target flag is supplied).
+  - name: --codex
+    description: Select Codex skills, scripts, and assets.
+  - name: --cursor
+    description: Select Cursor skills, scripts, and assets.
+  - name: --hermes
+    description: Select Hermes skills, scripts, and assets; project skills require explicit Hermes trust.
 ---
 
 # /sc-manage
@@ -37,6 +45,9 @@ Manage Synaptic Canvas packages:
 - Use `--list` to see available packages and whether they are installed locally or globally.
 - Use `--install <package>` with `--local`/`--project` or `--global`/`--user` to install.
 - Use `--uninstall <package>` with `--local`/`--project` or `--global`/`--user` to remove.
+- Add any combination of `--claude`, `--codex`, `--cursor`, `--hermes` to install,
+  uninstall, or list. With no target flag, only Claude is selected. Unknown or
+  conflicting flags fail before installation; scopes and targets are separate.
 
 Notes:
 - Some packages are local-only (e.g., sc-git-worktree). The manager will block global installation for those.

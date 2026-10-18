@@ -8,23 +8,27 @@ from typing import Any, Dict, List
 from sc_manage_common import (
     any_artifact_installed,
     artifacts_from_manifest,
-    default_global_claude_dir,
     default_sc_repo_path,
     list_manifests,
     manifest_scope,
     parse_manifest,
     read_json_stdin,
     resolve_repo_root,
+    report_error,
+    selected_targets,
+    target_roots,
 )
 
 
 def main() -> int:
     params = read_json_stdin()
+    try:
+        targets = selected_targets(params)
+    except ValueError as exc:
+        return report_error("INPUT_INVALID", str(exc))
     sc_repo_path = Path(params.get("sc_repo_path", default_sc_repo_path()))
-    global_claude_dir = Path(params.get("global_claude_dir", default_global_claude_dir()))
 
     repo_root = resolve_repo_root()
-    local_claude_dir = repo_root / ".claude" if repo_root else None
 
     packages: List[Dict[str, Any]] = []
 
@@ -33,23 +37,18 @@ def main() -> int:
         name = manifest.get("name")
         description = (manifest.get("description") or "").split("\n", 1)[0].strip()
         scope = manifest_scope(manifest)
-        artifacts = artifacts_from_manifest(manifest)
-
-        local_installed = False
-        global_installed = False
-        if local_claude_dir and artifacts:
-            local_installed = any_artifact_installed(local_claude_dir, artifacts)
-        if artifacts:
-            global_installed = any_artifact_installed(global_claude_dir, artifacts)
-
-        if local_installed and global_installed:
-            installed = "both"
-        elif local_installed:
-            installed = "local"
-        elif global_installed:
-            installed = "global"
-        else:
-            installed = "no"
+        installed_by_target = {}
+        for target in targets:
+            artifacts = artifacts_from_manifest(manifest, target)
+            global_dir, user_dir = target_roots(params, target)
+            local_dir = repo_root / f".{target}" if repo_root else None
+            local_installed = bool(local_dir and artifacts and any_artifact_installed(local_dir, artifacts))
+            global_installed = bool(artifacts and (any_artifact_installed(global_dir, artifacts)
+                                                  or any_artifact_installed(user_dir, artifacts)))
+            installed_by_target[target] = ("both" if local_installed and global_installed else
+                                           "local" if local_installed else "global" if global_installed else "no")
+        states = set(installed_by_target.values())
+        installed = next(iter(states)) if len(states) == 1 else "mixed"
 
         packages.append(
             {
@@ -57,6 +56,7 @@ def main() -> int:
                 "description": description,
                 "installable_scopes": scope,
                 "installed": installed,
+                "installed_by_target": installed_by_target,
             }
         )
 
@@ -64,7 +64,7 @@ def main() -> int:
         json.dumps(
             {
                 "success": True,
-                "data": {"packages": sorted(packages, key=lambda p: p.get("name") or "")},
+                "data": {"packages": sorted(packages, key=lambda p: p.get("name") or ""), "targets": targets},
                 "error": None,
             }
         )
