@@ -28,6 +28,8 @@ Options:
 Files updated per package:
     - packages/<package>/manifest.yaml
     - packages/<package>/.claude-plugin/plugin.json
+    - packages/<package>/plugin.json (portable native plugins, when present)
+    - packages/<package>/.codex-plugin/plugin.json (compatibility, when present)
     - packages/<package>/commands/*.md
     - packages/<package>/skills/*/SKILL.md
     - packages/<package>/agents/*.md
