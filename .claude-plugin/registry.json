@@ -1,6 +1,6 @@
 {
   "name": "synaptic-canvas",
-  "version": "0.13.0",
+  "version": "0.14.0",
   "description": "A marketplace for Claude Code skills",
   "author": {
     "name": "randlee"
@@ -21,7 +21,7 @@
         "scripts": 0,
         "schemas": 0
       },
-      "lastUpdated": "2026-10-18T03:32:51.658181+00:00"
+      "lastUpdated": "2026-10-18T05:23:01.257678+00:00"
     },
     {
       "name": "sc-ci-automation",
@@ -38,7 +38,7 @@
         "scripts": 1,
         "schemas": 0
       },
-      "lastUpdated": "2026-10-18T03:32:51.659109+00:00"
+      "lastUpdated": "2026-10-18T05:23:01.258911+00:00"
     },
     {
       "name": "sc-codex",
@@ -55,7 +55,7 @@
         "scripts": 2,
         "schemas": 2
       },
-      "lastUpdated": "2026-10-18T03:32:51.659980+00:00"
+      "lastUpdated": "2026-10-18T05:23:01.259991+00:00"
     },
     {
       "name": "sc-coding-agent-hardening",
@@ -72,7 +72,7 @@
         "scripts": 0,
         "schemas": 0
       },
-      "lastUpdated": "2026-10-18T03:32:51.660429+00:00"
+      "lastUpdated": "2026-10-18T05:23:01.260546+00:00"
     },
     {
       "name": "sc-commit-push-pr",
@@ -89,7 +89,7 @@
         "scripts": 9,
         "schemas": 0
       },
-      "lastUpdated": "2026-10-18T03:32:51.661046+00:00"
+      "lastUpdated": "2026-10-18T05:23:01.261281+00:00"
     },
     {
       "name": "sc-delay-tasks",
@@ -106,7 +106,7 @@
         "scripts": 2,
         "schemas": 0
       },
-      "lastUpdated": "2026-10-18T03:32:51.661624+00:00"
+      "lastUpdated": "2026-10-18T05:23:01.261988+00:00"
     },
     {
       "name": "sc-docling-pdf",
@@ -123,7 +123,7 @@
         "scripts": 0,
         "schemas": 0
       },
-      "lastUpdated": "2026-10-18T03:32:51.662425+00:00"
+      "lastUpdated": "2026-10-18T05:23:01.262934+00:00"
     },
     {
       "name": "sc-gh-stack",
@@ -137,10 +137,10 @@
         "commands": 2,
         "skills": 2,
         "agents": 0,
-        "scripts": 3,
+        "scripts": 5,
         "schemas": 0
       },
-      "lastUpdated": "2026-10-18T03:32:51.663374+00:00"
+      "lastUpdated": "2026-10-18T05:23:01.264084+00:00"
     },
     {
       "name": "sc-git-worktree",
@@ -157,7 +157,7 @@
         "scripts": 7,
         "schemas": 0
       },
-      "lastUpdated": "2026-10-18T03:32:51.664253+00:00"
+      "lastUpdated": "2026-10-18T05:23:01.265130+00:00"
     },
     {
       "name": "sc-github-issue",
@@ -174,7 +174,7 @@
         "scripts": 1,
         "schemas": 0
       },
-      "lastUpdated": "2026-10-18T03:32:51.665247+00:00"
+      "lastUpdated": "2026-10-18T05:23:01.266315+00:00"
     },
     {
       "name": "sc-just",
@@ -191,7 +191,7 @@
         "scripts": 0,
         "schemas": 0
       },
-      "lastUpdated": "2026-10-18T03:32:51.666266+00:00"
+      "lastUpdated": "2026-10-18T05:23:01.267470+00:00"
     },
     {
       "name": "sc-kanban",
@@ -208,7 +208,7 @@
         "scripts": 5,
         "schemas": 0
       },
-      "lastUpdated": "2026-10-18T03:32:51.666945+00:00"
+      "lastUpdated": "2026-10-18T05:23:01.268271+00:00"
     },
     {
       "name": "sc-launch-term",
@@ -222,10 +222,10 @@
         "commands": 0,
         "skills": 0,
         "agents": 0,
-        "scripts": 4,
+        "scripts": 5,
         "schemas": 0
       },
-      "lastUpdated": "2026-10-18T03:32:51.667684+00:00"
+      "lastUpdated": "2026-10-18T05:23:01.269237+00:00"
     },
     {
       "name": "sc-launchpad",
@@ -239,10 +239,10 @@
         "commands": 0,
         "skills": 1,
         "agents": 1,
-        "scripts": 8,
+        "scripts": 9,
         "schemas": 0
       },
-      "lastUpdated": "2026-10-18T03:32:51.668513+00:00"
+      "lastUpdated": "2026-10-18T05:23:01.270234+00:00"
     },
     {
       "name": "sc-manage",
@@ -259,7 +259,7 @@
         "scripts": 8,
         "schemas": 0
       },
-      "lastUpdated": "2026-10-18T03:32:51.669204+00:00"
+      "lastUpdated": "2026-10-18T05:23:01.271019+00:00"
     },
     {
       "name": "sc-refactory",
@@ -276,7 +276,7 @@
         "scripts": 10,
         "schemas": 0
       },
-      "lastUpdated": "2026-10-18T03:32:51.670282+00:00"
+      "lastUpdated": "2026-10-18T05:23:01.272514+00:00"
     },
     {
       "name": "sc-repomix-nuget",
@@ -293,7 +293,7 @@
         "scripts": 3,
         "schemas": 0
       },
-      "lastUpdated": "2026-10-18T03:32:51.670971+00:00"
+      "lastUpdated": "2026-10-18T05:23:01.273455+00:00"
     },
     {
       "name": "sc-roslyn-diff",
@@ -310,7 +310,7 @@
         "scripts": 6,
         "schemas": 0
       },
-      "lastUpdated": "2026-10-18T03:32:51.671679+00:00"
+      "lastUpdated": "2026-10-18T05:23:01.274445+00:00"
     },
     {
       "name": "sc-rust",
@@ -327,7 +327,7 @@
         "scripts": 0,
         "schemas": 0
       },
-      "lastUpdated": "2026-10-18T03:32:51.672824+00:00"
+      "lastUpdated": "2026-10-18T05:23:01.275834+00:00"
     },
     {
       "name": "sc-startup",
@@ -344,7 +344,7 @@
         "scripts": 1,
         "schemas": 0
       },
-      "lastUpdated": "2026-10-18T03:32:51.673523+00:00"
+      "lastUpdated": "2026-10-18T05:23:01.276663+00:00"
     }
   ],
   "metadata": {
@@ -352,9 +352,9 @@
     "totalCommands": 17,
     "totalSkills": 29,
     "totalAgents": 52,
-    "totalScripts": 70,
+    "totalScripts": 74,
     "totalSchemas": 2
   },
-  "generated": "2026-10-18T03:32:51.673536+00:00",
-  "lastUpdated": "2026-10-18T03:32:51.673538+00:00"
+  "generated": "2026-10-18T05:23:01.276679+00:00",
+  "lastUpdated": "2026-10-18T05:23:01.276680+00:00"
 }

@@ -8,17 +8,20 @@ Usage:
     python3 scripts/set-package-version.py <package> <version>
     python3 scripts/set-package-version.py --all <version>
     python3 scripts/set-package-version.py --all --marketplace <version>
+    python3 scripts/set-package-version.py --marketplace <version>
 
 Examples:
     python3 scripts/set-package-version.py sc-delay-tasks 0.8.0
     python3 scripts/set-package-version.py --all 0.8.0
     python3 scripts/set-package-version.py --all --marketplace 0.8.0
+    python3 scripts/set-package-version.py --marketplace 0.14.0   # platform only
 
 Options:
     <package>       Package name to update (e.g., sc-delay-tasks)
     <version>       Target version in SemVer format (X.Y.Z)
     --all           Update all packages to the same version
-    --marketplace   Also update marketplace platform version (version.yaml)
+    --marketplace   Update the marketplace platform version (version.yaml); with no
+                    package and no --all, only the platform version changes
     --dry-run       Show what would be changed without making changes
     --force         Allow version decrement (use with caution)
 
@@ -36,6 +39,8 @@ Registry files regenerated:
 
 If --marketplace:
     - version.yaml
+
+The marketplace version written into the registries always comes from version.yaml.
 """
 
 import argparse
@@ -323,18 +328,9 @@ def regenerate_marketplace_json(repo_root: Path, dry_run: bool = False) -> list[
 
     packages_dir = repo_root / 'packages'
 
-    # Get marketplace version from first package or keep existing
-    first_manifest = None
-    for pkg_dir in sorted(packages_dir.iterdir()):
-        if not pkg_dir.is_dir() or pkg_dir.name == "shared":
-            continue
-        manifest = load_manifest(pkg_dir)
-        if manifest:
-            first_manifest = manifest
-            break
-
-    if first_manifest:
-        marketplace['metadata']['version'] = first_manifest.get('version', marketplace['metadata'].get('version'))
+    marketplace_version = read_marketplace_version(repo_root)
+    if marketplace_version:
+        marketplace.setdefault('metadata', {})['version'] = marketplace_version
 
     existing_plugins = {
         plugin.get('name'): plugin
@@ -395,7 +391,7 @@ def regenerate_registry_json(repo_root: Path, dry_run: bool = False) -> list[str
     packages_dir = repo_root / 'packages'
     packages = []
     totals = {'commands': 0, 'skills': 0, 'agents': 0, 'scripts': 0, 'schemas': 0}
-    marketplace_version = None
+    marketplace_version = read_marketplace_version(repo_root)
 
     for pkg_dir in sorted(packages_dir.iterdir()):
         if not pkg_dir.is_dir() or pkg_dir.name == "shared":
@@ -404,9 +400,6 @@ def regenerate_registry_json(repo_root: Path, dry_run: bool = False) -> list[str
         manifest = load_manifest(pkg_dir)
         if not manifest:
             continue
-
-        if marketplace_version is None:
-            marketplace_version = manifest.get('version')
 
         counts = count_artifacts(pkg_dir)
         for key in totals:
@@ -463,7 +456,7 @@ def regenerate_nuget_registry(repo_root: Path, dry_run: bool = False) -> list[st
         registry = json.load(f)
 
     packages_dir = repo_root / 'packages'
-    marketplace_version = None
+    marketplace_version = read_marketplace_version(repo_root)
 
     # Update each package in the registry
     for pkg_dir in sorted(packages_dir.iterdir()):
@@ -475,9 +468,6 @@ def regenerate_nuget_registry(repo_root: Path, dry_run: bool = False) -> list[st
             continue
 
         pkg_name = manifest.get('name', pkg_dir.name)
-
-        if marketplace_version is None:
-            marketplace_version = manifest.get('version')
 
         if pkg_name in registry.get('packages', {}):
             pkg_entry = registry['packages'][pkg_name]
@@ -524,6 +514,16 @@ def regenerate_nuget_registry(repo_root: Path, dry_run: bool = False) -> list[st
     return updated_files
 
 
+def read_marketplace_version(repo_root: Path) -> Optional[str]:
+    """Marketplace platform version from version.yaml, or None if absent."""
+    version_path = repo_root / 'version.yaml'
+    if not version_path.exists():
+        return None
+    data = yaml.safe_load(version_path.read_text(encoding='utf-8')) or {}
+    version = data.get('version')
+    return str(version) if version is not None else None
+
+
 def update_marketplace_version(repo_root: Path, new_version: str, dry_run: bool = False) -> list[str]:
     """Update version.yaml with new marketplace version."""
     updated_files = []
@@ -565,7 +565,7 @@ def main():
     parser.add_argument('version', nargs='?', help='Target version (X.Y.Z)')
     parser.add_argument('--all', action='store_true', help='Update all packages')
     parser.add_argument('--marketplace', action='store_true',
-                       help='Also update marketplace platform version')
+                       help='Update marketplace platform version (alone: platform only)')
     parser.add_argument('--dry-run', action='store_true',
                        help='Show changes without applying')
     parser.add_argument('--force', action='store_true',
@@ -574,7 +574,10 @@ def main():
     args = parser.parse_args()
 
     # Validate arguments
-    if args.all:
+    marketplace_only = args.marketplace and not args.all and args.package and not args.version
+    if marketplace_only:
+        version = args.package  # Support: --marketplace 0.14.0
+    elif args.all:
         if not args.version and not args.package:
             print("Error: Version required with --all")
             sys.exit(1)
@@ -603,7 +606,9 @@ def main():
         sys.exit(1)
 
     # Determine packages to update
-    if args.all:
+    if marketplace_only:
+        package_names = []
+    elif args.all:
         package_names = [
             d.name for d in packages_dir.iterdir() if d.is_dir() and d.name != "shared"
         ]
@@ -640,6 +645,19 @@ def main():
         print("Errors occurred. Registry files not updated.")
         sys.exit(1)
 
+    # Update the platform version first: the registries read it from version.yaml
+    if args.marketplace:
+        current = read_marketplace_version(repo_root)
+        if current and compare_versions(version, current) < 0 and not args.force:
+            print(f"\nError: Version decrement not allowed: marketplace {current} -> {version} (use --force)")
+            sys.exit(1)
+        print("\n" + "=" * 60)
+        print(f"\nUpdating marketplace platform version: {current} -> {version}")
+        marketplace_files = update_marketplace_version(repo_root, version, args.dry_run)
+        for f in marketplace_files:
+            print(f"  ✓ {f}")
+        total_files += len(marketplace_files)
+
     # Regenerate registry files
     print("\n" + "=" * 60)
     print("\nRegenerating registry files...")
@@ -652,14 +670,6 @@ def main():
     for f in registry_files:
         print(f"  ✓ {f}")
     total_files += len(registry_files)
-
-    # Update marketplace version if requested
-    if args.marketplace:
-        print("\nUpdating marketplace platform version...")
-        marketplace_files = update_marketplace_version(repo_root, version, args.dry_run)
-        for f in marketplace_files:
-            print(f"  ✓ {f}")
-        total_files += len(marketplace_files)
 
     # Summary
     print("\n" + "=" * 60)
