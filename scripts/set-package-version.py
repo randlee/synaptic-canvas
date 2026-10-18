@@ -195,10 +195,13 @@ def update_package(
     if update_yaml_version(manifest_path, new_version, dry_run):
         result.files_updated.append(str(manifest_path.relative_to(repo_root)))
 
-    # Update plugin.json
-    plugin_json = package_dir / '.claude-plugin' / 'plugin.json'
-    if update_json_version(plugin_json, new_version, dry_run):
-        result.files_updated.append(str(plugin_json.relative_to(repo_root)))
+    # Keep native Codex and Claude plugin identities at the package version.
+    for host in ('.claude-plugin', '.codex-plugin'):
+        plugin_json = package_dir / host / 'plugin.json'
+        if update_json_version(plugin_json, new_version, dry_run):
+            result.files_updated.append(str(plugin_json.relative_to(repo_root)))
+    if update_json_version(package_dir / 'plugin.json', new_version, dry_run):
+        result.files_updated.append(str((package_dir / 'plugin.json').relative_to(repo_root)))
 
     # Update commands
     commands_dir = package_dir / 'commands'

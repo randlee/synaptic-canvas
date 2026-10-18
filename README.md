@@ -4,7 +4,7 @@
 [![License MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Publisher Verified](https://img.shields.io/badge/publisher-verified-brightgreen)](docs/PUBLISHER-VERIFICATION.md)
 
-**A marketplace for Claude Code skills, agents, and commands.**
+**A marketplace for Claude Code packages and native Codex skill plugins.**
 
 Discover and install productivity packages for Claude development workflows. Register once, use across all your projects.
 
@@ -29,6 +29,23 @@ Discover and install productivity packages for Claude development workflows. Reg
 ```
 
 That's it! Commands, agents, and skills are immediately available in Claude Code.
+
+### Codex (native marketplace)
+
+With a Codex CLI that supports `codex plugin` (verified with 0.162.1):
+
+```bash
+codex plugin marketplace add randlee/synaptic-canvas --ref develop
+codex plugin list --available --marketplace synaptic-canvas --json
+codex plugin add sc-manage@synaptic-canvas
+codex plugin add sc-gh-stack@synaptic-canvas
+```
+
+This registers real Codex plugins; no Claude session or Python bootstrap is
+needed. The native catalog currently includes `sc-manage` (`managing-sc-packages`)
+and `sc-gh-stack` (both `sc-gh-stack` and `sc-gh-stack-view`). Other packages
+remain in the Claude marketplace until their host workflows are verified.
+See [Codex installation, review refs, updates and removal](docs/CODEX-MARKETPLACE.md).
 
 ---
 
@@ -90,7 +107,7 @@ python3 tools/sc-install.py install sc-delay-tasks
 
 ### [sc-manage](packages/sc-manage/)
 [![Beta](https://img.shields.io/badge/status-beta-yellow)](packages/sc-manage/CHANGELOG.md)
-[![v0.14.0](https://img.shields.io/badge/version-0.14.0-blue)](packages/sc-manage/CHANGELOG.md)
+[![v0.14.1](https://img.shields.io/badge/version-0.14.1-blue)](packages/sc-manage/CHANGELOG.md)
 [![Tier 0](https://img.shields.io/badge/tier-0-green)](README.md#-package-tiers-explained)
 [![MIT License](https://img.shields.io/badge/license-MIT-green)](packages/sc-manage/LICENSE)
 

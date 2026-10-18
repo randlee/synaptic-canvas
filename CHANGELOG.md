@@ -9,6 +9,8 @@ package versions (see `docs/versioning-strategy.md`).
 ## [Unreleased]
 
 ### Added
+- Native Codex marketplace for sc-manage and sc-gh-stack, generated manifests,
+  drift validation, isolated CLI install/load/remove tests and install guidance.
 - Explicit Claude, Codex, Cursor and Hermes target flags for `sc-manage` and
   the installer; non-Claude targets receive portable skills/scripts/assets.
   Cursor sc-manage also writes a native `/sc-manage` command. `--dest` accepts

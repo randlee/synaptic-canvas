@@ -1,6 +1,6 @@
 ---
 name: sc-gh-stack
-version: 0.2.1
+version: 0.2.2
 description: Run stacked PRs with the gh stack extension the way that lands (append-only frozen layers on a named trunk, one stack writer, QA/CI on the top, one atomic merge). Use for any stack, stacked/dependent PRs, gh stack link/unstack/merge, landing, a red layer, or /sc-gh-stack. Supersedes /gh-stack.
 entry_point: /sc-gh-stack
 ---

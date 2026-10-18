@@ -5,6 +5,13 @@ All notable changes to the **sc-manage** package will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.14.1] - 2026-10-18
+
+### Added
+- Native Codex plugin manifest and marketplace registration. The manager skill
+  distinguishes native plugin state from artifact copies and uses Codex's own
+  install/list/remove commands without requiring a source checkout.
+
 ## [0.14.0] - 2026-10-17
 
 ### Added
