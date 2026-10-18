@@ -310,6 +310,36 @@
       "category": "tools"
     },
     {
+      "name": "sc-lint-adoption",
+      "description": "Configures a Rust repository to use the managed sc-lint adoption kit. Hosted in randlee/sc-lint.",
+      "author": {
+        "name": "randlee"
+      },
+      "category": "tools",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/randlee/sc-lint.git",
+        "path": "packages/sc-lint-adoption",
+        "ref": "main"
+      },
+      "homepage": "https://github.com/randlee/sc-lint"
+    },
+    {
+      "name": "sc-lint-version-adoption",
+      "description": "Adopt sc-lint-version in a repository via the sc-lint-version adoption skill. Hosted in randlee/sc-lint.",
+      "author": {
+        "name": "randlee"
+      },
+      "category": "tools",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/randlee/sc-lint.git",
+        "path": "packages/sc-lint-version-adoption",
+        "ref": "main"
+      },
+      "homepage": "https://github.com/randlee/sc-lint"
+    },
+    {
       "name": "sc-manage",
       "source": "./packages/sc-manage",
       "description": "Manage Synaptic Canvas Claude packages. List available packages and their install status (local/global), and install or uninstall packages according to policy.\n",
@@ -325,6 +355,21 @@
         "agents"
       ],
       "category": "tools"
+    },
+    {
+      "name": "sc-observability",
+      "description": "Skills for bootstrapping, adopting, and reviewing sc-observability in downstream Rust projects.",
+      "author": {
+        "name": "randlee"
+      },
+      "category": "tools",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/randlee/sc-observability.git",
+        "path": "packages/sc-observability",
+        "ref": "main"
+      },
+      "homepage": "https://github.com/randlee/sc-observability"
     },
     {
       "name": "sc-refactory",
