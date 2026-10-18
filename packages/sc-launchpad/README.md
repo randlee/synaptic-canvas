@@ -8,7 +8,7 @@ opening a visible terminal window.
 - `skills/launchpad/SKILL.md`
 - `agents/launchpad.md`
 - `scripts/sc_launchpad_task.py` (entry point)
-- `scripts/launchpad_models.py`, `launchpad_commands.py`, `launchpad_process.py`, `launchpad_output.py`
+- `scripts/launchpad_models.py`, `launchpad_commands.py`, `launchpad_process.py`, `launchpad_output.py`, `launchpad_env.py`
 - `scripts/launchpad_shared.py`
 - `scripts/agent_models.py` (shared model table; synced from `packages/shared/scripts`)
 
@@ -112,6 +112,7 @@ the prompt on stdin in every mode (see "Prompt delivery").
 | `isolation.cwd` | `"given"` \| `"temp"` | `temp` creates a fresh empty directory for a **new** session and returns it as `data.cwd`; omit `cwd` in that case. |
 | `timeout_seconds` | number > 0 | Kill the child process tree after this many seconds and return `CLI.TIMEOUT`. |
 | `ephemeral` | bool | Do not persist the session (`claude --no-session-persistence`, `codex exec --ephemeral`); it cannot be resumed. |
+| `env_file` | string | Dotenv file loaded into the child's environment (see [env_file](#env_file)). Omitted: the inherited environment is used unchanged. |
 
 `cwd` is required unless `isolation.cwd` is `"temp"`, and must be omitted then.
 `isolation.tools: "none"` rejects `extra_args` and `atm_identity`.
@@ -132,7 +133,8 @@ sc-launchpad's own flags never contain these characters.
 
 `output_format`, `session_id`, `result_text`, `resumed_session_id`,
 `isolation` (`{tools, cwd, flags}` or `null`), `timeout_seconds`, `timed_out`,
-`duration_seconds`, `warnings` (non-fatal harness notices), `ephemeral`, and
+`duration_seconds`, `warnings` (non-fatal harness notices), `ephemeral`,
+`env_file` (resolved path or `null`), `env_keys` (variable names it set), and
 `cleanup_paths` (see below). Existing keys (`tool`, `model`, `cwd`,
 `teammate_mode`, `atm_team`, `atm_identity`, `exit_code`, `stdout`, `stderr`)
 keep their meaning in text mode. In JSON mode `stdout` is `null` (the answer is
@@ -259,11 +261,34 @@ flags (`--dangerously-skip-permissions`, `--yolo`).
 `CAPABILITY.UNSUPPORTED`. Gemini text-mode launches (and `timeout_seconds`)
 work as before.
 
+### env_file
+
+launchpad starts `claude`/`codex`/`gemini` directly, so a shell alias that loads a
+`.env` first never runs. `"env_file": ".env"` does that loading explicitly:
+
+- **Lookup.** An absolute or `~` path is used as given. A relative path is tried in
+  `cwd` (for `isolation.cwd: "temp"`, the project directory: `CLAUDE_PROJECT_DIR`, else
+  the runtime's working directory), then the repository root, then the main worktree
+  root, so a linked worktree finds the `.env` that lives only in the main checkout.
+  The first file that exists wins.
+- **Precedence.** Inherited environment < `env_file` < launchpad's own variables
+  (`ATM_TEAM`/`ATM_IDENTITY` normalization, the private `CODEX_HOME` of
+  `isolation.tools: "none"` codex runs). The merged environment is also used to find
+  the CLI on `PATH` and to run `atm`. On Windows names match case-insensitively.
+- **Syntax.** `KEY=value` lines, optional `export `, `#` comments (also after a space
+  in unquoted values), `'literal'` and `"escaped"` (`\n \r \t \" \\`) values.
+  Values are literal: no `$VAR` expansion, no multi-line values. A repeated key keeps
+  its last value.
+- **Never logged.** Results and the audit log carry the resolved path and the variable
+  names (`env_keys`), never values; parse errors give the line number only.
+
 ### Error codes
 
 | Code | When |
 |------|------|
 | `VALIDATION.MISSING_INPUT` / `VALIDATION.INVALID_JSON` / `VALIDATION.INVALID_PAYLOAD` / `VALIDATION.INVALID_CWD` / `VALIDATION.INVALID_MODEL` / `VALIDATION.INVALID_EFFORT` | Payload problems (unknown fields are rejected). |
+| `VALIDATION.ENV_FILE_NOT_FOUND` | `env_file` exists in none of the searched places; `details.searched` lists them. |
+| `VALIDATION.INVALID_ENV_FILE` | `env_file` is unreadable or has a malformed line; the message gives the line number, never its content. |
 | `CLI.NOT_FOUND` | The CLI (or `atm` in teammate mode) is not on PATH; `details.searched_path` lists the PATH directories. |
 | `CLI.LAUNCH_FAILED` | The executable could not be started. |
 | `CLI.NON_ZERO_EXIT` | The child exited non-zero for an unclassified reason. |
@@ -327,6 +352,6 @@ Contract:
 Each launch appends one line to
 `<CLAUDE_PROJECT_DIR or cwd>/.claude/state/logs/sc-launchpad/launch.jsonl`:
 `timestamp`, `event` (`launch`), `package`, `level`, `tool`, `model`, `effort`,
-`output_format`, `isolation`, `ephemeral`, `session_id`, `resumed_session_id`,
-`exit_code`, `error_code`, `duration_seconds`. The prompt, the answer, and the
-environment are never logged. A log write failure never fails the launch.
+`output_format`, `isolation`, `ephemeral`, `env_file`, `env_keys`, `session_id`,
+`resumed_session_id`, `exit_code`, `error_code`, `duration_seconds`. The prompt, the
+answer, and environment values (including `env_file` values) are never logged. A log write failure never fails the launch.

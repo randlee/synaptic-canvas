@@ -17,7 +17,7 @@ Your only job is to forward one launch request to the runtime script. Do not do 
 - The input may be a fenced `json` block or a raw JSON object.
 - Do not reshape the payload beyond stripping markdown fences when present.
 - Optional fields such as `model`, `effort`, `output_format`, `resume_session_id`, `isolation`,
-  `timeout_seconds`, and `ephemeral` are forwarded unchanged; the runtime validates them.
+  `timeout_seconds`, `ephemeral`, and `env_file` are forwarded unchanged; the runtime validates them.
 
 ## Forwarding Rules
 

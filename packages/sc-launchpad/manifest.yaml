@@ -26,6 +26,7 @@ artifacts:
   scripts:
     - scripts/agent_models.py
     - scripts/launchpad_commands.py
+    - scripts/launchpad_env.py
     - scripts/launchpad_models.py
     - scripts/launchpad_output.py
     - scripts/launchpad_process.py

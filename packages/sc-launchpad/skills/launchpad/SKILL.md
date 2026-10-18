@@ -52,6 +52,8 @@ Optional fields:
 - `isolation`: `{"tools": "none"|"default", "cwd": "temp"|"given"}`
 - `timeout_seconds`: kill the child and return `CLI.TIMEOUT` after this many seconds
 - `ephemeral`: `true` to keep claude/codex from persisting the session
+- `env_file`: dotenv file (e.g. `.env`) merged over the inherited environment; a relative
+  path is looked up in `cwd`, the repo root, then the main worktree root (README `env_file`)
 
 `output_format` defaults to `json` when `resume_session_id` or `isolation` is
 present, otherwise `text`. Payloads without the new fields still validate, but

@@ -42,6 +42,7 @@ FAKE_CLI = textwrap.dedent(
                     "stdin": sys.stdin.buffer.read().decode("utf-8") if not sys.stdin.isatty() else None,
                     "atm_team": os.environ.get("ATM_TEAM"),
                     "codex_home": os.environ.get("CODEX_HOME"),
+                    "env_probe": {k: os.environ.get(k) for k in spec.get("env_probe", [])},
                 },
                 fh,
             )
@@ -292,6 +293,69 @@ def test_audit_log_records_launch_without_prompt(fake_bin, tmp_path):
     assert (record["event"], record["package"], record["level"]) == ("launch", "sc-launchpad", "info")
     assert record["session_id"] == SESSION
     assert "SECRET-PROMPT" not in log.read_text(encoding="utf-8")
+
+
+# --- env_file -------------------------------------------------------------------
+
+
+def test_env_file_overrides_inherited_and_is_never_logged(fake_bin, tmp_path):
+    project = tmp_path / "project"
+    project.mkdir()
+    (project / ".env").write_text("ANTHROPIC_API_KEY=fresh-key-value\nSC_FROM_FILE='yes'\n", encoding="utf-8")
+    env = make_env(fake_bin, tmp_path, {"stdout": CLAUDE_OK, "env_probe": ["ANTHROPIC_API_KEY", "SC_FROM_FILE"]},
+                   ANTHROPIC_API_KEY="stale-key-value")
+    body = json.dumps({"description": "d", "prompt": "p", "tool": "claude", "isolation": ISOLATED, "env_file": ".env"})
+    response = json.loads(_invoke(["--json", body], env).stdout)
+    assert response["success"] is True, response
+    assert recorded(tmp_path)["env_probe"] == {"ANTHROPIC_API_KEY": "fresh-key-value", "SC_FROM_FILE": "yes"}
+    assert response["data"]["env_file"] == str((project / ".env").resolve())
+    assert response["data"]["env_keys"] == ["ANTHROPIC_API_KEY", "SC_FROM_FILE"]
+    log = (project / ".claude" / "state" / "logs" / "sc-launchpad" / "launch.jsonl").read_text(encoding="utf-8")
+    assert json.loads(log)["env_keys"] == ["ANTHROPIC_API_KEY", "SC_FROM_FILE"]
+    assert "fresh-key-value" not in log and "fresh-key-value" not in json.dumps(response)
+
+
+def test_env_file_found_in_main_checkout_from_linked_worktree(fake_bin, tmp_path):
+    main = tmp_path / "repo"
+    (main / ".git" / "worktrees" / "feat").mkdir(parents=True)
+    (main / ".git" / "worktrees" / "feat" / "commondir").write_text("../..\n", encoding="utf-8")
+    (main / ".env").write_text("SC_FROM_FILE=main\n", encoding="utf-8")
+    linked = tmp_path / "wt" / "feat"
+    linked.mkdir(parents=True)
+    (linked / ".git").write_text(f"gitdir: {main / '.git' / 'worktrees' / 'feat'}\n", encoding="utf-8")
+    response = run(fake_bin, tmp_path, {"stdout": CODEX_OK, "env_probe": ["SC_FROM_FILE"]},
+                   tool="codex", cwd=str(linked), output_format="json", env_file=".env")
+    assert response["success"] is True, response
+    assert recorded(tmp_path)["env_probe"] == {"SC_FROM_FILE": "main"}
+
+
+def test_launchpad_variables_win_over_env_file(fake_bin, tmp_path):
+    real_home = tmp_path / "real-codex"
+    real_home.mkdir()
+    (real_home / "auth.json").write_text("{}", encoding="utf-8")
+    project = tmp_path / "project"
+    project.mkdir()
+    (project / "creds.env").write_text(f"CODEX_HOME={real_home}\nATM_IDENTITY=from-file\n", encoding="utf-8")
+    response = run(fake_bin, tmp_path, {"stdout": CODEX_OK}, tool="codex", isolation=ISOLATED, env_file="creds.env")
+    assert response["success"] is True, response
+    home = Path(recorded(tmp_path)["codex_home"])
+    assert home != real_home and (home / "auth.json").exists()  # private home, login taken from the file's
+    assert response["data"]["atm_identity"] is None  # not teammate mode: ATM vars are cleared
+
+
+def test_missing_env_file_fails_before_launch(fake_bin, tmp_path, workdir):
+    response = run(fake_bin, tmp_path, {"stdout": CLAUDE_OK}, cwd=str(workdir), env_file="nope.env")
+    assert error_code(response) == "VALIDATION.ENV_FILE_NOT_FOUND"
+    assert str(workdir / "nope.env") in response["error"]["details"]["searched"]
+    assert not (tmp_path / "record.json").exists()
+
+
+def test_without_env_file_the_environment_is_inherited_unchanged(fake_bin, tmp_path, workdir):
+    (workdir / ".env").write_text("SC_FROM_FILE=should-not-load\n", encoding="utf-8")
+    env = make_env(fake_bin, tmp_path, {"stdout": "ok\n", "env_probe": ["SC_FROM_FILE"]}, SC_FROM_FILE="inherited")
+    response = lp.run_payload(payload(cwd=str(workdir)), env)
+    assert response["success"] is True and response["data"]["env_file"] is None
+    assert recorded(tmp_path)["env_probe"] == {"SC_FROM_FILE": "inherited"}
 
 
 # --- isolation verification ---------------------------------------------------

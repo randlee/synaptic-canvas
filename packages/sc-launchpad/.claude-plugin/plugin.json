@@ -30,6 +30,7 @@
     "./scripts/launchpad_models.py",
     "./scripts/launchpad_output.py",
     "./scripts/launchpad_process.py",
+    "./scripts/launchpad_env.py",
     "./scripts/launchpad_shared.py",
     "./scripts/sc_launchpad_task.py"
   ]

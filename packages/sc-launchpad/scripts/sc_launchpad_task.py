@@ -34,6 +34,7 @@ from launchpad_commands import (  # noqa: E402
     is_launchpad_temp,
     isolation_flags,
 )
+from launchpad_env import load_env_file  # noqa: E402
 from launchpad_models import LaunchFailure, LaunchpadInput, normalize_tool_model, roster_model  # noqa: E402
 from launchpad_output import classify, tail  # noqa: E402
 from launchpad_process import run_process  # noqa: E402
@@ -141,6 +142,9 @@ def audit(env: Dict[str, str], payload: LaunchpadInput, response: dict, started:
         "output_format": "json" if payload.structured else "text",
         "isolation": payload.isolation.model_dump() if payload.isolation else None,
         "ephemeral": payload.ephemeral,
+        # Path and names only; values never leave the process.
+        "env_file": data.get("env_file", payload.env_file),
+        "env_keys": data.get("env_keys"),
         "session_id": data.get("session_id"),
         "resumed_session_id": payload.resume_session_id,
         "exit_code": data.get("exit_code"),
@@ -161,6 +165,12 @@ def run_payload(payload: LaunchpadInput, parent_env: Dict[str, str]) -> dict:
     check_capabilities(payload)
     model = normalize_tool_model(payload)
     given_cwd = None if payload.temp_cwd else resolve_given_cwd(payload.cwd or "")
+    env_file, env_keys = None, []
+    if payload.env_file:
+        # The file wins over inherited variables; launchpad's own (ATM_*, an isolated
+        # CODEX_HOME) are applied after it and win over both.
+        base = given_cwd or Path(parent_env.get("CLAUDE_PROJECT_DIR") or os.getcwd())
+        parent_env, env_file, env_keys = load_env_file(payload.env_file, base, parent_env)
     command = build_command(payload, model)
     executable = which(payload.tool, parent_env)
     check_batch_shim(executable, [executable] + command.argv[1:])
@@ -212,6 +222,8 @@ def run_payload(payload: LaunchpadInput, parent_env: Dict[str, str]) -> dict:
             else None
         ),
         "ephemeral": payload.ephemeral,
+        "env_file": str(env_file) if env_file else None,
+        "env_keys": env_keys,
         "exit_code": outcome.exit_code,
         # Structured runs carry the answer in result_text; raw output only in error details.
         "stdout": None if payload.structured else outcome.stdout,

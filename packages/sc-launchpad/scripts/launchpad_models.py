@@ -65,6 +65,8 @@ class LaunchpadInput(BaseModel):
     isolation: Optional[IsolationInput] = None
     timeout_seconds: Optional[float] = Field(default=None, gt=0)
     ephemeral: bool = False
+    # Dotenv file merged over the inherited environment (see launchpad_env.py).
+    env_file: Optional[str] = Field(default=None, min_length=1)
 
     model_config = {"extra": "forbid"}
 

@@ -36,6 +36,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   `CODEX_HOME`, claude transcripts of a temp cwd); the caller deletes these after
   the last turn. A temp cwd is removed automatically if no child started.
 - `ephemeral: true` (claude `--no-session-persistence`, codex `--ephemeral`).
+- `env_file`: a dotenv file merged over the inherited environment, for credentials a shell
+  alias would otherwise load. Relative paths are found in `cwd`, the repo root, or the main
+  worktree root; launchpad's own variables still win. Results and the audit log carry the
+  path and variable names (`env_keys`), never values (`VALIDATION.ENV_FILE_NOT_FOUND`,
+  `VALIDATION.INVALID_ENV_FILE`).
 - One audit line per launch in `.claude/state/logs/sc-launchpad/launch.jsonl`
   (never the prompt).
 - Documented direct script invocation for programs (`--json '<payload>'` or
