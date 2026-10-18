@@ -31,7 +31,7 @@ import shlex
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from gh_stack_shared import ToolError, guarded, is_ancestor, origin_sha, run, short, ReportArgumentParser, compact_report  # noqa: E402
+from gh_stack_shared import ToolError, guarded, is_ancestor, origin_sha, run, short, ReportArgumentParser, compact_report, parse_selector  # noqa: E402
 from gh_stack_local import read_local_snapshot, evaluate_stack_conflicts, scope_diagnostics, _branch as valid_branch
 from gh_stack_remote import StackDataClient
 from gh_stack_view import add_refresh_options, _selected, _catalog_composition, _scope_epoch, _git_scope_fresh
@@ -85,19 +85,20 @@ def resolve_layers(args: list[str], by_number: dict[int, dict], by_branch: dict[
     """Resolve numeric identifiers from local/cache before any scoped lookup."""
     layers = []
     for arg in args:
-        if arg.isdigit():
-            pr = by_number.get(int(arg))
+        selector_kind, value = parse_selector(arg, kind='layer')
+        if selector_kind == 'number':
+            pr = by_number.get(value)
             if pr is None:
-                pr = view_pr(int(arg), client=client, offline=offline) if client is not None else (
-                    None if offline else view_pr(int(arg)))
+                pr = view_pr(value, client=client, offline=offline) if client is not None else (
+                    None if offline else view_pr(value))
                 if not pr:
                     raise ToolError(f"PR #{arg} has no local mapping; pass its branch name (--no-pr makes no API calls)", "STATE.PR_UNKNOWN")
-                by_number[int(arg)] = pr
+                by_number[value] = pr
                 if by_branch is not None:
                     by_branch.setdefault(pr["headRefName"], pr)
             layers.append(pr["headRefName"])
         else:
-            layers.append(arg)
+            layers.append(value)
     return layers
 
 
@@ -107,8 +108,13 @@ def evaluate(trunk: str, layers: list[str], by_branch: dict[str, dict], *, fetch
     problems: list[str] = []
     notes: list[str] = []
     resolve = (lambda name: refs.get(f"refs/remotes/{remote}/{name}")) if refs is not None else origin_sha
-    fresh = lambda name: fetched and (ref_observations is None or ref_observations.get(name, {}).get('fresh') is True)
+    fresh = lambda name: fetched and (ref_observations is None or (
+        ref_observations.get(name, {}).get('fresh') is True and ref_observations.get(name, {}).get('exists') is not False))
+    absent = lambda name: bool(ref_observations is not None and
+        ref_observations.get(name, {}).get('exists') is False and ref_observations.get(name, {}).get('absence_fresh') is True)
     trunk_sha = resolve(trunk) if fresh(trunk) else None
+    if absent(trunk):
+        problems.append(f'{remote}/{trunk} is not on the remote; push the trunk or select an existing trunk')
     if fetched and trunk_sha is None and ref_observations is None:
         raise ToolError(f"origin/{trunk} does not exist; pass the trunk branch name exactly as on origin")
     if len(layers) != len(set(layers)):
@@ -124,10 +130,10 @@ def evaluate(trunk: str, layers: list[str], by_branch: dict[str, dict], *, fetch
         pr = by_branch.get(name) if use_pr else None
         trusted = lambda field: pr_observations is None or pr_observations.get((pr or {}).get('number'), {}).get(field, {}).get('freshness') == 'fresh'
         row = {"layer": idx, "branch": name, "origin": sha, "pr": pr.get("number") if pr else None,
-               "pushed": None if not fresh(name) else sha is not None, "contains_parent": None,
+               "pushed": False if absent(name) else (None if not fresh(name) else sha is not None), "contains_parent": None,
                "pr_base_ok": None, "pr_head_ok": None, "draft": bool(pr and pr.get("isDraft")),
                "pr_state": pr.get("state") if pr else None, "expected_base": parent_name}
-        if fresh(name) and sha is None:
+        if absent(name) or (fresh(name) and sha is None):
             problems.append(f"L{idx} {name}: not on origin (unpushed) -> push it before linking")
         elif sha and parent_sha:
             row["contains_parent"] = is_ancestor(parent_sha, sha)
@@ -154,6 +160,8 @@ def evaluate(trunk: str, layers: list[str], by_branch: dict[str, dict], *, fetch
                 row["pr_head_ok"] = head_ok
                 if head_ok is False:
                     problems.append(f"L{idx} {name}: PR #{pr['number']} head {short(pr.get('headRefOid'))} != origin {short(sha)} -> stale PR head; wait for GitHub or re-push")
+        elif name.isascii() and name.isdecimal():
+            problems.append(f"L{idx} {name}: numeric branch has no qualified PR mapping; open its PR first and recheck using the PR number (gh stack link treats bare numbers as PRs)")
         elif use_pr:
             notes.append(f"L{idx} {name}: no PR yet; `gh stack link` creates one with base {parent_name}")
         rows.append(row)
@@ -262,8 +270,14 @@ def run_check(args: argparse.Namespace) -> int:
     remote = getattr(args, 'remote', 'origin')
     if not valid_branch(args.trunk) or not valid_branch(remote):
         raise ToolError('invalid trunk or remote name', 'INPUT.INVALID_REF')
-    if any((not value.isdigit() and not valid_branch(value)) or (value.isdigit() and int(value) <= 0) for value in args.layers):
+    selectors = [parse_selector(value, kind='layer') for value in args.layers]
+    if any(kind == 'branch' and not valid_branch(value) for kind, value in selectors):
         raise ToolError('layers must be valid branch names or positive PR numbers', 'INPUT.INVALID_LAYER')
+    stack_selector = getattr(args, 'stack', None)
+    if stack_selector is not None:
+        selector_kind, selector_value = parse_selector(stack_selector, kind='stack')
+        if selector_kind in ('branch', 'auto') and not valid_branch(selector_value):
+            raise ToolError('invalid stack branch selector', 'INPUT.INVALID_SELECTOR')
     snapshot = read_local_snapshot(remote, run_fn=run)
     stacks = [stack for stack in snapshot['stacks'] if _selected(stack, getattr(args, 'stack', None))]
     if getattr(args, 'stack', None) and not stacks:
@@ -282,7 +296,7 @@ def run_check(args: argparse.Namespace) -> int:
                 if existing and existing['headRefName'] != branch['name']:
                     raise ToolError('conflicting local PR branch mappings', 'STATE.CATALOG_CONFLICT')
                 catalog[number] = {'number': number, 'headRefName': branch['name']}
-    requested_numbers = sorted({int(value) for value in args.layers if value.isdigit()})
+    requested_numbers = sorted({value for kind, value in selectors if kind == 'number'})
     # Resolve numeric identifiers in one request sequence, never one call per PR.
     missing_numbers = [number for number in requested_numbers if number not in catalog]
     cached_mapping = client.pr_metadata(missing_numbers, offline=offline, force=force) if missing_numbers else {}
@@ -310,7 +324,9 @@ def run_check(args: argparse.Namespace) -> int:
     if unresolved:
         known.update(client.resolve_branches(unresolved, offline=offline, force=force))
     numbers = sorted({pr['number'] for pr in known.values()})
-    heads = {pr['number']: refs.get(f'refs/remotes/{remote}/{branch}') for branch, pr in known.items()}
+    git_refs = git_observation.get('refs') or {}
+    heads = {pr['number']: refs.get(f'refs/remotes/{remote}/{branch}') for branch, pr in known.items()
+             if git_refs.get(branch, {}).get('fresh') is True and git_refs.get(branch, {}).get('exists') is not False}
     head_map = {number: sha for number, sha in heads.items() if sha}
     already_refreshed = set(cached_mapping) | {known[branch]['number'] for branch in unresolved if branch in known}
     remaining = [number for number in numbers if number not in already_refreshed]
@@ -341,7 +357,8 @@ def run_check(args: argparse.Namespace) -> int:
             report['problems'].append(f"L{row['layer']} {row['branch']}: local content conflict against intended parent")
         row_fresh = _git_scope_fresh(git_observation, [args.trunk, row['branch'], row.get('expected_base', args.trunk)])
         if not _git_scope_fresh(git_observation, [row['branch']]):
-            row['pushed'] = None
+            negative = git_refs.get(row['branch'], {})
+            row['pushed'] = False if negative.get('exists') is False and negative.get('absence_fresh') is True else None
         row['unknown'] = entry['clean'] is None or stale or not row_fresh
         if row['unknown']:
             unknown_count += 1

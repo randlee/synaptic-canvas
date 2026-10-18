@@ -67,6 +67,10 @@ It never invokes `gh stack view` per worktree. The default view shows every stac
 has an open layer, on any trunk. `--trunk`/`--phase` narrows to one trunk
 (`--phase` is shorthand for `--trunk integrate/phase-<x>`); `--all` also shows
 merged/closed stacks. Hidden stacks are counted on a `hidden:` line.
+Bare positive ASCII stack numbers take precedence over branch names. Explicit
+forms are `--stack number:42`, `--stack branch:42`, and `--stack id:<catalog-id>`.
+Use the branch form for numeric or non-ASCII-digit branch names; invalid numeric
+selectors fail before hosted acquisition.
 
 Default reports reuse sufficient shared observations and acquire only required
 missing or stale remote facts in bounded batches. `--refresh-git` coordinates
@@ -83,6 +87,9 @@ For missing structural evidence before a cut or scoped merge, scoped
 numeric stack number is required). Require `structure_observation.complete == true`
 and `freshness == "fresh"`; `--refresh-status` refreshes PR fields only.
 Use the compact projection in `../sc-gh-stack/references/recipe-evidence.md`.
+An unscoped structural refresh refuses missing numeric identities before any
+structural request. Scope it to a known number, or request git/status refresh
+without claiming complete remote membership.
 
 Text summaries show at most ten layer rows and count all blockers/unknowns.
 `--full` shows all rows without forcing refresh; `--json` is always complete and
@@ -171,6 +178,10 @@ containment. A green `LANDING` is not a whole-stack clean result: require
 `local_mergeability.clean == true` for all intended layer pairs and top/trunk,
 with no unknown/conflicted pair. Hosted CI/QA still gate the exact top head
 only; local cleanliness never substitutes for GitHub's policy enforcement.
+Green LANDING also requires fresh positive pushed refs for trunk and every
+active layer, never local-head fallback. A fresh negative remote advertisement
+(`exists == false`, `absence_fresh == true`) identifies an unpushed layer;
+it expires after 60 seconds and never makes an old tracking SHA current.
 
 If you see stale local tracking (🔄, or a false `NOT COHERENT` with `-` rows
 right after an `unstack`), that is fixed by the recipe in

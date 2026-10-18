@@ -116,6 +116,28 @@ class EvaluateTests(unittest.TestCase):
         self.assertIn("next: gh stack link --base develop 1 2 l3", text)
         self.assertIn("bare branch name pushes the LOCAL ref", text)
 
+    def test_literal_numeric_branch_without_mapping_cannot_link_unrelated_pr(self):
+        self.origins['123'] = A1
+        # PR123 exists on an unrelated branch: the extension would prefer it
+        # over the intended literal branch if handed the bare argument 123.
+        unrelated = {'different': pr(123, 'different', TRUNK, B2)}
+        report = gcc.evaluate(TRUNK, ['123'], unrelated, fetched=True, use_pr=True)
+        self.assertFalse(report['linkable'])
+        self.assertIsNone(report['link_command'])
+        self.assertTrue(any('numeric branch' in problem and 'open its PR first' in problem for problem in report['problems']))
+
+    def test_literal_numeric_branch_with_mapping_links_correct_pr(self):
+        self.origins['123'] = A1
+        report = gcc.evaluate(TRUNK, ['123'], {'123': pr(9, '123', TRUNK, A1)}, fetched=True, use_pr=True)
+        self.assertTrue(report['linkable'])
+        self.assertEqual(report['link_command'], 'gh stack link --base develop 9')
+
+    def test_unicode_digit_branch_is_not_misclassified_as_extension_pr_number(self):
+        self.origins['１２３'] = A1
+        report = gcc.evaluate(TRUNK, ['１２３'], {}, fetched=True, use_pr=True)
+        self.assertTrue(report['linkable'])
+        self.assertFalse(any('numeric branch' in problem for problem in report['problems']))
+
     def test_top_conflicts_with_trunk(self) -> None:
         self.merge = False
         report = gcc.evaluate(TRUNK, ["l1", "l2", "l3"], self.prs, fetched=True, use_pr=True)
@@ -151,6 +173,23 @@ class EvaluateTests(unittest.TestCase):
         assert report['rows'][1]['pushed'] is True
         assert report['rows'][1]['contains_parent'] is None
         assert not report['problems']
+
+    def test_confirmed_absence_never_uses_stale_tracking_head(self):
+        observations = {TRUNK: {'fresh': True}, 'l1': {'fresh': False, 'exists': False, 'absence_fresh': True}}
+        report = gcc.evaluate(TRUNK, ['l1'], self.prs, fetched=True, use_pr=True,
+                              ref_observations=observations)
+        self.assertIsNone(report['rows'][0]['origin'])
+        self.assertIs(report['rows'][0]['pushed'], False)
+        self.assertIsNone(report['rows'][0]['pr_head_ok'])
+        self.assertTrue(any('not on origin (unpushed)' in p for p in report['problems']))
+        self.assertIsNone(report['landing']['clean'])
+
+    def test_confirmed_absent_trunk_is_actionable(self):
+        observations = {TRUNK: {'fresh': False, 'exists': False, 'absence_fresh': True}, 'l1': {'fresh': True}}
+        report = gcc.evaluate(TRUNK, ['l1'], self.prs, fetched=True, use_pr=True,
+                              ref_observations=observations)
+        self.assertIsNone(report['trunk_origin'])
+        self.assertTrue(any('trunk' in p and 'not on the remote' in p for p in report['problems']))
 
     def test_stale_current_ref_is_not_passed_as_none_to_git(self):
         for stale in ('l1', 'l2'):

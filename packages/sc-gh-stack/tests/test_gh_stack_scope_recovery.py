@@ -57,7 +57,7 @@ def test_deleted_branch_does_not_poison_survivors_and_negative_cache_coalesces(t
         assert cmd[0] == 'git'
         if cmd[1] == 'ls-remote':
             return subprocess.CompletedProcess(cmd, 0, 'a' * 40 + '\trefs/heads/main\n' + 'b' * 40 + '\trefs/heads/healthy\n', '')
-        if any('refs/heads/deleted:' in arg for arg in cmd):
+        if 'refs/heads/deleted:' in kwargs.get('input', ''):
             return subprocess.CompletedProcess(cmd, 128, '', "fatal: couldn't find remote ref refs/heads/deleted")
         return subprocess.CompletedProcess(cmd, 0, '', '')
     report = client(tmp_path, transport).refresh_git(refs=['main', 'healthy', 'deleted'])
@@ -67,6 +67,8 @@ def test_deleted_branch_does_not_poison_survivors_and_negative_cache_coalesces(t
     assert report['refs']['main']['fresh'] is True
     assert report['refs']['deleted']['fresh'] is False
     assert report['refs']['deleted']['exists'] is False
+    assert report['refs']['deleted']['absence_fresh'] is True
+    assert report['refs']['deleted']['observed_at'] == 1000
     assert len(calls) == 3  # failed batch + one advertisement + surviving batch
     again = client(tmp_path, transport).refresh_git(refs=['main', 'healthy', 'deleted'], force=True, offline=True)
     assert again['fresh'] is False
@@ -129,6 +131,7 @@ def test_real_local_git_missing_branch_recovery_and_reappearance(tmp_path):
     assert len(calls) == 3
     assert report['refs']['healthy']['fresh'] is True
     assert report['refs']['deleted']['exists'] is False
+    assert report['refs']['deleted']['absence_fresh'] is True
     # Recovery does not delete existing local/tracking refs to disguise absence.
     assert git('rev-parse', 'refs/remotes/origin/deleted') == original_sha
     git('--git-dir=' + str(server), 'update-ref', 'refs/heads/deleted', original_sha)

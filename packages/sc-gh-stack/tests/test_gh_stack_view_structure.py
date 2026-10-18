@@ -48,7 +48,8 @@ def harness(tmp_path):
     client.observations, client.branch_observations = {}, {}
     client.stack_observations = {42: {'source': 'REST', 'freshness': 'fresh', 'complete': True, 'observed_at': 100}}
     client.refresh_stack.return_value = remote_stack()
-    client.refresh_git.return_value = {'fresh': True, 'source': 'fetched', 'observed_at': 100}
+    client.refresh_git.return_value = {'fresh': True, 'source': 'fetched', 'observed_at': 100,
+                                       'refs': {name: {'fresh': True, 'exists': True} for name in SHAS}}
 
     def details(numbers, **kwargs):
         result = {}
@@ -82,6 +83,103 @@ def harness(tmp_path):
             code = view.guarded('gh-stack-view', body, json_errors=True) if guard_errors else body()
         return code, json.loads(output.getvalue())
     return snapshot, client, run
+
+
+@pytest.mark.parametrize('missing', ['main', 'one', 'two'])
+@pytest.mark.parametrize('state', ['stale', 'unknown', 'absent'])
+def test_landing_requires_each_fresh_positive_remote_ref(harness, missing, state):
+    snapshot, client, run = harness
+    observation = {'fresh': False}
+    if state == 'absent':
+        observation.update(exists=False, absence_fresh=True)
+    client.refresh_git.return_value['refs'][missing] = observation
+    if state == 'unknown':
+        snapshot['refs'].pop('refs/remotes/origin/' + missing)
+    code, report = run()
+    stack = report['stacks'][0]
+    assert code == 1
+    assert stack['landing']['landable'] is None
+    assert stack['landing']['top_sha'] is None
+    assert stack['local_mergeability']['combined']['clean'] is True
+    if state == 'absent':
+        assert any('not on origin' in problem for problem in stack['problems'])
+        if missing != 'main':
+            row = next(row for row in stack['rows'] if row['branch'] == missing)
+            assert row['pushed'] is False
+            assert row['origin'] is None
+
+
+def test_aggregate_freshness_cannot_certify_landing_or_expected_hosted_heads(harness):
+    _, client, run = harness
+    client.refresh_git.return_value = {'fresh': True, 'source': 'fetched'}
+    _, report = run()
+    assert report['stacks'][0]['landing']['landable'] is None
+    assert client.pr_details.call_args.kwargs['head_map'] == {}
+
+
+def test_only_fresh_positive_git_observations_constrain_hosted_heads(harness):
+    _, client, run = harness
+    client.refresh_git.return_value['refs']['one'] = {'fresh': False, 'exists': True}
+    run()
+    assert client.pr_details.call_args.kwargs['head_map'] == {12: SHAS['two']}
+
+
+def test_missing_host_identity_warning_does_not_suppress_local_landing(harness):
+    snapshot, _, run = harness
+    warning = 'Remote identity unknown; hosted fields remain unknown'
+    snapshot['warnings'] = [warning]
+    snapshot['nonblocking_warnings'] = [warning]
+    code, report = run()
+    assert code == 0
+    assert report['stacks'][0]['landing']['landable'] is True
+    assert warning in report['warnings']
+
+
+@pytest.mark.parametrize('trunk_filter', [None, 'main'])
+def test_broad_reports_ignore_unrelated_ref_and_catalog_byte_churn(harness, trunk_filter):
+    snapshot, _, run = harness
+    final = copy.deepcopy(snapshot)
+    final['fingerprint'] = 'worktree-head-and-unrelated-ref-change'
+    final['refs']['refs/heads/unrelated'] = 'f' * 40
+    final['catalogs'][0]['digest'] = 'same-semantics-new-json-formatting'
+    final['repository']['current_worktree'] = '/other-checkout'
+    code, report = run(stack=None, trunk_filter=trunk_filter, snapshots=[snapshot, snapshot, final])
+    assert code == 0
+    assert report['coherent'] is True
+
+
+@pytest.mark.parametrize('legacy_first', [False, True])
+def test_structural_refresh_preflights_every_selected_number_before_api(harness, legacy_first):
+    snapshot, client, run = harness
+    legacy = {'id': 'legacy', 'trunk': 'main', 'branches': [{'name': 'legacy-layer'}]}
+    snapshot['stacks'].insert(0 if legacy_first else 1, legacy)
+    code, report = run(stack=None, refresh=True, guard_errors=True)
+    assert code == 2
+    assert report['error']['code'] == 'STATE.STACK_NUMBER_UNKNOWN'
+    assert report['error']['details']['stacks'][0]['branches'] == ['legacy-layer']
+    client.refresh_stack.assert_not_called()
+    client.refresh_git.assert_not_called()
+    client.pr_details.assert_not_called()
+
+
+def test_stack_selector_disambiguates_numeric_branch():
+    stack = {'number': 7, 'id': 'S_7', 'branches': [{'name': '42'}]}
+    assert not view._selected(stack, '42')
+    assert not view._selected(stack, 'number:42')
+    assert view._selected(stack, 'branch:42')
+    assert view._selected(stack, 'id:S_7')
+    assert view._selected(stack, '7')
+
+
+@pytest.mark.parametrize('selector', ['', '0', '²', '１２', 'number:0', 'branch:', 'unknown:42'])
+def test_invalid_stack_selector_refused_before_acquisition(harness, selector):
+    _, client, run = harness
+    code, report = run(stack=selector, guard_errors=True)
+    assert code == 2
+    assert report['error']['code'] == 'INPUT.INVALID_SELECTOR'
+    client.refresh_stack.assert_not_called()
+    client.refresh_git.assert_not_called()
+    client.pr_details.assert_not_called()
 
 
 @pytest.mark.parametrize('names', [('one', 'two', 'three'), ('one',)])

@@ -20,10 +20,12 @@ class ScopedGitRefresh(unittest.TestCase):
                            'remote': 'upstream', 'host': 'github.test', 'owner': 'org', 'name': 'repo'}
         self.now = [1000]
         self.commands = []
+        self.inputs = []
         self.failure = False
 
     def transport(self, cmd, **kwargs):
         self.commands.append(cmd)
+        self.inputs.append(kwargs.get('input'))
         self.assertEqual(cmd[:2], ['git', 'fetch'])
         return subprocess.CompletedProcess(cmd, int(self.failure), '', 'unavailable' if self.failure else '')
 
@@ -33,11 +35,11 @@ class ScopedGitRefresh(unittest.TestCase):
     def test_explicit_scope_exact_refspec_and_warm_subset(self):
         first = self.client().refresh_git(refs=['main', 'layer/1'])
         self.assertTrue(first['fresh'])
-        self.assertEqual(self.commands, [['git', 'fetch', '--quiet', '--no-tags', '--no-recurse-submodules', '--', 'upstream',
-                                         '+refs/heads/layer/1:refs/remotes/upstream/layer/1', '+refs/heads/main:refs/remotes/upstream/main']])
+        self.assertEqual(self.commands, [['git', 'fetch', '--quiet', '--no-tags', '--no-recurse-submodules', '--stdin', '--', 'upstream']])
+        self.assertEqual(self.inputs[0], '+refs/heads/layer/1:refs/remotes/upstream/layer/1\n+refs/heads/main:refs/remotes/upstream/main\n')
         self.assertEqual(self.client().refresh_git(refs=['main'])['source'], 'cached')
         self.client().refresh_git(refs=['main', 'layer/2'])
-        self.assertEqual(self.commands[-1][-1], '+refs/heads/layer/2:refs/remotes/upstream/layer/2')
+        self.assertEqual(self.inputs[-1], '+refs/heads/layer/2:refs/remotes/upstream/layer/2\n')
         self.assertEqual(len(self.commands[-1]), 8)
 
     def test_scope_ttl_and_offline_aggregate(self):
@@ -50,7 +52,7 @@ class ScopedGitRefresh(unittest.TestCase):
         self.assertFalse(stale['refs']['main']['fresh'])
         self.assertTrue(stale['refs']['other']['fresh'])
         self.client().refresh_git(refs=['main', 'other'])
-        self.assertEqual(self.commands[-1][-1], '+refs/heads/main:refs/remotes/upstream/main')
+        self.assertEqual(self.inputs[-1], '+refs/heads/main:refs/remotes/upstream/main\n')
         self.assertEqual(len(self.commands), 3)
 
     def test_failed_scope_never_covers_other_scope(self):

@@ -16,7 +16,7 @@ options:
   - name: --remote
     description: Select the git remote (default origin).
   - name: --stack
-    description: Select a stack by number, ID or branch name before acquisition.
+    description: Select a stack before acquisition; explicit forms are number:N, branch:NAME or id:ID. Bare ASCII numbers mean stack numbers.
   - name: --full
     description: Print all layer rows without forcing refresh.
   - name: --refresh-git
@@ -27,6 +27,8 @@ options:
     description: Reconcile remote stack membership, git refs and hosted observations.
   - name: --json
     description: Emit complete stacks[].rows[] and branches[], problems[], notes[], landing, coherent and provenance as JSON.
+  - name: --compact-json
+    description: Bounded JSON presentation with explicit counts and truncation; not complete composition evidence.
   - name: --help
     description: Show options.
 ---

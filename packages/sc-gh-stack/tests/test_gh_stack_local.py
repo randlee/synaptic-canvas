@@ -23,7 +23,7 @@ def repo(tmp_path, monkeypatch):
     (path / 'f').write_text('base\n')
     git('add', '.')
     git('commit', '-m', 'base')
-    git('remote', 'add', 'origin', 'git@github.com:owner/project.git')
+    git('remote', 'add', 'origin', 'https://github.com/owner/project.git')
     git('branch', 'one')
     monkeypatch.chdir(path)
     return path, git
@@ -93,7 +93,7 @@ def test_worktree_common_legacy_dedupe_and_conflict(repo, tmp_path):
 def test_malformed_catalog_unknown_identity(repo, data):
     path, git = repo
     (path / '.git/gh-stack').write_text(json.dumps(data))
-    git('remote', 'set-url', 'origin', 'myalias:owner/project')
+    git('remote', 'set-url', 'origin', '/tmp/local-repository.git')
     snapshot = local.read_local_snapshot()
     assert snapshot['stacks'] == []
     assert snapshot['repository']['identity'] is None
@@ -219,3 +219,68 @@ def test_reusable_conflict_memo_and_attribute_invalidation(repo):
     local.evaluate_stack_conflicts(*args, run_fn=runner)
     local.evaluate_stack_conflicts(*args, run_fn=runner)
     assert sum('merge-tree' in cmd for cmd in calls) == 4
+
+
+@pytest.mark.parametrize('url,canonical,destination,port', [
+    ('git@work:owner/project.git', 'github.com', 'git@work', None),
+    ('git@work.example:owner/project.git', 'github.enterprise', 'git@work.example', None),
+    ('ssh://build@work:443/owner/project.git', 'ssh.github.com', 'build@work', 443),
+    ('git@ghe:owner/project.git', 'ghe', 'git@ghe', None),
+])
+def test_ssh_identity_uses_bounded_local_configuration(url, canonical, destination, port):
+    calls = []
+    def runner(command, **kwargs):
+        calls.append((command, kwargs))
+        return subprocess.CompletedProcess(command, 0, 'hostname ' + canonical + '\n', '')
+    expected_host = 'github.com' if canonical == 'ssh.github.com' else canonical
+    assert local._remote_identity(url, runner) == (expected_host, 'owner', 'project')
+    assert calls == [(['ssh', '-G'] + (['-p', str(port)] if port else []) + ['--', destination],
+                      {'check': False, 'timeout': 5})]
+
+
+def test_https_undotted_enterprise_never_invokes_ssh():
+    def forbidden(*args, **kwargs):
+        raise AssertionError('HTTPS identity requires no subprocess')
+    assert local._remote_identity('https://ghe/owner/project.git', forbidden) == ('ghe', 'owner', 'project')
+    assert local._remote_identity('https://ghe/prefix/owner/project.git', forbidden) is None
+
+
+@pytest.mark.parametrize('stdout,returncode', [('', 1), ('hostname a\nhostname b\n', 0), ('hostname bad/name\n', 0)])
+def test_ssh_identity_failure_never_falls_back_to_transport_alias(stdout, returncode):
+    def runner(command, **kwargs):
+        return subprocess.CompletedProcess(command, returncode, stdout, '')
+    assert local._remote_identity('git@work.example:owner/project.git', runner) is None
+
+
+def test_missing_host_identity_is_not_catalog_failure(repo):
+    path, git = repo
+    catalog(path / '.git', number=7)
+    git('remote', 'set-url', 'origin', '/tmp/local-repository.git')
+    snapshot = local.read_local_snapshot()
+    assert snapshot['repository']['identity'] is None
+    assert snapshot['stacks'][0]['number'] == 7
+    assert any('identity unknown' in warning for warning in snapshot['warnings'])
+    assert local.scope_diagnostics(snapshot) == []
+    assert local.scope_diagnostics(snapshot, stacks=snapshot['stacks']) == []
+
+
+@pytest.mark.parametrize('conflict', [False, True])
+def test_missing_worktree_catalog_recovered_from_validated_administration(repo, tmp_path, conflict):
+    path, git = repo
+    worktree = tmp_path / 'missing linked worktree'
+    git('worktree', 'add', str(worktree), 'one')
+    admin = Path(git('-C', str(worktree), 'rev-parse', '--git-dir'))
+    catalog(path / '.git', number=7)
+    catalog(admin, number=7, branches=[{'branch': 'other' if conflict else 'one',
+                                      'pullRequest': {'number': 12, 'merged': False}}])
+    # Simulate an unavailable checkout without deleting any Git metadata.
+    worktree.rename(tmp_path / 'parked linked worktree')
+    snapshot = local.read_local_snapshot()
+    assert str(admin / 'gh-stack') in {entry['source_path'] for entry in snapshot['catalogs']}
+    assert any('unavailable' in warning for warning in snapshot['warnings'])
+    if conflict:
+        assert snapshot['stacks'] == []
+        assert any('Conflicting' in warning for warning in local.scope_diagnostics(snapshot))
+    else:
+        assert snapshot['stacks'][0]['number'] == 7
+        assert local.scope_diagnostics(snapshot, stacks=snapshot['stacks']) == []

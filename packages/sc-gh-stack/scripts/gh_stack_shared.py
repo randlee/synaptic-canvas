@@ -11,6 +11,7 @@ import subprocess
 import sys
 import json
 import argparse
+import re
 from typing import Callable
 
 GIT_TIMEOUT = 60
@@ -111,10 +112,55 @@ class ToolError(Exception):
         self.details = details
 
 
-def run(cmd: list[str], *, check: bool = True, cwd: str | None = None, timeout: float | None = None) -> subprocess.CompletedProcess[str]:
+def parse_selector(value: str, *, kind: str = 'stack') -> tuple[str, int | str]:
+    """Disambiguate numeric identifiers from literal branches without API reads.
+
+    Bare ASCII numbers retain their historical numeric meaning. Explicit
+    ``branch:123`` names a numeric branch; ``id:...`` explicitly selects a
+    stack ID. Bare nonnumeric stack IDs remain supported for compatibility.
+    Git branch validation remains the caller's responsibility.
+    """
+    if kind not in ('stack', 'layer'):
+        raise ValueError('selector kind must be stack or layer')
+    def invalid():
+        raise ToolError('invalid %s selector %r; use a positive ASCII number or branch:NAME%s' %
+                        (kind, value, ' / id:ID' if kind == 'stack' else ''), 'INPUT.INVALID_SELECTOR')
+    def number(text):
+        if not re.fullmatch(r'[0-9]+', text):
+            invalid()
+        try:
+            parsed = int(text)
+        except ValueError:
+            invalid()
+        if parsed <= 0:
+            invalid()
+        return 'number', parsed
+    if not isinstance(value, str) or not value:
+        invalid()
+    if ':' in value:
+        prefix, text = value.split(':', 1)
+        if not text:
+            invalid()
+        if prefix == 'branch':
+            return 'branch', text
+        if prefix == 'id' and kind == 'stack':
+            return 'id', text
+        if prefix != ('number' if kind == 'stack' else 'pr'):
+            invalid()
+        return number(text)
+    if re.fullmatch(r'[0-9]+', value):
+        return number(value)
+    if value.isdigit():
+        invalid()
+    return ('auto' if kind == 'stack' else 'branch'), value
+
+
+def run(cmd: list[str], *, check: bool = True, cwd: str | None = None, timeout: float | None = None,
+        input: str | None = None) -> subprocess.CompletedProcess[str]:
     timeout = timeout if timeout is not None else (GH_TIMEOUT if cmd and cmd[0] == "gh" else GIT_TIMEOUT)
     try:
-        proc = subprocess.run(cmd, text=True, capture_output=True, cwd=cwd, timeout=timeout)
+        kwargs = {'input': input} if input is not None else {}
+        proc = subprocess.run(cmd, text=True, capture_output=True, cwd=cwd, timeout=timeout, **kwargs)
     except subprocess.TimeoutExpired as exc:
         raise ToolError(f"{' '.join(cmd[:3])} timed out after {timeout}s; check network, `gh auth status`, or a hung prompt") from exc
     except FileNotFoundError as exc:

@@ -81,7 +81,7 @@ class BuildRowsShapeTests(unittest.TestCase):
         rows, problems, notes = gsv.build_rows(stack, prs, fetched=True)
         self.assertEqual(problems, [], "remote side (origin == PR head) is coherent, so no problems")
         self.assertTrue(any("no local head" in n and "fix/middle" in n for n in notes))
-        self.assertTrue(any("no base SHA" in n and "docs/top" in n for n in notes))
+        self.assertTrue(any("no recorded base SHA" in n and "docs/top" in n for n in notes))
         self.assertIsNone(rows[1]["head"])
         self.assertIsNone(rows[1]["base"])
         self.assertIsNone(rows[1]["base_ok"])
@@ -119,14 +119,14 @@ class BuildRowsShapeTests(unittest.TestCase):
         landing = {"landable": None, "reason": "no open layer or trunk not fetched"}
         text = gsv.render_table(stack, rows, problems, notes, landing, trunk_origin=T0)
         self.assertIn("coherence unknown", text)
-        self.assertIn("note: L3 docs/top: gh stack reported no local head", text)
+        self.assertIn("note: L3 docs/top: no local head", text)
 
     def test_needs_rebase_and_base_mismatch_still_flagged(self) -> None:
         stack, prs = self.coherent_stack()
         stack["branches"][1] = layer("fix/middle", 2, head=B2, base=OLD, needs_rebase=True)
         _, problems, _ = gsv.build_rows(stack, prs, fetched=True)
         self.assertTrue(any("base ddddddddd != parent head aaaaaaaaa" in p for p in problems))
-        self.assertTrue(any("gh stack reports needsRebase" in p for p in problems))
+        self.assertTrue(any("parent edge indicates needsRebase" in p for p in problems))
 
     def test_summary_counts_and_prioritizes_hidden_stable_ci_failure(self):
         stack, prs = self.coherent_stack()
@@ -345,6 +345,27 @@ class ReviewRegressionTests(unittest.TestCase):
     def setUp(self) -> None:
         gsv.SKIPPED.clear()
         self.addCleanup(gsv.SKIPPED.clear)
+
+    def test_unknown_recorded_bottom_base_does_not_order_rebase_for_moved_trunk(self):
+        stack = {'trunk': TRUNK, 'branches': [layer('l1', 1, head=A1, base=None)]}
+        refs = {f'refs/remotes/origin/{TRUNK}': T0, 'refs/remotes/origin/l1': A1}
+        with mock.patch.object(gsv, 'is_ancestor', return_value=False):
+            rows, problems, notes = gsv.build_rows(stack, {}, fetched=True, refs=refs)
+        self.assertIsNone(rows[0]['needs_rebase'])
+        self.assertIsNone(rows[0]['base_ok'])
+        self.assertFalse(any('needsRebase' in problem or 'needs rebase' in problem for problem in problems))
+        self.assertTrue(any('no recorded base SHA' in note for note in notes))
+
+    def test_unknown_upper_recorded_base_still_checks_parent_containment(self):
+        stack = {'trunk': TRUNK, 'branches': [layer('l1', 1, head=A1, base=None),
+                                            layer('l2', 2, head=B2, base=None)]}
+        refs = {f'refs/remotes/origin/{TRUNK}': T0, 'refs/remotes/origin/l1': A1,
+                'refs/remotes/origin/l2': B2}
+        with mock.patch.object(gsv, 'is_ancestor', return_value=False):
+            rows, problems, _ = gsv.build_rows(stack, {}, fetched=True, refs=refs)
+        self.assertIsNone(rows[0]['needs_rebase'])
+        self.assertTrue(rows[1]['needs_rebase'])
+        self.assertTrue(any('L2' in problem and 'needsRebase' in problem for problem in problems))
 
     @contextmanager
     def report_dependencies(self, warnings=(), fetch_error=None):

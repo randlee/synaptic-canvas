@@ -17,8 +17,10 @@ import json
 import os
 from pathlib import Path
 import re
+import subprocess
 import tempfile
 import time
+import uuid
 from urllib.parse import urlencode, urlparse
 
 from gh_stack_shared import run
@@ -26,10 +28,31 @@ from gh_stack_shared import run
 SCHEMA = 1
 COMMON = ('number', 'state', 'isDraft', 'baseRefName', 'headRefName', 'headRefOid')
 STATUS = COMMON + ('mergeable', 'mergeStateStatus', 'ci')
+# Below Windows' command-line limit, including executable and quoting overhead.
+GIT_ARGV_BUDGET = 24000
 
 
 def _digest(value):
     return hashlib.sha256(json.dumps(value, sort_keys=True, default=str).encode()).hexdigest()[:24]
+
+
+def _argv_units(arguments):
+    # Python's Windows transport escapes embedded quotes even in otherwise
+    # whitespace-free Git refs. Count the exact rendered UTF-16 command line.
+    return len(subprocess.list2cmdline(arguments).encode('utf-16-le')) // 2 + 1
+
+
+def _error_evidence(errors):
+    text, codes = [], set()
+    for error in errors if isinstance(errors, list) else []:
+        if not isinstance(error, dict):
+            continue
+        text.extend(str(error.get(key, '')) for key in ('message', 'type', 'code'))
+        extensions = error.get('extensions')
+        codes.update(str(value).upper() for value in (
+            error.get('type'), error.get('code'),
+            extensions.get('code') if isinstance(extensions, dict) else None) if value is not None)
+    return ' '.join(text).lower(), codes
 
 
 def _read(path):
@@ -159,17 +182,97 @@ class StackDataClient:
         if message not in self.warnings:
             self.warnings.append(message)
 
+    @staticmethod
+    def _revision(data, scope):
+        value = data.get('refreshes', {}).get(scope)
+        # Older caches persisted monotonic clocks; these are not revisions and
+        # cannot be compared across boots or independent clock namespaces.
+        return value if isinstance(value, str) else None
+
+    @staticmethod
+    def _complete_refresh(data, scope):
+        refreshes = data.setdefault('refreshes', {})
+        refreshes.pop(scope, None)
+        refreshes[scope] = uuid.uuid4().hex
+        if len(refreshes) > 256:
+            # Coalescing is an optimization, not freshness authority. Retain
+            # this scope even if old caches have a different key ordering.
+            data['refreshes'] = {key: value for key, value in list(refreshes.items())[-256:]}
+
+    def _hosted_lock_seconds(self):
+        remaining = max(0, self.deadline - self.monotonic()) if self.deadline is not None else self.deadline_seconds
+        if remaining <= 0:
+            self._warn('GitHub acquisition deadline reached; remaining hosted facts are unknown')
+            self._stopped = True
+        return remaining
+
+    @contextlib.contextmanager
+    def _cache_lock(self):
+        # A warm/offline read must not start the hosted clock. If acquisition
+        # becomes necessary, however, its repository-lock wait counts toward
+        # the same deadline rather than granting another full allowance.
+        remaining = self._hosted_lock_seconds()
+        prior = getattr(self, '_cache_deadline', None)
+        self._cache_deadline = self.deadline if self.deadline is not None else self.monotonic() + remaining
+        try:
+            with self._lock(self.lock_path, seconds=remaining) as acquired:
+                yield acquired
+        finally:
+            self._cache_deadline = prior
+
+    @staticmethod
+    def _partial_graphql(body, errors):
+        """Remove only error-affected top-level alias fields, failing closed.
+
+        Removing a commits field, rather than retaining its error-induced null,
+        prevents the normal no-checks conversion from manufacturing CI=NONE.
+        A connection error invalidates its whole mapping: partial node lists
+        can never establish a negative PR mapping.
+        """
+        if not isinstance(errors, list) or not errors or not isinstance(body.get('data'), dict):
+            return None
+        clean = json.loads(json.dumps(body))
+        data = clean['data']
+        for error in errors:
+            path = error.get('path') if isinstance(error, dict) else None
+            if (not isinstance(path, list) or not path or
+                    any(not isinstance(part, (str, int)) or isinstance(part, bool) for part in path)):
+                return None
+            if path[0] == 'rateLimit':
+                data.pop('rateLimit', None)
+                continue
+            if path[0] != 'repository':
+                return None
+            repository = data.get('repository')
+            if len(path) < 2 or not isinstance(repository, dict):
+                return None
+            alias = path[1]
+            if not isinstance(alias, str) or not re.fullmatch(r'[pb][0-9]+', alias):
+                return None
+            if len(path) == 2 or alias.startswith('b'):
+                repository.pop(alias, None)
+            elif isinstance(repository.get(alias), dict) and isinstance(path[2], str):
+                repository[alias].pop(path[2], None)
+                # Without PR identity or head identity no remaining field can
+                # be safely attached to its observation epoch.
+                if path[2] in ('number', 'headRefOid'):
+                    repository.pop(alias, None)
+            else:
+                repository.pop(alias, None)
+        clean.pop('errors', None)
+        return clean
+
     def _request(self, endpoint, query=None, etag=None):
         if self._stopped or not self._valid_repository:
             return None, {}, None
         if self.deadline is None:
-            self.deadline = self.monotonic() + self.deadline_seconds
+            self.deadline = getattr(self, '_cache_deadline', None) or self.monotonic() + self.deadline_seconds
         remaining = self.deadline - self.monotonic()
         if remaining <= 0:
             self._warn('GitHub acquisition deadline reached; remaining hosted facts are unknown')
             self._stopped = True
             return None, {}, None
-        with self._lock(self.pressure_path.with_suffix('.lock'), seconds=min(5, remaining)) as acquired:
+        with self._lock(self.pressure_path.with_suffix('.lock'), seconds=remaining) as acquired:
             pressure = _read(self.pressure_path)
             if not acquired or pressure.get('until', 0) > self.clock():
                 self._warn('GitHub refresh deferred: shared cooldown or refresh in progress')
@@ -223,12 +326,17 @@ class StackDataClient:
                 body = json.loads(raw) if raw.strip() else None
             except ValueError:
                 body = None
-            message = json.dumps(body) + (proc.stderr or '')
+            errors = body.get('errors') if isinstance(body, dict) else None
+            # Successful data (including user-chosen branch names) is not
+            # evidence of a throttle. Inspect only error messages and types.
+            error_text, error_codes = _error_evidence(errors)
+            failure_text = ((str(body.get('message', '')) if isinstance(body, dict) else '')
+                            + ' ' + (proc.stderr or '')).lower() if status >= 400 else ''
             throttle = status == 429 or (status == 403 and (
                 headers.get('x-ratelimit-remaining') == '0' or 'retry-after' in headers or
-                any(term in message.lower() for term in ('rate limit', 'secondary', 'abuse'))))
-            errors = body.get('errors') if isinstance(body, dict) else None
-            if errors and any(term in message.lower() for term in ('rate_limit', 'rate limit', 'secondary')):
+                any(term in failure_text for term in ('rate limit', 'abuse detection'))))
+            if errors and (error_codes & {'RATE_LIMITED', 'RATE_LIMIT', 'SECONDARY_RATE_LIMIT', 'ABUSE_DETECTED'}
+                           or any(term in error_text for term in ('rate limit', 'abuse detection'))):
                 throttle = True
             if throttle:
                 until = self.clock() + 60
@@ -246,12 +354,26 @@ class StackDataClient:
                     pass
                 _write(self.pressure_path, dict(pressure, until=until, reason='throttle'))
                 self._warn('GitHub throttled; shared cooldown recorded')
-            if throttle or status not in (200, 201, 304) or proc.returncode != 0 or errors:
+            # gh api exits 1 for a genuine conditional 304. The caller must
+            # still verify a usable body exists for this endpoint and validator.
+            revalidated = status == 304 and bool(etag) and not raw.strip() and proc.returncode in (0, 1)
+            auth_error = errors and (error_codes & {'FORBIDDEN', 'UNAUTHORIZED', 'UNAUTHENTICATED'}
+                                     or re.search(r'\b(?:bad credentials|resource not accessible|requires authentication|'
+                                                  r'authentication required|permission denied|insufficient permissions?|'
+                                                  r'does not have permission|not permitted|not authorized)\b', error_text)
+                                     or error_text.strip() in ('forbidden', 'unauthorized', 'unauthenticated'))
+            partial = self._partial_graphql(body, errors) if query and errors and not auth_error and not throttle else None
+            if (throttle or auth_error or status not in (200, 201, 304)
+                    or (status == 304 and not revalidated)
+                    or (proc.returncode != 0 and not revalidated and not (partial is not None and proc.returncode == 1))
+                    or (errors and partial is None)):
                 self._stopped = True
                 label = 'authentication/permission' if status in (401, 403) and not throttle else 'request'
                 self._warn('GitHub %s failed (HTTP %s)%s' % (label, status, ': GraphQL errors' if errors else ''))
-                # Partial GraphQL data cannot establish complete requested fields.
-                return None, headers, status
+                return None, headers, None if status == 304 else status
+            if partial is not None:
+                self._warn('GitHub GraphQL partial response: error-affected fields remain unknown')
+                body = partial
             if headers.get('x-ratelimit-remaining') == '0':
                 try:
                     until = float(headers.get('x-ratelimit-reset', self.clock() + 60))
@@ -265,8 +387,8 @@ class StackDataClient:
         old = data['rest'].get(endpoint, {})
         if not force and 0 <= self.clock() - old.get('time', -1e20) < 120:
             return old.get('body')
-        body, headers, status = self._request(endpoint, etag=old.get('etag'))
-        if status == 304:
+        body, headers, status = self._request(endpoint, etag=old.get('etag') if old.get('body') is not None else None)
+        if status == 304 and old.get('etag') and old.get('body') is not None:
             body = old.get('body')
         if body is not None:
             data['rest'][endpoint] = {'body': body, 'time': self.clock(),
@@ -336,16 +458,16 @@ class StackDataClient:
         return result
 
     def _prs(self, numbers, force=False, offline=False, fields='status', head_map=None):
-        started = time.monotonic()
         if any(type(n) is not int or n <= 0 for n in numbers):
             raise ValueError('PR numbers must be positive integers')
         numbers = sorted(set(numbers))
         wanted = STATUS if fields == 'status' else COMMON
         head_map = head_map or {}
         scope = _digest([numbers, fields, head_map])
-        with self._lock(self.lock_path) as acquired:
+        before = self._revision(self._load(), scope)
+        with self._cache_lock() as acquired:
             data = self._load()
-            coalesced = data.get('refreshes', {}).get(scope, -1e20) >= started
+            coalesced = self._revision(data, scope) is not None and self._revision(data, scope) != before
             def retry_deferred(number):
                 entry = data['prs'].get(str(number), {})
                 return (entry.get('unavailable_head') == head_map.get(number)
@@ -398,13 +520,20 @@ class StackDataClient:
                     else:
                         for key in ('unavailable_at', 'unavailable_head', 'unavailable_reason'):
                             entry.pop(key, None)
-                refreshes = data.setdefault('refreshes', {})
-                refreshes[scope] = time.monotonic()
-                if len(refreshes) > 256:
-                    data['refreshes'] = dict(sorted(refreshes.items(), key=lambda item: item[1])[-256:])
+                self._complete_refresh(data, scope)
                 self._save(data)
             elif missing and not acquired:
                 self._warn('GitHub refresh in progress; bounded wait expired')
+                if force and not coalesced:
+                    # A requested refresh that never got the lock cannot
+                    # certify the old green observation. De-qualify only this
+                    # invocation: mutating the shared cache requires its lock.
+                    data = json.loads(json.dumps(data))
+                    for number in missing:
+                        entry = data['prs'].get(str(number), {})
+                        for field in wanted:
+                            if field in entry.get('value', {}):
+                                entry.setdefault('fields', {}).setdefault(field, {})['refresh_error'] = 'requested refresh deferred: cache lock deadline reached'
             return self._result(data, numbers, wanted, head_map)
 
     def pr_details(self, numbers, force=False, offline=False, fields='status', head_map=None):
@@ -414,15 +543,15 @@ class StackDataClient:
         return self._prs(numbers, force, offline, 'metadata', head_map)
 
     def resolve_branches(self, branches, force=False, offline=False):
-        started = time.monotonic()
         result = {}
         branches = sorted(set(branches))
         if any(not isinstance(branch, str) or not branch for branch in branches):
             raise ValueError('Branch names must be nonempty strings')
         scope = 'branches:' + _digest(branches)
-        with self._lock(self.lock_path) as acquired:
+        before = self._revision(self._load(), scope)
+        with self._cache_lock() as acquired:
             data = self._load()
-            coalesced = data.get('refreshes', {}).get(scope, -1e20) >= started
+            coalesced = self._revision(data, scope) is not None and self._revision(data, scope) != before
             missing = []
             def observed(branch, entry):
                 fresh = entry.get('complete', False) and 0 <= self.clock() - entry.get('time', -1e20) < 120
@@ -511,15 +640,16 @@ class StackDataClient:
                         accept(branch, normalized, 'GraphQL', complete)
             if acquired and not offline:
                 if missing:
-                    data.setdefault('refreshes', {})[scope] = time.monotonic()
+                    self._complete_refresh(data, scope)
                 self._save(data)
             return result
 
     def refresh_stack(self, number, force=False):
         if type(number) is not int or number <= 0:
             raise ValueError('Stack number must be a positive integer')
-        started = time.monotonic()
-        with self._lock(self.lock_path) as acquired:
+        scope = 'stack:' + str(number)
+        before = self._revision(self._load(), scope)
+        with self._cache_lock() as acquired:
             if not acquired:
                 self._warn('Stack refresh in progress')
                 self.stack_observations[number] = {'source': None, 'freshness': 'unknown',
@@ -530,8 +660,7 @@ class StackDataClient:
             endpoint = 'repos/%s/%s/stacks/%s' % (self.owner, self.name, int(number))
             first_endpoint = endpoint
             requests_before = self.metrics['requests']
-            scope = 'stack:' + str(number)
-            coalesced = data.get('refreshes', {}).get(scope, -1e20) >= started
+            coalesced = self._revision(data, scope) is not None and self._revision(data, scope) != before
             force = force and not coalesced
             first = None
             complete = True
@@ -595,7 +724,7 @@ class StackDataClient:
                 'complete': complete, 'observed_at': observed_at,
                 'reason': None if complete else 'Stack structural response incomplete or last refresh failed',
             }
-            data.setdefault('refreshes', {})[scope] = time.monotonic()
+            self._complete_refresh(data, scope)
             self._save(data)
             if not complete:
                 self._warn('Stack structural response incomplete')
@@ -603,7 +732,9 @@ class StackDataClient:
             return first
 
     def invalidate(self, numbers=None):
-        with self._lock(self.lock_path) as acquired:
+        # Cache invalidation is local bookkeeping and remains available even
+        # after this client's hosted acquisition deadline has elapsed.
+        with self._lock(self.lock_path, seconds=self.deadline_seconds) as acquired:
             if not acquired:
                 self._warn('Cache invalidation deferred: refresh in progress')
                 return
@@ -628,7 +759,6 @@ class StackDataClient:
         refresh of every surviving branch in the same scope.
         """
         from gh_stack_local import _branch
-        started = time.monotonic()
         remote = self.repository.get('remote') or 'origin'
         if not _branch(remote):
             raise ValueError('invalid remote name')
@@ -638,6 +768,8 @@ class StackDataClient:
         requested = ['*'] if selected is None else selected
         key = _digest([self.repository.get('common_dir'), remote, self.host, self.owner, self.name])
         path = self.cache_dir / ('git-' + key + '.json')
+        initial = _read(path).get('refs', {})
+        before = {ref: initial.get(ref, {}).get('revision') for ref in requested}
         def fresh(entry):
             stamp = entry.get('observed_at')
             return stamp is not None and 0 <= self.clock() - stamp < 60 and not entry.get('error')
@@ -646,6 +778,10 @@ class StackDataClient:
             # A configured broad refspec may actually exclude branches. Its
             # success cannot establish coverage for an explicit scope.
             return entries.get(ref, {})
+        def absence_fresh(entry):
+            stamp = entry.get('observed_at')
+            return (entry.get('exists') is False and not entry.get('absence_error')
+                    and stamp is not None and 0 <= self.clock() - stamp < 60)
         def result(state, fetched=False):
             entries = [entry_for(state, ref) for ref in requested]
             complete = all(fresh(entry) for entry in entries)
@@ -655,58 +791,76 @@ class StackDataClient:
             return {'fresh': complete, 'observed_at': stamp,
                     'source': 'fetched' if fetched else ('cached' if complete else ('stale' if any(value is not None for value in stamps) else 'unknown')),
                     'error': '; '.join(errors) or None,
-                    'refs': {ref: dict(entry_for(state, ref), fresh=fresh(entry_for(state, ref))) for ref in requested}}
-        with self._lock(path.with_suffix('.lock')) as acquired:
+                    'refs': {ref: dict(entry_for(state, ref), fresh=fresh(entry_for(state, ref)),
+                                       absence_fresh=absence_fresh(entry_for(state, ref))) for ref in requested}}
+        git_deadline = self.monotonic() + 60
+        with self._lock(path.with_suffix('.lock'), seconds=60) as acquired:
             state = _read(path)
             if 'refs' not in state:
                 state = {'refs': {'*': state} if state else {}}
             missing = []
             for ref in requested:
                 entry = entry_for(state, ref)
-                coalesced = entry.get('completed_monotonic', -1e20) >= started
+                coalesced = isinstance(entry.get('revision'), str) and entry['revision'] != before[ref]
                 if (not fresh(entry) or (force and not coalesced)) and entry.get('retry_at', 0) <= self.clock():
                     missing.append(ref)
             if offline or not acquired or not missing:
                 return result(state)
             # Git work has its own total bound; it must not consume the hosted
             # API budget before the first API request has even been attempted.
-            git_deadline = self.monotonic() + 60
-            def invoke(command):
+            def invoke(command, input=None):
                 remaining = git_deadline - self.monotonic()
                 if remaining <= 0:
                     raise TimeoutError('Git refresh deadline reached')
+                options = {'input': input} if input is not None else {}
                 return self.run(command, check=False,
-                                cwd=str(self.repository.get('root') or '.'), timeout=remaining)
+                                cwd=str(self.repository.get('root') or '.'), timeout=remaining, **options)
             def fetch(names):
                 self.metrics['git_fetches'] += 1
                 command = ['git', 'fetch', '--quiet']
                 if selected is None:
                     command += ['--', remote]
                 else:
-                    command += ['--no-tags', '--no-recurse-submodules', '--', remote]
-                    command += ['+refs/heads/%s:refs/remotes/%s/%s' % (ref, remote, ref) for ref in names]
+                    command += ['--no-tags', '--no-recurse-submodules', '--stdin', '--', remote]
+                refspecs = None if selected is None else ''.join('+refs/heads/%s:refs/remotes/%s/%s\n' % (ref, remote, ref) for ref in names)
                 try:
-                    proc = invoke(command)
+                    proc = invoke(command, input=refspecs)
                     return (proc.stderr or proc.stdout or 'git fetch failed').strip() if proc.returncode else None
                 except Exception as exc:
                     return str(exc)
             error = fetch(missing)
             absent, successful = set(), set(missing) if not error else set()
             if selected is not None and error and re.search(r"could(?:n't| not) find remote ref", error, re.I):
-                # One advertisement read partitions the entire scope. Retrying
-                # each ref separately would turn a stale stack into O(N) reads.
+                # Size-bounded advertisement batches partition the scope.
+                # Never retry individually or scan unrelated remote branches.
                 try:
-                    self.metrics['git_ref_discoveries'] = self.metrics.get('git_ref_discoveries', 0) + 1
-                    advertised = invoke(['git', 'ls-remote', '--heads', '--', remote,
-                                         *['refs/heads/' + ref for ref in missing]])
-                    if advertised.returncode:
-                        raise ValueError((advertised.stderr or advertised.stdout or 'remote ref discovery failed').strip())
-                    present = set()
-                    for line in advertised.stdout.splitlines():
-                        match = re.fullmatch(r'([0-9a-fA-F]{40}|[0-9a-fA-F]{64})\s+refs/heads/(.+)', line)
-                        if not match or match[2] not in missing:
-                            raise ValueError('Invalid remote ref advertisement')
-                        present.add(match[2])
+                    present, advertised_times = set(), {}
+                    base = ['git', 'ls-remote', '--heads', '--', remote]
+                    chunks, chunk = [], []
+                    length = _argv_units(base)
+                    for ref in missing:
+                        pattern = 'refs/heads/' + ref
+                        units = _argv_units([pattern])
+                        if units + _argv_units(base) > GIT_ARGV_BUDGET:
+                            raise ValueError('Remote ref pattern exceeds bounded command-line allowance')
+                        if chunk and length + units > GIT_ARGV_BUDGET:
+                            chunks.append(chunk)
+                            chunk, length = [], _argv_units(base)
+                        chunk.append(pattern)
+                        length += units
+                    if chunk:
+                        chunks.append(chunk)
+                    for patterns in chunks:
+                        self.metrics['git_ref_discoveries'] = self.metrics.get('git_ref_discoveries', 0) + 1
+                        advertised = invoke(base + patterns)
+                        if advertised.returncode:
+                            raise ValueError((advertised.stderr or advertised.stdout or 'remote ref discovery failed').strip())
+                        for line in advertised.stdout.splitlines():
+                            match = re.fullmatch(r'([0-9a-fA-F]{40}|[0-9a-fA-F]{64})\s+refs/heads/(.+)', line)
+                            if not match or 'refs/heads/' + match[2] not in patterns:
+                                raise ValueError('Invalid remote ref advertisement')
+                            present.add(match[2])
+                        advertised_times.update((pattern[len('refs/heads/'):], self.clock()) for pattern in patterns)
                     absent = set(missing) - present
                     if present:
                         error = fetch(sorted(present))
@@ -718,11 +872,13 @@ class StackDataClient:
                 entry = dict(state['refs'].get(ref, {}))
                 if ref in absent:
                     entry.update(error='Remote branch not advertised: ' + ref, exists=False,
-                                 retry_at=self.clock() + 60, completed_monotonic=time.monotonic())
+                                 observed_at=advertised_times[ref], absence_error=None,
+                                 retry_at=advertised_times[ref] + 60, revision=uuid.uuid4().hex)
                 elif ref not in successful:
-                    entry.update(error=error, retry_at=self.clock() + 15, completed_monotonic=time.monotonic())
+                    entry.update(error=error, absence_error=error, retry_at=self.clock() + 15, revision=uuid.uuid4().hex)
                 else:
-                    entry = {'observed_at': self.clock(), 'completed_monotonic': time.monotonic(), 'error': None, 'exists': True}
+                    entry = {'observed_at': self.clock(), 'revision': uuid.uuid4().hex, 'error': None, 'exists': True}
+                entry.pop('completed_monotonic', None)
                 state['refs'][ref] = entry
             if error:
                 self._warn('Git fetch failed; remote refs are stale: ' + error)

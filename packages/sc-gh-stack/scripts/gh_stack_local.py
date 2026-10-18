@@ -84,9 +84,42 @@ def _identity(url):
         host, path = match.groups()
     path = path.removesuffix('.git')
     parts = path.split('/')
-    if not host or '.' not in host or len(parts) != 2 or not all(parts):
+    if (not host or len(host) > 253
+            or not all(re.fullmatch(r'[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?', label) for label in host.split('.'))
+            or len(parts) != 2 or not all(parts)):
         return None
     return host.lower(), parts[0], parts[1]
+
+
+def _remote_identity(url, run_fn):
+    """Resolve SSH aliases locally; never use a transport alias as an API host."""
+    identity = _identity(url)
+    if identity is None:
+        return None
+    host, owner, name = identity
+    port = None
+    if '://' in url:
+        parsed = urlsplit(url)
+        if parsed.scheme not in ('ssh', 'git+ssh'):
+            return identity
+        try:
+            port = parsed.port
+        except ValueError:
+            return None
+        destination = (parsed.username + '@' if parsed.username else '') + host
+    else:
+        destination = url.split(':', 1)[0]
+    command = ['ssh', '-G'] + (['-p', str(port)] if port is not None else []) + ['--', destination]
+    try:
+        proc = run_fn(command, check=False, timeout=5)
+    except ToolError:
+        return None
+    resolved = [line.split(None, 1)[1].strip() for line in proc.stdout.splitlines()
+                if line.lower().startswith('hostname ')]
+    if proc.returncode or len(resolved) != 1:
+        return None
+    canonical = 'github.com' if resolved[0].lower() == 'ssh.github.com' else resolved[0]
+    return _identity('https://' + canonical + '/' + owner + '/' + name)
 
 
 def _normalize(item, refs):
@@ -148,8 +181,10 @@ def scope_diagnostics(snapshot, *, stacks=None, branches=None):
     is still conservative. An explicit scope is not invalidated by an unreadable
     unrelated catalog, but affirmative branch/stack identity collisions block it.
     """
+    warnings = [warning for warning in snapshot.get('warnings', [])
+                if warning not in snapshot.get('nonblocking_warnings', [])]
     if stacks is None and branches is None:
-        return list(snapshot.get('warnings', []))
+        return warnings
     stacks = stacks or []
     names = set(branches or []) | {branch['name'] for stack in stacks for branch in stack['branches']}
     ids = {stack['id'] for stack in stacks if stack.get('id') is not None}
@@ -162,7 +197,7 @@ def scope_diagnostics(snapshot, *, stacks=None, branches=None):
         return (bool(names & set(issue.get('branches', [])))
                 or bool(prs & set(issue.get('pr_numbers', [])))
                 or issue.get('id') in ids or issue.get('number') in numbers)
-    return [warning for warning in snapshot.get('warnings', [])
+    return [warning for warning in warnings
             if warning not in by_message or any(relevant(issue) for issue in by_message[warning])]
 
 
@@ -178,7 +213,7 @@ def read_local_snapshot(remote='origin', run_fn=run):
         value = git('rev-parse', flag, cwd=cwd).stdout.removesuffix('\n')
         return os.path.realpath(os.path.join(cwd or os.getcwd(), value))
     common, current = gitdir('--git-common-dir'), gitdir('--git-dir')
-    warnings, scope_issues = [], []
+    warnings, scope_issues, advisories = [], [], []
     refs = {}
     for line in git('for-each-ref', '--format=%(refname) %(objectname)', 'refs/heads/', 'refs/remotes/').stdout.splitlines():
         ref, sha = line.split(' ', 1)
@@ -198,6 +233,31 @@ def read_local_snapshot(remote='origin', run_fn=run):
     # its location by stripping a .git suffix: separate git directories exist.
     root = records[0].get('worktree') if records else common
     directories = {common, current}
+    # Linked-worktree administration survives a missing/prunable checkout.
+    # Validate both the common-directory backlink and the worktree backlink;
+    # do not infer an administration directory from a branch or basename.
+    admin_by_worktree = {}
+    worktrees_dir = Path(common) / 'worktrees'
+    try:
+        admins = list(worktrees_dir.iterdir())
+    except FileNotFoundError:
+        admins = []
+    except OSError as exc:
+        admins = []
+        warnings.append(f'Cannot inspect worktree administration {worktrees_dir}: {exc}')
+    for admin in admins:
+        try:
+            if not admin.is_dir() or admin.resolve().parent != worktrees_dir.resolve():
+                continue
+            backlink = (admin / 'commondir').read_text().removesuffix('\n')
+            if os.path.realpath(admin / backlink) != common:
+                continue
+            gitfile = Path((admin / 'gitdir').read_text().removesuffix('\n'))
+            if not gitfile.is_absolute() or gitfile.name != '.git':
+                continue
+            admin_by_worktree[os.path.realpath(gitfile.parent)] = str(admin)
+        except (OSError, ValueError):
+            continue
     owners = {}
     branch_owners = {}
     for record in records:
@@ -208,14 +268,26 @@ def read_local_snapshot(remote='origin', run_fn=run):
             name = record['branch'].removeprefix('refs/heads/')
             owners[name] = path
             branch_owners.setdefault(name, []).append(path)
-        try:
-            directories.add(gitdir('--git-dir', cwd=path))
-        except ToolError as exc:
-            warnings.append(f'Cannot inspect worktree {path!r}: {exc}')
+        admin = admin_by_worktree.get(os.path.realpath(path))
+        if admin:
+            directories.add(admin)
+            if not os.path.isdir(path):
+                message = f'Worktree {path!r} is unavailable; legacy catalog read from its Git administration directory'
+                warnings.append(message)
+                advisories.append(message)
+        else:
+            try:
+                directories.add(gitdir('--git-dir', cwd=path))
+            except ToolError as exc:
+                message = f'Cannot inspect worktree {path!r}: {exc}'
+                warnings.append(message)
+                scope_issues.append({'message': message, 'branches': [record['branch'].removeprefix('refs/heads/')] if record.get('branch') else []})
     url = git('remote', 'get-url', remote, check=False)
-    identity = _identity(url.stdout.strip()) if url.returncode == 0 else None
+    identity = _remote_identity(url.stdout.strip(), run_fn) if url.returncode == 0 else None
     if not identity:
-        warnings.append(f'Remote {remote!r} identity unknown; configure an unambiguous host/owner/repository URL for hosted reads')
+        message = f'Remote {remote!r} identity unknown; configure an unambiguous host/owner/repository URL for hosted reads'
+        warnings.append(message)
+        advisories.append(message)
     repository = {'root': root, 'current_worktree': current_worktree, 'common_dir': common, 'git_dir': current, 'remote': remote,
                   'host': identity[0] if identity else None, 'owner': identity[1] if identity else None,
                   'name': identity[2] if identity else None,
@@ -296,7 +368,7 @@ def read_local_snapshot(remote='origin', run_fn=run):
         warnings.append('No local gh-stack catalog; remote-only stacks may still exist')
     fingerprint = hashlib.sha256(json.dumps([epoch, refs, repository['identity'], remote, records], sort_keys=True).encode()).hexdigest()
     return {'repository': repository, 'refs': refs, 'stacks': stacks, 'catalogs': catalogs,
-            'warnings': warnings, 'scope_issues': scope_issues, 'fingerprint': fingerprint}
+            'warnings': warnings, 'nonblocking_warnings': advisories, 'scope_issues': scope_issues, 'fingerprint': fingerprint}
 
 
 def evaluate_stack_conflicts(stack, refs, remote='origin', run_fn=run):

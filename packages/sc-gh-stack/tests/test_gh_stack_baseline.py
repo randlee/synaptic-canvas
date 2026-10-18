@@ -4,6 +4,7 @@ Set SC_STACK_EVIDENCE_PATH to retain the generated JSON evidence. Extension
 HTTP internals and real quota cost are deliberately unmeasured.
 """
 import copy
+import hashlib
 from datetime import datetime, timezone
 import importlib.util
 import json
@@ -19,6 +20,16 @@ from unittest import mock
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[2]
+BASELINE_PATH = HERE / 'fixtures/baseline_fc702b1_gh_stack_view.py'
+BASELINE_SHA256 = 'b7cb5dd349d427e86fc50ea714da0df241dae7c37af804e89bbd1796907f7870'
+
+
+def load_baseline_source():
+    """Load pinned historical code without requiring git history or network."""
+    source = BASELINE_PATH.read_bytes()
+    if hashlib.sha256(source).hexdigest() != BASELINE_SHA256:
+        raise AssertionError('Historical baseline fixture changed; verify its provenance before updating the digest')
+    return source.decode('utf-8')
 
 
 def load_fixture():
@@ -35,7 +46,7 @@ def output_size(text):
 
 class BaselineTraceTests(unittest.TestCase):
     def test_120_layer_baseline_and_shared_reports(self):
-        source = subprocess.run(['git', 'show', 'fc702b1:packages/sc-gh-stack/scripts/gh_stack_view.py'], cwd=ROOT, check=True, text=True, capture_output=True).stdout
+        source = load_baseline_source()
         fixture_module = load_fixture()
         baseline = types.ModuleType('stack_baseline_fc702b1')
         baseline.__file__ = str(ROOT / 'packages/sc-gh-stack/scripts/gh_stack_view.py')
@@ -151,6 +162,11 @@ class BaselineTraceTests(unittest.TestCase):
             path = Path(destination)
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(json.dumps(evidence, indent=2) + '\n')
+
+    def test_pinned_baseline_loads_without_git_history(self):
+        with mock.patch.object(subprocess, 'run', side_effect=AssertionError('No git history reads permitted')):
+            source = load_baseline_source()
+        self.assertIn('def discover_stacks(', source)
 
 
 if __name__ == '__main__':

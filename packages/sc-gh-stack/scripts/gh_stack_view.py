@@ -11,7 +11,7 @@ import shutil
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from gh_stack_shared import ToolError, guarded, is_ancestor, origin_sha, run, short, ReportArgumentParser, compact_report
+from gh_stack_shared import ToolError, guarded, is_ancestor, origin_sha, run, short, ReportArgumentParser, compact_report, parse_selector
 from gh_stack_local import read_local_snapshot, evaluate_stack_conflicts, scope_diagnostics, _branch as valid_branch
 from gh_stack_remote import StackDataClient, _read as read_snapshot, _write as write_snapshot
 
@@ -117,7 +117,8 @@ def landing_verdict(stack: dict, rows: list[dict], trunk_origin: str | None) -> 
 def build_rows(stack: dict, prs: dict[int, dict], *, fetched: bool, refs=None, remote="origin", ref_observations=None, pr_observations=None) -> tuple[list[dict], list[str], list[str]]:
     trunk = stack["trunk"]
     resolve = (lambda name: refs.get(f"refs/remotes/{remote}/{name}")) if refs is not None else origin_sha
-    fresh = lambda name: fetched and (ref_observations is None or ref_observations.get(name, {}).get('fresh') is True)
+    fresh = lambda name: fetched and (ref_observations is None or (
+        ref_observations.get(name, {}).get('fresh') is True and ref_observations.get(name, {}).get('exists') is not False))
     trunk_origin = resolve(trunk) if fresh(trunk) else None
     rows: list[dict] = []
     problems: list[str] = []
@@ -150,6 +151,10 @@ def build_rows(stack: dict, prs: dict[int, dict], *, fetched: bool, refs=None, r
         head = br.get("head")
         base = br.get("base")
         origin = resolve(name) if fresh(name) else None
+        ref_observation = (ref_observations or {}).get(name, {})
+        remote_absent = ref_observation.get('exists') is False and ref_observation.get('absence_fresh') is True
+        if remote_absent:
+            problems.append(f'L{idx} {name}: not on {remote}; push the branch before linking or landing')
         if (br.get("pr") or {}).get("number") is not None and prs and not pr:
             notes.append(f"L{idx} {name}: PR #{(br.get('pr') or {}).get('number')} could not be resolved on GitHub (deleted, or no access); merge and CI shown as unknown")
         base_ok = (base == expected_base) if (expected_base and base and (ref_observations is None or fresh(name))) else None
@@ -162,9 +167,9 @@ def build_rows(stack: dict, prs: dict[int, dict], *, fetched: bool, refs=None, r
                 # No local head to compare; the remote side (origin vs PR) can still be checked.
                 origin_ok = pr.get("headRefOid") == origin if trusted('headRefOid') else None
         if head is None:
-            notes.append(f"L{idx} {name}: gh stack reported no local head (branch not present locally); local tracking not verified")
+            notes.append(f"L{idx} {name}: no local head (branch not present locally); local tracking not verified")
         if base is None:
-            notes.append(f"L{idx} {name}: gh stack reported no base SHA; base coherence not verified")
+            notes.append(f"L{idx} {name}: no recorded base SHA; base coherence not verified")
         row = {
             "layer": idx,
             "branch": name,
@@ -176,6 +181,8 @@ def build_rows(stack: dict, prs: dict[int, dict], *, fetched: bool, refs=None, r
             "expected_base": expected_base,
             "base_ok": base_ok,
             "origin_ok": origin_ok,
+            "pushed": False if remote_absent else (bool(origin) if fresh(name) else None),
+            "remote_absent": remote_absent,
             "needs_rebase": br.get("needsRebase"),
             "merged": br.get("isMerged"),
             "queued": br.get("isQueued"),
@@ -188,10 +195,14 @@ def build_rows(stack: dict, prs: dict[int, dict], *, fetched: bool, refs=None, r
             "pr_unresolved": bool((br.get("pr") or {}).get("number") is not None and prs and not pr),
         }
         conflict_head = origin if ref_observations is not None else origin or head
-        if refs is not None and expected_base and conflict_head:
-            row["needs_rebase"] = not is_ancestor(expected_base, conflict_head)
-            br["needsRebase"] = row["needs_rebase"]
         parent_is_trunk = parent == trunk
+        if refs is not None and expected_base and conflict_head:
+            contains_parent = is_ancestor(expected_base, conflict_head)
+            # A moving trunk need not be incorporated simply to restart CI.
+            # Without a recorded base, noncontainment cannot establish a
+            # broken recorded edge. The local conflict result remains separate.
+            row["needs_rebase"] = None if parent_is_trunk and base is None and not contains_parent else not contains_parent
+            br["needsRebase"] = row["needs_rebase"]
         if pr and trusted('baseRefName') and pr.get("baseRefName") not in (None, parent):
             problems.append(f"L{idx} {name}: PR #{row['pr']} base is {pr['baseRefName']}, expected {parent}")
         if base_ok is False:
@@ -210,9 +221,9 @@ def build_rows(stack: dict, prs: dict[int, dict], *, fetched: bool, refs=None, r
             )
         if br.get("needsRebase"):
             if row["behind_trunk"]:
-                notes.append(f"L{idx} {name}: gh stack reports needsRebase, but only against a trunk that moved; no action while its CI can go green")
+                notes.append(f"L{idx} {name}: needsRebase, but only against a trunk that moved; no action while its CI can go green")
             else:
-                problems.append(f"L{idx} {name}: gh stack reports needsRebase")
+                problems.append(f"L{idx} {name}: parent edge indicates needsRebase")
         if trusted('mergeable') and pr.get("mergeable") == "CONFLICTING":
             problems.append(f"L{idx} {name}: PR #{row['pr']} CONFLICTING")
         if trusted('isDraft') and pr.get("isDraft"):
@@ -329,7 +340,7 @@ def legend() -> str:
 
 def add_refresh_options(ap, *, include_structure=False):
     ap.add_argument("--remote", default="origin", help="selected git remote")
-    ap.add_argument("--stack", help="stack number, ID, or one of its branch names")
+    ap.add_argument("--stack", help="stack number, ID, or branch; explicit number:N / id:X / branch:NAME disambiguate")
     ap.add_argument("--full", action="store_true", help="show every layer/issue; does not refresh")
     ap.add_argument("--compact-json", action="store_true", help="bounded JSON presentation (ten rows/stacks); not complete composition evidence; does not refresh")
     ap.add_argument("--refresh-git", action="store_true", help="refresh git refs once; no API requests unless combined with --refresh-status")
@@ -367,8 +378,15 @@ def preflight() -> None:
 
 
 def _selected(stack, selector):
-    return not selector or str(stack.get("number", "")) == selector or stack.get("id") == selector or any(
-        b["name"] == selector for b in stack["branches"])
+    if selector is None:
+        return True
+    kind, value = parse_selector(selector, kind='stack')
+    if kind == 'number':
+        return stack.get('number') == value
+    if kind == 'id':
+        return stack.get('id') == value
+    return ((kind == 'auto' and stack.get('id') == value)
+            or any(branch['name'] == value for branch in stack['branches']))
 
 
 def _remote_shape(data, refs, *, expected_number=None, local_stack=None):
@@ -447,7 +465,26 @@ def _git_scope_fresh(observation, names):
     entries = observation.get('refs')
     if entries is None:
         return observation['fresh']
-    return all(entries.get(name, {}).get('fresh') is True for name in names)
+    return all(entries.get(name, {}).get('fresh') is True and entries.get(name, {}).get('exists') is not False for name in names)
+
+
+def _discovery_epoch(snapshot, scope, trunk_filter, include_all):
+    """Re-evaluate broad membership without pinning unrelated refs or bytes."""
+    selected = scope
+    if selected is None:
+        selected, _ = select_stacks(snapshot['stacks'][:], trunk_filter, include_all=include_all)
+    blocking = scope_diagnostics(snapshot, stacks=scope) if scope is not None else scope_diagnostics(snapshot)
+    return (_catalog_composition(snapshot, selected),
+            [warning for warning in blocking if not warning.startswith('No local gh-stack catalog')])
+
+
+def _report_epoch(snapshot, scope, trunk_filter, include_all, remote, reported):
+    selected = scope
+    if selected is None:
+        selected, _ = select_stacks(snapshot['stacks'][:], trunk_filter, include_all=include_all)
+        selected = [*selected, *reported]
+    return (_discovery_epoch(snapshot, scope, trunk_filter, include_all),
+            _scope_epoch(snapshot, selected, remote=remote))
 
 
 def _refresh_structure(client, number, refs, *, force, local_stack=None, require_fresh=False):
@@ -467,9 +504,12 @@ def run_report(args: argparse.Namespace, trunk_filter: str | None) -> int:
     preflight()
     SKIPPED.clear()
     remote = getattr(args, "remote", "origin")
+    selector = getattr(args, "stack", None)
+    parsed_selector = parse_selector(selector, kind='stack') if selector is not None else None
+    if parsed_selector and parsed_selector[0] in ('branch', 'auto') and not valid_branch(parsed_selector[1]):
+        raise ToolError('Invalid stack branch selector', 'INPUT.INVALID_SELECTOR')
     snapshot = read_local_snapshot(remote, run_fn=run)
     stacks, hidden = discover_stacks(trunk_filter, include_all=args.all, snapshot=snapshot)
-    selector = getattr(args, "stack", None)
     # Lifecycle enrichment must not mutate the catalog epoch we later verify.
     stacks = copy.deepcopy([s for s in stacks if _selected(s, selector)])
     # A trunk filter still requests discovery of every stack on that trunk;
@@ -481,8 +521,8 @@ def run_report(args: argparse.Namespace, trunk_filter: str | None) -> int:
     offline = args.no_pr or git_only
     force_status = getattr(args, "refresh_status", False) or getattr(args, "refresh", False)
     refresh_structure = getattr(args, "refresh", False)
-    if not stacks and selector and selector.isdigit() and not offline:
-        structural = _refresh_structure(client, int(selector), snapshot["refs"], force=force_status,
+    if not stacks and parsed_selector and parsed_selector[0] == 'number' and not offline:
+        structural = _refresh_structure(client, parsed_selector[1], snapshot["refs"], force=force_status,
                                         require_fresh=refresh_structure)
         if structural and (not trunk_filter or structural["trunk"] == trunk_filter):
             stacks = [structural]
@@ -492,15 +532,19 @@ def run_report(args: argparse.Namespace, trunk_filter: str | None) -> int:
                         + ("; " + "; ".join(SKIPPED) if SKIPPED else ""), "STATE.STACK_UNKNOWN",
                         {"catalogs": snapshot.get("catalogs", []), "warnings": SKIPPED})
     if refresh_structure:
+        missing_numbers = [{'id': stack.get('id'), 'trunk': stack['trunk'],
+                            'branches': [branch['name'] for branch in stack['branches']]}
+                           for stack in stacks if type(stack.get('number')) is not int or stack['number'] <= 0]
+        if missing_numbers:
+            raise ToolError('Selected stacks lack numeric stack numbers; use --stack NUMBER for scoped remote discovery, '
+                            'or --refresh-git/--refresh-status without membership reconciliation',
+                            'STATE.STACK_NUMBER_UNKNOWN', {'stacks': missing_numbers})
         refreshed_stacks = []
         for stack in stacks:
             if stack.get("source") == "REST":
                 refreshed_stacks.append(stack)
                 continue
             number = stack.get("number")
-            if type(number) is not int or number <= 0:
-                raise ToolError("A numeric stack number is required to refresh membership; use --stack NUMBER for scoped remote discovery",
-                                "STATE.STACK_NUMBER_UNKNOWN")
             structural = _refresh_structure(client, number, snapshot["refs"], force=True,
                                             local_stack=stack, require_fresh=True)
             if trunk_filter and structural["trunk"] != trunk_filter:
@@ -520,7 +564,7 @@ def run_report(args: argparse.Namespace, trunk_filter: str | None) -> int:
         refs=sorted({st["trunk"] for st in stacks} | {b["name"] for st in stacks for b in st["branches"] if not b.get("isMerged")}))
     if git_observation["source"] == "fetched":
         refreshed = read_local_snapshot(remote, run_fn=run)
-        if _catalog_composition(refreshed, epoch_scope) != _catalog_composition(snapshot, epoch_scope):
+        if _discovery_epoch(refreshed, epoch_scope, trunk_filter, args.all) != _discovery_epoch(snapshot, epoch_scope, trunk_filter, args.all):
             raise ToolError("Local catalog composition changed while refreshing refs; retry the scoped report",
                             "STATE.SNAPSHOT_CHANGED")
         snapshot = refreshed
@@ -542,8 +586,11 @@ def run_report(args: argparse.Namespace, trunk_filter: str | None) -> int:
             if not branch.get("pr") and mapped:
                 branch["pr"] = {"number": mapped["number"], "state": mapped.get("state", "UNKNOWN")}
     numbers = sorted({b["pr"]["number"] for st in stacks for b in st["branches"] if b.get("pr") and not b.get("isMerged")})
+    ref_observations = git_observation.get('refs', {})
     head_map = {b["pr"]["number"]: refs.get(f"refs/remotes/{remote}/{b['name']}")
-                for st in stacks for b in st["branches"] if b.get("pr") and not b.get("isMerged")}
+                for st in stacks for b in st["branches"] if b.get("pr") and not b.get("isMerged")
+                and ref_observations.get(b['name'], {}).get('fresh') is True
+                and ref_observations.get(b['name'], {}).get('exists') is not False}
     head_map = {n: sha for n, sha in head_map.items() if sha}
     prs = pr_details(numbers, client=client, force=force_status, offline=offline, head_map=head_map)
     prs = {n: prs.get(n, {}) for n in numbers}
@@ -582,6 +629,9 @@ def run_report(args: argparse.Namespace, trunk_filter: str | None) -> int:
                                            fetched=stack_fetched if git_observation.get('refs') is None else True,
                                            refs=refs, remote=remote, ref_observations=git_observation.get('refs'),
                                            pr_observations=effective_observations)
+        trunk_observation = ref_observations.get(st['trunk'], {})
+        if trunk_observation.get('exists') is False and trunk_observation.get('absence_fresh') is True:
+            problems.append(f"Trunk {st['trunk']}: not on {remote}; select or push the intended remote trunk before landing")
         conflicts = local_conflicts[stack_index]
         if tuple(bool(b.get("isMerged")) for b in st["branches"]) != merged_shapes[stack_index]:
             conflicts = evaluate_stack_conflicts(st, refs, remote, run_fn=run)
@@ -602,12 +652,24 @@ def run_report(args: argparse.Namespace, trunk_filter: str | None) -> int:
         active = [r for r in rows if not r.get("merged")]
         combined = conflicts["combined"]
         top = active[-1] if active else {}
-        missing = [r["branch"] for r in active[:-1] if not (r.get("origin") or r.get("head")) or not combined.get("head") or not is_ancestor(r.get("origin") or r["head"], combined["head"])]
-        landing = {"landable": False if missing else combined["clean"], "top": top.get("branch"),
-                   "top_sha": combined.get("head"), "reason": "top does not contain: " + ", ".join(missing) if missing else combined["reason"]}
+        # A local content probe can be informative with stale/local-only refs,
+        # but cannot certify pushed-head containment or a current landing.
+        fresh_positive = bool(active) and all(
+            ref_observations.get(name, {}).get('fresh') is True
+            and ref_observations.get(name, {}).get('exists') is not False
+            and refs.get(f'refs/remotes/{remote}/{name}')
+            for name in [st['trunk'], *[row['branch'] for row in active]])
+        missing = [r['branch'] for r in active[:-1]
+                   if fresh_positive and (not top.get('origin') or not r.get('origin')
+                                          or not is_ancestor(r['origin'], top['origin']))]
+        landing = {'landable': (False if missing else combined['clean']) if fresh_positive else None,
+                   'top': top.get('branch'), 'top_sha': top.get('origin') if fresh_positive else None,
+                   'reason': ('fresh positive remote refs required for trunk and every active layer' if not fresh_positive
+                              else 'top does not contain: ' + ', '.join(missing) if missing else combined['reason'])}
         blocking = ([warning for warning in scope_diagnostics(snapshot, stacks=[st])
                      if not warning.startswith('No local gh-stack catalog')]
-                    if selector else SKIPPED)
+                    if selector else [warning for warning in scope_diagnostics(snapshot)
+                                      if not warning.startswith('No local gh-stack catalog')])
         if blocking:
             problems.append(f"discovery incomplete: {len(blocking)} catalog/worktree diagnostic(s)")
             landing["landable"] = None
@@ -628,8 +690,8 @@ def run_report(args: argparse.Namespace, trunk_filter: str | None) -> int:
                  "notes": notes, "coherent": coherent, "landing": landing, "local_mergeability": conflicts}
         report.append(entry)
     final_snapshot = read_local_snapshot(remote, run_fn=run)
-    changed = (_scope_epoch(final_snapshot, epoch_scope, remote=remote) != _scope_epoch(snapshot, epoch_scope, remote=remote)
-               if epoch_scope is not None else final_snapshot['fingerprint'] != snapshot['fingerprint'])
+    changed = (_report_epoch(final_snapshot, epoch_scope, trunk_filter, args.all, remote, stacks)
+               != _report_epoch(snapshot, epoch_scope, trunk_filter, args.all, remote, stacks))
     if changed:
         raise ToolError("Snapshot changed during evaluation; retry the scoped report",
                         "STATE.SNAPSHOT_CHANGED")

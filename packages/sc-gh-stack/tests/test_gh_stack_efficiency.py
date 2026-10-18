@@ -213,6 +213,9 @@ class EfficiencyIntegrationTests(unittest.TestCase):
             reads[0] += 1
             if reads[0] > 1:
                 snapshot['fingerprint'] += '-changed'
+                # A semantic epoch intentionally ignores unrelated raw hash
+                # churn, but a requested pushed head must still invalidate it.
+                snapshot['refs']['refs/remotes/origin/layer/120'] = 'b' * 40
             return snapshot
         with mock.patch.object(view, 'read_local_snapshot', side_effect=changing):
             code, text, _ = self.cli(view, ['--no-fetch', '--no-pr', '--json'])

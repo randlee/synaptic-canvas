@@ -68,6 +68,15 @@ all GitHub API calls. Neither runs a `gh stack` write command.
 For the view, `--refresh` also reconciles selected remote stack membership.
 `stacks[].structure_observation` distinguishes verified remote composition from
 local tracking; `--refresh-status` alone does not establish complete membership.
+Bare ASCII numbers select stack numbers, not numeric branch names. Use
+`--stack number:42`, `--stack branch:42`, or `--stack id:<catalog-id>` to make
+the identity explicit. Chain arguments accept `pr:42` and `branch:42`;
+unprefixed positive ASCII numbers retain their PR-number meaning there.
+Open a PR first for an ASCII-numeric branch before requesting a generated link
+command: the extension itself otherwise interprets its bare name as a PR number.
+An unscoped structural refresh preflights every selected stack number before
+acquisition; legacy catalogs without numbers need an explicit numbered scope
+or separate git/status refresh instead.
 
 | Script | Purpose | Exit codes |
 |--------|---------|-----------|
@@ -82,9 +91,15 @@ Both scripts offer `--compact-json` for bounded routine agent status: ten
 rows per stack and ten stacks, bounded diagnostics, full-scope verdicts and total/shown/truncated
 counts, with no acquisition change. Compact output is not complete composition
 evidence; use full JSON for top/range selection. Both JSON modes return
-`INPUT.INVALID_ARGUMENT` on invalid arguments (exit 2).
+`INPUT.INVALID_ARGUMENT` on argument parsing errors and
+`INPUT.INVALID_SELECTOR` on malformed selectors (exit 2).
 `LANDING` predicts top/trunk content merge and containment only; every local
 layer pair must also be clean, while hosted CI/QA still gate the exact top only.
+Green LANDING requires fresh positive pushed-ref evidence for trunk and every
+active layer. Raw local merge predictions remain separate when refs are stale.
+Per-ref `exists: false` plus `absence_fresh: true` means a successful remote
+advertisement confirmed absence for 60 seconds; it is an unpushed problem,
+never a qualified head SHA. Network failures do not establish absence.
 Reuse sufficient observations and mutation responses between recipe steps.
 
 ## The model in one paragraph
@@ -112,6 +127,9 @@ under the common repository's `.sc/sc-gh-stack/output/`; nonsecret cooldown
 coordination lives under `~/.sc/sc-gh-stack/`. No tokens are stored. Common and
 legacy per-worktree gh-stack catalogs are read locally without migration; see
 `references/recipe-stale-tracking.md` for conflicting tracking recovery.
+Consumers should ignore the generated cache directory; reporting does not edit
+their ignore files. “Read-only” preserves refs, index and worktree files;
+Git's `merge-tree --write-tree` may create objects in the object database.
 
 ## Install / Uninstall
 
