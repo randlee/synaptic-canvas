@@ -3,7 +3,7 @@
 [![Publisher Verified](https://img.shields.io/badge/publisher-verified-brightgreen)](https://github.com/randlee/synaptic-canvas/blob/main/docs/PUBLISHER-VERIFICATION.md)
 [![Security Scanned](https://img.shields.io/badge/security-scanned-blue)](https://github.com/randlee/synaptic-canvas/blob/main/SECURITY.md)
 [![License MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-[![Version 0.1.0](https://img.shields.io/badge/version-0.1.0-blue)](CHANGELOG.md)
+[![Version 0.2.0](https://img.shields.io/badge/version-0.2.0-blue)](CHANGELOG.md)
 
 Scope: Local or global
 Requires: `gh` >= 2.0 with the `gh-stack` extension (v0.1.0), `git` >= 2.38, `python3` >= 3.9; `jq` optional (documented one-liners only)
