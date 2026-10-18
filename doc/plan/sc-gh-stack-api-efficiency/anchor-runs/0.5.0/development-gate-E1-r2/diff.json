@@ -1,0 +1,65 @@
+{
+  "success": true,
+  "data": {
+    "gate": "dev",
+    "item": "sc-stack-review-p68",
+    "prev": "dev-20261017T183907Z-sc-stack-review-p68",
+    "next": "dev-20261017T184149Z-sc-stack-review-p68",
+    "changed": [
+      {
+        "anchor_id": "ANC-004",
+        "from": "satisfied",
+        "to": "underspecified",
+        "improved": false
+      },
+      {
+        "anchor_id": "ANC-005",
+        "from": "underspecified",
+        "to": "satisfied",
+        "improved": true
+      },
+      {
+        "anchor_id": "ANC-006",
+        "from": "underspecified",
+        "to": "satisfied",
+        "improved": true
+      },
+      {
+        "anchor_id": "ANC-008",
+        "from": "satisfied",
+        "to": "underspecified",
+        "improved": false
+      },
+      {
+        "anchor_id": "ANC-009",
+        "from": "underspecified",
+        "to": "satisfied",
+        "improved": true
+      }
+    ],
+    "added": [],
+    "removed": [],
+    "regressions": [
+      "ANC-004",
+      "ANC-008"
+    ],
+    "pass_to_fail": [
+      "ANC-004",
+      "ANC-008"
+    ],
+    "fail_to_pass": [
+      "ANC-005",
+      "ANC-006",
+      "ANC-009"
+    ],
+    "item_size": {
+      "before_chars": 8082,
+      "after_chars": 12279,
+      "delta_chars": 4197,
+      "grew": true
+    },
+    "pass_before": false,
+    "pass_after": false
+  },
+  "error": null
+}

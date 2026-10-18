@@ -1,0 +1,972 @@
+{
+  "timestamp_utc": "2026-10-17T18:44:25.561311+00:00",
+  "baseline_commit": "fc702b1",
+  "layers": 120,
+  "transport": "mocked GitHub subprocess boundary; local git executes in temporary repository",
+  "worktrees": "synthetic 1/10/60 worktree inventory sharing one native catalog",
+  "unmeasured": [
+    "HTTP inside gh-stack extension",
+    "real GitHub request concurrency",
+    "real quota cost"
+  ],
+  "semantics": "Equivalent coherent 120-layer identity/head/base/CI observations. New reports additionally check every intended local merge pair; clean top alone is not parity evidence.",
+  "traces": [
+    {
+      "worktrees": 1,
+      "baseline": {
+        "gh_subprocesses": 3,
+        "extension_views": 1,
+        "repository_identity_calls": 1,
+        "direct_graphql_subprocesses": 1,
+        "graphql_aliases": [
+          120
+        ],
+        "peak_mock_subprocess_concurrency": 1,
+        "mock_latency_seconds": 0.003,
+        "output": {
+          "utf8_bytes": 4480,
+          "lexical_tokens": 1758,
+          "token_method": "Unicode words and individual punctuation; not model tokenizer tokens"
+        },
+        "rows": 120,
+        "events": [
+          {
+            "elapsed_seconds": 0.00045287515968084335,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 1
+          },
+          {
+            "elapsed_seconds": 0.004907709080725908,
+            "command": [
+              "gh",
+              "repo",
+              "view"
+            ],
+            "active_mock_subprocesses": 1
+          },
+          {
+            "elapsed_seconds": 0.008742500096559525,
+            "command": [
+              "gh",
+              "api",
+              "graphql"
+            ],
+            "active_mock_subprocesses": 1
+          }
+        ],
+        "hidden_extension_http_requests": null,
+        "real_quota_cost": null
+      },
+      "new": {
+        "cold_gh_subprocesses": 3,
+        "warm_additional_gh_subprocesses": 0,
+        "graphql_aliases": [
+          50,
+          50,
+          20
+        ],
+        "extension_views": 0,
+        "repository_identity_calls": 0,
+        "peak_mock_gh_subprocess_concurrency": 1,
+        "events": [
+          {
+            "elapsed_seconds": 0.07267004204913974,
+            "command": [
+              "gh",
+              "api",
+              "--hostname"
+            ],
+            "active_mock_subprocesses": 1
+          },
+          {
+            "elapsed_seconds": 0.0737537918612361,
+            "command": [
+              "gh",
+              "api",
+              "--hostname"
+            ],
+            "active_mock_subprocesses": 1
+          },
+          {
+            "elapsed_seconds": 0.07412787480279803,
+            "command": [
+              "gh",
+              "api",
+              "--hostname"
+            ],
+            "active_mock_subprocesses": 1
+          }
+        ],
+        "actual_local_subprocesses_across_three_reports": 778,
+        "wrapper_transport_calls_across_three_reports": 73,
+        "cold_json": {
+          "utf8_bytes": 663001,
+          "lexical_tokens": 123169,
+          "token_method": "Unicode words and individual punctuation; not model tokenizer tokens"
+        },
+        "default_text": {
+          "utf8_bytes": 1455,
+          "lexical_tokens": 406,
+          "token_method": "Unicode words and individual punctuation; not model tokenizer tokens"
+        },
+        "full_text": {
+          "utf8_bytes": 6163,
+          "lexical_tokens": 2151,
+          "token_method": "Unicode words and individual punctuation; not model tokenizer tokens"
+        },
+        "rows": 120,
+        "default_rows": 10,
+        "full_rows": 120,
+        "per_layer_local_conflict_results": 120,
+        "mock_reported_graphql_cost": 3,
+        "real_quota_cost": null
+      }
+    },
+    {
+      "worktrees": 10,
+      "baseline": {
+        "gh_subprocesses": 12,
+        "extension_views": 10,
+        "repository_identity_calls": 1,
+        "direct_graphql_subprocesses": 1,
+        "graphql_aliases": [
+          120
+        ],
+        "peak_mock_subprocess_concurrency": 4,
+        "mock_latency_seconds": 0.003,
+        "output": {
+          "utf8_bytes": 4480,
+          "lexical_tokens": 1758,
+          "token_method": "Unicode words and individual punctuation; not model tokenizer tokens"
+        },
+        "rows": 120,
+        "events": [
+          {
+            "elapsed_seconds": 0.0003764582797884941,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 1
+          },
+          {
+            "elapsed_seconds": 0.00042950036004185677,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 2
+          },
+          {
+            "elapsed_seconds": 0.00048241717740893364,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 3
+          },
+          {
+            "elapsed_seconds": 0.0005339169874787331,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 4
+          },
+          {
+            "elapsed_seconds": 0.004748917184770107,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 4
+          },
+          {
+            "elapsed_seconds": 0.0052848332561552525,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 4
+          },
+          {
+            "elapsed_seconds": 0.0057900832034647465,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 4
+          },
+          {
+            "elapsed_seconds": 0.0063291252590715885,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 4
+          },
+          {
+            "elapsed_seconds": 0.009019417222589254,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 4
+          },
+          {
+            "elapsed_seconds": 0.009524875320494175,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 4
+          },
+          {
+            "elapsed_seconds": 0.01459679240360856,
+            "command": [
+              "gh",
+              "repo",
+              "view"
+            ],
+            "active_mock_subprocesses": 1
+          },
+          {
+            "elapsed_seconds": 0.01841608341783285,
+            "command": [
+              "gh",
+              "api",
+              "graphql"
+            ],
+            "active_mock_subprocesses": 1
+          }
+        ],
+        "hidden_extension_http_requests": null,
+        "real_quota_cost": null
+      },
+      "new": {
+        "cold_gh_subprocesses": 3,
+        "warm_additional_gh_subprocesses": 0,
+        "graphql_aliases": [
+          50,
+          50,
+          20
+        ],
+        "extension_views": 0,
+        "repository_identity_calls": 0,
+        "peak_mock_gh_subprocess_concurrency": 1,
+        "events": [
+          {
+            "elapsed_seconds": 0.08100600028410554,
+            "command": [
+              "gh",
+              "api",
+              "--hostname"
+            ],
+            "active_mock_subprocesses": 1
+          },
+          {
+            "elapsed_seconds": 0.08153262501582503,
+            "command": [
+              "gh",
+              "api",
+              "--hostname"
+            ],
+            "active_mock_subprocesses": 1
+          },
+          {
+            "elapsed_seconds": 0.08195387525483966,
+            "command": [
+              "gh",
+              "api",
+              "--hostname"
+            ],
+            "active_mock_subprocesses": 1
+          }
+        ],
+        "actual_local_subprocesses_across_three_reports": 778,
+        "wrapper_transport_calls_across_three_reports": 127,
+        "cold_json": {
+          "utf8_bytes": 663711,
+          "lexical_tokens": 123340,
+          "token_method": "Unicode words and individual punctuation; not model tokenizer tokens"
+        },
+        "default_text": {
+          "utf8_bytes": 1455,
+          "lexical_tokens": 406,
+          "token_method": "Unicode words and individual punctuation; not model tokenizer tokens"
+        },
+        "full_text": {
+          "utf8_bytes": 6163,
+          "lexical_tokens": 2151,
+          "token_method": "Unicode words and individual punctuation; not model tokenizer tokens"
+        },
+        "rows": 120,
+        "default_rows": 10,
+        "full_rows": 120,
+        "per_layer_local_conflict_results": 120,
+        "mock_reported_graphql_cost": 3,
+        "real_quota_cost": null
+      }
+    },
+    {
+      "worktrees": 60,
+      "baseline": {
+        "gh_subprocesses": 62,
+        "extension_views": 60,
+        "repository_identity_calls": 1,
+        "direct_graphql_subprocesses": 1,
+        "graphql_aliases": [
+          120
+        ],
+        "peak_mock_subprocess_concurrency": 4,
+        "mock_latency_seconds": 0.003,
+        "output": {
+          "utf8_bytes": 4480,
+          "lexical_tokens": 1758,
+          "token_method": "Unicode words and individual punctuation; not model tokenizer tokens"
+        },
+        "rows": 120,
+        "events": [
+          {
+            "elapsed_seconds": 0.0004059579223394394,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 1
+          },
+          {
+            "elapsed_seconds": 0.0004676659591495991,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 2
+          },
+          {
+            "elapsed_seconds": 0.0005284580402076244,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 3
+          },
+          {
+            "elapsed_seconds": 0.0005789161659777164,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 4
+          },
+          {
+            "elapsed_seconds": 0.004708374850451946,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 4
+          },
+          {
+            "elapsed_seconds": 0.00519008282572031,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 4
+          },
+          {
+            "elapsed_seconds": 0.005666166078299284,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 4
+          },
+          {
+            "elapsed_seconds": 0.006157957948744297,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 4
+          },
+          {
+            "elapsed_seconds": 0.008677790872752666,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 4
+          },
+          {
+            "elapsed_seconds": 0.009195833001285791,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 4
+          },
+          {
+            "elapsed_seconds": 0.009946790989488363,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 4
+          },
+          {
+            "elapsed_seconds": 0.01080441614612937,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 4
+          },
+          {
+            "elapsed_seconds": 0.012925791088491678,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 4
+          },
+          {
+            "elapsed_seconds": 0.013368125073611736,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 4
+          },
+          {
+            "elapsed_seconds": 0.014190541114658117,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 4
+          },
+          {
+            "elapsed_seconds": 0.015021791215986013,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 4
+          },
+          {
+            "elapsed_seconds": 0.017187540885061026,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 4
+          },
+          {
+            "elapsed_seconds": 0.017670874949544668,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 4
+          },
+          {
+            "elapsed_seconds": 0.018392040859907866,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 4
+          },
+          {
+            "elapsed_seconds": 0.019237541127949953,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 4
+          },
+          {
+            "elapsed_seconds": 0.021484250202775,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 4
+          },
+          {
+            "elapsed_seconds": 0.02197941578924656,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 4
+          },
+          {
+            "elapsed_seconds": 0.022519125137478113,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 4
+          },
+          {
+            "elapsed_seconds": 0.023005332797765732,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 4
+          },
+          {
+            "elapsed_seconds": 0.025765125174075365,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 4
+          },
+          {
+            "elapsed_seconds": 0.02624366618692875,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 4
+          },
+          {
+            "elapsed_seconds": 0.02674904093146324,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 4
+          },
+          {
+            "elapsed_seconds": 0.027224000077694654,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 4
+          },
+          {
+            "elapsed_seconds": 0.0299940831027925,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 4
+          },
+          {
+            "elapsed_seconds": 0.030463083181530237,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 4
+          },
+          {
+            "elapsed_seconds": 0.03102691611275077,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 4
+          },
+          {
+            "elapsed_seconds": 0.031522832810878754,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 4
+          },
+          {
+            "elapsed_seconds": 0.034345750231295824,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 4
+          },
+          {
+            "elapsed_seconds": 0.034876625053584576,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 4
+          },
+          {
+            "elapsed_seconds": 0.03536158287897706,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 4
+          },
+          {
+            "elapsed_seconds": 0.03587933303788304,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 4
+          },
+          {
+            "elapsed_seconds": 0.03857245808467269,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 4
+          },
+          {
+            "elapsed_seconds": 0.03910379111766815,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 4
+          },
+          {
+            "elapsed_seconds": 0.03963462496176362,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 4
+          },
+          {
+            "elapsed_seconds": 0.04013641597703099,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 4
+          },
+          {
+            "elapsed_seconds": 0.042892000172287226,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 4
+          },
+          {
+            "elapsed_seconds": 0.043417165987193584,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 4
+          },
+          {
+            "elapsed_seconds": 0.043898249976336956,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 4
+          },
+          {
+            "elapsed_seconds": 0.04439008282497525,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 4
+          },
+          {
+            "elapsed_seconds": 0.047571499831974506,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 4
+          },
+          {
+            "elapsed_seconds": 0.0480790832079947,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 4
+          },
+          {
+            "elapsed_seconds": 0.04857404110953212,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 4
+          },
+          {
+            "elapsed_seconds": 0.049076749943196774,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 4
+          },
+          {
+            "elapsed_seconds": 0.0518727907910943,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 4
+          },
+          {
+            "elapsed_seconds": 0.05240229098126292,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 4
+          },
+          {
+            "elapsed_seconds": 0.05289016617462039,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 4
+          },
+          {
+            "elapsed_seconds": 0.05338254105299711,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 4
+          },
+          {
+            "elapsed_seconds": 0.05622891616076231,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 4
+          },
+          {
+            "elapsed_seconds": 0.05673237517476082,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 4
+          },
+          {
+            "elapsed_seconds": 0.05722516588866711,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 4
+          },
+          {
+            "elapsed_seconds": 0.0577393751591444,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 4
+          },
+          {
+            "elapsed_seconds": 0.06013304088264704,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 4
+          },
+          {
+            "elapsed_seconds": 0.060992749873548746,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 4
+          },
+          {
+            "elapsed_seconds": 0.06151287490502,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 4
+          },
+          {
+            "elapsed_seconds": 0.06201466592028737,
+            "command": [
+              "gh",
+              "stack",
+              "view"
+            ],
+            "active_mock_subprocesses": 4
+          },
+          {
+            "elapsed_seconds": 0.09034662507474422,
+            "command": [
+              "gh",
+              "repo",
+              "view"
+            ],
+            "active_mock_subprocesses": 1
+          },
+          {
+            "elapsed_seconds": 0.09419037494808435,
+            "command": [
+              "gh",
+              "api",
+              "graphql"
+            ],
+            "active_mock_subprocesses": 1
+          }
+        ],
+        "hidden_extension_http_requests": null,
+        "real_quota_cost": null
+      },
+      "new": {
+        "cold_gh_subprocesses": 3,
+        "warm_additional_gh_subprocesses": 0,
+        "graphql_aliases": [
+          50,
+          50,
+          20
+        ],
+        "extension_views": 0,
+        "repository_identity_calls": 0,
+        "peak_mock_gh_subprocess_concurrency": 1,
+        "events": [
+          {
+            "elapsed_seconds": 0.07463066605851054,
+            "command": [
+              "gh",
+              "api",
+              "--hostname"
+            ],
+            "active_mock_subprocesses": 1
+          },
+          {
+            "elapsed_seconds": 0.07508770795539021,
+            "command": [
+              "gh",
+              "api",
+              "--hostname"
+            ],
+            "active_mock_subprocesses": 1
+          },
+          {
+            "elapsed_seconds": 0.07547583291307092,
+            "command": [
+              "gh",
+              "api",
+              "--hostname"
+            ],
+            "active_mock_subprocesses": 1
+          }
+        ],
+        "actual_local_subprocesses_across_three_reports": 778,
+        "wrapper_transport_calls_across_three_reports": 427,
+        "cold_json": {
+          "utf8_bytes": 668089,
+          "lexical_tokens": 124290,
+          "token_method": "Unicode words and individual punctuation; not model tokenizer tokens"
+        },
+        "default_text": {
+          "utf8_bytes": 1455,
+          "lexical_tokens": 406,
+          "token_method": "Unicode words and individual punctuation; not model tokenizer tokens"
+        },
+        "full_text": {
+          "utf8_bytes": 6163,
+          "lexical_tokens": 2151,
+          "token_method": "Unicode words and individual punctuation; not model tokenizer tokens"
+        },
+        "rows": 120,
+        "default_rows": 10,
+        "full_rows": 120,
+        "per_layer_local_conflict_results": 120,
+        "mock_reported_graphql_cost": 3,
+        "real_quota_cost": null
+      }
+    }
+  ]
+}

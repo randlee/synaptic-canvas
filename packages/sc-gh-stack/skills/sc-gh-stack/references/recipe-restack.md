@@ -4,7 +4,9 @@ Three operations share one mechanism: `gh stack unstack <n>` (PRs and branches
 untouched), fix PR bases with `gh pr edit --base`, then one full
 `gh stack link --base <trunk> <ordered list>`. Every cycle mints a **new stack
 number**; update any ledger or PR text that names it, clear stale tracking in
-other worktrees, and finish with `/sc-gh-stack-view`. Merged PRs drop out of
+other worktrees when stale, and verify the affected composition/bases once.
+Reuse sufficient mutation responses or a scoped `/sc-gh-stack-view`.
+Merged PRs drop out of
 the new stack by themselves.
 
 Unstacking and closing PRs are outward-facing: confirm with the user unless
@@ -29,7 +31,7 @@ gh stack link --base <trunk> <bottom-pr#> ... <new-pr#> <pr-above#> ... <top-pr#
 
 If the worktree reports "Checkout an existing stack using gh stack checkout"
 before the link, run `gh stack checkout <old stack#>` there first. Then
-`recipe-stale-tracking.md`, then `/sc-gh-stack-view`.
+`recipe-stale-tracking.md` when tracking is stale, then verify affected bases.
 
 ## 2. Remove a red layer whose fix lives above
 
@@ -53,7 +55,8 @@ Field result (phase-bc, 2026-09-23): four red PRs closed, absorbed by the two
 green layers above them; stack #1564 became #1570 with 17 layers, coherent,
 all green in one pass.
 
-Then `recipe-stale-tracking.md`, then `/sc-gh-stack-view`.
+Then verify the reduced composition and bases; use `recipe-stale-tracking.md`
+only for stale tracking.
 
 ## 3. Collapse the bottom
 
@@ -63,10 +66,11 @@ after ten hours instead of six to eight small merges over the day, and its
 `needsRebase` and stale-tracking noise made the view tool's verdict stop
 matching reality.
 
-1. `/sc-gh-stack-view`: LANDING green, bottom layers QA PASS, no open
+1. Sufficient scoped evidence: LANDING green, bottom layers QA PASS, no open
    findings on them.
-2. Read `branches[]` from `gh stack view --json`; confirm the layer above the
-   run has unique commits (an empty draft would be swept in and deleted).
+2. Inspect sufficient verified remote composition, or use scoped `--refresh`
+   and the compact projection in `recipe-evidence.md`; confirm the layer above
+   the run has unique commits (an empty draft would be swept in and deleted).
 3. If the bottom's own CI is red for a reason fixed above it, do **not** merge
    it: remove the red layer first (section 2) so the fixing layer carries its
    commits, then collapse. Merging #1492 alone put its red on `develop`.
@@ -88,12 +92,13 @@ matching reality.
    ```
 
    Never force-push the local branch over GitHub's rebase.
-6. `/sc-gh-stack-view`. The next layer's `base` may now read as "behind
+6. Verify affected PR lifecycle, bases and heads from the operation response
+   or a scoped helper observation. The next layer's `base` may now read as "behind
    trunk", which is a note, not a rebase order. Lift the freeze; the next unit
    of work is cut from the new trunk head.
 
 ## Finish
 
-Every branch of this recipe ends with `recipe-stale-tracking.md` where a
-stack number changed, `/sc-gh-stack-view` pasted verbatim, and the new stack
-number recorded.
+Record a changed stack number and reconcile affected composition, bases,
+heads and lifecycle once. Use `recipe-stale-tracking.md` for stale catalogs;
+reuse sufficient evidence instead of an additional finish report.

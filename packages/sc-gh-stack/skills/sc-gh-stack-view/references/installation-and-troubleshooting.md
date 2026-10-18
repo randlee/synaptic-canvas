@@ -65,7 +65,7 @@ Claude Code's bash inherits a minimal PATH that may omit directories populated b
 ## Validation
 
 ```bash
-gh stack view --json    # in a worktree that is on a stack branch; exits 0
+gh stack --help         # extension installation only; no remote status read
 python3 .claude/scripts/gh_stack_view.py --help
 ```
 
@@ -85,9 +85,13 @@ The first `gh stack init` in a repo may prompt under a TTY to enable `git rerere
 
 `gh stack` commands that push or fetch need a single default remote. If more than one remote is configured: `git config remote.pushDefault origin`. Note `checkout`, `modify`, and `trunk` have no `--remote` flag at all and always rely on `remote.pushDefault`.
 
-### View script needs a checked-out layer
+### Extension view needs a checked-out layer
 
 Any wrapper script that shells out to `gh stack view --json` reads the *current* worktree's stack state — it needs at least one stack branch checked out in that worktree. Running it from trunk, or in a worktree that was never part of a stack, returns "not in a stack" (exit 2), not stack data.
+
+The packaged `gh_stack_view.py` reads catalogs locally and does not have this
+restriction. Do not checkout/import merely to obtain status. Import only when
+tracking needed for an actual extension operation is absent or stale.
 
 ### `gh stack help <cmd>` doesn't work
 

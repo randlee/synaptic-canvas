@@ -28,14 +28,14 @@ gh stack rebase --abort        # restores every branch in the stack
 
 ```bash
 gh stack sync
-gh stack view --json   # merged branch: "isMerged": true, "state": "MERGED"
+python3 .claude/scripts/gh_stack_view.py --stack <branch> --json   # inspect observed lifecycle/provenance
 ```
 
 If the replay conflicts, `sync` restores everything and exits 3 — resolve with `gh stack rebase` / `--continue` as above.
 
 ## Local and remote stacks diverged
 
-Divergence: the local stack and the GitHub stack changed differently (e.g. a branch added locally while a PR was added to the stack on github.com). **Non-interactively, `sync` prints `ℹ Sync aborted`, changes nothing, and exits 0.** Exit 0 here is NOT success — always check stderr for "Sync aborted" or diff `gh stack view --json` before/after to confirm sync actually happened.
+Divergence: the local stack and the GitHub stack changed differently (e.g. a branch added locally while a PR was added to the stack on github.com). **Non-interactively, `sync` prints `ℹ Sync aborted`, changes nothing, and exits 0.** Exit 0 here is NOT success — check stderr for "Sync aborted" and affected catalog/heads; obtain scoped helper evidence only if needed to establish the outcome.
 
 Resolution in this model: the GitHub stack is the truth, local tracking is
 disposable. In every worktree whose tracking is stale run
@@ -71,7 +71,10 @@ Commands taking an explicit stack number (`merge 7`, `unstack 7`) sidestep this 
 
 ## Stack file locked (exit 8)
 
-Another `gh stack` process holds `.git/gh-stack.lock`. The lock times out after ~5 seconds — wait and retry. A persistent exit 8 means another process still holds it; find and stop it.
+Another `gh stack` process holds `.git/gh-stack.lock`. The lock times out after
+~5 seconds. Inspect the holder and use a bounded wait; persistent exit 8 is a
+reported blocker, not an indefinite retry loop. Do not stop another writer's
+process without coordinating with its owner.
 
 ## Interrupted modify (exit 10)
 
@@ -95,10 +98,10 @@ The repository doesn't have stacked PRs enabled. This can't be fixed from the CL
 
 | Observed message | Cause | Fix |
 |---|---|---|
-| `stack is out-of-date with its base branch` | Someone pushed to trunk after the final sync | Freeze trunk pushes during merge, use the merge-async fallback, or re-sync (`gh stack sync`) and retry |
+| `stack is out-of-date with its base branch` | Someone pushed to trunk after the final sync | Freeze trunk pushes and use `recipe-land.md` fallback B; never `gh stack sync` over frozen layers or sequential async merges that rebase them |
 | `PR #X's branch is not a linear descendant of PR #Y's branch` | A lower layer was rewritten (rebased/force-pushed) after children branched from it | `gh stack unstack`, `gh pr edit <top-PR> --base <trunk>`, merge the top PR directly — GitHub marks the lower PRs MERGED by ancestry |
 | `HTTP 422 PullRequest.base is invalid` / `new PRs must be added to the top of the existing stack` | Tried a mid-stack insert via `gh stack link` | `unstack` + `gh pr edit <PR> --base <new-base>` + full re-link with the complete branch list |
-| `Pull request head branch was modified` (on a `merge-async` call) | Passed an abbreviated SHA instead of the full 40-char `headRefOid` | Re-fetch `headRefOid` from `gh stack view --json` / `gh pr view --json headRefOid` and pass it in full |
+| `Pull request head branch was modified` (on a `merge-async` call) | Passed an abbreviated or stale SHA instead of the exact full `headRefOid` | Verify the target's full head from sufficient observations or a targeted `gh pr view --json headRefOid`; pass it in full |
 | `...part of a stack and must be merged using the asynchronous merge REST API` | Ran `gh pr merge` on a stacked PR | Use `gh stack merge`, or the `merge-async` API fallback directly |
 | False `NOT COHERENT` / `-` rows from the view tool | Stale per-worktree gh-stack tracking after an unstack/re-link done in a different worktree | `gh stack unstack --local` in the stale worktree, then `gh stack checkout <new-stack#>` |
 | `Checkout an existing stack using gh stack checkout` | Worktree lost tracking after an unstack elsewhere | `gh stack checkout <stack#>` — "Already on `<branch>`" in response is fine, not an error |
@@ -108,4 +111,8 @@ The repository doesn't have stacked PRs enabled. This can't be fixed from the CL
 
 ## Multi-worktree note
 
-gh-stack's local tracking is per worktree. After any `unstack`/re-link done in one worktree, treat tracking in every other worktree as stale: run `gh stack unstack --local` there, then `gh stack checkout <new-stack#>` in exactly one worktree that is on a stack branch.
+Legacy tracking is per worktree; newer catalogs may be shared. After an
+`unstack`/re-link, use its response and local catalog diagnostics to identify
+affected stale tracking. Clear only stale local definitions with
+`gh stack unstack --local`, then import with `gh stack checkout <new-stack#>`
+in one appropriate worktree. Do not import every worktree merely for status.

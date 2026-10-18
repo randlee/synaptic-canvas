@@ -1,0 +1,347 @@
+{
+  "schema": "plan-anchoring/anchors/1",
+  "plan": "sc-gh-stack-api-efficiency",
+  "intent_ref": "doc/plan/sc-gh-stack-api-efficiency/intent.md",
+  "anchors": [
+    {
+      "id": "ANC-001",
+      "source_type": "ANC",
+      "source_ref": null,
+      "statement": "The sc-gh-stack redesign must reduce burst GraphQL request volume for the same stack operations compared with the current scripts.",
+      "quote": "we need to redesign the scripts & recommended sc-gh-stack and sc-gh-stack-view to be more conservative on gh graphql budget, particularly burst.",
+      "kind": "directive",
+      "stated_by": "randlee",
+      "stated_at": "2026-10-14",
+      "context": "Explicit user instruction: yes, lock down the approved statements; recipe git-call substitution clarification applies. Prior inconclusive capture results remain recorded, not passes.",
+      "summary": "Reduce GraphQL bursts",
+      "scope": "Changes to API scheduling or status recommendations in sc-gh-stack scripts and the sc-gh-stack/sc-gh-stack-view skills.",
+      "deterministic_check": "Compare documented request paths and mocked request counts for equivalent operations.",
+      "fixtures": {
+        "pass": [],
+        "fail": []
+      },
+      "question_overrides": {},
+      "version": 1,
+      "status": "locked",
+      "promoted_to": null,
+      "beads": {
+        "anchor": null,
+        "plan_questions": null,
+        "dev_questions": null
+      },
+      "history": [
+        {
+          "at": "2026-10-15T06:57:17+00:00",
+          "event": "created",
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "id": "ANC-002",
+      "source_type": "ANC",
+      "source_ref": null,
+      "statement": "Remote information gathering in sc-gh-stack must be limited to information still required for the current operation.",
+      "quote": "We want to eliminate redundant/conservative information gathering.",
+      "kind": "directive",
+      "stated_by": "randlee",
+      "stated_at": "2026-10-14",
+      "context": "Explicit user instruction: yes, lock down the approved statements; recipe git-call substitution clarification applies. Prior inconclusive capture results remain recorded, not passes.",
+      "summary": "Gather only needed information",
+      "scope": "Adds or changes information gathering in stack scripts or the two stack skills' recommendations.",
+      "deterministic_check": "Trace each planned remote read to a consumer and identify whether existing sufficient observations can supply it.",
+      "fixtures": {
+        "pass": [],
+        "fail": []
+      },
+      "question_overrides": {},
+      "version": 1,
+      "status": "locked",
+      "promoted_to": null,
+      "beads": {
+        "anchor": null,
+        "plan_questions": null,
+        "dev_questions": null
+      },
+      "history": [
+        {
+          "at": "2026-10-15T06:57:17+00:00",
+          "event": "created",
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "id": "ANC-003",
+      "source_type": "ANC",
+      "source_ref": null,
+      "statement": "The sc-gh-stack scripts must evaluate locally derivable state before requesting that state through GraphQL.",
+      "quote": "we want to determine state locally if possible before graphql calls.",
+      "kind": "directive",
+      "stated_by": "randlee",
+      "stated_at": "2026-10-14",
+      "context": "Explicit user instruction: yes, lock down the approved statements; recipe git-call substitution clarification applies. Prior inconclusive capture results remain recorded, not passes.",
+      "summary": "Determine local state first",
+      "scope": "Changes stack discovery, state derivation, or a GraphQL request path in the stack scripts.",
+      "deterministic_check": "Inspect call ordering and branch conditions for local state resolution before GraphQL selection.",
+      "fixtures": {
+        "pass": [],
+        "fail": []
+      },
+      "question_overrides": {},
+      "version": 1,
+      "status": "locked",
+      "promoted_to": null,
+      "beads": {
+        "anchor": null,
+        "plan_questions": null,
+        "dev_questions": null
+      },
+      "history": [
+        {
+          "at": "2026-10-15T06:57:17+00:00",
+          "event": "created",
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "id": "ANC-004",
+      "source_type": "ANC",
+      "source_ref": null,
+      "statement": "The sc-gh-stack redesign must prefer REST to GraphQL when REST supplies the required information at lower quota cost.",
+      "quote": "use cheap rest calls to conserve budget.",
+      "kind": "directive",
+      "stated_by": "randlee",
+      "stated_at": "2026-10-14",
+      "context": "Explicit user instruction: yes, lock down the approved statements; recipe git-call substitution clarification applies. Prior inconclusive capture results remain recorded, not passes.",
+      "summary": "Choose economical REST reads",
+      "scope": "Selects REST or GraphQL for remotely acquiring stack information.",
+      "deterministic_check": "Inspect source selection decisions for equivalent required information and their documented request costs.",
+      "fixtures": {
+        "pass": [],
+        "fail": []
+      },
+      "question_overrides": {},
+      "version": 1,
+      "status": "locked",
+      "promoted_to": null,
+      "beads": {
+        "anchor": null,
+        "plan_questions": null,
+        "dev_questions": null
+      },
+      "history": [
+        {
+          "at": "2026-10-15T06:57:17+00:00",
+          "event": "created",
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "id": "ANC-005",
+      "source_type": "ANC",
+      "source_ref": null,
+      "statement": "The sc-gh-stack redesign must preserve reporting of stack mergeability.",
+      "quote": "is-mergeable is important and if it can be determined for entire stack locally is preferred.",
+      "kind": "directive",
+      "stated_by": "randlee",
+      "stated_at": "2026-10-14",
+      "context": "Explicit user instruction: yes, lock down the approved statements; recipe git-call substitution clarification applies. Prior inconclusive capture results remain recorded, not passes.",
+      "summary": "Preserve stack mergeability",
+      "scope": "Changes mergeability computation or the stack status report.",
+      "deterministic_check": "Inspect the resulting report contract for a mergeability result rather than its removal to save quota.",
+      "fixtures": {
+        "pass": [],
+        "fail": []
+      },
+      "question_overrides": {},
+      "version": 1,
+      "status": "locked",
+      "promoted_to": null,
+      "beads": {
+        "anchor": null,
+        "plan_questions": null,
+        "dev_questions": null
+      },
+      "history": [
+        {
+          "at": "2026-10-15T06:57:18+00:00",
+          "event": "created",
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "id": "ANC-006",
+      "source_type": "ANC",
+      "source_ref": null,
+      "statement": "The sc-gh-stack redesign must prefer local computation of whole-stack mergeability when the required state can be determined locally.",
+      "quote": "is-mergeable is important and if it can be determined for entire stack locally is preferred.",
+      "kind": "directive",
+      "stated_by": "randlee",
+      "stated_at": "2026-10-14",
+      "context": "Explicit user instruction: yes, lock down the approved statements; recipe git-call substitution clarification applies. Prior inconclusive capture results remain recorded, not passes.",
+      "summary": "Prefer local whole-stack mergeability",
+      "scope": "Chooses the source or algorithm for computing mergeability across stack layers.",
+      "deterministic_check": "Inspect local mergeability coverage across the stack and reasons retained remote information cannot be derived locally.",
+      "fixtures": {
+        "pass": [],
+        "fail": []
+      },
+      "question_overrides": {},
+      "version": 1,
+      "status": "locked",
+      "promoted_to": null,
+      "beads": {
+        "anchor": null,
+        "plan_questions": null,
+        "dev_questions": null
+      },
+      "history": [
+        {
+          "at": "2026-10-15T06:57:18+00:00",
+          "event": "created",
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "id": "ANC-007",
+      "source_type": "ANC",
+      "source_ref": null,
+      "statement": "The sc-gh-stack redesign must preserve the stacking strategies and intended outcomes of established recipes when changing their git calls.",
+      "quote": "untouched may be a bit strong.  the recipe are strategies for stacking in challenging conditions.  we can change the git calls and accomplish the same goals.",
+      "kind": "prohibition",
+      "stated_by": "randlee",
+      "stated_at": "2026-10-14",
+      "context": "Explicit user instruction: yes, lock down the approved statements; recipe git-call substitution clarification applies. Prior inconclusive capture results remain recorded, not passes.",
+      "summary": "Preserve recipe strategies and outcomes",
+      "scope": "Plans or performs changes to established stacking recipes, including git-call substitutions in challenging-condition handling.",
+      "deterministic_check": "Compare each changed recipe with its baseline strategy and intended outcome; prove git-call substitutions retain those goals and challenging-condition behavior.",
+      "fixtures": {
+        "pass": [],
+        "fail": []
+      },
+      "question_overrides": {},
+      "version": 1,
+      "status": "locked",
+      "promoted_to": null,
+      "beads": {
+        "anchor": null,
+        "plan_questions": null,
+        "dev_questions": null
+      },
+      "history": [
+        {
+          "at": "2026-10-15T06:57:18+00:00",
+          "event": "created",
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "id": "ANC-008",
+      "source_type": "ANC",
+      "source_ref": null,
+      "statement": "The sc-gh-stack redesign must support stacks with more than 100 layers.",
+      "quote": "we are using this on stacks w/ 100+ layers, do you see a problem there?",
+      "kind": "directive",
+      "stated_by": "randlee",
+      "stated_at": "2026-10-14",
+      "context": "Explicit user instruction: yes, lock down the approved statements; recipe git-call substitution clarification applies. Prior inconclusive capture results remain recorded, not passes.",
+      "summary": "Design for 100-plus layers",
+      "scope": "Chooses size limits, pagination, discovery, request batching, or output handling for stack scripts.",
+      "deterministic_check": "Inspect limits and pagination for assumptions that exclude stacks exceeding 100 layers.",
+      "fixtures": {
+        "pass": [],
+        "fail": []
+      },
+      "question_overrides": {},
+      "version": 1,
+      "status": "locked",
+      "promoted_to": null,
+      "beads": {
+        "anchor": null,
+        "plan_questions": null,
+        "dev_questions": null
+      },
+      "history": [
+        {
+          "at": "2026-10-15T06:57:18+00:00",
+          "event": "created",
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "id": "ANC-009",
+      "source_type": "ANC",
+      "source_ref": null,
+      "statement": "The sc-gh-stack design must document how to obtain the required information when local repository state is out of date.",
+      "quote": "3.b. how to get same info if repo is out of date",
+      "kind": "directive",
+      "stated_by": "randlee",
+      "stated_at": "2026-10-14",
+      "context": "Explicit user instruction: yes, lock down the approved statements; recipe git-call substitution clarification applies. Prior inconclusive capture results remain recorded, not passes.",
+      "summary": "Account for stale local state",
+      "scope": "Describes state acquisition, local-first alternatives, or refresh behavior in the sc-gh-stack redesign.",
+      "deterministic_check": "Inspect the design's stale-state acquisition path for each required information category.",
+      "fixtures": {
+        "pass": [],
+        "fail": []
+      },
+      "question_overrides": {},
+      "version": 1,
+      "status": "locked",
+      "promoted_to": null,
+      "beads": {
+        "anchor": null,
+        "plan_questions": null,
+        "dev_questions": null
+      },
+      "history": [
+        {
+          "at": "2026-10-15T06:57:18+00:00",
+          "event": "created",
+          "status": "locked"
+        }
+      ]
+    },
+    {
+      "id": "ANC-010",
+      "source_type": "ANC",
+      "source_ref": null,
+      "statement": "The sc-gh-stack redesign must include automated tests.",
+      "quote": "we want tests, graphql tests will be hard due to quota",
+      "kind": "directive",
+      "stated_by": "randlee",
+      "stated_at": "2026-10-14",
+      "context": "Explicit user instruction: yes, lock down the approved statements; recipe git-call substitution clarification applies. Prior inconclusive capture results remain recorded, not passes.",
+      "summary": "Include tests despite live quota constraints",
+      "scope": "Plans implementation verification for the sc-gh-stack redesign.",
+      "deterministic_check": "Inspect planned test coverage and eventual test artifacts; distinguish mocked/local tests from quota-constrained live checks.",
+      "fixtures": {
+        "pass": [],
+        "fail": []
+      },
+      "question_overrides": {},
+      "version": 1,
+      "status": "locked",
+      "promoted_to": null,
+      "beads": {
+        "anchor": null,
+        "plan_questions": null,
+        "dev_questions": null
+      },
+      "history": [
+        {
+          "at": "2026-10-15T06:57:18+00:00",
+          "event": "created",
+          "status": "locked"
+        }
+      ]
+    }
+  ]
+}
