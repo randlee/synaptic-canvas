@@ -13,7 +13,8 @@ Sources (no API call, no tokens spent):
 
 Works on Windows (npm ``.cmd`` shims are resolved with ``shutil.which``), macOS and
 Linux. Every probe returns None when the CLI is missing or does not answer, so callers
-can tell "no data" from "stale data". Used by ``tests/test_agent_model_drift.py``.
+can tell "no data" from "stale data". Run it by hand; it is deliberately not a test
+(a live probe depends on what is installed and how fast it answers).
 """
 
 import argparse
@@ -380,7 +381,8 @@ def fix_instructions(tool: str, version: str, edits: List[str], stale_ids) -> st
         "4. Update any model tables / defaults in each package's README.md and SKILL.md, add a CHANGELOG",
         "   entry, and bump the minor version of: " + ", ".join(name for name, _ in packages),
         "   (python3 scripts/set-package-version.py <package> <version>).",
-        "5. Re-run:  python3 -m pytest tests/test_agent_model_drift.py tests/scripts -q",
+        "5. Re-run:  python3 scripts/agent_model_discovery.py --check",
+        "   Tests:  python3 -m pytest tests/test_agent_model_drift.py tests/scripts -q",
         f"   Live data:  python3 scripts/agent_model_discovery.py",
     ]
     return "\n".join(lines)

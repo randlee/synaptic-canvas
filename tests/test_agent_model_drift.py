@@ -1,10 +1,10 @@
-"""The shared model table (packages/shared/scripts/agent_models.py) against the installed CLIs.
+"""The shared model table (packages/shared/scripts/agent_models.py) and the drift logic.
 
-The two live tests run only where `codex` / `claude` are installed and answer; they skip
-when there is no model data and fail only when real data shows the table is stale. The
-failure message is the complete fix: exact edits, the sync command, the files to touch.
+Every test is static and deterministic: no processes, no clocks, no installed CLIs.
+Checking the table against the live `claude` / `codex` CLIs is a manual step, never a
+test (a live probe depends on what is installed and how fast it answers):
 
-Every other test is static and deterministic (no processes, no clocks).
+  python3 scripts/agent_model_discovery.py --check
 """
 
 import sys
@@ -19,25 +19,6 @@ import agent_model_discovery as discovery  # noqa: E402
 from agent_model_discovery import LiveClaude, LiveCodex, agent_models  # noqa: E402
 
 ModelSpec = agent_models.ModelSpec
-
-
-# --- live: only on a machine with the CLI installed ---------------------------
-
-
-def test_codex_models_are_current():
-    live = discovery.codex_live()
-    if live is None:
-        pytest.skip("codex not installed or returned no model data")
-    edits = discovery.codex_drift(live)
-    assert not edits, discovery.fix_instructions("codex", live.version, edits, discovery.stale_ids("codex", edits))
-
-
-def test_claude_models_are_current():
-    live = discovery.claude_live()
-    if live is None:
-        pytest.skip("claude not installed or returned no model data")
-    edits = discovery.claude_drift(live)
-    assert not edits, discovery.fix_instructions("claude", live.version, edits, discovery.stale_ids("claude", edits))
 
 
 # --- the table itself ------------------------------------------------------------
