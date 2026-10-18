@@ -46,6 +46,9 @@ five hours with ten layers and three fix rounds per sprint.
 4. The lead ran `/sc-gh-stack-view --trunk integrate/phase-bc` after every link
    and before every dispatch; devs never ran a stack write.
 
+   Historical cadence, not a current requirement: reuse sufficient scoped
+   observations and mutation responses instead of repeating those scans.
+
 ## Rebase at task start
 
 When a dev started a fix task on their sprint layer (a live layer with no

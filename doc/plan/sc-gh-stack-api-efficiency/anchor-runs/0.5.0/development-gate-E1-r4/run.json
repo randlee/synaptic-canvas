@@ -1,0 +1,843 @@
+{
+  "schema": "plan-anchoring/run/1",
+  "run_id": "dev-20261017T185300Z-sc-stack-review-p68",
+  "gate": "dev",
+  "created_at": "2026-10-17T18:53:00+00:00",
+  "anchors_path": "/Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sc-gh-stack-api-efficiency/doc/plan/sc-gh-stack-api-efficiency/anchors.json",
+  "plan": "sc-gh-stack-api-efficiency",
+  "item": {
+    "id": "sc-stack-review-p68",
+    "title": "E1 — Economical stack state development review",
+    "source": "/Users/randlee/Documents/github/synaptic-canvas-worktrees/feature/sc-gh-stack-api-efficiency/doc/plan/sc-gh-stack-api-efficiency/anchor-runs/0.5.0/development-gate-E1-r4/item.txt",
+    "chars": 14884,
+    "truncated": false
+  },
+  "model_requested": "jev-1.13.0",
+  "model_answered": "jev-1.13.0",
+  "threshold": 0.6,
+  "max_request_bytes": 64000,
+  "min_item_chars": 2000,
+  "dry_run": false,
+  "fixture": false,
+  "results": [
+    {
+      "anchor_id": "ANC-001",
+      "source_type": "ANC",
+      "source_ref": null,
+      "statement": "The sc-gh-stack redesign must reduce burst GraphQL request volume for the same stack operations compared with the current scripts.",
+      "quote": "we need to redesign the scripts & recommended sc-gh-stack and sc-gh-stack-view to be more conservative on gh graphql budget, particularly burst.",
+      "stated_by": "randlee",
+      "stated_at": "2026-10-14",
+      "context": "Explicit user instruction: yes, lock down the approved statements; recipe git-call substitution clarification applies. Prior inconclusive capture results remain recorded, not passes.",
+      "anchor_version": 1,
+      "question_set": {
+        "gate": "dev",
+        "version": 1,
+        "overridden": false
+      },
+      "questions_sha256": "3c3003769e83070c2318361583df704621657784f6dfbe6c77a894e380f08503",
+      "deterministic_check": "Compare documented request paths and mocked request counts for equivalent operations.",
+      "kind": "directive",
+      "leaning": "satisfied",
+      "verdict": "satisfied",
+      "answers": {
+        "relevant": {
+          "type": "choice",
+          "choice": "yes",
+          "confidence": 1.0,
+          "probabilities": {
+            "yes": 1.0,
+            "no": 0.0,
+            "unclear": 0.0
+          }
+        },
+        "implemented": {
+          "type": "choice",
+          "choice": "yes",
+          "confidence": 0.71,
+          "probabilities": {
+            "yes": 0.8099999999999999,
+            "no": 0.03,
+            "unclear": 0.16
+          }
+        },
+        "violated": {
+          "type": "choice",
+          "choice": "no",
+          "confidence": 0.98,
+          "probabilities": {
+            "yes": 0.01,
+            "no": 0.99,
+            "unclear": 0.0
+          }
+        },
+        "evidenced": {
+          "type": "choice",
+          "choice": "yes",
+          "confidence": 0.98,
+          "probabilities": {
+            "yes": 0.99,
+            "no": 0.01,
+            "unclear": 0.0
+          }
+        }
+      },
+      "min_confidence": 0.71,
+      "explanation": "The directive was followed and evidenced.",
+      "usage": {
+        "input_tokens": 5068,
+        "output_tokens": 152
+      },
+      "attempts": 1,
+      "item_chars_sent": 14884,
+      "item_shortened": false,
+      "request_bytes": 18883
+    },
+    {
+      "anchor_id": "ANC-002",
+      "source_type": "ANC",
+      "source_ref": null,
+      "statement": "Remote information gathering in sc-gh-stack must be limited to information still required for the current operation.",
+      "quote": "We want to eliminate redundant/conservative information gathering.",
+      "stated_by": "randlee",
+      "stated_at": "2026-10-14",
+      "context": "Explicit user instruction: yes, lock down the approved statements; recipe git-call substitution clarification applies. Prior inconclusive capture results remain recorded, not passes.",
+      "anchor_version": 1,
+      "question_set": {
+        "gate": "dev",
+        "version": 1,
+        "overridden": false
+      },
+      "questions_sha256": "3c3003769e83070c2318361583df704621657784f6dfbe6c77a894e380f08503",
+      "deterministic_check": "Trace each planned remote read to a consumer and identify whether existing sufficient observations can supply it.",
+      "kind": "directive",
+      "leaning": "satisfied",
+      "verdict": "satisfied",
+      "answers": {
+        "relevant": {
+          "type": "choice",
+          "choice": "yes",
+          "confidence": 1.0,
+          "probabilities": {
+            "yes": 1.0,
+            "no": 0.0,
+            "unclear": 0.0
+          }
+        },
+        "implemented": {
+          "type": "choice",
+          "choice": "yes",
+          "confidence": 1.0,
+          "probabilities": {
+            "yes": 1.0,
+            "no": 0.0,
+            "unclear": 0.0
+          }
+        },
+        "violated": {
+          "type": "choice",
+          "choice": "no",
+          "confidence": 1.0,
+          "probabilities": {
+            "yes": 0.0,
+            "no": 1.0,
+            "unclear": 0.0
+          }
+        },
+        "evidenced": {
+          "type": "choice",
+          "choice": "yes",
+          "confidence": 0.98,
+          "probabilities": {
+            "yes": 0.99,
+            "no": 0.01,
+            "unclear": 0.0
+          }
+        }
+      },
+      "min_confidence": 1.0,
+      "explanation": "The directive was followed and evidenced.",
+      "usage": {
+        "input_tokens": 5056,
+        "output_tokens": 152
+      },
+      "attempts": 1,
+      "item_chars_sent": 14884,
+      "item_shortened": false,
+      "request_bytes": 18846
+    },
+    {
+      "anchor_id": "ANC-003",
+      "source_type": "ANC",
+      "source_ref": null,
+      "statement": "The sc-gh-stack scripts must evaluate locally derivable state before requesting that state through GraphQL.",
+      "quote": "we want to determine state locally if possible before graphql calls.",
+      "stated_by": "randlee",
+      "stated_at": "2026-10-14",
+      "context": "Explicit user instruction: yes, lock down the approved statements; recipe git-call substitution clarification applies. Prior inconclusive capture results remain recorded, not passes.",
+      "anchor_version": 1,
+      "question_set": {
+        "gate": "dev",
+        "version": 1,
+        "overridden": false
+      },
+      "questions_sha256": "3c3003769e83070c2318361583df704621657784f6dfbe6c77a894e380f08503",
+      "deterministic_check": "Inspect call ordering and branch conditions for local state resolution before GraphQL selection.",
+      "kind": "directive",
+      "leaning": "satisfied",
+      "verdict": "satisfied",
+      "answers": {
+        "relevant": {
+          "type": "choice",
+          "choice": "yes",
+          "confidence": 1.0,
+          "probabilities": {
+            "yes": 1.0,
+            "no": 0.0,
+            "unclear": 0.0
+          }
+        },
+        "implemented": {
+          "type": "choice",
+          "choice": "yes",
+          "confidence": 1.0,
+          "probabilities": {
+            "yes": 1.0,
+            "no": 0.0,
+            "unclear": 0.0
+          }
+        },
+        "violated": {
+          "type": "choice",
+          "choice": "no",
+          "confidence": 1.0,
+          "probabilities": {
+            "yes": 0.0,
+            "no": 1.0,
+            "unclear": 0.0
+          }
+        },
+        "evidenced": {
+          "type": "choice",
+          "choice": "yes",
+          "confidence": 1.0,
+          "probabilities": {
+            "yes": 1.0,
+            "no": 0.0,
+            "unclear": 0.0
+          }
+        }
+      },
+      "min_confidence": 1.0,
+      "explanation": "The directive was followed and evidenced.",
+      "usage": {
+        "input_tokens": 5063,
+        "output_tokens": 152
+      },
+      "attempts": 1,
+      "item_chars_sent": 14884,
+      "item_shortened": false,
+      "request_bytes": 18831
+    },
+    {
+      "anchor_id": "ANC-004",
+      "source_type": "ANC",
+      "source_ref": null,
+      "statement": "The sc-gh-stack redesign must prefer REST to GraphQL when REST supplies the required information at lower quota cost.",
+      "quote": "use cheap rest calls to conserve budget.",
+      "stated_by": "randlee",
+      "stated_at": "2026-10-14",
+      "context": "Explicit user instruction: yes, lock down the approved statements; recipe git-call substitution clarification applies. Prior inconclusive capture results remain recorded, not passes.",
+      "anchor_version": 1,
+      "question_set": {
+        "gate": "dev",
+        "version": 1,
+        "overridden": true
+      },
+      "questions_sha256": "69bef7f6eacbf9c00f1bedd9c3443eb580f273ac5372d3f2df461b96876aac7d",
+      "deterministic_check": "Inspect source selection decisions for equivalent required information and their documented request costs.",
+      "kind": "directive",
+      "leaning": "satisfied",
+      "questions": {
+        "relevant": {
+          "criteria": {
+            "no": "The work is unrelated to stack remote information acquisition.",
+            "unclear": "The affected work cannot be identified.",
+            "yes": "The work affects remote stack information reads or their source selection."
+          },
+          "instructions": "Does delivered work in `item.text` touch remote acquisition of stack information or selection of REST versus GraphQL in sc-gh-stack? Judge subject overlap only.",
+          "type": "choice"
+        },
+        "implemented": {
+          "criteria": {
+            "no": "The preference is absent, deferred, or explicitly not followed.",
+            "unclear": "REST, GraphQL, or costs are mentioned but the delivered selection policy cannot be determined.",
+            "yes": "It states delivered conditional cheaper-equivalent-REST preference, including with allowed equal-cost or missing-information exceptions."
+          },
+          "instructions": "Does `item.text` say the delivered redesign prefers REST when it supplies the required information at lower quota cost than GraphQL? Judge the claimed implemented source preference. Equal-cost reads and reads for information REST cannot supply may still use GraphQL.",
+          "type": "choice"
+        },
+        "violated": {
+          "criteria": {
+            "no": "No conflicting delivered selection is stated, including silence or permitted GraphQL exceptions.",
+            "unclear": "The described source selection might conflict but its required information or relative cost is indeterminate.",
+            "yes": "It describes choosing GraphQL despite equivalent required information being cheaper through REST."
+          },
+          "instructions": "Does `item.text` describe delivered source selection choosing GraphQL despite REST supplying the required information at lower quota cost? Silence is not conflict. GraphQL with equal cost or missing required REST fields is permitted.",
+          "type": "choice"
+        },
+        "evidenced": {
+          "criteria": {
+            "no": "It supplies no supporting checkable artifact, or makes no such compliance claim.",
+            "unclear": "An artifact is mentioned but its support for that preference is unclear.",
+            "yes": "It cites a path, diff, named test, command output, or concrete comparison supporting that conditional preference."
+          },
+          "instructions": "Does `item.text` supply a concrete checkable artifact supporting the claim that the delivered source selection prefers equivalent cheaper REST? A bare assurance or topic mention is insufficient.",
+          "type": "choice"
+        }
+      },
+      "verdict": "satisfied",
+      "answers": {
+        "relevant": {
+          "type": "choice",
+          "choice": "yes",
+          "confidence": 1.0,
+          "probabilities": {
+            "no": 0.0,
+            "unclear": 0.0,
+            "yes": 1.0
+          }
+        },
+        "implemented": {
+          "type": "choice",
+          "choice": "yes",
+          "confidence": 0.94,
+          "probabilities": {
+            "no": 0.02,
+            "unclear": 0.02,
+            "yes": 0.96
+          }
+        },
+        "violated": {
+          "type": "choice",
+          "choice": "no",
+          "confidence": 0.98,
+          "probabilities": {
+            "no": 0.99,
+            "unclear": 0.0,
+            "yes": 0.01
+          }
+        },
+        "evidenced": {
+          "type": "choice",
+          "choice": "yes",
+          "confidence": 1.0,
+          "probabilities": {
+            "no": 0.0,
+            "unclear": 0.0,
+            "yes": 1.0
+          }
+        }
+      },
+      "min_confidence": 0.94,
+      "explanation": "The directive was followed and evidenced.",
+      "usage": {
+        "input_tokens": 4798,
+        "output_tokens": 152
+      },
+      "attempts": 1,
+      "item_chars_sent": 14884,
+      "item_shortened": false,
+      "request_bytes": 17779
+    },
+    {
+      "anchor_id": "ANC-005",
+      "source_type": "ANC",
+      "source_ref": null,
+      "statement": "The sc-gh-stack redesign must preserve reporting of stack mergeability.",
+      "quote": "is-mergeable is important and if it can be determined for entire stack locally is preferred.",
+      "stated_by": "randlee",
+      "stated_at": "2026-10-14",
+      "context": "Explicit user instruction: yes, lock down the approved statements; recipe git-call substitution clarification applies. Prior inconclusive capture results remain recorded, not passes.",
+      "anchor_version": 1,
+      "question_set": {
+        "gate": "dev",
+        "version": 1,
+        "overridden": false
+      },
+      "questions_sha256": "3c3003769e83070c2318361583df704621657784f6dfbe6c77a894e380f08503",
+      "deterministic_check": "Inspect the resulting report contract for a mergeability result rather than its removal to save quota.",
+      "kind": "directive",
+      "leaning": "satisfied",
+      "verdict": "satisfied",
+      "answers": {
+        "relevant": {
+          "type": "choice",
+          "choice": "yes",
+          "confidence": 1.0,
+          "probabilities": {
+            "yes": 1.0,
+            "no": 0.0,
+            "unclear": 0.0
+          }
+        },
+        "implemented": {
+          "type": "choice",
+          "choice": "yes",
+          "confidence": 1.0,
+          "probabilities": {
+            "yes": 1.0,
+            "no": 0.0,
+            "unclear": 0.0
+          }
+        },
+        "violated": {
+          "type": "choice",
+          "choice": "no",
+          "confidence": 1.0,
+          "probabilities": {
+            "yes": 0.0,
+            "no": 1.0,
+            "unclear": 0.0
+          }
+        },
+        "evidenced": {
+          "type": "choice",
+          "choice": "yes",
+          "confidence": 0.98,
+          "probabilities": {
+            "yes": 0.99,
+            "no": 0.01,
+            "unclear": 0.0
+          }
+        }
+      },
+      "min_confidence": 1.0,
+      "explanation": "The directive was followed and evidenced.",
+      "usage": {
+        "input_tokens": 5048,
+        "output_tokens": 152
+      },
+      "attempts": 1,
+      "item_chars_sent": 14884,
+      "item_shortened": false,
+      "request_bytes": 18765
+    },
+    {
+      "anchor_id": "ANC-006",
+      "source_type": "ANC",
+      "source_ref": null,
+      "statement": "The sc-gh-stack redesign must prefer local computation of whole-stack mergeability when the required state can be determined locally.",
+      "quote": "is-mergeable is important and if it can be determined for entire stack locally is preferred.",
+      "stated_by": "randlee",
+      "stated_at": "2026-10-14",
+      "context": "Explicit user instruction: yes, lock down the approved statements; recipe git-call substitution clarification applies. Prior inconclusive capture results remain recorded, not passes.",
+      "anchor_version": 1,
+      "question_set": {
+        "gate": "dev",
+        "version": 1,
+        "overridden": false
+      },
+      "questions_sha256": "3c3003769e83070c2318361583df704621657784f6dfbe6c77a894e380f08503",
+      "deterministic_check": "Inspect local mergeability coverage across the stack and reasons retained remote information cannot be derived locally.",
+      "kind": "directive",
+      "leaning": "satisfied",
+      "verdict": "satisfied",
+      "answers": {
+        "relevant": {
+          "type": "choice",
+          "choice": "yes",
+          "confidence": 1.0,
+          "probabilities": {
+            "yes": 1.0,
+            "no": 0.0,
+            "unclear": 0.0
+          }
+        },
+        "implemented": {
+          "type": "choice",
+          "choice": "yes",
+          "confidence": 1.0,
+          "probabilities": {
+            "yes": 1.0,
+            "no": 0.0,
+            "unclear": 0.0
+          }
+        },
+        "violated": {
+          "type": "choice",
+          "choice": "no",
+          "confidence": 1.0,
+          "probabilities": {
+            "yes": 0.0,
+            "no": 1.0,
+            "unclear": 0.0
+          }
+        },
+        "evidenced": {
+          "type": "choice",
+          "choice": "yes",
+          "confidence": 1.0,
+          "probabilities": {
+            "yes": 1.0,
+            "no": 0.0,
+            "unclear": 0.0
+          }
+        }
+      },
+      "min_confidence": 1.0,
+      "explanation": "The directive was followed and evidenced.",
+      "usage": {
+        "input_tokens": 5062,
+        "output_tokens": 152
+      },
+      "attempts": 1,
+      "item_chars_sent": 14884,
+      "item_shortened": false,
+      "request_bytes": 18846
+    },
+    {
+      "anchor_id": "ANC-007",
+      "source_type": "ANC",
+      "source_ref": null,
+      "statement": "The sc-gh-stack redesign must preserve the stacking strategies and intended outcomes of established recipes when changing their git calls.",
+      "quote": "untouched may be a bit strong.  the recipe are strategies for stacking in challenging conditions.  we can change the git calls and accomplish the same goals.",
+      "stated_by": "randlee",
+      "stated_at": "2026-10-14",
+      "context": "Explicit user instruction: yes, lock down the approved statements; recipe git-call substitution clarification applies. Prior inconclusive capture results remain recorded, not passes.",
+      "anchor_version": 1,
+      "question_set": {
+        "gate": "dev",
+        "version": 1,
+        "overridden": false
+      },
+      "questions_sha256": "3c3003769e83070c2318361583df704621657784f6dfbe6c77a894e380f08503",
+      "deterministic_check": "Compare each changed recipe with its baseline strategy and intended outcome; prove git-call substitutions retain those goals and challenging-condition behavior.",
+      "kind": "prohibition",
+      "leaning": "satisfied",
+      "verdict": "satisfied",
+      "answers": {
+        "relevant": {
+          "type": "choice",
+          "choice": "yes",
+          "confidence": 0.98,
+          "probabilities": {
+            "yes": 0.99,
+            "no": 0.01,
+            "unclear": 0.0
+          }
+        },
+        "implemented": {
+          "type": "choice",
+          "choice": "yes",
+          "confidence": 1.0,
+          "probabilities": {
+            "yes": 1.0,
+            "no": 0.0,
+            "unclear": 0.0
+          }
+        },
+        "violated": {
+          "type": "choice",
+          "choice": "no",
+          "confidence": 1.0,
+          "probabilities": {
+            "yes": 0.0,
+            "no": 1.0,
+            "unclear": 0.0
+          }
+        },
+        "evidenced": {
+          "type": "choice",
+          "choice": "yes",
+          "confidence": 1.0,
+          "probabilities": {
+            "yes": 1.0,
+            "no": 0.0,
+            "unclear": 0.0
+          }
+        }
+      },
+      "min_confidence": 0.98,
+      "explanation": "The directive was followed and evidenced.",
+      "usage": {
+        "input_tokens": 5061,
+        "output_tokens": 152
+      },
+      "attempts": 1,
+      "item_chars_sent": 14884,
+      "item_shortened": false,
+      "request_bytes": 18898
+    },
+    {
+      "anchor_id": "ANC-008",
+      "source_type": "ANC",
+      "source_ref": null,
+      "statement": "The sc-gh-stack redesign must support stacks with more than 100 layers.",
+      "quote": "we are using this on stacks w/ 100+ layers, do you see a problem there?",
+      "stated_by": "randlee",
+      "stated_at": "2026-10-14",
+      "context": "Explicit user instruction: yes, lock down the approved statements; recipe git-call substitution clarification applies. Prior inconclusive capture results remain recorded, not passes.",
+      "anchor_version": 1,
+      "question_set": {
+        "gate": "dev",
+        "version": 1,
+        "overridden": true
+      },
+      "questions_sha256": "ac1218ce595c89d083002c60f8c31772537adb3dccdd7a26157da620658b936d",
+      "deterministic_check": "Inspect limits and pagination for assumptions that exclude stacks exceeding 100 layers.",
+      "kind": "directive",
+      "leaning": "satisfied",
+      "questions": {
+        "relevant": {
+          "criteria": {
+            "no": "The work is unrelated to those operations.",
+            "unclear": "The work is too vague to identify its subject.",
+            "yes": "The work affects stack capacity, pagination, discovery, request batching, or output."
+          },
+          "instructions": "Is the delivered change within stack-capacity handling, including the discovery or presentation pipeline? Topic overlap counts even without a capacity claim. The required behavior is support for stacks with more than 100 layers in sc-gh-stack.",
+          "type": "choice"
+        },
+        "implemented": {
+          "criteria": {
+            "no": "No such claim is made, the change is deferred, only exactly 100 is tested, or the described behavior rejects or truncates larger stacks.",
+            "unclear": "Scalability is mentioned but delivered above-100 support cannot be determined.",
+            "yes": "The account claims delivered complete support beyond 100 layers, explicitly or through a larger-stack result."
+          },
+          "instructions": "Does the delivered account claim stack operation beyond the 100-layer boundary? A successful 101-layer or 150-layer complete stack qualifies. Exactly 100 alone and future work do not qualify. Judge the claim, not its proof.",
+          "type": "choice"
+        },
+        "violated": {
+          "criteria": {
+            "no": "No incompatible size restriction is described; silence, absent evidence and a test only at 100 do not conflict.",
+            "unclear": "A described size restriction is ambiguous about whether larger stacks are supported.",
+            "yes": "Explicit delivered behavior rejects stacks above 100 or drops later layers because of a cap."
+          },
+          "instructions": "Does `item.text` describe an incompatible restriction such as rejection after 100 layers, one-page truncation, or output that drops later layers? No described incompatible behavior means no; absent claims are not violations.",
+          "type": "choice"
+        },
+        "evidenced": {
+          "criteria": {
+            "no": "No above-100 compliance claim is made, or it has no supporting checkable artifact; exactly 100 does not evidence above-100 capacity.",
+            "unclear": "An artifact is mentioned but its support for the capacity claim cannot be determined.",
+            "yes": "An identifiable artifact supports a claim of complete stack handling beyond 100 layers."
+          },
+          "instructions": "Is there concrete, checkable support for a delivered above-100-layer capacity claim? Judge supporting evidence only: test names, commands, paths or diffs must connect to the larger-stack behavior. Without such a claim answer no.",
+          "type": "choice"
+        }
+      },
+      "verdict": "satisfied",
+      "answers": {
+        "relevant": {
+          "type": "choice",
+          "choice": "yes",
+          "confidence": 1.0,
+          "probabilities": {
+            "no": 0.0,
+            "unclear": 0.0,
+            "yes": 1.0
+          }
+        },
+        "implemented": {
+          "type": "choice",
+          "choice": "yes",
+          "confidence": 0.89,
+          "probabilities": {
+            "no": 0.06,
+            "unclear": 0.01,
+            "yes": 0.93
+          }
+        },
+        "violated": {
+          "type": "choice",
+          "choice": "no",
+          "confidence": 0.88,
+          "probabilities": {
+            "no": 0.92,
+            "unclear": 0.03,
+            "yes": 0.05
+          }
+        },
+        "evidenced": {
+          "type": "choice",
+          "choice": "yes",
+          "confidence": 0.79,
+          "probabilities": {
+            "no": 0.13,
+            "unclear": 0.01,
+            "yes": 0.86
+          }
+        }
+      },
+      "min_confidence": 0.88,
+      "explanation": "The directive was followed and evidenced.",
+      "usage": {
+        "input_tokens": 4880,
+        "output_tokens": 152
+      },
+      "attempts": 1,
+      "item_chars_sent": 14884,
+      "item_shortened": false,
+      "request_bytes": 17883
+    },
+    {
+      "anchor_id": "ANC-009",
+      "source_type": "ANC",
+      "source_ref": null,
+      "statement": "The sc-gh-stack design must document how to obtain the required information when local repository state is out of date.",
+      "quote": "3.b. how to get same info if repo is out of date",
+      "stated_by": "randlee",
+      "stated_at": "2026-10-14",
+      "context": "Explicit user instruction: yes, lock down the approved statements; recipe git-call substitution clarification applies. Prior inconclusive capture results remain recorded, not passes.",
+      "anchor_version": 1,
+      "question_set": {
+        "gate": "dev",
+        "version": 1,
+        "overridden": false
+      },
+      "questions_sha256": "3c3003769e83070c2318361583df704621657784f6dfbe6c77a894e380f08503",
+      "deterministic_check": "Inspect the design's stale-state acquisition path for each required information category.",
+      "kind": "directive",
+      "leaning": "satisfied",
+      "verdict": "satisfied",
+      "answers": {
+        "relevant": {
+          "type": "choice",
+          "choice": "yes",
+          "confidence": 1.0,
+          "probabilities": {
+            "yes": 1.0,
+            "no": 0.0,
+            "unclear": 0.0
+          }
+        },
+        "implemented": {
+          "type": "choice",
+          "choice": "yes",
+          "confidence": 0.98,
+          "probabilities": {
+            "yes": 0.99,
+            "no": 0.01,
+            "unclear": 0.0
+          }
+        },
+        "violated": {
+          "type": "choice",
+          "choice": "no",
+          "confidence": 1.0,
+          "probabilities": {
+            "yes": 0.0,
+            "no": 1.0,
+            "unclear": 0.0
+          }
+        },
+        "evidenced": {
+          "type": "choice",
+          "choice": "yes",
+          "confidence": 1.0,
+          "probabilities": {
+            "yes": 1.0,
+            "no": 0.0,
+            "unclear": 0.0
+          }
+        }
+      },
+      "min_confidence": 0.98,
+      "explanation": "The directive was followed and evidenced.",
+      "usage": {
+        "input_tokens": 5063,
+        "output_tokens": 152
+      },
+      "attempts": 1,
+      "item_chars_sent": 14884,
+      "item_shortened": false,
+      "request_bytes": 18856
+    },
+    {
+      "anchor_id": "ANC-010",
+      "source_type": "ANC",
+      "source_ref": null,
+      "statement": "The sc-gh-stack redesign must include automated tests.",
+      "quote": "we want tests, graphql tests will be hard due to quota",
+      "stated_by": "randlee",
+      "stated_at": "2026-10-14",
+      "context": "Explicit user instruction: yes, lock down the approved statements; recipe git-call substitution clarification applies. Prior inconclusive capture results remain recorded, not passes.",
+      "anchor_version": 1,
+      "question_set": {
+        "gate": "dev",
+        "version": 1,
+        "overridden": false
+      },
+      "questions_sha256": "3c3003769e83070c2318361583df704621657784f6dfbe6c77a894e380f08503",
+      "deterministic_check": "Inspect planned test coverage and eventual test artifacts; distinguish mocked/local tests from quota-constrained live checks.",
+      "kind": "directive",
+      "leaning": "satisfied",
+      "verdict": "satisfied",
+      "answers": {
+        "relevant": {
+          "type": "choice",
+          "choice": "yes",
+          "confidence": 1.0,
+          "probabilities": {
+            "yes": 1.0,
+            "no": 0.0,
+            "unclear": 0.0
+          }
+        },
+        "implemented": {
+          "type": "choice",
+          "choice": "yes",
+          "confidence": 0.98,
+          "probabilities": {
+            "yes": 0.99,
+            "no": 0.01,
+            "unclear": 0.0
+          }
+        },
+        "violated": {
+          "type": "choice",
+          "choice": "no",
+          "confidence": 1.0,
+          "probabilities": {
+            "yes": 0.0,
+            "no": 1.0,
+            "unclear": 0.0
+          }
+        },
+        "evidenced": {
+          "type": "choice",
+          "choice": "yes",
+          "confidence": 0.97,
+          "probabilities": {
+            "yes": 0.98,
+            "no": 0.02,
+            "unclear": 0.0
+          }
+        }
+      },
+      "min_confidence": 0.98,
+      "explanation": "The directive was followed and evidenced.",
+      "usage": {
+        "input_tokens": 5041,
+        "output_tokens": 152
+      },
+      "attempts": 1,
+      "item_chars_sent": 14884,
+      "item_shortened": false,
+      "request_bytes": 18751
+    }
+  ],
+  "summary": {
+    "counts": {
+      "satisfied": 10
+    },
+    "failing": [],
+    "leaning_counts": {
+      "satisfied": 10
+    },
+    "unstable": [],
+    "errors": [],
+    "shortened": [],
+    "pass": true
+  }
+}

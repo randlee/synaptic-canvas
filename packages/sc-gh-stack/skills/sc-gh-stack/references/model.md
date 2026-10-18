@@ -64,6 +64,13 @@ push "until the parent SHA is known" each cost hours in one phase.
 The landing head is the only tree that reaches the trunk, so its CI and its QA
 verdict are the only gates. Red CI on a frozen layer is not fixed there.
 
+This is a hosted CI/QA rule, not permission to skip local content checks.
+For the whole stack, every intended parent/head pair and the combined
+top/trunk pair must be locally clean on the exact observed heads; any conflict
+or unknown remains visible. The `LANDING` line predicts only the top/trunk
+merge and containment, not whole-stack cleanliness or hosted authorization.
+Reuse sufficient local results; do not add per-layer hosted CI/QA polling.
+
 - QA is dispatched once, on the top, when the top is pushed. A QA already
   running on a mid layer of a large stack may finish and its verdict carries
   forward; nothing new is dispatched below the top.

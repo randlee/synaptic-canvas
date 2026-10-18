@@ -7,19 +7,23 @@ docs or evidence layer. The layer is a new worktree cut from the current
 ## Inputs
 
 - `<trunk>`: the stack's trunk (for example `develop`, `integrate/phase-bc`).
-- `<top>`: the current top branch, from `/sc-gh-stack-view` (the last open
-  row). For the first layer of a new stack, `<top>` is the trunk.
+- `<top>`: the last active branch in the complete ordered composition, never
+  the last displayed summary row (summaries are prioritized and truncated).
+  For the first layer of a new stack, `<top>` is the trunk.
 - `<layer>`: the new branch name. Follow the repository's naming policy;
   names are used verbatim by gh-stack.
 
 ## Steps
 
-1. Status: `/sc-gh-stack-view`. Note the top branch and its origin SHA.
+1. From sufficient verified complete composition, note the last active branch
+   and its exact pushed head. If missing, use the scoped refresh and compact
+   top/composition projection in `recipe-evidence.md`. Unknown membership or
+   lifecycle stops the cut; a local-only catalog is not remotely complete.
 
 2. Verify the top is pushed and contains every lower layer:
 
    ```bash
-   git fetch origin
+   git fetch origin                       # once, if relevant refs are not already current
    git rev-parse --verify origin/<top>
    for lower in <every open layer below top>; do
      git merge-base --is-ancestor origin/$lower origin/<top> && echo "ok $lower" || echo "MISSING $lower"
@@ -69,5 +73,6 @@ appended commit.
 
 ## Finish
 
-`/sc-gh-stack-view` after the link. Record the stack number if the link
-printed a new one.
+Verify the affected bases and pushed heads after the link using its response
+and sufficient observations, or a scoped `/sc-gh-stack-view --stack <layer>`.
+Record the stack number if the link printed a new one.

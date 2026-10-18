@@ -10,7 +10,7 @@ options:
       - name: trunk
         description: Branch the stack lands on (e.g. develop, integrate/phase-bc).
       - name: layers
-        description: Proposed order bottom to top, branch names or PR numbers.
+        description: Proposed order bottom to top; branch names or PR numbers, with branch:NAME and pr:N for explicit identity.
     description: Read-only pre-link chain check (gh_stack_chain_check.py); prints the exact link command to run next.
   - name: --cut
     args:
@@ -48,8 +48,9 @@ Delegates to the `sc-gh-stack` skill. For `--cut`, `--link`, `--restack` and
 Rules the command enforces regardless of option:
 
 - Every `gh stack` write command (`link`, `unstack`, `sync`, `rebase`,
-  `merge`) is run only by the stack writer, only after `/sc-gh-stack-view`,
-  and is followed by `/sc-gh-stack-view` again.
+  `merge`) is run only by the stack writer with sufficient evidence for its
+  preconditions. Reconcile affected facts before dependent work; reuse
+  sufficient observations and mutation responses instead of repeating scans.
 - Creating or re-creating a stack is one `gh stack link --base <trunk>` with
   the full ordered list; `gh stack link <stack#> <pr#>` only appends on top.
   Landing is `gh stack merge <stack#> --yes --merge`, never `--squash`.

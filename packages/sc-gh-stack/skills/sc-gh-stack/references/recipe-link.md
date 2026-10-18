@@ -56,7 +56,8 @@ is green". One link command, the full ordered list, `--base` every time.
    branch names, when running from the main checkout: a branch name pushes
    the *local* ref, which may be another writer's unpushed state.
 
-4. Verify: `/sc-gh-stack-view`. Every base must equal its parent's head
+4. Verify from sufficient mutation responses or scoped helper observations:
+   every base must equal its parent's head
    (`✅` in the rebase column, VERDICT COHERENT). Record the stack number the
    link printed.
 
@@ -84,7 +85,8 @@ or should land in one CI cycle instead of three:
    finish and its verdict carries forward), CI gates the top, and the stack
    lands once. Tell every writer that bases changed and that only the top
    moves.
-6. `/sc-gh-stack-view`; record the stack number.
+6. Verify affected bases and heads from sufficient mutation responses or a
+   scoped `/sc-gh-stack-view`; record the stack number.
 
 ## Never
 
@@ -96,5 +98,5 @@ or should land in one CI cycle instead of three:
 
 ## Finish
 
-`/sc-gh-stack-view`, pasted verbatim, and the stack number recorded wherever
-the team tracks it (ledger, PR bodies).
+Record the stack number wherever the team tracks it (ledger, PR bodies).
+Reuse the verification above; no additional finish report is needed.

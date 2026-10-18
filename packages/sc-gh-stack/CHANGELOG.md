@@ -5,6 +5,21 @@ All notable changes to the **sc-gh-stack** package will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- Stack reports derive local state first, share bounded hosted observations across worktrees, and support scoped refreshes and complete JSON/full output. Recipes reuse sufficient evidence while preserving verification, ownership and recovery requirements.
+- Add explicitly truncated `--compact-json` presentation while retaining complete `--json`; coordinate adapter API starts across repositories and start the hosted deadline only with API acquisition.
+
+### Fixed
+- Correct bulk GraphQL branch filters; reconcile explicit view refreshes with remote membership and reject catalog races or incomplete structural observations.
+- Select the pushed top from complete ordered composition, not sorted/truncated summary rows; keep composition projections compact and fail closed on unknown evidence.
+- Suppress repeated failed branch lookups, recover surviving refs after branch deletion, isolate exact-stack catalog epochs, and keep stale refs/hosted values unknown rather than advising writes. JSON parse failures now return typed errors.
+- Align companion handoffs and retry guidance with scoped evidence reuse; retain recipe strategies and top-only hosted CI/QA requirements.
+- Preserve usable partial GraphQL results and conditional REST responses; classify throttling only from failure evidence, coalesce with restart-safe revisions, and bound contention by the acquisition deadline. Failed forced refreshes cannot certify old green observations.
+- Resolve SSH aliases locally, recover catalogs from unavailable worktrees, qualify remote absence separately from pushed heads, and require fresh pushed refs for LANDING. Semantic snapshot checks ignore unrelated churn while detecting scope changes.
+- Validate explicit selectors before acquisition, guard numeric branch link commands, preflight structural refresh scope, and bound Git ref transport for long branch names. Historical comparison tests now work without repository history.
+
 ## [0.1.1] - 2026-09-23
 
 ### Changed

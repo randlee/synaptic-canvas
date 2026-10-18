@@ -32,6 +32,7 @@ artifacts:
     - skills/sc-gh-stack/references/recipe-restack.md
     - skills/sc-gh-stack/references/recipe-land.md
     - skills/sc-gh-stack/references/recipe-stale-tracking.md
+    - skills/sc-gh-stack/references/recipe-evidence.md
     - skills/sc-gh-stack/references/phase-model-example.md
     - skills/sc-gh-stack/references/stack-design.md
     - skills/sc-gh-stack/references/commands.md
@@ -41,6 +42,8 @@ artifacts:
     - skills/sc-gh-stack-view/references/installation-and-troubleshooting.md
   scripts:
     - scripts/gh_stack_shared.py
+    - scripts/gh_stack_local.py
+    - scripts/gh_stack_remote.py
     - scripts/gh_stack_view.py
     - scripts/gh_stack_chain_check.py
 

@@ -1,0 +1,30 @@
+{
+  "previous_run": "development-gate-E1-r3/run.json",
+  "changes": [
+    {
+      "files": [
+        "execution-report.md",
+        "evidence-map.md",
+        "test-summary.md"
+      ],
+      "authority": "ANC-004 v1 / ANC-010 v1",
+      "reason": "Replace underspecified source selection with required fields and actual routing-test counts; update passing test count."
+    },
+    {
+      "files": [
+        "execution-report.md"
+      ],
+      "authority": "ANC-002 v1 / ANC-007 v1",
+      "reason": "Record removal of a redundant mandatory report without removing affected-base verification."
+    },
+    {
+      "files": [
+        "files-changed.md"
+      ],
+      "authority": "ANC-010 v1",
+      "reason": "Refresh immutable git diff-stat for the focused test and documented work fix."
+    }
+  ],
+  "normative_authority_changed": false,
+  "questions_changed": false
+}

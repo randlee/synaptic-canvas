@@ -30,7 +30,7 @@ Cut a new stack layer as a worktree by calling `worktree_create.py` with a `stac
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `branch` | string | Yes | New layer name (must not exist locally or on origin) |
-| `base` | string | Yes | Parent layer: the current stack top from `/sc-gh-stack-view`, or the trunk for the bottom layer, or a mid-stack layer when inserting |
+| `base` | string | Yes | Parent layer: the current pushed top from complete ordered composition (not summary row order), or the trunk for the bottom layer, or a mid-stack layer when inserting |
 | `stack.trunk` | string | Yes | Branch the stack's bottom PR targets (for example `develop`) |
 | `stack.above` | string | No | Layer currently stacked directly on `base`; set **only** when inserting mid-stack |
 | `purpose` | string | Yes | Task or sprint id; goes into the PR body placeholder |
@@ -66,7 +66,7 @@ The script returns fenced JSON. Forward it verbatim. On success `data` carries t
 - `stack`: `{trunk, parent, parent_sha, above, position}` (`position` is `top` or `insert`), also stored in the tracking row.
 - `stack_handoff`: `pr_base`, `pr_body`, two role blocks, `chain_check_available`, `reference`.
   - `writer`: `rules[]` and `commands[]` for the single agent that works in the worktree (WIP commit, first push with `-u`, the one rebase at task start, no gh stack write commands, no edits to lower layers).
-  - `stack_writer`: ordered `commands[]` for the one agent that opens PRs and runs gh stack write commands (PR with base = parent, `gh stack checkout` in the new worktree, link on top or the insert sequence: merge-forward by every layer above, unstack, `gh pr edit --base`, chain check, full relink). Angle-bracket placeholders come from `gh pr create` output and `/sc-gh-stack-view`.
+  - `stack_writer`: ordered `commands[]` for the one agent that opens PRs and runs gh stack write commands (PR with base = parent, reuse sufficient complete composition/exact-head evidence, link on top or the insert sequence: merge-forward by every layer above, unstack, `gh pr edit --base`, chain check, full relink). Explicit-number link/full link does not require checkout in each worktree. Record the returned numeric stack number from link (relink creates a new number). Reconcile mutation responses; only if complete composition/base evidence remains missing, use `/sc-gh-stack-view --stack <returned-stack#> --refresh`. A branch selector works only with a known qualified local catalog; a new worktree may have none. Import tracking only where a later operation needs it. Angle-bracket placeholders come from `gh pr create` output and sufficient verified composition evidence.
 
 The caller pastes `stack_handoff.writer` verbatim into the worker agent's prompt and `stack_handoff.stack_writer` into the stack writer's prompt (or keeps it for itself when it holds that role). Layer writers never receive the stack-writer block.
 
@@ -95,10 +95,12 @@ The caller pastes `stack_handoff.writer` verbatim into the worker agent's prompt
         "commands": [
           "# after the writer's first push of sprint-7:",
           "gh pr create --base sprint-6 --head sprint-7 --title \"<title>\" --body \"$(cat <<'B'\nParent: sprint-6 @ 3f9c...e1\nTask: sprint 7\nFence: <paths this layer may touch>\nB\n)\"",
-          "cd /path/to/worktrees/sprint-7 && gh stack checkout <stack#>   # import tracking into this new worktree; skip only when no stack exists yet",
-          "gh stack link <stack#> <pr# of sprint-7>          # append: only if sprint-6 is the top row in /sc-gh-stack-view",
+          "# reuse sufficient verified complete ordered composition and exact pushed heads; no per-worktree checkout",
+          "# choose exactly one link form: append to a known existing stack, OR first/full link below",
+          "gh stack link <stack#> <pr# of sprint-7>          # append: only if complete ordered composition proves sprint-6 is the current pushed top",
           "gh stack link --base develop <bottom-pr#> ... <pr# of sprint-6> <pr# of sprint-7>   # first link, or full relink",
-          "/sc-gh-stack-view"
+          "# record the returned numeric stack number from link; a relink mints a new number",
+          "# reconcile affected bases/heads from mutation responses; only if complete composition/base evidence is missing: /sc-gh-stack-view --stack <returned-stack#> --refresh"
         ]
       }
     }

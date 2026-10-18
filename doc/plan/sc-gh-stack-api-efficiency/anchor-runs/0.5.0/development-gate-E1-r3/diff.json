@@ -1,0 +1,33 @@
+{
+  "success": true,
+  "data": {
+    "gate": "dev",
+    "item": "sc-stack-review-p68",
+    "prev": "dev-20261017T184149Z-sc-stack-review-p68",
+    "next": "dev-20261017T185026Z-sc-stack-review-p68",
+    "changed": [
+      {
+        "anchor_id": "ANC-008",
+        "from": "underspecified",
+        "to": "satisfied",
+        "improved": true
+      }
+    ],
+    "added": [],
+    "removed": [],
+    "regressions": [],
+    "pass_to_fail": [],
+    "fail_to_pass": [
+      "ANC-008"
+    ],
+    "item_size": {
+      "before_chars": 12279,
+      "after_chars": 14019,
+      "delta_chars": 1740,
+      "grew": true
+    },
+    "pass_before": false,
+    "pass_after": false
+  },
+  "error": null
+}
