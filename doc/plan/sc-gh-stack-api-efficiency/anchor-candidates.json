@@ -1,0 +1,106 @@
+{
+  "status": "user explicitly instructed locking approved statements; C07 clarified to preserve recipe strategies/outcomes while allowing git-call changes; anchors.json is now authoritative",
+  "intent": "intent.md",
+  "candidates": [
+    {
+      "candidate_id": "C01",
+      "statement": "The sc-gh-stack redesign must reduce burst GraphQL request volume for the same stack operations compared with the current scripts.",
+      "quote": "we need to redesign the scripts & recommended sc-gh-stack and sc-gh-stack-view to be more conservative on gh graphql budget, particularly burst.",
+      "kind": "directive",
+      "scope": "Changes to API scheduling or status recommendations in sc-gh-stack scripts and the sc-gh-stack/sc-gh-stack-view skills.",
+      "summary": "Reduce GraphQL bursts",
+      "deterministic_check": "Compare documented request paths and mocked request counts for equivalent operations.",
+      "fixtures": {"pass": "The redesigned status path issues fewer GraphQL requests per stack operation than the existing per-worktree scan.", "fail": "The redesign preserves the current GraphQL burst volume for each stack operation."}
+    },
+    {
+      "candidate_id": "C02",
+      "statement": "Remote information gathering in sc-gh-stack must be limited to information still required for the current operation.",
+      "quote": "We want to eliminate redundant/conservative information gathering.",
+      "kind": "directive",
+      "scope": "Adds or changes information gathering in stack scripts or the two stack skills' recommendations.",
+      "summary": "Gather only needed information",
+      "deterministic_check": "Trace each planned remote read to a consumer and identify whether existing sufficient observations can supply it.",
+      "fixtures": {"pass": "The script reuses sufficient existing observations and requests only the missing information needed for this operation.", "fail": "The script repeats the full remote status scan as a precaution even when its results are already available for this operation."}
+    },
+    {
+      "candidate_id": "C03",
+      "statement": "The sc-gh-stack scripts must evaluate locally derivable state before requesting that state through GraphQL.",
+      "quote": "we want to determine state locally if possible before graphql calls.",
+      "kind": "directive",
+      "scope": "Changes stack discovery, state derivation, or a GraphQL request path in the stack scripts.",
+      "summary": "Determine local state first",
+      "deterministic_check": "Inspect call ordering and branch conditions for local state resolution before GraphQL selection.",
+      "fixtures": {"pass": "Stack discovery reads git metadata locally before deciding whether any GraphQL information is missing.", "fail": "Stack discovery calls GraphQL first even when the requested state can be derived locally."}
+    },
+    {
+      "candidate_id": "C04",
+      "statement": "The sc-gh-stack redesign must prefer REST to GraphQL when REST supplies the required information at lower quota cost.",
+      "quote": "use cheap rest calls to conserve budget.",
+      "kind": "directive",
+      "scope": "Selects REST or GraphQL for remotely acquiring stack information.",
+      "summary": "Choose economical REST reads",
+      "deterministic_check": "Inspect source selection decisions for equivalent required information and their documented request costs.",
+      "fixtures": {"pass": "The metadata refresh uses a cheaper REST read instead of GraphQL for the same required information.", "fail": "The metadata refresh chooses GraphQL despite an available cheaper REST read supplying the same required information."}
+    },
+    {
+      "candidate_id": "C05",
+      "statement": "The sc-gh-stack redesign must preserve reporting of stack mergeability.",
+      "quote": "is-mergeable is important and if it can be determined for entire stack locally is preferred.",
+      "kind": "directive",
+      "scope": "Changes mergeability computation or the stack status report.",
+      "summary": "Preserve stack mergeability",
+      "deterministic_check": "Inspect the resulting report contract for a mergeability result rather than its removal to save quota.",
+      "fixtures": {"pass": "The redesigned status report retains stack mergeability information.", "fail": "The redesigned status report removes mergeability information to reduce API usage."}
+    },
+    {
+      "candidate_id": "C06",
+      "statement": "The sc-gh-stack redesign must prefer local computation of whole-stack mergeability when the required state can be determined locally.",
+      "quote": "is-mergeable is important and if it can be determined for entire stack locally is preferred.",
+      "kind": "directive",
+      "scope": "Chooses the source or algorithm for computing mergeability across stack layers.",
+      "summary": "Prefer local whole-stack mergeability",
+      "deterministic_check": "Inspect local mergeability coverage across the stack and reasons retained remote information cannot be derived locally.",
+      "fixtures": {"pass": "The design computes whole-stack conflict mergeability locally from sufficient git state, requesting only nonlocal GitHub eligibility information remotely.", "fail": "The design queries GitHub for whole-stack conflict mergeability even when sufficient local git state supplies it."}
+    },
+    {
+      "candidate_id": "C07",
+      "statement": "The sc-gh-stack redesign must preserve the stacking strategies and intended outcomes of established recipes when changing their git calls.",
+      "quote": "untouched may be a bit strong.  the recipe are strategies for stacking in challenging conditions.  we can change the git calls and accomplish the same goals.",
+      "kind": "prohibition",
+      "scope": "Plans or performs changes to established stacking recipes, including git-call substitutions in challenging-condition handling.",
+      "summary": "Preserve recipe strategies and outcomes",
+      "deterministic_check": "Compare each changed recipe with its baseline strategy and intended outcome; prove git-call substitutions retain those goals and challenging-condition behavior.",
+      "fixtures": {"pass": "The recipe replaces redundant remote reads with local git checks while preserving its stacking strategy and intended outcome.", "fail": "The recipe removes its challenging-condition recovery strategy instead of achieving the same stacking goal with cheaper git calls."}
+    },
+    {
+      "candidate_id": "C08",
+      "statement": "The sc-gh-stack redesign must support stacks with more than 100 layers.",
+      "quote": "we are using this on stacks w/ 100+ layers, do you see a problem there?",
+      "kind": "directive",
+      "scope": "Chooses size limits, pagination, discovery, request batching, or output handling for stack scripts.",
+      "summary": "Design for 100-plus layers",
+      "deterministic_check": "Inspect limits and pagination for assumptions that exclude stacks exceeding 100 layers.",
+      "fixtures": {"pass": "The status design handles stacks exceeding 100 layers without silently truncating their state.", "fail": "The status design supports at most 100 layers and drops any remaining layers."}
+    },
+    {
+      "candidate_id": "C09",
+      "statement": "The sc-gh-stack design must document how to obtain the required information when local repository state is out of date.",
+      "quote": "3.b. how to get same info if repo is out of date",
+      "kind": "directive",
+      "scope": "Describes state acquisition, local-first alternatives, or refresh behavior in the sc-gh-stack redesign.",
+      "summary": "Account for stale local state",
+      "deterministic_check": "Inspect the design's stale-state acquisition path for each required information category.",
+      "fixtures": {"pass": "The design documents how to refresh stale local refs and obtain required information absent from them.", "fail": "The design assumes local refs are always current and provides no way to obtain required information when they are stale."}
+    },
+    {
+      "candidate_id": "C10",
+      "statement": "The sc-gh-stack redesign must include automated tests.",
+      "quote": "we want tests, graphql tests will be hard due to quota",
+      "kind": "directive",
+      "scope": "Plans implementation verification for the sc-gh-stack redesign.",
+      "summary": "Include tests despite live quota constraints",
+      "deterministic_check": "Inspect planned test coverage and eventual test artifacts; distinguish mocked/local tests from quota-constrained live checks.",
+      "fixtures": {"pass": "The redesign includes automated local and mocked-API tests, with live GraphQL verification separately quota-constrained.", "fail": "The redesign excludes automated tests because the live GraphQL budget is exhausted."}
+    }
+  ]
+}

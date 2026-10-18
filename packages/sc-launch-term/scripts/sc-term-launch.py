@@ -16,15 +16,18 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from launch_term_shared import (
+import agent_models  # noqa: E402
+from agent_identity import (  # noqa: E402
     _IDENTITY_NAMES,  # noqa: F401 - retained as a module-level identity-pool view
+    resolve_identity,
+)
+from launch_term_shared import (  # noqa: E402
     build_claude_session_record_path,
     build_codex_session_record_path,
     generate_ulid,
     normalize_passthrough_args,
     quote_powershell,
     quote_shell,
-    resolve_identity,
     resolve_team,
     shell_mode_for_terminal,
 )
@@ -32,14 +35,12 @@ from launch_term_shared import (
 
 MAC_TERMINALS = ("iterm2", "ghostty", "wezterm", "warp", "cmux", "terminal")
 WINDOWS_TERMINALS = ("wt", "warp")
-CLAUDE_MODELS = ("sonnet", "haiku", "opus", "fable")
-CODEX_MODELS = ("sol", "terra", "luna", "codex")
-CODEX_MODEL_IDS = {
-    "sol": "gpt-5.6-sol",
-    "terra": "gpt-5.6-terra",
-    "luna": "gpt-5.6-luna",
-}
-TEAM_MEMBER_MODELS = CLAUDE_MODELS + CODEX_MODELS + ("gemini",)
+# Models, aliases, and effort levels come from the shared table (agent_models.py).
+CLAUDE_MODELS = tuple(agent_models.model_choices("claude"))
+CODEX_MODELS = tuple(agent_models.model_choices("codex"))
+TEAM_MEMBER_MODELS = (
+    tuple(agent_models.ALIASES["claude"]) + tuple(agent_models.ALIASES["codex"]) + ("gemini",)
+)
 MACOS_SHELL_SETTLE_DELAY_SECONDS = 0.8
 
 
@@ -50,6 +51,10 @@ def emit_json(data: dict) -> None:
 def fail(message: str, exit_code: int = 1) -> None:
     print(message, file=sys.stderr)
     sys.exit(exit_code)
+
+
+def warn(message: str) -> None:
+    print(f"warning: {message}", file=sys.stderr)
 
 
 def applescript_escape(value: str) -> str:
@@ -457,34 +462,38 @@ def render_command_argv(command_argv: list[str], terminal: str) -> str:
     return shlex.join(command_argv)
 
 
+def resolve_model(tool: str, model: str, effort: str | None) -> tuple[agent_models.ModelSpec, str]:
+    """The model spec plus its label: the family alias, else the full id (`codex` -> `sol`)."""
+    try:
+        spec = agent_models.resolve_model(tool, model)
+        agent_models.resolve_effort(spec, effort)
+    except agent_models.ModelError as exc:
+        fail(str(exc))
+    return spec, agent_models.alias_for(tool, spec.id) or spec.id
+
+
+def identity_family(tool: str, label: str) -> str:
+    """Identity pool key: the alias, or the family inside a full id (claude-opus-5-5 -> opus)."""
+    if label in agent_models.ALIASES.get(tool, {}):
+        return label
+    parts = label.split("-")
+    return parts[1] if tool == "claude" else parts[-1]
+
+
 def build_claude_argv(
-    model: str, extra_args: list[str], teammate_mode: bool
+    spec: agent_models.ModelSpec, effort: str | None, extra_args: list[str], teammate_mode: bool
 ) -> list[str]:
-    command = ["claude", "--model", model, "--dangerously-skip-permissions"]
+    command = ["claude", *agent_models.model_flags("claude", spec, effort), "--dangerously-skip-permissions"]
     if teammate_mode:
         command.extend(["--teammate-mode", "tmux"])
     command.extend(extra_args)
     return command
 
 
-def canonical_codex_model(model: str) -> str:
-    """Normalize the deprecated Codex alias to the Terra model identity."""
-    return "terra" if model == "codex" else model
-
-
-def codex_model_id(model: str) -> str:
-    return CODEX_MODEL_IDS[canonical_codex_model(model)]
-
-
-def build_codex_argv(model: str, extra_args: list[str]) -> list[str]:
-    command = [
-        "codex",
-        "--model",
-        codex_model_id(model),
-        "--yolo",
-        "--enable",
-        "hooks",
-    ]
+def build_codex_argv(
+    spec: agent_models.ModelSpec, effort: str | None, extra_args: list[str]
+) -> list[str]:
+    command = ["codex", *agent_models.model_flags("codex", spec, effort), "--yolo", "--enable", "hooks"]
     command.extend(extra_args)
     return command
 
@@ -493,20 +502,77 @@ def apply_env_prefix(
     command: str,
     terminal: str,
     env_vars: dict[str, str],
+    unset: tuple[str, ...] = (),
 ) -> str:
+    """Prefix `command` with env assignments, after clearing every name in `unset`."""
     filtered = {key: value for key, value in env_vars.items() if value}
-    if not filtered:
+    if not filtered and not unset:
         return command
     shell_mode = shell_mode_for_terminal(terminal)
     if shell_mode == "powershell":
         assignments: list[str] = []
+        if unset:
+            targets = ",".join(f"Env:{key}" for key in unset)
+            assignments.append(f"Remove-Item {targets} -ErrorAction SilentlyContinue")
         for key, value in filtered.items():
             assignments.append(f"$env:{key} = {quote_powershell(value)}")
         return "; ".join(assignments + [command])
-    exports: list[str] = []
+    # `unset` of a missing name succeeds, so `&&` keeps any `cd ... &&` chain intact.
+    exports: list[str] = [f"unset {' '.join(unset)}"] if unset else []
     for key, value in filtered.items():
         exports.append(f"export {key}={quote_shell(value)}")
     return " && ".join(exports + [command])
+
+
+# Variables that name the launched session's agent. They are set together from
+# the ATM identity (BEADS_ACTOR attributes `bd` audit entries and slot holders)
+# and are cleared together when there is no identity.
+ATM_CHILD_IDENTITY_VARS = ("ATM_IDENTITY", "BEADS_ACTOR")
+
+
+def resolve_atm_member(
+    explicit_identity: str | None, pool_key: str | None
+) -> tuple[str | None, str | None]:
+    """Team and identity for the launched session.
+
+    With no ATM team there is no identity: none is generated or registered, an
+    explicit `--identity` is ignored with a warning, and an inherited
+    `ATM_IDENTITY` and `BEADS_ACTOR` (the parent's) are dropped from this
+    process's environment, so backends that spawn the child with the launcher's
+    environment (wezterm, wt, cmux, osascript, tmux) cannot pass them on.
+    ATM_TEAM is never touched.
+    """
+    team = resolve_team()
+    if not team:
+        if explicit_identity:
+            warn(
+                f"ignoring --identity {explicit_identity}: ATM_TEAM is not set, "
+                "so no ATM identity is exported"
+            )
+        for name in ATM_CHILD_IDENTITY_VARS:
+            os.environ.pop(name, None)
+        return None, None
+    return team, resolve_identity(explicit_identity, pool_key)
+
+
+def atm_child_env(
+    team: str | None, identity: str | None
+) -> tuple[dict[str, str], tuple[str, ...]]:
+    """ATM variables to set in the child, and the ones to clear there.
+
+    With a team, export ATM_TEAM, ATM_IDENTITY and BEADS_ACTOR (equal to the
+    identity, so `bd` attributes the child's work to the child). Without one,
+    clear only ATM_IDENTITY and BEADS_ACTOR, so a shell, terminal or tmux server
+    that inherited the parent's identity does not keep it. ATM_TEAM is never
+    cleared.
+    """
+    if not team:
+        return {}, ATM_CHILD_IDENTITY_VARS
+    env_vars = {"ATM_TEAM": team}
+    if identity:
+        for name in ATM_CHILD_IDENTITY_VARS:
+            env_vars[name] = identity
+    return env_vars, ()
 
 
 def apply_atm_env_prefix(
@@ -515,12 +581,8 @@ def apply_atm_env_prefix(
     team: str | None,
     identity: str | None,
 ) -> str:
-    env_vars: dict[str, str] = {}
-    if team:
-        env_vars["ATM_TEAM"] = team
-    if identity:
-        env_vars["ATM_IDENTITY"] = identity
-    return apply_env_prefix(command, terminal, env_vars)
+    env_vars, unset = atm_child_env(team, identity)
+    return apply_env_prefix(command, terminal, env_vars, unset)
 
 
 def wait_for_path(
@@ -578,7 +640,7 @@ def session_tracking_for_member_model(
     member_model: str | None,
     dir_path: str,
 ) -> tuple[str, Path] | tuple[None, None]:
-    if member_model in CODEX_MODELS:
+    if member_model in agent_models.ALIASES["codex"]:
         launch_id = generate_ulid()
         return launch_id, build_codex_session_record_path(dir_path, launch_id)
     return None, None
@@ -594,21 +656,16 @@ def model_session_record_path(tool: str, dir_path: str, launch_id: str) -> Path:
 
 def build_model_argv(
     tool: str,
-    model: str,
+    spec: agent_models.ModelSpec,
+    effort: str | None,
     extra_args: list[str],
     teammate_mode: bool,
 ) -> list[str]:
     if tool == "claude":
-        return build_claude_argv(model, extra_args, teammate_mode)
+        return build_claude_argv(spec, effort, extra_args, teammate_mode)
     if tool == "codex":
-        return build_codex_argv(model, extra_args)
+        return build_codex_argv(spec, effort, extra_args)
     fail(f"Unsupported model-launch tool: {tool}")
-
-
-def canonical_model_label(tool: str, model: str) -> str:
-    if tool == "codex":
-        return canonical_codex_model(model)
-    return model
 
 
 def handle_launch_model(args: argparse.Namespace, tool: str) -> None:
@@ -616,38 +673,35 @@ def handle_launch_model(args: argparse.Namespace, tool: str) -> None:
     if args.tmux and not tmux_available():
         fail("tmux is not available on PATH; omit --tmux or install tmux")
 
-    model = canonical_model_label(tool, args.model)
-    team = resolve_team()
-    identity = resolve_identity(args.identity, model)
+    spec, model = resolve_model(tool, args.model, args.effort)
+    team, identity = resolve_atm_member(args.identity, identity_family(tool, model))
     register_team_member(team, identity, model, args.dir)
     launch_id = generate_ulid()
     session_record = model_session_record_path(tool, args.dir, launch_id)
     extra_args = normalize_passthrough_args(getattr(args, "model_args", []))
     command = render_command_argv(
-        build_model_argv(tool, model, extra_args, teammate_mode=bool(args.tmux)),
+        build_model_argv(tool, spec, args.effort, extra_args, teammate_mode=bool(args.tmux)),
         terminal,
     )
+    atm_env, atm_unset = atm_child_env(team, identity)
     env_vars = {
         "SC_LAUNCH_ID": launch_id,
         "SC_SESSION_RECORD": str(session_record),
+        **atm_env,
     }
-    if team:
-        env_vars["ATM_TEAM"] = team
-    if identity:
-        env_vars["ATM_IDENTITY"] = identity
-    command = apply_env_prefix(command, terminal, env_vars)
+    command = apply_env_prefix(command, terminal, env_vars, atm_unset)
     shell_command = prepare_shell_command(terminal, command, args.dir, args.tmux)
     run_launch(terminal, shell_command, args.dir, args.tab, title_from_label(model))
     result = {
         "ok": True,
         "tool": tool,
         "model": model,
+        "model_id": spec.id,
+        "effort": args.effort,
         "launch_id": launch_id,
         "session_record": str(session_record),
         "session_record_found": wait_for_path(session_record),
     }
-    if tool == "codex":
-        result["model_id"] = codex_model_id(model)
     emit_json(result)
 
 
@@ -656,26 +710,23 @@ def handle_attach_pane_model(args: argparse.Namespace, tool: str) -> None:
     if not tmux_available():
         fail("tmux is not available on PATH; cannot attach to a session")
 
-    model = canonical_model_label(tool, args.model)
-    team = resolve_team()
-    identity = resolve_identity(args.identity, model)
+    spec, model = resolve_model(tool, args.model, args.effort)
+    team, identity = resolve_atm_member(args.identity, identity_family(tool, model))
     register_team_member(team, identity, model, args.cwd)
     launch_id = generate_ulid()
     session_record = model_session_record_path(tool, args.cwd, launch_id)
     extra_args = normalize_passthrough_args(getattr(args, "model_args", []))
     command = render_command_argv(
-        build_model_argv(tool, model, extra_args, teammate_mode=True),
+        build_model_argv(tool, spec, args.effort, extra_args, teammate_mode=True),
         terminal,
     )
+    atm_env, atm_unset = atm_child_env(team, identity)
     env_vars = {
         "SC_LAUNCH_ID": launch_id,
         "SC_SESSION_RECORD": str(session_record),
+        **atm_env,
     }
-    if team:
-        env_vars["ATM_TEAM"] = team
-    if identity:
-        env_vars["ATM_IDENTITY"] = identity
-    command = apply_env_prefix(command, terminal, env_vars)
+    command = apply_env_prefix(command, terminal, env_vars, atm_unset)
     run_launch(
         terminal,
         build_tmux_attach_pane(args.session, command),
@@ -687,12 +738,12 @@ def handle_attach_pane_model(args: argparse.Namespace, tool: str) -> None:
         "ok": True,
         "tool": tool,
         "model": model,
+        "model_id": spec.id,
+        "effort": args.effort,
         "launch_id": launch_id,
         "session_record": str(session_record),
         "session_record_found": wait_for_path(session_record),
     }
-    if tool == "codex":
-        result["model_id"] = codex_model_id(model)
     emit_json(result)
 
 
@@ -701,13 +752,12 @@ def handle_launch(args: argparse.Namespace) -> None:
     if args.tmux and not tmux_available():
         fail("tmux is not available on PATH; omit --tmux or install tmux")
 
-    team = resolve_team()
     member_model = (
-        canonical_model_label("codex", args.member_model)
-        if args.member_model in CODEX_MODELS
+        resolve_model("codex", args.member_model, None)[1]
+        if args.member_model in agent_models.ALIASES["codex"]
         else args.member_model
     )
-    identity = resolve_identity(args.identity, member_model)
+    team, identity = resolve_atm_member(args.identity, member_model)
     register_team_member(team, identity, member_model, args.dir)
     launch_id, session_record = session_tracking_for_member_model(
         member_model, args.dir
@@ -716,11 +766,9 @@ def handle_launch(args: argparse.Namespace) -> None:
     if launch_id and session_record:
         env_vars["SC_LAUNCH_ID"] = launch_id
         env_vars["SC_SESSION_RECORD"] = str(session_record)
-    if team:
-        env_vars["ATM_TEAM"] = team
-    if identity:
-        env_vars["ATM_IDENTITY"] = identity
-    command = apply_env_prefix(args.command, terminal, env_vars)
+    atm_env, atm_unset = atm_child_env(team, identity)
+    env_vars.update(atm_env)
+    command = apply_env_prefix(args.command, terminal, env_vars, atm_unset)
     shell_command = prepare_shell_command(terminal, command, args.dir, args.tmux)
     run_launch(
         terminal, shell_command, args.dir, args.tab, title_from_command(args.command)
@@ -754,8 +802,7 @@ def handle_attach_pane(args: argparse.Namespace) -> None:
     terminal = resolve_terminal(args.terminal)
     if not tmux_available():
         fail("tmux is not available on PATH; cannot attach a pane")
-    team = resolve_team()
-    identity = resolve_identity(args.identity, args.member_model)
+    team, identity = resolve_atm_member(args.identity, args.member_model)
     register_team_member(team, identity, args.member_model, args.cwd)
     launch_id, session_record = session_tracking_for_member_model(
         args.member_model, args.cwd
@@ -764,11 +811,9 @@ def handle_attach_pane(args: argparse.Namespace) -> None:
     if launch_id and session_record:
         env_vars["SC_LAUNCH_ID"] = launch_id
         env_vars["SC_SESSION_RECORD"] = str(session_record)
-    if team:
-        env_vars["ATM_TEAM"] = team
-    if identity:
-        env_vars["ATM_IDENTITY"] = identity
-    command = apply_env_prefix(args.command, terminal, env_vars)
+    atm_env, atm_unset = atm_child_env(team, identity)
+    env_vars.update(atm_env)
+    command = apply_env_prefix(args.command, terminal, env_vars, atm_unset)
     run_launch(
         terminal,
         build_tmux_attach_pane(args.session, command),
@@ -839,6 +884,9 @@ def build_parser() -> argparse.ArgumentParser:
     launch_claude_model.add_argument("--tab", action="store_true")
     launch_claude_model.add_argument("--tmux")
     launch_claude_model.add_argument("--identity")
+    launch_claude_model.add_argument(
+        "--effort", choices=agent_models.EFFORTS, help="Reasoning effort (default: the CLI's own)"
+    )
 
     launch_codex_model = subparsers.add_parser(
         "launch-codex-model",
@@ -850,6 +898,9 @@ def build_parser() -> argparse.ArgumentParser:
     launch_codex_model.add_argument("--tab", action="store_true")
     launch_codex_model.add_argument("--tmux")
     launch_codex_model.add_argument("--identity")
+    launch_codex_model.add_argument(
+        "--effort", choices=agent_models.EFFORTS, help="Reasoning effort (default: the CLI's own)"
+    )
 
     attach = subparsers.add_parser("attach", help="Attach to an existing tmux session")
     attach.add_argument("session")
@@ -877,6 +928,9 @@ def build_parser() -> argparse.ArgumentParser:
     attach_pane_claude_model.add_argument("--terminal")
     attach_pane_claude_model.add_argument("--tab", action="store_true")
     attach_pane_claude_model.add_argument("--identity")
+    attach_pane_claude_model.add_argument(
+        "--effort", choices=agent_models.EFFORTS, help="Reasoning effort (default: the CLI's own)"
+    )
 
     attach_pane_codex_model = subparsers.add_parser(
         "attach-pane-codex-model",
@@ -888,6 +942,9 @@ def build_parser() -> argparse.ArgumentParser:
     attach_pane_codex_model.add_argument("--terminal")
     attach_pane_codex_model.add_argument("--tab", action="store_true")
     attach_pane_codex_model.add_argument("--identity")
+    attach_pane_codex_model.add_argument(
+        "--effort", choices=agent_models.EFFORTS, help="Reasoning effort (default: the CLI's own)"
+    )
 
     return parser
 

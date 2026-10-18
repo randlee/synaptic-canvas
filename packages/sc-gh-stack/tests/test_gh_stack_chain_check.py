@@ -5,6 +5,7 @@ import importlib.util
 from pathlib import Path
 import sys
 import unittest
+from contextlib import contextmanager
 from unittest import mock
 
 SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "gh_stack_chain_check.py"
@@ -21,6 +22,20 @@ T0, A1, B2, C3, OLD = ("0" * 40, "a" * 40, "b" * 40, "c" * 40, "d" * 40)
 def pr(number: int, head: str, base: str, oid: str, *, draft: bool = False, state: str = "OPEN") -> dict:
     return {"number": number, "headRefName": head, "baseRefName": base, "headRefOid": oid,
             "isDraft": draft, "state": state}
+
+
+@contextmanager
+def report_dependencies(fetch_error=None):
+    snapshot = {'repository': {}, 'refs': {'refs/remotes/origin/' + TRUNK: T0}, 'stacks': [], 'warnings': [], 'fingerprint': 'fixture'}
+    client = mock.Mock()
+    client.refresh_git.return_value = {'fresh': fetch_error is None, 'source': 'cached', 'observed_at': 123, 'error': fetch_error}
+    client.pr_metadata.return_value = {}
+    client.resolve_branches.return_value = {}
+    client.warnings = [fetch_error] if fetch_error else []
+    client.observations, client.metrics, client.snapshot_id = {}, {}, 'fixture'
+    conflicts = {'layers': [], 'combined': {'clean': True, 'reason': 'clean'}, 'clean': True}
+    with mock.patch.object(gcc, 'read_local_snapshot', return_value=snapshot), mock.patch.object(gcc, 'StackDataClient', return_value=client), mock.patch.object(gcc, 'evaluate_stack_conflicts', return_value=conflicts), mock.patch.object(gcc, 'run', side_effect=AssertionError('unexpected subprocess')):
+        yield client
 
 
 class EvaluateTests(unittest.TestCase):
@@ -101,6 +116,28 @@ class EvaluateTests(unittest.TestCase):
         self.assertIn("next: gh stack link --base develop 1 2 l3", text)
         self.assertIn("bare branch name pushes the LOCAL ref", text)
 
+    def test_literal_numeric_branch_without_mapping_cannot_link_unrelated_pr(self):
+        self.origins['123'] = A1
+        # PR123 exists on an unrelated branch: the extension would prefer it
+        # over the intended literal branch if handed the bare argument 123.
+        unrelated = {'different': pr(123, 'different', TRUNK, B2)}
+        report = gcc.evaluate(TRUNK, ['123'], unrelated, fetched=True, use_pr=True)
+        self.assertFalse(report['linkable'])
+        self.assertIsNone(report['link_command'])
+        self.assertTrue(any('numeric branch' in problem and 'open its PR first' in problem for problem in report['problems']))
+
+    def test_literal_numeric_branch_with_mapping_links_correct_pr(self):
+        self.origins['123'] = A1
+        report = gcc.evaluate(TRUNK, ['123'], {'123': pr(9, '123', TRUNK, A1)}, fetched=True, use_pr=True)
+        self.assertTrue(report['linkable'])
+        self.assertEqual(report['link_command'], 'gh stack link --base develop 9')
+
+    def test_unicode_digit_branch_is_not_misclassified_as_extension_pr_number(self):
+        self.origins['１２３'] = A1
+        report = gcc.evaluate(TRUNK, ['１２３'], {}, fetched=True, use_pr=True)
+        self.assertTrue(report['linkable'])
+        self.assertFalse(any('numeric branch' in problem for problem in report['problems']))
+
     def test_top_conflicts_with_trunk(self) -> None:
         self.merge = False
         report = gcc.evaluate(TRUNK, ["l1", "l2", "l3"], self.prs, fetched=True, use_pr=True)
@@ -123,6 +160,58 @@ class EvaluateTests(unittest.TestCase):
     def test_duplicate_branch_is_a_problem(self) -> None:
         report = gcc.evaluate(TRUNK, ["l1", "l1"], self.prs, fetched=True, use_pr=True)
         self.assertTrue(any("appears twice" in p for p in report["problems"]))
+
+    def test_stale_parent_ref_never_generates_hard_ancestry_or_head_failure(self):
+        self.ancestors.discard((A1, B2))
+        self.prs['l1']['headRefOid'] = OLD
+        observations = {TRUNK: {'fresh': True}, 'l1': {'fresh': False, 'exists': False},
+                        'l2': {'fresh': True}, 'l3': {'fresh': True}}
+        report = gcc.evaluate(TRUNK, ['l1', 'l2', 'l3'], self.prs, fetched=True, use_pr=True,
+                              ref_observations=observations)
+        assert report['rows'][0]['pushed'] is None
+        assert report['rows'][0]['pr_head_ok'] is None
+        assert report['rows'][1]['pushed'] is True
+        assert report['rows'][1]['contains_parent'] is None
+        assert not report['problems']
+
+    def test_confirmed_absence_never_uses_stale_tracking_head(self):
+        observations = {TRUNK: {'fresh': True}, 'l1': {'fresh': False, 'exists': False, 'absence_fresh': True}}
+        report = gcc.evaluate(TRUNK, ['l1'], self.prs, fetched=True, use_pr=True,
+                              ref_observations=observations)
+        self.assertIsNone(report['rows'][0]['origin'])
+        self.assertIs(report['rows'][0]['pushed'], False)
+        self.assertIsNone(report['rows'][0]['pr_head_ok'])
+        self.assertTrue(any('not on origin (unpushed)' in p for p in report['problems']))
+        self.assertIsNone(report['landing']['clean'])
+
+    def test_confirmed_absent_trunk_is_actionable(self):
+        observations = {TRUNK: {'fresh': False, 'exists': False, 'absence_fresh': True}, 'l1': {'fresh': True}}
+        report = gcc.evaluate(TRUNK, ['l1'], self.prs, fetched=True, use_pr=True,
+                              ref_observations=observations)
+        self.assertIsNone(report['trunk_origin'])
+        self.assertTrue(any('trunk' in p and 'not on the remote' in p for p in report['problems']))
+
+    def test_stale_current_ref_is_not_passed_as_none_to_git(self):
+        for stale in ('l1', 'l2'):
+            with self.subTest(stale=stale):
+                observations = {name: {'fresh': name != stale} for name in (TRUNK, 'l1', 'l2', 'l3')}
+                def ancestor(older, newer):
+                    assert older is not None and newer is not None
+                    return older == newer or (older, newer) in self.ancestors
+                with mock.patch.object(gcc, 'is_ancestor', side_effect=ancestor):
+                    report = gcc.evaluate(TRUNK, ['l1', 'l2', 'l3'], self.prs, fetched=True, use_pr=True,
+                                          ref_observations=observations)
+                assert not report['problems']
+                assert next(row for row in report['rows'] if row['branch'] == stale)['pushed'] is None
+
+    def test_stale_hosted_metadata_does_not_generate_hard_write_advice(self):
+        self.prs['l1'].update(headRefOid=OLD, baseRefName='old-base', state='CLOSED', isDraft=True)
+        observations = {1: {field: {'freshness': 'stale'} for field in self.prs['l1']}}
+        report = gcc.evaluate(TRUNK, ['l1'], self.prs, fetched=True, use_pr=True,
+                              pr_observations=observations)
+        assert not report['problems']
+        assert report['rows'][0]['pr_head_ok'] is None
+        assert report['rows'][0]['pr_base_ok'] is None
 
 
 class IndexAndResolveTests(unittest.TestCase):
@@ -158,13 +247,13 @@ class MainContractTests(unittest.TestCase):
         return gcc.argparse.Namespace(**base)
 
     def test_exit_0_when_linkable(self) -> None:
-        with mock.patch.object(gcc, "preflight"), \
+        with report_dependencies(), mock.patch.object(gcc, "preflight"), \
              mock.patch.object(gcc, "evaluate", return_value={"trunk": TRUNK, "trunk_origin": T0, "rows": [], "problems": [], "notes": [], "landing": {"clean": None, "reason": "x"}, "linkable": True}), \
              mock.patch("builtins.print"):
             self.assertEqual(gcc.run_check(self._args()), 0)
 
     def test_exit_1_when_problems(self) -> None:
-        with mock.patch.object(gcc, "preflight"), \
+        with report_dependencies(), mock.patch.object(gcc, "preflight"), \
              mock.patch.object(gcc, "evaluate", return_value={"trunk": TRUNK, "trunk_origin": T0, "rows": [], "problems": ["p"], "notes": [], "landing": {"clean": None, "reason": "x"}, "linkable": False}), \
              mock.patch("builtins.print"):
             self.assertEqual(gcc.run_check(self._args()), 1)
@@ -207,26 +296,29 @@ class ErrorConditionTests(unittest.TestCase):
         self.assertEqual(list(by_branch), ["l1"])
 
     def test_view_pr_rejects_bad_shape(self) -> None:
-        cp = __import__("subprocess").CompletedProcess(["gh"], 0, stdout='{"number": 5}', stderr="")
-        with mock.patch.object(gcc, "run", return_value=cp):
+        client = mock.Mock()
+        client.pr_metadata.return_value = {5: {'number': 5}}
+        with mock.patch.object(gcc, "run", side_effect=AssertionError('unexpected subprocess')):
             with self.assertRaises(gcc.ToolError):
-                gcc.view_pr(5)
+                gcc.view_pr(5, client=client)
 
     def test_fetch_failure_is_a_warning_not_exit_2(self) -> None:
         import io
         failed = __import__("subprocess").CompletedProcess(["git"], 128, stdout="", stderr="fatal: could not read from remote")
-        with mock.patch.object(gcc, "preflight"), \
-             mock.patch.object(gcc, "run", return_value=failed), \
+        with report_dependencies(fetch_error='fatal: could not read from remote'), mock.patch.object(gcc, "preflight"), \
              mock.patch.object(gcc, "evaluate", return_value={"trunk": TRUNK, "trunk_origin": T0, "rows": [], "problems": [], "notes": [], "landing": {"clean": None, "reason": "x"}, "linkable": True}), \
-             mock.patch("builtins.print"), \
+             mock.patch("builtins.print") as output, \
              mock.patch.object(gcc.sys, "stderr", new=io.StringIO()) as err:
             args = gcc.argparse.Namespace(trunk=TRUNK, layers=["l1"], no_fetch=False, no_pr=True, json=False)
             self.assertEqual(gcc.run_check(args), 0)
-            self.assertIn("warning: git fetch origin failed", err.getvalue())
+            self.assertIn('could not read from remote', '\n'.join(str(call) for call in output.call_args_list))
 
     def test_run_hint_for_rate_limit_and_auth(self) -> None:
         shared = gcc.sys.modules[gcc.run.__module__]
-        self.assertIn("rate limit", shared.hint_for("HTTP 403: API rate limit exceeded"))
+        rate_hint = shared.hint_for("HTTP 403: API rate limit exceeded")
+        self.assertIn("rate limit", rate_hint)
+        self.assertNotIn('30 min', rate_hint)
+        self.assertIn('cooldown', rate_hint)
         self.assertIn("gh auth", shared.hint_for("gh: Not logged in (HTTP 401)"))
         self.assertEqual(shared.hint_for("something else"), "")
 

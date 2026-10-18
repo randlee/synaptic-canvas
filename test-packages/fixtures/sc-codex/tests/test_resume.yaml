@@ -8,9 +8,9 @@ description: |
 
 execution:
   prompt: |
-    /sc-codex --background --model mini write a short haiku about rain. Capture the agentId and output_file, but do not tail the log.
+    /sc-codex --background --model luna write a short haiku about rain. Capture the agentId and output_file, but do not tail the log.
     Verify the output_file exists, then derive <agentId> from the output_file filename (basename without .jsonl).
-    Immediately run /sc-codex --json {"description":"Refine haiku","prompt":"Refine the previous haiku and improve imagery.","subagent_type":"sc-codex","model":"mini","resume":"<agentId>","run_in_background":false}.
+    Immediately run /sc-codex --json {"description":"Refine haiku","prompt":"Refine the previous haiku and improve imagery.","subagent_type":"sc-codex","model":"luna","resume":"<agentId>","run_in_background":false}.
     Replace <agentId> with the derived value, and return the refined haiku with a line `Grade: N` (N is 1-10).
     Do not run any other Codex tasks. If the resume call fails, report the error and stop.
   model: haiku

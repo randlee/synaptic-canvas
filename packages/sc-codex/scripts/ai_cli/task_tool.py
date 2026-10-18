@@ -10,26 +10,36 @@ This module provides:
 """
 from __future__ import annotations
 
-from typing import Literal, Optional, Union
+from typing import Optional, Union
 
 from pydantic import BaseModel, Field
 
+from .agent_models import DEFAULT_ALIAS, EFFORTS, model_choices, resolve_model
 
-CodexModel = Literal[
-    "codex",
-    "gpt-5.2-codex",
-    "codex-max",
-    "max",
-    "gpt-5.1-codex-max",
-    "codex-mini",
-    "mini",
-    "gpt-5.1-codex-mini",
-    "gpt-5",
-    "gpt-5.2",
-    "gtp-5",
-]
-ClaudeModel = Literal["sonnet", "opus", "haiku"]
-ModelName = Union[CodexModel, ClaudeModel]
+
+# Models, aliases, and effort levels come from the shared table in agent_models.py.
+# `model` and `reasoning_effort` are plain strings here: task_runner resolves them through
+# agent_models so an unknown name gets a message listing the valid choices.
+
+
+def _model_description() -> str:
+    parts = [
+        f"{tool} ({', '.join(model_choices(tool))}; default {DEFAULT_ALIAS[tool]} -> "
+        f"{resolve_model(tool).id})"
+        for tool in ("codex", "claude")
+    ]
+    return (
+        "Optional model alias or full id. If not specified, the runner's default is used. "
+        + "; ".join(parts)
+        + "."
+    )
+
+
+MODEL_DESCRIPTION = _model_description()
+EFFORT_DESCRIPTION = (
+    f"Optional reasoning effort: {', '.join(EFFORTS)} (supported levels vary by model). "
+    "When omitted, no effort flag is passed and the CLI's own configuration applies."
+)
 
 
 class TaskToolInput(BaseModel):
@@ -45,14 +55,8 @@ class TaskToolInput(BaseModel):
         description="The type of specialized agent to use for this task",
         min_length=1,
     )
-    model: Optional[ModelName] = Field(
-        default=None,
-        description=(
-            "Optional model to use for this agent. If not specified, inherits from parent. "
-            "Claude models: sonnet, opus, haiku. Codex models: codex, max/codex-max, "
-            "mini/codex-mini, gpt-5, or full model names."
-        ),
-    )
+    model: Optional[str] = Field(default=None, description=MODEL_DESCRIPTION)
+    reasoning_effort: Optional[str] = Field(default=None, description=EFFORT_DESCRIPTION)
     run_in_background: Optional[bool] = Field(
         default=None,
         description=(

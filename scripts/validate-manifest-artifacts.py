@@ -225,6 +225,11 @@ def get_disk_files(package_path: Path) -> list[str]:
                 continue
 
             if file_path.is_file():
+                # .local.j2 siblings are rendered in place of their plain
+                # manifest artifact (see src/sc_cli/README.md); they are not
+                # themselves manifest entries.
+                if file_path.name.endswith(".local.j2"):
+                    continue
                 # Get path relative to package root
                 rel_path = file_path.relative_to(package_path)
                 # Normalize to forward slashes for cross-platform compatibility

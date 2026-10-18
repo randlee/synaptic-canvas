@@ -21,6 +21,7 @@ Discover and manage Synaptic Canvas marketplace packages through natural convers
 - **Scope Control**: Install globally (--global) or locally (--local)
 - **Version Management**: Track installed package versions
 - **Dependency Resolution**: View and manage package dependencies
+- **Install-Time Hooks**: Runs a package's optional `install.py` `prepare()`/`complete()` hooks around the copy step, and `cleanup()` on uninstall, if the package ships one
 - **Installation Verification**: Confirm successful installation with file checks
 
 ### Registry Management
@@ -165,6 +166,7 @@ Unified command interface for marketplace operations.
 - `--local` - Install to ./.claude-local (project-level)
 - `--force` - Overwrite existing files
 - `--registry <name>` - Use specific registry
+- `--set KEY=VALUE` - Repeatable; extra info for a package's optional `install.py` hooks (see Troubleshooting below)
 
 ## Examples
 
@@ -251,6 +253,7 @@ See [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) for common issues and solutions.
 - **Package not found**: Verify package name and registry configuration
 - **Installation fails**: Check write permissions and disk space
 - **Command not found**: Ensure `sc-install` is in PATH
+- **`install.py` hook failed**: the error message names the reason and the fix; if it names a missing value, retry with `--set KEY=VALUE`
 
 ## Use Cases
 

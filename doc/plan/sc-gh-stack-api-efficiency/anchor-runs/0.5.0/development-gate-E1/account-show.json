@@ -1,0 +1,18 @@
+[
+  {
+    "id": "sc-stack-review-p68",
+    "title": "E1 — Economical stack state development review",
+    "description": "Review tracking for the completed Markdown sprint doc/plan/sc-gh-stack-api-efficiency/sprint-E1.md. Approved anchors remain doc/plan/sc-gh-stack-api-efficiency/anchors.json. Implementation is in feature/sc-gh-stack-api-efficiency; development gate and deterministic checks are pending. This record introduces no new implementation scope.",
+    "status": "in_progress",
+    "priority": 2,
+    "issue_type": "epic",
+    "owner": "randlee@users.noreply.github.com",
+    "created_at": "2026-10-17T18:36:18Z",
+    "created_by": "Rand Lee",
+    "updated_at": "2026-10-17T18:36:18Z",
+    "dependent_count": 0,
+    "dependency_count": 0,
+    "comment_count": 0,
+    "revision": "-8802750768555486014"
+  }
+]

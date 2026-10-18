@@ -1,0 +1,159 @@
+## Sprint report
+
+# E1 implementation evidence
+
+Implemented on `feature/sc-gh-stack-api-efficiency`; baseline `fc702b1`.
+The locked intent/anchors and the reviewed sprint remain the design authority.
+This execution record supersedes their historical planning-only status, not
+their requirements. No live GitHub API or load test was run.
+
+| Task | Delivered evidence |
+|---|---|
+| T1 | Common/legacy catalog reader, locally parsed remote identity, batched refs, scope-first selection, conflicting branch/PR identity rejection |
+| T2 | Every active intended parent/head pair plus top/trunk; separate ancestry, recorded base, pushedness and hosted eligibility; unknowns retained |
+| T3 | Small targeted REST metadata reads; bulk metadata/status and missing branch mappings in serial batches of at most 50; no repository-wide PR scan or per-worktree API discovery |
+| T4 | Atomic shared observations, auth partitions, exact-head invalidation, TTLs, coalesced refreshes, shared cooldowns and shrinking request timeouts within a 30-second acquisition allowance |
+| T5 | Both CLIs use the shared client and scoped relevant-ref fetches; strict no-PR/no-fetch paths, complete JSON, bounded ten-row summaries and epoch revalidation |
+| T6 | Repeated precautionary scans removed; recipe strategies and safety conditions preserved in `recipe-evidence.md` |
+| T7 | Deterministic git fixtures, fake transports and timestamped baseline traces; temporary installed entrypoints both import and show help |
+
+## Reproduce
+
+```bash
+SC_STACK_EVIDENCE_PATH="$PWD/doc/plan/sc-gh-stack-api-efficiency/execution-evidence.json" \
+  python3 -m pytest packages/sc-gh-stack/tests -q
+```
+
+The suite includes 120 layers, synthetic inventories of 1/10/60 worktrees,
+ten real linked worktrees, ten concurrent readers, cold/warm/forced scopes,
+same-SHA hosted expiry, failed fetches, intermediate conflicts with a clean
+tip, missing history, numeric offline cache misses, partial errors, throttles,
+auth partitions, pagination, deadlines, and snapshot changes. Git fixtures
+verify refs/index/work files remain unchanged by reporting.
+
+Result: **133 tests passed** locally; compilation, installed-entrypoint smoke
+checks and `git diff --check` also passed. A dedicated Linux CI job is
+configured for this quota-independent suite; that hosted job has not run yet.
+
+## Observed comparison
+
+`execution-evidence.json` retains timestamped subprocess-boundary traces.
+For the same 120 known PRs, old acquisition issued 1/10/60 extension views,
+one repository-identity subprocess and one unbounded 120-alias detail query.
+New acquisition issued zero extension/identity calls, three serial detail
+queries (50/50/20), and zero additional GitHub calls on warm reports. Both
+retain all 120 layers; default new text shows ten, with explicit truncation.
+The fixture measured 4,480 old text bytes versus 1,455 new summary bytes;
+complete JSON and full text are separately measured.
+
+These are observed mocked subprocess counts, not a measurement of HTTP calls
+inside the old extension. Real quota cost and production concurrency remain
+unmeasured. Recorded lexical token counts are not model tokenizer counts.
+
+## Freshness and compatibility
+
+Git freshness is shared per repository/remote/ref for 60 seconds; explicit
+scopes do not inherit coverage from an arbitrary configured refspec. Hosted
+metadata/status expires after 120 seconds, or 60 for running checks. Unchanged
+heads do not extend hosted freshness. Failed refreshes never claim fresh
+heads or relabel old green hosted data as fresh. Unavailable fields have a
+60-second retry observation to prevent hot loops; explicit refresh or a new
+expected head bypasses it. `--refresh-git` refreshes refs without API acquisition; `--refresh-status`
+refreshes hosted fields without implying fetch; `--refresh` requests both.
+`--full` does not force acquisition and `--json` remains complete.
+
+After external writes, reuse sufficient mutation responses or explicitly
+refresh the affected requested scope; these read-only scripts do not intercept
+the extension's writes. The adapter exposes scoped invalidation for callers.
+Local clean merges do not establish checks, reviews, approvals or policy.
+Unknown/stale required evidence never authorizes linking or a green chain
+verdict. Catalogs are not migrated, and reporting never imports/checks out a
+stack. Python remains stdlib-only and uses `gh api`, not a new HTTP client.
+
+Bulk branch lookup uses GitHub's documented
+[head-ref filtering](https://docs.github.com/en/graphql/reference/repos).
+Small equivalent REST lookups remain preferred without creating REST fanout.
+Live endpoint compatibility and hosted mutation/recovery outcomes were not
+exercised; recipe-equivalence evidence is a strategy/contract review, not a
+production landing test. No release, commit, push or PR is implied by this record.
+
+## Evidence map
+
+# Checkable implementation evidence for E1
+
+All paths below are relative to the repository root. Implementation baseline
+is `fc702b1`; the reviewed feature worktree is not yet committed. No live
+GitHub calls or production quota measurements are claimed.
+
+| Anchor | Completed behavior and checkable artifacts |
+|---|---|
+| ANC-001 | Per-worktree extension views and identity API probes are removed. `packages/sc-gh-stack/tests/test_gh_stack_baseline.py` compares actual fc702b1 wrapper subprocess paths on the same 120 PR inputs with 1/10/60 worktree inventories. `doc/plan/sc-gh-stack-api-efficiency/execution-evidence.json` records old 1/10/60 extension calls plus identity/detail acquisition versus new serial 50/50/20 detail batches and zero extra warm API calls. Hidden extension HTTP and real quota costs are unmeasured, not estimated as facts. |
+| ANC-002 | `packages/sc-gh-stack/scripts/gh_stack_remote.py` requests COMMON metadata only for chain checks and STATUS for the status consumer, shares per-field observations and targeted invalidation, and defers repeated unavailable lookups. `test_gh_stack_remote.py` covers warm reuse, forced/concurrent coalescing, missing-node retry suppression and source selection; the two skills remove mandatory before/after/finish scans. |
+| ANC-003 | Both `gh_stack_view.py:run_report` and `gh_stack_chain_check.py:run_check` read local catalogs/refs and compute local content conflicts before hosted detail selection. Numeric mappings absent locally may require the scoped prerequisite lookup. `test_gh_stack_efficiency.py:test_local_conflicts_precede_hosted_detail_selection` asserts ordering; numeric no-PR/cache-miss tests assert zero API calls. |
+| ANC-004 | `gh_stack_remote.py:pr_metadata` uses REST for at most two missing PRs; bulk metadata/status and bulk missing branch mappings use bounded GraphQL rather than REST fanout. `test_gh_stack_remote.py` verifies REST/ETag reuse and 120-branch batching with no follow-up metadata calls. |
+| ANC-005 | Both reports retain complete `local_mergeability` results, per-layer clean/conflicting/unknown values and a combined top/trunk result. Hosted eligibility and CI remain separate with provenance. `test_gh_stack_efficiency.py` checks complete 120-layer JSON, intermediate conflicts/unknowns with a clean tip, and stale/unknown icons never green. |
+| ANC-006 | `gh_stack_local.py:evaluate_stack_conflicts` runs every intended immutable parent/head pair and top/trunk locally through merge-tree. Missing refs/history/errors stay unknown, never inferred clean from ancestry or the tip. `test_gh_stack_local.py` covers merged parents, intermediate conflicts, missing refs, unexpected merge errors and reporting immutability. |
+| ANC-007 | `packages/sc-gh-stack/skills/sc-gh-stack/references/recipe-evidence.md` maps each replaced evidence-gathering call to its original strategy and success/recovery outcome. Recipe diffs retain append-only frozen layers, one writer, atomic landing, expected full SHA, authorization, async UUID deadline/failure handling, and child tree comparison before reset. Only equivalent information-gathering calls and cadence change. This is a diff/contract review plus local-state fixtures, not a production mutation test. |
+| ANC-008 | `test_gh_stack_efficiency.py`, `test_gh_stack_remote.py` and the baseline comparison cover complete 120-layer acquisition/output with three <=50-PR batches, ten real worktrees and 1/10/60 synthetic inventories. Default text is ten rows with all blockers counted; JSON/full contain all 120. No 500-layer experiment was performed. |
+| ANC-009 | The detailed plan's stale-state information contracts and `execution.md` document coordinated relevant-ref fetch, separate hosted refresh, TTL/head invalidation, fetch failure qualification and missing history. `test_gh_stack_git_refresh.py` covers explicit scopes, partial coverage, expiry/failure and concurrent reuse; same-SHA expiry and failed-forced-hosted-refresh tests prevent false freshness. |
+| ANC-010 | `python3 -m pytest -q packages/sc-gh-stack/tests` was rerun on 2026-10-17: `133 passed in 35.62s`. `.github/workflows/tests.yml` adds a dedicated Linux local/simulated suite. Compilation, temporary install entrypoints and diff whitespace checks passed previously; hosted CI has not run. |
+
+## Files changed
+
+## Files changed
+
+Command: `git diff --cached --stat` (includes newly staged implementation and tests).
+
+```text
+ .github/workflows/tests.yml                        |  13 +
+ packages/sc-gh-stack/CHANGELOG.md                  |   5 +
+ packages/sc-gh-stack/README.md                     |  27 +-
+ packages/sc-gh-stack/commands/sc-gh-stack-view.md  |  24 +-
+ packages/sc-gh-stack/commands/sc-gh-stack.md       |   5 +-
+ packages/sc-gh-stack/manifest.yaml                 |   3 +
+ .../sc-gh-stack/scripts/gh_stack_chain_check.py    | 234 +++++---
+ packages/sc-gh-stack/scripts/gh_stack_local.py     | 280 +++++++++
+ packages/sc-gh-stack/scripts/gh_stack_remote.py    | 627 +++++++++++++++++++++
+ packages/sc-gh-stack/scripts/gh_stack_shared.py    |  23 +-
+ packages/sc-gh-stack/scripts/gh_stack_view.py      | 475 ++++++++--------
+ .../sc-gh-stack/skills/sc-gh-stack-view/SKILL.md   | 100 ++--
+ .../references/installation-and-troubleshooting.md |   8 +-
+ packages/sc-gh-stack/skills/sc-gh-stack/SKILL.md   |  42 +-
+ .../skills/sc-gh-stack/references/commands.md      |  19 +-
+ .../references/installation-and-troubleshooting.md |   8 +-
+ .../sc-gh-stack/references/phase-model-example.md  |   3 +
+ .../skills/sc-gh-stack/references/preconditions.md |  16 +-
+ .../sc-gh-stack/references/recipe-cut-layer.md     |  10 +-
+ .../sc-gh-stack/references/recipe-evidence.md      |  18 +
+ .../skills/sc-gh-stack/references/recipe-land.md   |  25 +-
+ .../skills/sc-gh-stack/references/recipe-link.md   |  10 +-
+ .../sc-gh-stack/references/recipe-restack.md       |  23 +-
+ .../references/recipe-stale-tracking.md            |  32 +-
+ .../sc-gh-stack/references/troubleshooting.md      |  12 +-
+ .../skills/sc-gh-stack/references/workflow.md      |   9 +-
+ .../sc-gh-stack/tests/test_gh_stack_baseline.py    | 157 ++++++
+ .../sc-gh-stack/tests/test_gh_stack_chain_check.py |  38 +-
+ .../tests/test_gh_stack_chain_observations.py      |  78 +++
+ .../sc-gh-stack/tests/test_gh_stack_efficiency.py  | 227 ++++++++
+ .../sc-gh-stack/tests/test_gh_stack_git_refresh.py |  93 +++
+ packages/sc-gh-stack/tests/test_gh_stack_local.py  | 209 +++++++
+ packages/sc-gh-stack/tests/test_gh_stack_remote.py | 386 +++++++++++++
+ packages/sc-gh-stack/tests/test_gh_stack_view.py   |  98 +++-
+ plans/2026-10-14-sc-gh-stack-api-efficiency.md     | 487 ++++++++++++++++
+ 35 files changed, 3352 insertions(+), 472 deletions(-)
+```
+
+## Tests
+
+## Tests
+
+Command: `python3 -m pytest -q packages/sc-gh-stack/tests`
+Date: 2026-10-17
+
+Actual summary:
+
+```text
+============================= 133 passed in 35.62s ==============================
+```
+
+Local git and mocked GitHub transports only. No live GitHub API calls.

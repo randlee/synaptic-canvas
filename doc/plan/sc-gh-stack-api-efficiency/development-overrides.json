@@ -1,0 +1,82 @@
+{
+  "ANC-004": {
+    "questions": {
+      "evidenced": {
+        "criteria": {
+          "no": "It supplies no supporting checkable artifact, or makes no such compliance claim.",
+          "unclear": "An artifact is mentioned but its support for that preference is unclear.",
+          "yes": "It cites a path, diff, named test, command output, or concrete comparison supporting that conditional preference."
+        },
+        "instructions": "Does `item.text` supply a concrete checkable artifact supporting the claim that the delivered source selection prefers equivalent cheaper REST? A bare assurance or topic mention is insufficient.",
+        "type": "choice"
+      },
+      "implemented": {
+        "criteria": {
+          "no": "The preference is absent, deferred, or explicitly not followed.",
+          "unclear": "REST, GraphQL, or costs are mentioned but the delivered selection policy cannot be determined.",
+          "yes": "It states delivered conditional cheaper-equivalent-REST preference, including with allowed equal-cost or missing-information exceptions."
+        },
+        "instructions": "Does `item.text` say the delivered redesign prefers REST when it supplies the required information at lower quota cost than GraphQL? Judge the claimed implemented source preference. Equal-cost reads and reads for information REST cannot supply may still use GraphQL.",
+        "type": "choice"
+      },
+      "relevant": {
+        "criteria": {
+          "no": "The work is unrelated to stack remote information acquisition.",
+          "unclear": "The affected work cannot be identified.",
+          "yes": "The work affects remote stack information reads or their source selection."
+        },
+        "instructions": "Does delivered work in `item.text` touch remote acquisition of stack information or selection of REST versus GraphQL in sc-gh-stack? Judge subject overlap only.",
+        "type": "choice"
+      },
+      "violated": {
+        "criteria": {
+          "no": "No conflicting delivered selection is stated, including silence or permitted GraphQL exceptions.",
+          "unclear": "The described source selection might conflict but its required information or relative cost is indeterminate.",
+          "yes": "It describes choosing GraphQL despite equivalent required information being cheaper through REST."
+        },
+        "instructions": "Does `item.text` describe delivered source selection choosing GraphQL despite REST supplying the required information at lower quota cost? Silence is not conflict. GraphQL with equal cost or missing required REST fields is permitted.",
+        "type": "choice"
+      }
+    }
+  },
+  "ANC-008": {
+    "questions": {
+      "evidenced": {
+        "criteria": {
+          "no": "No above-100 compliance claim is made, or it has no supporting checkable artifact; exactly 100 does not evidence above-100 capacity.",
+          "unclear": "An artifact is mentioned but its support for the capacity claim cannot be determined.",
+          "yes": "An identifiable artifact supports a claim of complete stack handling beyond 100 layers."
+        },
+        "instructions": "Is there concrete, checkable support for a delivered above-100-layer capacity claim? Judge supporting evidence only: test names, commands, paths or diffs must connect to the larger-stack behavior. Without such a claim answer no.",
+        "type": "choice"
+      },
+      "implemented": {
+        "criteria": {
+          "no": "No such claim is made, the change is deferred, only exactly 100 is tested, or the described behavior rejects or truncates larger stacks.",
+          "unclear": "Scalability is mentioned but delivered above-100 support cannot be determined.",
+          "yes": "The account claims delivered complete support beyond 100 layers, explicitly or through a larger-stack result."
+        },
+        "instructions": "Does the delivered account claim stack operation beyond the 100-layer boundary? A successful 101-layer or 150-layer complete stack qualifies. Exactly 100 alone and future work do not qualify. Judge the claim, not its proof.",
+        "type": "choice"
+      },
+      "relevant": {
+        "criteria": {
+          "no": "The work is unrelated to those operations.",
+          "unclear": "The work is too vague to identify its subject.",
+          "yes": "The work affects stack capacity, pagination, discovery, request batching, or output."
+        },
+        "instructions": "Is the delivered change within stack-capacity handling, including the discovery or presentation pipeline? Topic overlap counts even without a capacity claim. The required behavior is support for stacks with more than 100 layers in sc-gh-stack.",
+        "type": "choice"
+      },
+      "violated": {
+        "criteria": {
+          "no": "No incompatible size restriction is described; silence, absent evidence and a test only at 100 do not conflict.",
+          "unclear": "A described size restriction is ambiguous about whether larger stacks are supported.",
+          "yes": "Explicit delivered behavior rejects stacks above 100 or drops later layers because of a cap."
+        },
+        "instructions": "Does `item.text` describe an incompatible restriction such as rejection after 100 layers, one-page truncation, or output that drops later layers? No described incompatible behavior means no; absent claims are not violations.",
+        "type": "choice"
+      }
+    }
+  }
+}

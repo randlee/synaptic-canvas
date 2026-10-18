@@ -98,10 +98,11 @@ under review is `layer head` versus the commit it was cut from
 commit), not versus the moving remote base; otherwise a rewritten lower layer's
 delta is misattributed as this layer's regression. Post the verdict on the PR.
 
-## 8. Status after every write
+## 8. Reconcile changed facts
 
-`/sc-gh-stack-view` after every link, merge, unstack and before any dispatch.
-It shows base coherence (base == parent head), `needsRebase`,
+Reuse sufficient observations and mutation responses after links, merges and
+unstacks; obtain missing affected facts before dependent work or dispatch with
+a scoped `/sc-gh-stack-view`. It shows base coherence (base == parent head), `needsRebase`,
 `mergeStateStatus`, CI, stale local tracking and a LANDING line. If the
 LANDING line is green and a contiguous bottom run is QA PASS and green by
 itself, collapse it (`recipe-restack.md`) and keep the open stack 2 to 3 deep.
@@ -109,7 +110,7 @@ itself, collapse it (`recipe-restack.md`) and keep the open stack 2 to 3 deep.
 ## 9. Land once, from the top
 
 All layers frozen, QA PASS on the top, top CI green, trunk frozen and acked:
-one `gh stack merge --yes --merge`. Then `/sc-gh-stack-view`, confirm no
+one `gh stack merge --yes --merge`. Verify the affected outcome, confirm no
 in-flight PR was closed as a side effect, lift the freeze. Recipe:
 `recipe-land.md`.
 

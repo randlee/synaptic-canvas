@@ -1,5 +1,5 @@
 name: sc-codex
-version: 0.13.0
+version: 0.14.1
 description: >
   Run Codex agents via a Task Tool-compatible runner, with hooks emulation
   and background execution support.
@@ -22,6 +22,7 @@ artifacts:
     - scripts/sc_codex_task.py
     - scripts/sc_shared.py
     - scripts/ai_cli/__init__.py
+    - scripts/ai_cli/agent_models.py
     - scripts/ai_cli/__main__.py
     - scripts/ai_cli/cli.py
     - scripts/ai_cli/logging.py
@@ -32,6 +33,12 @@ artifacts:
   schemas:
     - schemas/task_tool.schema.json
     - schemas/task_tool.output.schema.json
+shared_scripts:
+  - source: packages/shared/scripts/sc_shared.py
+    target: scripts/sc_shared.py
+  - source: packages/shared/scripts/agent_models.py
+    target: scripts/ai_cli/agent_models.py
+
 requires:
   cli:
     - python3

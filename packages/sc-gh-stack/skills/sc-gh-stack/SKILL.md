@@ -1,6 +1,6 @@
 ---
 name: sc-gh-stack
-version: 0.1.1
+version: 0.2.0
 description: Run stacked PRs with the gh stack extension the way that lands (append-only frozen layers on a named trunk, one stack writer, QA/CI on the top, one atomic merge). Use for any stack, stacked/dependent PRs, gh stack link/unstack/merge, landing, a red layer, or /sc-gh-stack. Supersedes /gh-stack.
 entry_point: /sc-gh-stack
 ---
@@ -14,6 +14,10 @@ cite the incident. This file is the table of contents; read the reference a
 step points to before acting, and nothing else.
 
 ## Step 1 — Verify gh, the gh-stack extension, git, python3
+
+Check once at setup or after an executable/version change or failure. Local
+reporting needs git and Python; check gh/auth only when acquisition needs it,
+and the extension for actual extension operations.
 
 ```bash
 which gh && gh --version
@@ -36,17 +40,23 @@ done
 
 Found off-PATH: `export PATH="<dir>:$PATH"` for this session. Still missing,
 below the floors (git < 2.38, gh < 2.0, python3 < 3.9, no gh-stack
-extension), or `gh auth status` fails: read `references/installation-and-troubleshooting.md`
-and stop. Never continue with degraded behavior.
+extension for an extension operation), or required authentication fails: read
+`references/installation-and-troubleshooting.md`. Stop dependent writes;
+local reports may retain useful evidence with explicit unknowns.
 
-## Step 2 — Status first, and after every write
+## Step 2 — Obtain the evidence the operation needs
 
 `/sc-gh-stack-view` (skill `sc-gh-stack-view`, script
-`.claude/scripts/gh_stack_view.py`) is THE status call. Run it before any
-`gh stack` write command, after every link, unstack, rebase or merge, and
-before dispatching anyone to a layer. Paste its output verbatim. Never fan out
-`gh pr view` per branch, never text-parse `gh pr checks`, never use bare
-`gh stack view` (it opens a TUI; the script uses `--json`).
+`.claude/scripts/gh_stack_view.py`) is the status call. Reuse sufficient
+observations and mutation responses; obtain only missing or changed facts
+needed for the next write or dispatch. Scope with `--stack <number-or-branch>`
+or `--trunk`; `--compact-json` bounds routine agent output without changing
+acquisition, while `--json` includes every layer. Compact output is not complete
+composition evidence and never selects the top or a merge range. Use `--refresh-git` for current
+remote refs, `--refresh-status` for hosted facts, or `--refresh` for both.
+Do not duplicate the hosted executor's preflight with precautionary scans.
+Paste requested status output verbatim. Never fan out `gh pr view` per branch,
+text-parse `gh pr checks`, or use bare `gh stack view` (it opens a TUI).
 
 ## The model (read `references/model.md` once)
 
@@ -82,9 +92,11 @@ before dispatching anyone to a layer. Paste its output verbatim. Never fan out
 | Any `gh stack` command, flag, exit code, `--json` schema | `references/commands.md` |
 | An error message you do not recognise | `references/troubleshooting.md` |
 | How a whole phase runs on one stack (worked example) | `references/phase-model-example.md` |
+| Why status-call substitutions preserve recipe outcomes | `references/recipe-evidence.md` |
 
-Every recipe ends the same way: run `/sc-gh-stack-view`, paste it, and record
-the current stack number (each unstack mints a new one).
+Record the current stack number when a link changes it. Reconcile changed
+heads, bases and lifecycle before dependent work; a sufficient mutation
+response or existing observation does not need a repeated full report.
 
 ## Hard preconditions (details and incidents in `references/preconditions.md`)
 
@@ -93,7 +105,8 @@ the current stack number (each unstack mints a new one).
    stack branch. Without `--base` the bottom PR is retargeted to the default
    branch and locked there. Appending one PR to an existing stack may use
    `gh stack link <stack#> <pr#>`, which appends on top only and cannot
-   insert. Either way, verify every base with `/sc-gh-stack-view` afterwards.
+   insert. Either way, verify every affected base from sufficient mutation
+   responses or existing observations; request a scoped view only for missing facts.
 2. Cut a new layer only from a **pushed** head that contains every lower
    layer's head (`git merge-base --is-ancestor`). Two layers cut from the same
    head must declare at cut time which one merges the other forward.
@@ -106,9 +119,10 @@ the current stack number (each unstack mints a new one).
    fix lives above (that puts the red on the trunk). Remove the red layer from
    the stack so the fixing layer above carries its commits
    (`recipe-restack.md`, section 2).
-6. Before any scoped `gh stack merge <pr>`, read the full `branches[]` from
-   `gh stack view --json`; an upper empty draft gets swept in and its branch
-   deleted.
+6. Before any scoped `gh stack merge <pr>`, inspect sufficient verified remote
+   composition, or acquire it with scoped `--refresh` (not `--refresh-status`);
+   use the compact projection in `references/recipe-evidence.md`. Local catalog membership
+   alone is not complete; an unseen upper empty draft can be swept in and deleted.
 7. Land with `gh stack merge <stack#> --yes --merge` (merge commits only, by
    stack number so stale local tracking cannot pick the wrong stack). Never
    `--squash`.
@@ -135,9 +149,10 @@ and use the newest match. Never reproduce the checks by hand.
 
 ## Storage
 
-No state under `.claude/` or `.sc/`. The skill runs `git`, `gh` and `gh stack`
-in the target repository and its worktrees. Stack tracking is gh-stack's own,
-per worktree (`recipe-stale-tracking.md` explains the consequence).
+Shared observations live in the common repository's `.sc/sc-gh-stack/output/`;
+nonsecret cooldown coordination lives in `~/.sc/sc-gh-stack/`. No tokens are
+stored. Common and legacy per-worktree gh-stack catalogs are read locally;
+conflicting tracking requires `recipe-stale-tracking.md` recovery.
 
 ## Related
 

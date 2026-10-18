@@ -1,33 +1,31 @@
 # Recipe: clear stale local stack tracking
 
 Use when `/sc-gh-stack-view` shows 🔄 on a layer, reports NOT COHERENT with
-`-` rows, or names a stack number that no longer exists on GitHub; and after
-every unstack or re-link as a matter of course.
+`-` rows, conflicting catalog definitions, or a stack number that no longer
+exists on GitHub. An unstack/re-link invalidates affected observations; use
+its response to identify stale tracking rather than scanning as a precaution.
 
 ## Why it happens
 
-gh-stack tracking is stored **per worktree**. After `gh stack unstack` and a
-re-link, the worktree that ran them knows the new stack; every other worktree
-still holds the old stack number and the old layer list. The view tool
-discovers stacks through `git worktree list`, runs `gh stack view --json` in
-each, and keeps the *longest* view of a stack (a lower-layer worktree only
-sees the layers linked from it). A stale worktree therefore wins with its
-longer, obsolete list and the report shows a false NOT COHERENT.
+Legacy gh-stack tracking is stored **per worktree**; newer catalogs may be
+shared. After `gh stack unstack` and a re-link, legacy worktrees can retain the
+old stack number and layer list. The helper reads catalogs locally and reports
+conflicting definitions instead of selecting the longest obsolete list.
 
 ## Steps
 
 1. Find the worktrees that carry tracking:
 
    ```bash
-   git worktree list --porcelain | sed -n 's/^worktree //p' | while IFS= read -r wt; do
-     out=$(cd "$wt" && gh stack view --json 2>/dev/null) || continue
-     printf '%s: ' "$wt"
-     printf '%s' "$out" | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d["trunk"], "->", [b["name"] for b in d["branches"]])'
-   done
+   python3 .claude/scripts/gh_stack_view.py --all --no-pr --no-fetch --json
    ```
 
-   `/sc-gh-stack-view --all --json` shows the same information as
-   `stacks[].worktree` and `stacks[].rows[]`.
+   Inspect catalog conflict diagnostics and `stacks[].worktree` /
+   `stacks[].branches[]`; reuse already available diagnostics when sufficient.
+   `catalogs[]` retains source paths, ordered compositions and branch owners,
+   including disputed definitions. If no stack can be accepted, read those
+   records under `error.details.catalogs` instead; no checkout is needed.
+   Do not run `gh stack view` once per worktree to discover tracking.
 
 2. In every worktree whose list is not the current stack:
 
@@ -46,7 +44,10 @@ longer, obsolete list and the report shows a false NOT COHERENT.
    interactive prompt that cannot be bypassed; that is exactly why step 2 runs
    first.
 
-4. `/sc-gh-stack-view`. The verdict now reflects GitHub, not a dead list.
+4. Verify the imported local composition and affected bases/heads with
+   `gh_stack_view.py --stack <branch> --json`; request `--refresh-status` only
+   when current hosted facts are missing. Recovery does not itself prove CI
+   or hosted eligibility.
 
 ## Notes
 

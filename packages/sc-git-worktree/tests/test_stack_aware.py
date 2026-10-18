@@ -113,10 +113,11 @@ class TestStackCreate:
         assert writer[1] == f"git -C {wt} push -u origin l2"
         assert not any("gh " in c for c in writer), "writers never get gh commands"
         assert any("gh pr create --base l1 --head l2" in c and "<<'B'" in c for c in stack_writer)
-        assert any(c.startswith(f"cd {wt} && gh stack checkout <stack#>") for c in stack_writer)
+        assert not any("gh stack checkout" in c for c in stack_writer if not c.startswith("#"))
         assert any(c.startswith("gh stack link <stack#> <pr# of l2>") for c in stack_writer)
         assert any("gh stack link --base develop <bottom-pr#> ... <pr# of l1> <pr# of l2>" in c for c in stack_writer)
-        assert stack_writer[-1] == "/sc-gh-stack-view"
+        assert stack_writer[-1].startswith("# reconcile affected bases/heads from mutation responses")
+        assert "/sc-gh-stack-view --stack <returned-stack#> --refresh" in stack_writer[-1]
         rules = handoff["writer"]["rules"]
         assert any("rebase --onto origin/l1" in r for r in rules)
         assert any("Never run gh stack write commands" in r for r in rules)

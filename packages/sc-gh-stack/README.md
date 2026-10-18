@@ -3,7 +3,7 @@
 [![Publisher Verified](https://img.shields.io/badge/publisher-verified-brightgreen)](https://github.com/randlee/synaptic-canvas/blob/main/docs/PUBLISHER-VERIFICATION.md)
 [![Security Scanned](https://img.shields.io/badge/security-scanned-blue)](https://github.com/randlee/synaptic-canvas/blob/main/SECURITY.md)
 [![License MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-[![Version 0.1.0](https://img.shields.io/badge/version-0.1.0-blue)](CHANGELOG.md)
+[![Version 0.2.0](https://img.shields.io/badge/version-0.2.0-blue)](CHANGELOG.md)
 
 Scope: Local or global
 Requires: `gh` >= 2.0 with the `gh-stack` extension (v0.1.0), `git` >= 2.38, `python3` >= 3.9; `jq` optional (documented one-liners only)
@@ -56,15 +56,51 @@ contents that points to one reference per situation:
 
 ## Usage
 
-- `/sc-gh-stack-view [--trunk <branch>] [--all] [--json]`
+- `/sc-gh-stack-view [--trunk <branch>] [--stack <number-or-branch>] [--remote origin] [--all] [--full | --json | --compact-json] [--refresh-git | --refresh-status | --refresh] [--no-fetch] [--no-pr]`
 - `/sc-gh-stack --status | --check <trunk> <layers...> | --cut <layer> | --link | --restack | --land`
 
-Scripts (installed under `.claude/scripts/`). Both are read-only apart from one `git fetch origin` (skip it with `--no-fetch`); neither runs a `gh stack` write command:
+Scripts (installed under `.claude/scripts/`). Both derive local state first,
+reuse shared observations, and acquire only required missing remote facts.
+`--refresh-git` refreshes relevant refs once; `--refresh-status` refreshes hosted
+facts; `--refresh` does both. `--no-fetch` forbids fetching and `--no-pr` forbids
+all GitHub API calls. Neither runs a `gh stack` write command.
+
+For the view, `--refresh` also reconciles selected remote stack membership.
+`stacks[].structure_observation` distinguishes verified remote composition from
+local tracking; `--refresh-status` alone does not establish complete membership.
+Bare ASCII numbers select stack numbers, not numeric branch names. Use
+`--stack number:42`, `--stack branch:42`, or `--stack id:<catalog-id>` to make
+the identity explicit. Chain arguments accept `pr:42` and `branch:42`;
+unprefixed positive ASCII numbers retain their PR-number meaning there.
+Open a PR first for an ASCII-numeric branch before requesting a generated link
+command: the extension itself otherwise interprets its bare name as a PR number.
+An unscoped structural refresh preflights every selected stack number before
+acquisition; legacy catalogs without numbers need an explicit numbered scope
+or separate git/status refresh instead.
 
 | Script | Purpose | Exit codes |
 |--------|---------|-----------|
-| `gh_stack_view.py` | Coherence (base == parent head), origin vs local vs PR head, `needsRebase`, `mergeStateStatus`, CI rollup, LANDING verdict | 0 coherent, 1 problems, 2 environment |
+| `gh_stack_view.py` | Coherence (base == parent head), origin vs local vs PR head, `needsRebase`, `mergeStateStatus`, CI rollup, LANDING verdict | 0 coherent, 1 problems/unknowns, 2 environment/state failure |
 | `gh_stack_chain_check.py --trunk <t> <bottom> ... <top>` | Pre-link check: pushed heads, linear ancestry, PR state and bases, clean merge into trunk; prints the exact link command | 0 linkable, 1 problems, 2 environment |
+
+Every layer's local content-conflict result is separate from hosted eligibility;
+missing or stale evidence stays unknown. A git fetch does not refresh checks
+or reviews. Summaries show at most ten layer rows and count all blockers;
+`--full` and `--json` are complete. JSON includes provenance and exact SHAs.
+Both scripts offer `--compact-json` for bounded routine agent status: ten
+rows per stack and ten stacks, bounded diagnostics, full-scope verdicts and total/shown/truncated
+counts, with no acquisition change. Compact output is not complete composition
+evidence; use full JSON for top/range selection. Both JSON modes return
+`INPUT.INVALID_ARGUMENT` on argument parsing errors and
+`INPUT.INVALID_SELECTOR` on malformed selectors (exit 2).
+`LANDING` predicts top/trunk content merge and containment only; every local
+layer pair must also be clean, while hosted CI/QA still gate the exact top only.
+Green LANDING requires fresh positive pushed-ref evidence for trunk and every
+active layer. Raw local merge predictions remain separate when refs are stale.
+Per-ref `exists: false` plus `absence_fresh: true` means a successful remote
+advertisement confirmed absence for 60 seconds; it is an unpushed problem,
+never a qualified head SHA. Network failures do not establish absence.
+Reuse sufficient observations and mutation responses between recipe steps.
 
 ## The model in one paragraph
 
@@ -86,7 +122,14 @@ fixes with one owner do not get a stack at all.
 
 ## Storage
 
-Installs into `.claude/` only (commands, skills, scripts). Writes no logs, settings, state or output under `.claude/state/` or `.sc/`. Stack tracking is gh-stack's own per-worktree state; see `references/recipe-stale-tracking.md`.
+Installs commands, skills and scripts into `.claude/`. Shared observations live
+under the common repository's `.sc/sc-gh-stack/output/`; nonsecret cooldown
+coordination lives under `~/.sc/sc-gh-stack/`. No tokens are stored. Common and
+legacy per-worktree gh-stack catalogs are read locally without migration; see
+`references/recipe-stale-tracking.md` for conflicting tracking recovery.
+Consumers should ignore the generated cache directory; reporting does not edit
+their ignore files. “Read-only” preserves refs, index and worktree files;
+Git's `merge-tree --write-tree` may create objects in the object database.
 
 ## Install / Uninstall
 
@@ -103,8 +146,9 @@ python3 -m pytest packages/sc-gh-stack/tests -q
 
 ## Troubleshooting
 
-- "no open gh stack found": a stack is discovered through `git worktree list`
-  and needs at least one layer checked out in a worktree.
+- "no open gh stack found": inspect scope filters and local catalogs; absent
+  local tracking does not prove there are no remote stacks. Checkout/import is
+  for actual recovery, not routine status discovery.
 - 🔄 or a false NOT COHERENT with `-` rows after an unstack: stale per-worktree
   tracking; see `references/recipe-stale-tracking.md`.
 - Anything else: `references/troubleshooting.md` and
@@ -114,4 +158,4 @@ python3 -m pytest packages/sc-gh-stack/tests -q
 
 - Commands: `commands/sc-gh-stack.md`, `commands/sc-gh-stack-view.md`
 - Skills: `skills/sc-gh-stack/SKILL.md` (+ `references/`), `skills/sc-gh-stack-view/SKILL.md`
-- Scripts: `scripts/gh_stack_view.py`, `scripts/gh_stack_chain_check.py`
+- Scripts: `scripts/gh_stack_view.py`, `scripts/gh_stack_chain_check.py`, with `gh_stack_shared.py`, `gh_stack_local.py` and `gh_stack_remote.py`

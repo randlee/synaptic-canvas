@@ -20,8 +20,9 @@ Background output (run_in_background: true):
 {
   "description": "Summarize issue",
   "prompt": "Summarize the latest GitHub issue thread",
-  "subagent_type": "issue-summary",
-  "model": "haiku",
+  "subagent_type": "sc-codex",
+  "model": "sol",
+  "reasoning_effort": "low",
   "run_in_background": false,
   "max_turns": 10
 }
@@ -67,10 +68,11 @@ Validate input from file:
 PYTHONPATH=packages/sc-codex/scripts python3 -m ai_cli validate --file /path/to/input.json
 ```
 
-Run a task (blocking by default, runner auto-selects based on availability):
+Run a task (blocking by default). Without `--runner`, the runner auto-selects (Claude first if
+installed), so pass `--runner codex` for Codex models such as `sol`:
 
 ```bash
-PYTHONPATH=packages/sc-codex/scripts python3 -m ai_cli run --file /path/to/input.json
+PYTHONPATH=packages/sc-codex/scripts python3 -m ai_cli run --runner codex --file /path/to/input.json
 ```
 
 Run in background with Codex and custom output directory:
@@ -82,22 +84,34 @@ PYTHONPATH=packages/sc-codex/scripts python3 -m ai_cli run --runner codex --back
 Background outputs default to `.sc/sessions` (gitignored). For Codex, if `CODEX_HOME` is set,
 the default becomes `$CODEX_HOME/sessions`. Use `--output-dir` to override.
 
-Model defaults:
-- Claude defaults to `sonnet`
-- Codex defaults to `gpt-5.2-codex`
+Override model and reasoning effort from the command line (flags override the JSON payload):
 
-Codex model aliases:
-- `codex` -> `gpt-5.2-codex`
-- `codex-max` or `max` -> `gpt-5.1-codex-max`
-- `codex-mini` or `mini` -> `gpt-5.1-codex-mini`
-- `gpt-5` or `gtp-5` -> `gpt-5.2`
+```bash
+PYTHONPATH=packages/sc-codex/scripts python3 -m ai_cli run --runner codex --model sol --effort low --file /path/to/input.json
+# runs: <path to codex> exec --yolo --model gpt-6.1-sol -c model_reasoning_effort=low -   (prompt on stdin)
+```
+
+Models, aliases, defaults, and per-model efforts come from `ai_cli/agent_models.py` (a synced
+copy of `packages/shared/scripts/agent_models.py`; never edit it here). The table is in the
+sc-codex [README](../../README.md#models-and-reasoning-effort).
+
+- Unknown models (in `--model` or the JSON `model`) and efforts the model does not support fail
+  before launch with a message listing the valid choices.
+- The resolved full model id is written back into the payload, so background runs and logs show it.
+- Effort applies to both runners: Codex gets `-c model_reasoning_effort=<level>`, Claude gets
+  `--effort <level>`. When unset, no flag is passed and the CLI's own configuration applies.
+
+Platforms (Windows, macOS, Linux; Python 3.9+): the CLI is started through the full path from
+`shutil.which` (npm installs `codex.cmd`/`claude.cmd` on Windows), and the prompt is sent as UTF-8
+bytes on stdin (`codex exec ... -`, `claude --print`), never in argv, so it is not mangled by
+`.cmd` shims, quoting, or newline translation.
 
 ## Logs
 
 Errors and schema validation failures are logged to:
 - `.claude/state/logs/<package-name>/` (derived from the runner script path)
 
-Task start/end events are also logged with `agentId`, `runner`, `model`, and parameters.
+Task start/end events are also logged with `agentId`, `runner`, `model`, `reasoning_effort`, and parameters.
 Logs include `prompt_preview` and `duration_ms`.
 
 ## Hook emulation

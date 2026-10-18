@@ -1,6 +1,7 @@
 import json
 import shutil
 import subprocess
+import tempfile
 import sys
 from pathlib import Path
 
@@ -63,8 +64,21 @@ def _render_templates(template_root: Path, output_root: Path, vars_data: dict) -
         output_path.write_text(rendered, encoding="utf-8")
 
 
+def _capture(command: list[str], cwd: Path | None = None) -> subprocess.CompletedProcess[str]:
+    """Run ``command`` with its output in files, not pipes. A background process the
+    command leaves behind (the .NET build server, a NuGet credential provider) inherits
+    a pipe and holds it open, so reading a pipe to EOF would wait on that process."""
+    with tempfile.TemporaryFile("w+", encoding="utf-8") as out, tempfile.TemporaryFile("w+", encoding="utf-8") as err:
+        returncode = subprocess.run(
+            command, cwd=cwd, stdin=subprocess.DEVNULL, stdout=out, stderr=err, check=False
+        ).returncode
+        out.seek(0)
+        err.seek(0)
+        return subprocess.CompletedProcess(command, returncode, out.read(), err.read())
+
+
 def _run(command: list[str], cwd: Path, expected_returncode: int = 0) -> subprocess.CompletedProcess[str]:
-    completed = subprocess.run(command, cwd=cwd, capture_output=True, text=True, check=False)
+    completed = _capture(command, cwd)
     if completed.returncode != expected_returncode:
         raise AssertionError(
             f"Command failed: {' '.join(command)}\n"
@@ -99,12 +113,7 @@ def _write_dotnet_global_json(output_root: Path) -> None:
     if repo_global_json.exists():
         preferred_version = json.loads(repo_global_json.read_text(encoding="utf-8")).get("sdk", {}).get("version")
 
-    completed = subprocess.run(
-        ["dotnet", "--list-sdks"],
-        capture_output=True,
-        text=True,
-        check=False,
-    )
+    completed = _capture(["dotnet", "--list-sdks"])
     if completed.returncode != 0:
         return
 
@@ -256,7 +265,7 @@ def _verify_dotnet(case: dict) -> None:
     state_file = output_root / vars_data["state_file_name"]
 
     _write_dotnet_global_json(output_root)
-    _run(["dotnet", "build", "-nologo"], cwd=output_root)
+    _run(["dotnet", "build", "-nologo", "--disable-build-servers"], cwd=output_root)
 
     set_result = _run(
         ["dotnet", "run", "--no-build", "--", "--json", "--state-file", str(state_file), vars_data["set_command_name"], "--mode", "active"],

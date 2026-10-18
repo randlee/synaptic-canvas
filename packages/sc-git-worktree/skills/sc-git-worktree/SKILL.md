@@ -1,5 +1,5 @@
 ---
-name: sc-managing-worktrees
+name: sc-git-worktree
 description:
   Create, manage, scan, update, and clean up git worktrees for parallel development with protected branch safeguards.
   Use when working on multiple branches simultaneously, isolating experiments, updating protected branches (main/develop),
@@ -52,7 +52,8 @@ To invoke an agent, use the Task tool with the agent prompt and pass parameters 
 
 A stack layer is a worktree whose branch will be a PR in a `gh stack`. The plain create is wrong for it: it branches from the **local** base ref (possibly stale or another writer's unpushed state) and, from a remote ref, would leave the parent as upstream. `sc-worktree-create-stacked` cuts from `origin/<parent>` with `--no-track`, refuses bad cuts before touching anything (parent not pushed, already landed, insert target not stacked on the parent), records the parent SHA in tracking, and returns a `stack_handoff` block.
 
-- `stack_handoff.writer` goes verbatim to the agent that will work in the worktree (WIP commit, first push with `-u`, at most one rebase at task start, no edits to lower layers, no gh stack write commands). `stack_handoff.stack_writer` goes to the stack writer only (PR with base = parent, `gh stack checkout` in the new worktree, link on top, or the insert sequence: merge-forward by every layer above, unstack, `gh pr edit --base`, full relink).
+- `stack_handoff.writer` goes verbatim to the agent that will work in the worktree (WIP commit, first push with `-u`, at most one rebase at task start, no edits to lower layers, no gh stack write commands). `stack_handoff.stack_writer` goes to the stack writer only (PR with base = parent, reuse sufficient complete composition/exact-head evidence, link on top, or the insert sequence: merge-forward by every layer above, unstack, `gh pr edit --base`, full relink). Explicit-number link/full link needs no per-worktree checkout; import local tracking only where a later operation requires it. Reconcile mutation responses and acquire only missing affected facts with a scoped view.
+- Record the numeric stack number returned by link/relink. Only if complete composition/base evidence remains missing, use `/sc-gh-stack-view --stack <returned-stack#> --refresh`; selecting the new branch cannot discover it without a qualified local catalog that already records its number.
 - Cleanup refuses to delete a branch that live layers sit on unless git shows a merge-commit landing in the trunk (`STACK.HAS_CHILDREN`; batch cleanup reports `stack_blocked`, and never sweeps a fresh layer with no commits). Abort always refuses. Both read the tracking file.
 - Scan reports `stack_parent_advanced` (layer no longer contains the parent's head) and `stack_parent_landed` (PR should now target the trunk) on layer rows.
 
@@ -60,7 +61,7 @@ Details and the handoff contract: `references/stack-layers.md`. The stack model,
 
 ## Standards and Paths
 - Repo root: current directory.
-- Default worktree base: `../{{REPO_NAME}}-worktrees`.
+- Default worktree base: `../<repo-name>-worktrees` where `<repo-name>` is the basename of the repo root directory, derived at runtime via `basename $(git rev-parse --show-toplevel)` (e.g. repo `my-project` → `../my-project-worktrees`).
 - Worktrees live in `<worktree_base>/<branch>`.
 - Tracking file (if used): `<worktree_base>/worktree-tracking.jsonl` must be updated on create/scan/cleanup/abandon. Allow a toggle to disable tracking for repos that don't use it.
 - Naming: worktree directory = branch name; branch naming follows repo policy.
