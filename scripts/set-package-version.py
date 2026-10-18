@@ -301,6 +301,15 @@ def flatten_requires(requires: object) -> list[str]:
     return []
 
 
+def is_local_marketplace_plugin(plugin: dict) -> bool:
+    """Return True if a marketplace entry is backed by this repo's packages/ dir."""
+    source = plugin.get('source')
+    if isinstance(source, str):
+        normalized = source.strip()
+        return normalized.startswith('./packages/') or normalized.startswith('packages/')
+    return False
+
+
 def regenerate_marketplace_json(repo_root: Path, dry_run: bool = False) -> list[str]:
     """Regenerate .claude-plugin/marketplace.json from package manifests."""
     updated_files = []
@@ -358,6 +367,14 @@ def regenerate_marketplace_json(repo_root: Path, dry_run: bool = False) -> list[
         plugin['keywords'] = manifest.get('tags', plugin.get('keywords', []))
         plugin['category'] = manifest.get('category', plugin.get('category', 'tools'))
         plugins.append(plugin)
+
+    # Forwarded entries (e.g. git-subdir sources hosted in other repos) have no
+    # local manifest; keep them as-is instead of dropping them on regeneration.
+    regenerated = {plugin['name'] for plugin in plugins}
+    for name, plugin in existing_plugins.items():
+        if name not in regenerated and not is_local_marketplace_plugin(plugin):
+            plugins.append(plugin)
+    plugins.sort(key=lambda plugin: plugin['name'])
 
     marketplace['plugins'] = plugins
 
