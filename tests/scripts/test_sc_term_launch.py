@@ -198,7 +198,8 @@ def test_apply_atm_env_prefix_posix():
     )
     assert (
         command
-        == "export ATM_TEAM=annotations-test && export ATM_IDENTITY=alice && claude --model sonnet"
+        == "export ATM_TEAM=annotations-test && export ATM_IDENTITY=alice"
+        " && export BEADS_ACTOR=alice && claude --model sonnet"
     )
 
 
@@ -211,7 +212,8 @@ def test_apply_atm_env_prefix_powershell():
     )
     assert (
         command
-        == "$env:ATM_TEAM = 'annotations-test'; $env:ATM_IDENTITY = 'alice'; & 'claude' '--model' 'sonnet'"
+        == "$env:ATM_TEAM = 'annotations-test'; $env:ATM_IDENTITY = 'alice';"
+        " $env:BEADS_ACTOR = 'alice'; & 'claude' '--model' 'sonnet'"
     )
 
 
@@ -243,6 +245,19 @@ def test_resolve_identity_uses_codex_model_pool(monkeypatch, model):
     pool_model = "sol" if model == "codex" else model
     assert name in sc_term_launch._IDENTITY_NAMES[pool_model]
     assert len(suffix) == 4
+
+
+def test_identity_generator_is_the_shared_agent_identity_module(monkeypatch):
+    import agent_identity
+
+    assert sc_term_launch.resolve_identity is agent_identity.resolve_identity
+    assert sc_term_launch._IDENTITY_NAMES is agent_identity._IDENTITY_NAMES
+    monkeypatch.setattr(agent_identity.secrets, "choice", lambda pool: pool[0])
+    monkeypatch.setattr(agent_identity.secrets, "token_hex", lambda nbytes: "beef")
+    assert sc_term_launch.resolve_identity(None, "codex") == "Smith-beef"
+    assert sc_term_launch.resolve_identity(None, "opus") == "Orion-beef"
+    assert sc_term_launch.resolve_identity(None, "unknown-family") == "Amber-beef"
+    assert sc_term_launch.resolve_identity("alice", "opus") == "alice"
 
 
 def test_generate_ulid_and_session_path():
@@ -340,8 +355,9 @@ def test_launch_cmux_creates_focused_workspace(monkeypatch):
 # --- ATM team / identity handling across every launch path and backend -----
 
 PARENT_IDENTITY = "Parent-1234"
-POSIX_CLEAR = "unset ATM_IDENTITY"
-POWERSHELL_CLEAR = "Remove-Item Env:ATM_IDENTITY -ErrorAction SilentlyContinue"
+PARENT_ACTOR = "Parent-Actor"  # the parent's BEADS_ACTOR (bd audit/slot attribution)
+POSIX_CLEAR = "unset ATM_IDENTITY BEADS_ACTOR"
+POWERSHELL_CLEAR = "Remove-Item Env:ATM_IDENTITY,Env:BEADS_ACTOR -ErrorAction SilentlyContinue"
 
 # (subcommand argv, handler name) for every path that builds a child command.
 LAUNCH_PATHS = [
@@ -435,16 +451,20 @@ def test_no_team_launch_clears_inherited_identity_on_every_backend(
 ):
     monkeypatch.delenv("ATM_TEAM", raising=False)
     monkeypatch.setenv("ATM_IDENTITY", PARENT_IDENTITY)
+    monkeypatch.setenv("BEADS_ACTOR", PARENT_ACTOR)
     result = launch_harness(argv, handler, terminal)
 
-    assert PARENT_IDENTITY not in result["child"]
-    assert PARENT_IDENTITY not in result["rendered"]
+    for parent_value in (PARENT_IDENTITY, PARENT_ACTOR):
+        assert parent_value not in result["child"]
+        assert parent_value not in result["rendered"]
     if terminal == "wt":
         assert result["child"].startswith(POWERSHELL_CLEAR + "; ")
         assert "$env:ATM_" not in result["child"]
+        assert "$env:BEADS_ACTOR" not in result["child"]
     else:
         assert result["child"].startswith(POSIX_CLEAR + " && ")
         assert "export ATM_" not in result["child"]
+        assert "export BEADS_ACTOR" not in result["child"]
     # ATM_TEAM is neither set nor removed in the child.
     assert "ATM_TEAM" not in result["child"]
     assert result["add_member"] == []
@@ -452,6 +472,7 @@ def test_no_team_launch_clears_inherited_identity_on_every_backend(
     # spawned backends inherit) no longer carries the parent's identity.
     assert all(env is None for env in result["envs"])
     assert "ATM_IDENTITY" not in sc_term_launch.os.environ
+    assert "BEADS_ACTOR" not in sc_term_launch.os.environ
 
 
 @pytest.mark.parametrize("terminal", ["wezterm", "wt"])
@@ -459,13 +480,16 @@ def test_no_team_never_removes_inherited_atm_team(monkeypatch, launch_harness, t
     # A blank ATM_TEAM resolves to "no team"; it is left exactly as inherited.
     monkeypatch.setenv("ATM_TEAM", "   ")
     monkeypatch.setenv("ATM_IDENTITY", PARENT_IDENTITY)
+    monkeypatch.setenv("BEADS_ACTOR", PARENT_ACTOR)
     result = launch_harness(*LAUNCH_PATHS[0], terminal)
 
     assert "ATM_TEAM" not in result["child"]
     assert PARENT_IDENTITY not in result["rendered"]
+    assert PARENT_ACTOR not in result["rendered"]
     assert result["add_member"] == []
     assert sc_term_launch.os.environ["ATM_TEAM"] == "   "
     assert "ATM_IDENTITY" not in sc_term_launch.os.environ
+    assert "BEADS_ACTOR" not in sc_term_launch.os.environ
 
 
 @pytest.mark.parametrize(("argv", "handler"), LAUNCH_PATHS, ids=PATH_IDS)
@@ -489,15 +513,24 @@ def test_team_launch_registers_and_exports_explicit_identity(
 ):
     monkeypatch.setenv("ATM_TEAM", "atm-core")
     monkeypatch.setenv("ATM_IDENTITY", PARENT_IDENTITY)
+    monkeypatch.setenv("BEADS_ACTOR", PARENT_ACTOR)
     result = launch_harness(argv, handler, terminal, identity="alice")
 
+    # BEADS_ACTOR tracks the child's ATM_IDENTITY exactly.
     if terminal == "wt":
-        assert "$env:ATM_TEAM = 'atm-core'; $env:ATM_IDENTITY = 'alice'; " in result["child"]
+        assert (
+            "$env:ATM_TEAM = 'atm-core'; $env:ATM_IDENTITY = 'alice'; $env:BEADS_ACTOR = 'alice'; "
+            in result["child"]
+        )
         assert "Remove-Item" not in result["child"]
     else:
-        assert "export ATM_TEAM=atm-core && export ATM_IDENTITY=alice && " in result["child"]
+        assert (
+            "export ATM_TEAM=atm-core && export ATM_IDENTITY=alice && export BEADS_ACTOR=alice && "
+            in result["child"]
+        )
         assert "unset" not in result["child"]
     assert PARENT_IDENTITY not in result["rendered"]
+    assert PARENT_ACTOR not in result["rendered"]
     assert sc_term_launch.os.environ["ATM_TEAM"] == "atm-core"
     (add_member,) = result["add_member"]
     assert add_member[3:5] == ["atm-core", "alice"]
@@ -510,14 +543,19 @@ def test_team_launch_without_identity_never_reuses_inherited_identity(
 ):
     monkeypatch.setenv("ATM_TEAM", "atm-core")
     monkeypatch.setenv("ATM_IDENTITY", PARENT_IDENTITY)
+    monkeypatch.setenv("BEADS_ACTOR", PARENT_ACTOR)
     result = launch_harness(argv, handler, "wezterm")
 
     (add_member,) = result["add_member"]
     identity = add_member[4]
     assert identity != PARENT_IDENTITY
-    assert PARENT_IDENTITY not in result["child"]
-    assert PARENT_IDENTITY not in result["rendered"]
-    assert f"export ATM_TEAM=atm-core && export ATM_IDENTITY={identity} && " in result["child"]
+    for parent_value in (PARENT_IDENTITY, PARENT_ACTOR):
+        assert parent_value not in result["child"]
+        assert parent_value not in result["rendered"]
+    assert (
+        f"export ATM_TEAM=atm-core && export ATM_IDENTITY={identity}"
+        f" && export BEADS_ACTOR={identity} && " in result["child"]
+    )
 
 
 def test_team_launch_generates_pool_identity(monkeypatch, launch_harness):
@@ -530,16 +568,18 @@ def test_team_launch_generates_pool_identity(monkeypatch, launch_harness):
 def test_resolve_atm_member_without_team_returns_nothing(monkeypatch):
     monkeypatch.delenv("ATM_TEAM", raising=False)
     monkeypatch.setenv("ATM_IDENTITY", PARENT_IDENTITY)
+    monkeypatch.setenv("BEADS_ACTOR", PARENT_ACTOR)
     assert sc_term_launch.resolve_atm_member(None, "opus") == (None, None)
     assert "ATM_IDENTITY" not in sc_term_launch.os.environ
+    assert "BEADS_ACTOR" not in sc_term_launch.os.environ
 
 
 def test_apply_atm_env_prefix_without_team_clears_atm_vars():
     assert (
         sc_term_launch.apply_atm_env_prefix("claude", "wezterm", None, "alice")
-        == "unset ATM_IDENTITY && claude"
+        == "unset ATM_IDENTITY BEADS_ACTOR && claude"
     )
     assert (
         sc_term_launch.apply_atm_env_prefix("& 'claude'", "wt", None, "alice")
-        == "Remove-Item Env:ATM_IDENTITY -ErrorAction SilentlyContinue; & 'claude'"
+        == "Remove-Item Env:ATM_IDENTITY,Env:BEADS_ACTOR -ErrorAction SilentlyContinue; & 'claude'"
     )

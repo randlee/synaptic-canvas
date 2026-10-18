@@ -5,6 +5,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.14.2] - 2026-10-17
+### Changed
+- A team member launching without `atm_identity` now gets a new agent: when the
+  parent has `ATM_TEAM` and the launch has tools (`isolation.tools` is not
+  `none`), the runtime generates an identity from the model family's name pool
+  (the pools sc-launch-term uses, now shared as `agent_identity.py`), registers
+  it with `atm teams add-member`, and runs the child in teammate mode
+  (`ATM_TEAM`, `ATM_IDENTITY` and `BEADS_ACTOR` set). The identity is returned in
+  `data.atm_identity`. Previously the child got the team but no identity. An
+  explicit `atm_identity` works as before; `tools: none` and launches without a
+  team generate and register nothing.
+
+### Fixed
+- `BEADS_ACTOR` now tracks the child's `ATM_IDENTITY` exactly. `bd` (beads)
+  attributes audit-trail entries and slot holders to `$BEADS_ACTOR`, so a child
+  that inherited the parent's value misattributed its work to the parent. In
+  teammate mode `BEADS_ACTOR` is set to the registered identity; otherwise it is
+  dropped alongside `ATM_IDENTITY` (also when it comes from `env_file`).
+  `ATM_TEAM` is still never touched.
+
 ## [0.14.1] - 2026-10-17
 ### Fixed
 - Outside teammate mode the child keeps an inherited `ATM_TEAM` and only

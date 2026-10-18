@@ -41,14 +41,34 @@ def test_teammate_mode_needs_team_and_identity(env, identity, expected):
     assert resolve_teammate_mode(env, identity) == expected
 
 
+def test_teammate_mode_generates_identity_for_a_team_member_without_one(monkeypatch):
+    import agent_identity
+
+    monkeypatch.setattr(agent_identity.secrets, "choice", lambda pool: pool[0])
+    monkeypatch.setattr(agent_identity.secrets, "token_hex", lambda nbytes: "0a0b")
+    parent = {"ATM_TEAM": "t", "ATM_IDENTITY": "Parent-1234", "BEADS_ACTOR": "Parent-Actor"}
+    # Team, no atm_identity: a new identity from the family's pool, never the parent's.
+    assert resolve_teammate_mode(parent, None, "opus") == (True, "t", "Orion-0a0b")
+    assert resolve_teammate_mode(parent, "  ", "sol") == (True, "t", "Smith-0a0b")
+    # An explicit identity is used as given.
+    assert resolve_teammate_mode(parent, "r1", "opus") == (True, "t", "r1")
+    # No pool (isolation.tools='none'): nothing is generated, not a teammate.
+    assert resolve_teammate_mode(parent, None, None) == (False, None, None)
+    # No team: nothing is generated.
+    assert resolve_teammate_mode({"ATM_IDENTITY": "Parent-1234"}, None, "opus") == (False, None, None)
+
+
 def test_child_env_sets_or_clears_atm_vars():
-    parent = {"ATM_TEAM": "t", "ATM_IDENTITY": "lead", "KEEP": "1"}
-    # Not teammate mode: the parent's identity is dropped, its team is kept.
+    parent = {"ATM_TEAM": "t", "ATM_IDENTITY": "lead", "BEADS_ACTOR": "Parent-Actor", "KEEP": "1"}
+    teammate = {"KEEP": "1", "ATM_TEAM": "t", "ATM_IDENTITY": "r1", "BEADS_ACTOR": "r1"}
+    # Not teammate mode: the parent's identity and BEADS_ACTOR are dropped, its team is kept.
     assert build_child_env(parent, False, None, None) == {"KEEP": "1", "ATM_TEAM": "t"}
     assert build_child_env({"ATM_IDENTITY": "lead", "KEEP": "1"}, False, None, None) == {"KEEP": "1"}
-    assert build_child_env({"KEEP": "1"}, True, "t", "r1") == {"KEEP": "1", "ATM_TEAM": "t", "ATM_IDENTITY": "r1"}
-    # Teammate mode replaces an inherited identity with the registered one.
-    assert build_child_env(parent, True, "t", "r1") == {"KEEP": "1", "ATM_TEAM": "t", "ATM_IDENTITY": "r1"}
+    assert build_child_env({"BEADS_ACTOR": "Parent-Actor", "KEEP": "1"}, False, None, None) == {"KEEP": "1"}
+    # Teammate mode: BEADS_ACTOR equals the registered ATM_IDENTITY.
+    assert build_child_env({"KEEP": "1"}, True, "t", "r1") == teammate
+    # Teammate mode replaces an inherited identity and BEADS_ACTOR with the registered one.
+    assert build_child_env(parent, True, "t", "r1") == teammate
 
 
 # --- payload rules -----------------------------------------------------------

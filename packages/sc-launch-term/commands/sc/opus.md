@@ -13,7 +13,7 @@ Parse from `$ARGUMENTS`:
 - `--terminal <name>` optional explicit backend. Default: `auto`.
 - `--tab` optional request for a new tab instead of a new window when supported.
 - `--tmux` optional tmux session flow using the session name `"{folder} - opus"`.
-- `--identity <name>` optional; only meaningful when `ATM_TEAM` is set. With `ATM_TEAM` set, the launcher exports `ATM_TEAM` and `ATM_IDENTITY=<name>` into the launched session, generating a name from the opus identity pool when omitted. Without `ATM_TEAM`, no `ATM_IDENTITY` is generated, registered or exported, an inherited `ATM_IDENTITY` is cleared in the launched session (`ATM_TEAM` is left alone), and a supplied `--identity` is ignored with a warning.
+- `--identity <name>` optional; only meaningful when `ATM_TEAM` is set. With `ATM_TEAM` set, the launcher exports `ATM_TEAM`, `ATM_IDENTITY=<name>` and `BEADS_ACTOR=<name>` (the same name, so `bd` attributes the child's work to it) into the launched session, generating a name from the opus identity pool when omitted. Without `ATM_TEAM`, no `ATM_IDENTITY` or `BEADS_ACTOR` is generated, registered or exported, an inherited `ATM_IDENTITY` and `BEADS_ACTOR` are cleared in the launched session (`ATM_TEAM` is left alone), and a supplied `--identity` is ignored with a warning.
 - `--effort <level>` optional reasoning effort: `low`, `medium`, `high`, `xhigh`, or `max` (passed as `--effort <level>`). Default: Claude's own.
 - `-- <claude args...>` optional passthrough Claude CLI arguments. Everything after `--` is forwarded to `claude`.
 

@@ -130,3 +130,18 @@ def roster_model(payload: LaunchpadInput, model: Optional[str]) -> str:
     if payload.tool == "gemini" or model is None:
         return payload.tool
     return agent_models.alias_for(payload.tool, model) or model
+
+
+def identity_family(payload: LaunchpadInput, model: Optional[str]) -> str:
+    """Identity pool key for a generated teammate name, keyed like sc-launch-term.
+
+    The family alias (`opus`, `sol`, ...), or the family inside a full id with no
+    alias (claude-opus-4-1 -> opus, gpt-6-sol -> sol). A 1M-context suffix is ignored.
+    """
+    label = roster_model(payload, model)
+    if label.endswith(agent_models.CLAUDE_1M):
+        label = label[: -len(agent_models.CLAUDE_1M)]
+    if label == payload.tool or label in agent_models.ALIASES.get(payload.tool, {}):
+        return label
+    parts = label.split("-")
+    return parts[1] if payload.tool == "claude" and len(parts) > 1 else parts[-1]

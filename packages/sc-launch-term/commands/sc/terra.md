@@ -20,7 +20,7 @@ For `--tmux`, use `launch-codex-model terra ... --tmux "<session>"` and
 `attach-pane-codex-model "<session>" terra --cwd "<resolved_dir>" ...` in place of the
 Claude subcommands.
 
-With `ATM_TEAM` set, a missing identity is drawn from the Terra sci-fi/cyberpunk name pool; without `ATM_TEAM`, no identity is generated or exported and `--identity` is ignored with a warning. The launched command is:
+With `ATM_TEAM` set, the identity is exported as both `ATM_IDENTITY` and `BEADS_ACTOR`, and a missing identity is drawn from the Terra sci-fi/cyberpunk name pool; without `ATM_TEAM`, no identity is generated or exported, an inherited `ATM_IDENTITY` and `BEADS_ACTOR` are cleared, and `--identity` is ignored with a warning. The launched command is:
 
 ```text
 codex --model gpt-5.6-terra --yolo --enable hooks

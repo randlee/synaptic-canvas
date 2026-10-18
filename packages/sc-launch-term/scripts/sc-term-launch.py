@@ -17,15 +17,17 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import agent_models  # noqa: E402
-from launch_term_shared import (
+from agent_identity import (  # noqa: E402
     _IDENTITY_NAMES,  # noqa: F401 - retained as a module-level identity-pool view
+    resolve_identity,
+)
+from launch_term_shared import (  # noqa: E402
     build_claude_session_record_path,
     build_codex_session_record_path,
     generate_ulid,
     normalize_passthrough_args,
     quote_powershell,
     quote_shell,
-    resolve_identity,
     resolve_team,
     shell_mode_for_terminal,
 )
@@ -522,6 +524,12 @@ def apply_env_prefix(
     return " && ".join(exports + [command])
 
 
+# Variables that name the launched session's agent. They are set together from
+# the ATM identity (BEADS_ACTOR attributes `bd` audit entries and slot holders)
+# and are cleared together when there is no identity.
+ATM_CHILD_IDENTITY_VARS = ("ATM_IDENTITY", "BEADS_ACTOR")
+
+
 def resolve_atm_member(
     explicit_identity: str | None, pool_key: str | None
 ) -> tuple[str | None, str | None]:
@@ -529,9 +537,10 @@ def resolve_atm_member(
 
     With no ATM team there is no identity: none is generated or registered, an
     explicit `--identity` is ignored with a warning, and an inherited
-    `ATM_IDENTITY` (the parent's) is dropped from this process's environment, so
-    backends that spawn the child with the launcher's environment (wezterm, wt,
-    cmux, osascript, tmux) cannot pass it on. ATM_TEAM is never touched.
+    `ATM_IDENTITY` and `BEADS_ACTOR` (the parent's) are dropped from this
+    process's environment, so backends that spawn the child with the launcher's
+    environment (wezterm, wt, cmux, osascript, tmux) cannot pass them on.
+    ATM_TEAM is never touched.
     """
     team = resolve_team()
     if not team:
@@ -540,7 +549,8 @@ def resolve_atm_member(
                 f"ignoring --identity {explicit_identity}: ATM_TEAM is not set, "
                 "so no ATM identity is exported"
             )
-        os.environ.pop("ATM_IDENTITY", None)
+        for name in ATM_CHILD_IDENTITY_VARS:
+            os.environ.pop(name, None)
         return None, None
     return team, resolve_identity(explicit_identity, pool_key)
 
@@ -550,15 +560,18 @@ def atm_child_env(
 ) -> tuple[dict[str, str], tuple[str, ...]]:
     """ATM variables to set in the child, and the ones to clear there.
 
-    With a team, export ATM_TEAM and ATM_IDENTITY. Without one, clear only
-    ATM_IDENTITY, so a shell, terminal or tmux server that inherited the parent's
-    identity does not keep it. ATM_TEAM is never cleared.
+    With a team, export ATM_TEAM, ATM_IDENTITY and BEADS_ACTOR (equal to the
+    identity, so `bd` attributes the child's work to the child). Without one,
+    clear only ATM_IDENTITY and BEADS_ACTOR, so a shell, terminal or tmux server
+    that inherited the parent's identity does not keep it. ATM_TEAM is never
+    cleared.
     """
     if not team:
-        return {}, ("ATM_IDENTITY",)
+        return {}, ATM_CHILD_IDENTITY_VARS
     env_vars = {"ATM_TEAM": team}
     if identity:
-        env_vars["ATM_IDENTITY"] = identity
+        for name in ATM_CHILD_IDENTITY_VARS:
+            env_vars[name] = identity
     return env_vars, ()
 
 

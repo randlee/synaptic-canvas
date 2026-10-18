@@ -5,6 +5,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.14.2] - 2026-10-17
+### Fixed
+- `BEADS_ACTOR` now tracks the launched session's `ATM_IDENTITY` exactly. `bd`
+  (beads) attributes audit-trail entries and slot holders to `$BEADS_ACTOR`, so a
+  child that inherited the parent's value misattributed its work to the parent.
+  With `ATM_TEAM` set, `BEADS_ACTOR` is exported with the same explicit or
+  generated identity as `ATM_IDENTITY`. Without `ATM_TEAM`, an inherited
+  `BEADS_ACTOR` is cleared alongside `ATM_IDENTITY` in the launched session
+  (`unset ATM_IDENTITY BEADS_ACTOR` / `Remove-Item Env:ATM_IDENTITY,Env:BEADS_ACTOR`)
+  on every backend and path, and dropped from the launcher's own environment.
+  `ATM_TEAM` is still never touched.
+
+### Changed
+- The identity name pools and generator moved from `launch_term_shared.py` to the
+  shared `agent_identity.py` (also used by sc-launchpad). Generated names are
+  unchanged.
+
 ## [0.14.1] - 2026-10-17
 ### Fixed
 - With no ATM team (`ATM_TEAM` unset), launches no longer generate, register

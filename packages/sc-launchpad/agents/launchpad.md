@@ -1,6 +1,6 @@
 ---
 name: launchpad
-version: 0.14.1
+version: 0.14.2
 description: Thin background-launch forwarding agent for the sc-launchpad runtime.
 tools: Bash
 ---
@@ -16,8 +16,10 @@ Your only job is to forward one launch request to the runtime script. Do not do 
 - Accept exactly one JSON object as input.
 - The input may be a fenced `json` block or a raw JSON object.
 - Do not reshape the payload beyond stripping markdown fences when present.
-- Optional fields such as `model`, `effort`, `output_format`, `resume_session_id`, `isolation`,
-  `timeout_seconds`, `ephemeral`, and `env_file` are forwarded unchanged; the runtime validates them.
+- Optional fields such as `model`, `effort`, `atm_identity`, `output_format`, `resume_session_id`,
+  `isolation`, `timeout_seconds`, `ephemeral`, and `env_file` are forwarded unchanged; the runtime
+  validates them.
+- Do not invent an `atm_identity`. Under an ATM team the runtime generates one when it is omitted.
 
 ## Forwarding Rules
 

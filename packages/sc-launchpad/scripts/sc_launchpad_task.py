@@ -35,7 +35,13 @@ from launchpad_commands import (  # noqa: E402
     isolation_flags,
 )
 from launchpad_env import load_env_file  # noqa: E402
-from launchpad_models import LaunchFailure, LaunchpadInput, normalize_tool_model, roster_model  # noqa: E402
+from launchpad_models import (  # noqa: E402
+    LaunchFailure,
+    LaunchpadInput,
+    identity_family,
+    normalize_tool_model,
+    roster_model,
+)
 from launchpad_output import classify, tail  # noqa: E402
 from launchpad_process import run_process  # noqa: E402
 from launchpad_shared import build_child_env, resolve_teammate_mode  # noqa: E402
@@ -167,14 +173,17 @@ def run_payload(payload: LaunchpadInput, parent_env: Dict[str, str]) -> dict:
     given_cwd = None if payload.temp_cwd else resolve_given_cwd(payload.cwd or "")
     env_file, env_keys = None, []
     if payload.env_file:
-        # The file wins over inherited variables; launchpad's own (ATM_*, an isolated
-        # CODEX_HOME) are applied after it and win over both.
+        # The file wins over inherited variables; launchpad's own (ATM_*, BEADS_ACTOR,
+        # an isolated CODEX_HOME) are applied after it and win over both.
         base = given_cwd or Path(parent_env.get("CLAUDE_PROJECT_DIR") or os.getcwd())
         parent_env, env_file, env_keys = load_env_file(payload.env_file, base, parent_env)
     command = build_command(payload, model)
     executable = which(payload.tool, parent_env)
     check_batch_shim(executable, [executable] + command.argv[1:])
-    teammate_mode, team, identity = resolve_teammate_mode(parent_env, payload.atm_identity)
+    # A team member launched without `atm_identity` gets a generated identity, so the
+    # child is its own addressable agent; a tools-less child never joins the team.
+    identity_pool = None if payload.no_tools else identity_family(payload, model)
+    teammate_mode, team, identity = resolve_teammate_mode(parent_env, payload.atm_identity, identity_pool)
 
     cwd = given_cwd or create_temp_cwd()
     # Paths this launch's sessions leave behind; the caller deletes them after the last turn.

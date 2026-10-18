@@ -1,7 +1,7 @@
 {
   "name": "sc-launchpad",
   "description": "Launch Claude (including Fable), Codex (including Astra, Sol, Terra, and Luna), or Gemini as a separate background sub-agent runtime with explicit ATM teammate-mode normalization and roster registration.",
-  "version": "0.14.1",
+  "version": "0.14.2",
   "author": {
     "name": "synaptic-canvas"
   },
@@ -25,6 +25,7 @@
     "./skills/launchpad/SKILL.md"
   ],
   "scripts": [
+    "./scripts/agent_identity.py",
     "./scripts/agent_models.py",
     "./scripts/launchpad_commands.py",
     "./scripts/launchpad_models.py",

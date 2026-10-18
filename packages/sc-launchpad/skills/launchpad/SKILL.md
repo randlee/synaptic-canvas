@@ -1,6 +1,6 @@
 ---
 name: launchpad
-version: 0.14.1
+version: 0.14.2
 description: "Use when another workflow must launch Claude, Codex, or Gemini as a separate background sub-agent without opening a terminal. Spawns the `launchpad` agent with fenced JSON input and `run_in_background: true`."
 ---
 
@@ -45,7 +45,7 @@ Required fields:
 Optional fields:
 - `model`: alias or full id (claude default `fable`, codex default `sol`; see README)
 - `effort`: reasoning effort (claude `low`..`max`, codex `low`..`ultra`); omit for the CLI default
-- `atm_identity`
+- `atm_identity`: the child's ATM identity; under an `ATM_TEAM` it is generated when omitted (see ATM Rules)
 - `extra_args`
 - `output_format`: `"text"` or `"json"` (structured mode; returns `session_id` and `result_text`)
 - `resume_session_id`: continue a claude/codex session; requires an explicit `isolation` object
@@ -88,17 +88,23 @@ Claude aliases: `fable`, `opus`, `sonnet`, `haiku`. Codex aliases: `sol`, `astra
 
 ## ATM Rules
 
-Teammate mode is enabled only when both conditions are true:
+Teammate mode is enabled when both conditions are true:
 
 1. The parent environment contains `ATM_TEAM`
-2. The JSON payload includes `atm_identity`
+2. The launch has tools (`isolation.tools` is not `"none"`)
+
+The identity is the payload's `atm_identity`, or, when it is omitted, a new identity
+generated from the model family's name pool (same pools as sc-launch-term). A team
+member therefore always launches a distinct agent that can receive messages and beads,
+never one using the parent's identity. The identity is returned in `data.atm_identity`.
 
 Then the runtime:
 - runs `atm teams add-member <team> <identity> --model <tool-or-model> --cwd <cwd>`
-- launches the child with both `ATM_TEAM` and `ATM_IDENTITY` set
+- launches the child with both `ATM_TEAM` and `ATM_IDENTITY` set, and `BEADS_ACTOR` set to the same identity (so `bd` attributes the child's work to the child)
 
-Otherwise the runtime:
-- clears `ATM_IDENTITY` (the child must never take on the parent's identity)
+Otherwise (no `ATM_TEAM`, or `isolation.tools: "none"`) the runtime:
+- generates and registers nothing
+- clears `ATM_IDENTITY` and `BEADS_ACTOR` (the child must never take on the parent's identity)
 - keeps an inherited `ATM_TEAM` (the child is still part of the parent's team)
 - launches as a plain background agent, without registering a member
 

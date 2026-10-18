@@ -11,6 +11,7 @@ opening a visible terminal window.
 - `scripts/launchpad_models.py`, `launchpad_commands.py`, `launchpad_process.py`, `launchpad_output.py`, `launchpad_env.py`
 - `scripts/launchpad_shared.py`
 - `scripts/agent_models.py` (shared model table; synced from `packages/shared/scripts`)
+- `scripts/agent_identity.py` (shared ATM identity name pools; synced from `packages/shared/scripts`)
 
 ## What It Does
 
@@ -33,24 +34,31 @@ stderr, and teammate-mode state.
 
 ## ATM Teammate Mode
 
-Teammate mode is enabled only when:
+Teammate mode is enabled when the parent environment includes `ATM_TEAM` and the
+launch has tools (`isolation.tools` is not `"none"`). The child's identity is:
 
-1. the parent environment includes `ATM_TEAM`
-2. the payload includes `atm_identity`
+- the payload's `atm_identity`, when given;
+- otherwise a new identity generated from the model family's name pool (the same
+  pools as sc-launch-term, e.g. `Orion-3f2a` for `opus`, `Smith-9c01` for `sol`), so a
+  team member always launches a distinct agent that can receive messages and beads.
+  It is never the parent's identity, and it is returned in `data.atm_identity`.
 
-When both are present, the runtime:
+In teammate mode the runtime:
 
 - runs `atm teams add-member <team> <identity> --model <tool-or-model> --cwd <cwd>`
-- launches the child process with both `ATM_TEAM` and `ATM_IDENTITY` set
+- launches the child process with `ATM_TEAM` and `ATM_IDENTITY` set, and `BEADS_ACTOR`
+  set to the same identity, so `bd` (beads) attributes the child's audit-trail entries
+  and slot holds to the child
 
-Otherwise, the runtime clears `ATM_IDENTITY` before spawning the child, so the child
-never takes on the parent's identity, and keeps an inherited `ATM_TEAM`, because the
-child is still part of the parent's team. No member is registered.
+Otherwise (no `ATM_TEAM`, or `isolation.tools: "none"`), nothing is generated or
+registered: the runtime clears `ATM_IDENTITY` and `BEADS_ACTOR` before spawning the
+child, so the child never takes on the parent's identity, and keeps an inherited
+`ATM_TEAM`, because the child is still part of the parent's team.
 
 ## Security and Runtime Notes
 
 - `sc-launchpad` launches only locally installed `claude`, `codex`, or `gemini` executables.
-- The runtime preserves most of the parent environment, but explicitly normalizes `ATM_IDENTITY` (set in teammate mode, cleared otherwise) so the parent's identity never leaks into the child. `ATM_TEAM` is kept.
+- The runtime preserves most of the parent environment, but explicitly normalizes `ATM_IDENTITY` and `BEADS_ACTOR` (both set to the registered identity in teammate mode, both cleared otherwise) so the parent's identity never leaks into the child. `ATM_TEAM` is kept.
 - The `launchpad` agent is intentionally thin: it should make one runtime call and return the runtime stdout exactly as emitted.
 - The runtime expects absolute working-directory paths in launch payloads.
 - Structured, resumable, and isolated launches are described in "Sessions, Resume, and Isolation" below.
@@ -117,7 +125,7 @@ the prompt on stdin in every mode (see "Prompt delivery").
 | `env_file` | string | Dotenv file loaded into the child's environment (see [env_file](#env_file)). Omitted: the inherited environment is used unchanged. |
 
 `cwd` is required unless `isolation.cwd` is `"temp"`, and must be omitted then.
-`isolation.tools: "none"` rejects `extra_args` and `atm_identity`.
+`isolation.tools: "none"` rejects `extra_args` and `atm_identity`, and never generates an identity.
 
 **Prompt delivery.** claude and codex always get the prompt on stdin
 (`claude --print` with no positional prompt; `codex exec ... -`), never on the
@@ -274,7 +282,7 @@ launchpad starts `claude`/`codex`/`gemini` directly, so a shell alias that loads
   root, so a linked worktree finds the `.env` that lives only in the main checkout.
   The first file that exists wins.
 - **Precedence.** Inherited environment < `env_file` < launchpad's own variables
-  (`ATM_TEAM`/`ATM_IDENTITY` normalization, the private `CODEX_HOME` of
+  (`ATM_TEAM`/`ATM_IDENTITY`/`BEADS_ACTOR` normalization, the private `CODEX_HOME` of
   `isolation.tools: "none"` codex runs). The merged environment is also used to find
   the CLI on `PATH` and to run `atm`. On Windows names match case-insensitively.
 - **Syntax.** `KEY=value` lines, optional `export `, `#` comments (also after a space

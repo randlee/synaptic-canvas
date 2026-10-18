@@ -1,5 +1,5 @@
 name: sc-launchpad
-version: 0.14.1
+version: 0.14.2
 description: >
   Launch Claude (including Fable), Codex (including Astra, Sol, Terra, and Luna), or
   Gemini as a separate background
@@ -24,6 +24,7 @@ artifacts:
   agents:
     - agents/launchpad.md
   scripts:
+    - scripts/agent_identity.py
     - scripts/agent_models.py
     - scripts/launchpad_commands.py
     - scripts/launchpad_env.py
@@ -34,6 +35,8 @@ artifacts:
     - scripts/sc_launchpad_task.py
 
 shared_scripts:
+  - source: packages/shared/scripts/agent_identity.py
+    target: scripts/agent_identity.py
   - source: packages/shared/scripts/agent_models.py
     target: scripts/agent_models.py
   - source: packages/shared/scripts/launchpad_shared.py

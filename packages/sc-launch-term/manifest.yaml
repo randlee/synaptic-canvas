@@ -1,5 +1,5 @@
 name: sc-launch-term
-version: 0.14.1
+version: 0.14.2
 description: >
   Launch Claude (including Fable), Codex (including Sol, Astra, Terra, and Luna), and
   Gemini sessions in supported terminals with platform-aware autodetect, cmux
@@ -35,12 +35,15 @@ artifacts:
     - commands/sc/codex.md
     - commands/sc/gemini.md
   scripts:
+    - scripts/agent_identity.py
     - scripts/agent_models.py
     - scripts/launch_term_shared.py
     - scripts/sc-term-launch.sh
     - scripts/sc-term-launch.py
 
 shared_scripts:
+  - source: packages/shared/scripts/agent_identity.py
+    target: scripts/agent_identity.py
   - source: packages/shared/scripts/agent_models.py
     target: scripts/agent_models.py
 

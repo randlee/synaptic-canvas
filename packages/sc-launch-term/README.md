@@ -4,6 +4,8 @@ Launch Claude, Codex, and Gemini sessions in supported terminals with a shared
 autodetect launcher. Codex exposes Sol, Astra, Terra, and Luna model aliases through
 one shared model-launch implementation. Models and reasoning-effort levels come
 from the shared table `scripts/agent_models.py` (also used by sc-launchpad and sc-codex).
+Generated ATM identities come from the shared name pools in `scripts/agent_identity.py`
+(also used by sc-launchpad).
 
 ## Commands
 
@@ -24,7 +26,7 @@ Each command accepts:
 - `--terminal <name>` to force a specific terminal backend
 - `--tab` to request a new tab when the backend supports it
 - `--tmux` to create or attach to a named tmux session
-- `--identity <name>` optional; only used when `ATM_TEAM` is set. With a team, an omitted identity is generated from the model-specific pool and both `ATM_TEAM` and `ATM_IDENTITY` are exported. Without a team it is ignored with a warning
+- `--identity <name>` optional; only used when `ATM_TEAM` is set. With a team, an omitted identity is generated from the model-specific pool and `ATM_TEAM`, `ATM_IDENTITY` and `BEADS_ACTOR` (equal to the identity) are exported. Without a team it is ignored with a warning
 - `--effort <level>` optional reasoning effort (Claude and Codex commands): claude `low`..`max`, codex `low`..`ultra` (`luna` stops at `max`); omitted means the CLI's default
 - `-- <args...>` to forward extra CLI args to the launched tool
 
@@ -55,15 +57,20 @@ Notes:
   `-c model_reasoning_effort=<level>` for codex.
 - When `--tmux` is used with Claude model commands, the launcher also
   adds `--teammate-mode tmux` to match the current local wrappers.
-- If `ATM_TEAM` is set in the current environment, every launch exports both
-  `ATM_TEAM` and an explicit or generated `ATM_IDENTITY=<name>` into the launched session.
+- If `ATM_TEAM` is set in the current environment, every launch exports
+  `ATM_TEAM`, an explicit or generated `ATM_IDENTITY=<name>` and
+  `BEADS_ACTOR=<name>` (the same name) into the launched session.
+  `BEADS_ACTOR` is the actor `bd` (beads) records in audit-trail entries and
+  slot holders, so it always tracks the child's `ATM_IDENTITY`.
 - If `ATM_TEAM` is not set, the launcher does not generate, register or export
-  an `ATM_IDENTITY`. An inherited `ATM_IDENTITY` (the parent session's) is
-  cleared in the launched session (`unset ATM_IDENTITY` in POSIX shells,
-  `Remove-Item Env:ATM_IDENTITY` in PowerShell) and in the launcher's own
-  environment, so no backend (tmux, WezTerm, Windows Terminal, cmux, ...) can
-  hand the parent's identity to the child. `ATM_TEAM` is never cleared.
-  `--identity` is ignored with a warning on stderr.
+  an `ATM_IDENTITY` or `BEADS_ACTOR`. An inherited `ATM_IDENTITY` and
+  `BEADS_ACTOR` (the parent session's) are cleared in the launched session
+  (`unset ATM_IDENTITY BEADS_ACTOR` in POSIX shells,
+  `Remove-Item Env:ATM_IDENTITY,Env:BEADS_ACTOR` in PowerShell) and in the
+  launcher's own environment, so no backend (tmux, WezTerm, Windows Terminal,
+  cmux, ...) can hand the parent's identity to the child, and `bd` in the child
+  falls back to its own default actor instead of the parent's. `ATM_TEAM` is
+  never cleared. `--identity` is ignored with a warning on stderr.
 - When `ATM_TEAM` is set, the launcher also runs
   `atm teams add-member <team> <identity> --model <model> --cwd <dir>` before
   starting the AI tool. Pane-specific `--pane-id` wiring is intentionally left
@@ -87,7 +94,7 @@ This package is intended for global command installation under `~/.claude/`.
 - `/sc:sol`, `/sc:astra`, `/sc:terra`, `/sc:luna`, and `/sc:codex` forward to the local `codex` executable on `PATH`.
 - `/sc:gemini` forwards to the local `gemini` executable on `PATH`.
 - cmux requires the local `cmux` CLI on `PATH`; cmux launches always target a new workspace/tab.
-- When `ATM_TEAM` is present, the launcher exports both `ATM_TEAM` and an explicit or generated `ATM_IDENTITY` into the child session. Without `ATM_TEAM`, it exports no identity and clears an inherited `ATM_IDENTITY` (never `ATM_TEAM`).
+- When `ATM_TEAM` is present, the launcher exports `ATM_TEAM`, an explicit or generated `ATM_IDENTITY`, and `BEADS_ACTOR` set to that identity into the child session. Without `ATM_TEAM`, it exports no identity and clears an inherited `ATM_IDENTITY` and `BEADS_ACTOR` (never `ATM_TEAM`).
 - In ATM teammate mode, the launcher also runs `atm teams add-member <team> <identity> --model <model> --cwd <dir>` before starting the tool.
 - `--tmux` creates or reuses a local tmux session and therefore depends on a trusted local `tmux` installation.
 - The installed wrapper is `.claude/scripts/sc-term-launch.sh`, which resolves Python through the local machine in this order: `python3`, `py -3`, then `python`.

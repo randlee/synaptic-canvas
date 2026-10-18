@@ -42,6 +42,7 @@ FAKE_CLI = textwrap.dedent(
                     "stdin": sys.stdin.buffer.read().decode("utf-8") if not sys.stdin.isatty() else None,
                     "atm_team": os.environ.get("ATM_TEAM"),
                     "atm_identity": os.environ.get("ATM_IDENTITY"),
+                    "beads_actor": os.environ.get("BEADS_ACTOR"),
                     "codex_home": os.environ.get("CODEX_HOME"),
                     "env_probe": {k: os.environ.get(k) for k in spec.get("env_probe", [])},
                 },
@@ -136,7 +137,7 @@ def workdir(tmp_path):
 
 def make_env(fake_bin, tmp_path, spec=None, **extra):
     env = dict(os.environ)
-    for name in ("ATM_TEAM", "ATM_IDENTITY", "CODEX_HOME"):
+    for name in ("ATM_TEAM", "ATM_IDENTITY", "BEADS_ACTOR", "CODEX_HOME"):
         env.pop(name, None)
     tmp = str(tmp_path / "tmp")
     env.update(
@@ -337,28 +338,157 @@ def test_launchpad_variables_win_over_env_file(fake_bin, tmp_path):
     project = tmp_path / "project"
     project.mkdir()
     (project / "creds.env").write_text(
-        f"CODEX_HOME={real_home}\nATM_IDENTITY=from-file\nATM_TEAM=team-file\n", encoding="utf-8"
+        f"CODEX_HOME={real_home}\nATM_IDENTITY=from-file\nATM_TEAM=team-file\nBEADS_ACTOR=Parent-Actor\n",
+        encoding="utf-8",
     )
     response = run(fake_bin, tmp_path, {"stdout": CODEX_OK}, tool="codex", isolation=ISOLATED, env_file="creds.env")
     assert response["success"] is True, response
     child = recorded(tmp_path)
     home = Path(child["codex_home"])
     assert home != real_home and (home / "auth.json").exists()  # private home, login taken from the file's
-    # Not teammate mode: the identity is cleared, the team is kept.
+    # Not teammate mode: the identity and BEADS_ACTOR are cleared, the team is kept.
     assert response["data"]["atm_identity"] is None
     assert child["atm_identity"] is None
+    assert child["beads_actor"] is None
     assert child["atm_team"] == "team-file"
 
 
-def test_child_keeps_parent_team_but_never_its_identity(fake_bin, tmp_path, workdir):
-    env = make_env(fake_bin, tmp_path, {"stdout": "ok\n"}, ATM_TEAM="team-a", ATM_IDENTITY="Parent-1234")
-    env["PATH"] = str(fake_bin)  # no `atm`: any registration attempt would fail the launch
-    response = lp.run_payload(payload(cwd=str(workdir)), env)
+PARENT_ATM = {"ATM_TEAM": "team-a", "ATM_IDENTITY": "Parent-1234", "BEADS_ACTOR": "Parent-Actor"}
+FAKE_ATM = textwrap.dedent(
+    """
+    import json, os, sys
+    with open(os.environ["FAKE_ATM_RECORD"], "a", encoding="utf-8") as fh:
+        fh.write(json.dumps(sys.argv[1:]) + "\\n")
+    """
+)
+
+
+@pytest.fixture
+def fake_atm(fake_bin, tmp_path):
+    """An `atm` on PATH that records each argv (one JSON line per call) and succeeds."""
+    script = tmp_path / "fake_atm.py"
+    script.write_text(FAKE_ATM, encoding="utf-8")
+    if os.name == "nt":
+        (fake_bin / "atm.cmd").write_text(f'@"{sys.executable}" "{script}" %*\r\n', encoding="utf-8")
+    else:
+        target = fake_bin / "atm"
+        target.write_text(f"#!{sys.executable}\n" + FAKE_ATM, encoding="utf-8")
+        target.chmod(0o755)
+    record = tmp_path / "atm.jsonl"
+
+    def calls():
+        if not record.exists():
+            return []
+        return [json.loads(line) for line in record.read_text(encoding="utf-8").splitlines()]
+
+    return record, calls
+
+
+@pytest.fixture
+def stub_identity(monkeypatch):
+    """Make generated identities exact: the last name of the pool, suffix `beef`."""
+    import agent_identity
+
+    pools = []
+
+    def choice(pool):
+        pools.append(list(pool))
+        return pool[-1]
+
+    monkeypatch.setattr(agent_identity.secrets, "choice", choice)
+    monkeypatch.setattr(agent_identity.secrets, "token_hex", lambda nbytes: "beef")
+    return agent_identity, pools
+
+
+def atm_env(fake_bin, tmp_path, fake_atm, spec=None, **parent):
+    env = make_env(fake_bin, tmp_path, spec or {"stdout": "ok\n"}, **parent)
+    env["FAKE_ATM_RECORD"] = str(fake_atm[0])
+    return env
+
+
+@pytest.mark.parametrize(
+    ("tool", "model", "family", "roster"),
+    [
+        ("claude", None, "fable", "fable"),
+        ("claude", "opus", "opus", "opus"),
+        ("claude", "claude-haiku-5-5", "haiku", "haiku"),
+        ("claude", "sonnet[1m]", "sonnet", "sonnet[1m]"),
+        ("codex", None, "sol", "sol"),
+        ("codex", "terra", "terra", "terra"),
+        ("codex", "gpt-6-sol", "sol", "gpt-6-sol"),  # no alias: the family inside the id
+        ("gemini", None, "gemini", "gemini"),
+    ],
+)
+def test_team_member_without_identity_gets_a_generated_registered_identity(
+    fake_bin, tmp_path, workdir, fake_atm, stub_identity, tool, model, family, roster
+):
+    agent_identity, pools = stub_identity
+    env = atm_env(fake_bin, tmp_path, fake_atm, **PARENT_ATM)
+    response = lp.run_payload(payload(tool=tool, model=model, cwd=str(workdir)), env)
     assert response["success"] is True, response
+
+    expected = f"{agent_identity._IDENTITY_NAMES[family][-1]}-beef"
+    assert pools == [agent_identity._IDENTITY_NAMES[family]]
+    assert fake_atm[1]() == [
+        ["teams", "add-member", "team-a", expected, "--model", roster, "--cwd", str(workdir)]
+    ]
+    data = response["data"]
+    assert (data["teammate_mode"], data["atm_team"], data["atm_identity"]) == (True, "team-a", expected)
+    child = recorded(tmp_path)
+    assert child["atm_team"] == "team-a"
+    assert child["atm_identity"] == expected
+    assert child["beads_actor"] == expected
+    assert expected not in (PARENT_ATM["ATM_IDENTITY"], PARENT_ATM["BEADS_ACTOR"])
+
+
+def test_tools_none_child_keeps_parent_team_but_gets_no_identity(
+    fake_bin, tmp_path, fake_atm, stub_identity, private_tmp
+):
+    _, pools = stub_identity
+    env = atm_env(fake_bin, tmp_path, fake_atm, {"stdout": CLAUDE_OK}, **PARENT_ATM)
+    response = lp.run_payload(payload(isolation=ISOLATED), env)
+    assert response["success"] is True, response
+    assert pools == []  # nothing generated
+    assert fake_atm[1]() == []  # nothing registered
     child = recorded(tmp_path)
     assert child["atm_team"] == "team-a"
     assert child["atm_identity"] is None
+    assert child["beads_actor"] is None
+    data = response["data"]
+    assert (data["teammate_mode"], data["atm_team"], data["atm_identity"]) == (False, None, None)
+
+
+def test_no_team_child_gets_no_identity_and_no_parent_actor(
+    fake_bin, tmp_path, workdir, fake_atm, stub_identity
+):
+    _, pools = stub_identity
+    env = atm_env(
+        fake_bin, tmp_path, fake_atm, ATM_IDENTITY="Parent-1234", BEADS_ACTOR="Parent-Actor"
+    )
+    response = lp.run_payload(payload(cwd=str(workdir)), env)
+    assert response["success"] is True, response
+    assert pools == []
+    assert fake_atm[1]() == []
+    child = recorded(tmp_path)
+    assert (child["atm_team"], child["atm_identity"], child["beads_actor"]) == (None, None, None)
     assert response["data"]["teammate_mode"] is False
+
+
+def test_teammate_child_beads_actor_is_its_explicit_atm_identity(
+    fake_bin, tmp_path, workdir, fake_atm, stub_identity
+):
+    _, pools = stub_identity
+    env = atm_env(fake_bin, tmp_path, fake_atm, **PARENT_ATM)
+    response = lp.run_payload(payload(cwd=str(workdir), model="opus", atm_identity="r1"), env)
+    assert response["success"] is True, response
+    assert response["data"]["teammate_mode"] is True
+    assert response["data"]["atm_identity"] == "r1"
+    assert pools == []  # an explicit identity is used as given
+    assert fake_atm[1]() == [["teams", "add-member", "team-a", "r1", "--model", "opus", "--cwd", str(workdir)]]
+    child = recorded(tmp_path)
+    assert child["atm_team"] == "team-a"
+    assert child["atm_identity"] == "r1"
+    assert child["beads_actor"] == child["atm_identity"]
 
 
 def test_missing_env_file_fails_before_launch(fake_bin, tmp_path, workdir):
