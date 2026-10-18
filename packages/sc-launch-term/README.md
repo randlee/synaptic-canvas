@@ -24,7 +24,7 @@ Each command accepts:
 - `--terminal <name>` to force a specific terminal backend
 - `--tab` to request a new tab when the backend supports it
 - `--tmux` to create or attach to a named tmux session
-- `--identity <name>` optional; if omitted, the launcher generates a model-specific identity and exports both `ATM_TEAM` and `ATM_IDENTITY`
+- `--identity <name>` optional; only used when `ATM_TEAM` is set. With a team, an omitted identity is generated from the model-specific pool and both `ATM_TEAM` and `ATM_IDENTITY` are exported. Without a team it is ignored with a warning
 - `--effort <level>` optional reasoning effort (Claude and Codex commands): claude `low`..`max`, codex `low`..`ultra` (`luna` stops at `max`); omitted means the CLI's default
 - `-- <args...>` to forward extra CLI args to the launched tool
 
@@ -57,6 +57,13 @@ Notes:
   adds `--teammate-mode tmux` to match the current local wrappers.
 - If `ATM_TEAM` is set in the current environment, every launch exports both
   `ATM_TEAM` and an explicit or generated `ATM_IDENTITY=<name>` into the launched session.
+- If `ATM_TEAM` is not set, the launcher does not generate, register or export
+  an `ATM_IDENTITY`. An inherited `ATM_IDENTITY` (the parent session's) is
+  cleared in the launched session (`unset ATM_IDENTITY` in POSIX shells,
+  `Remove-Item Env:ATM_IDENTITY` in PowerShell) and in the launcher's own
+  environment, so no backend (tmux, WezTerm, Windows Terminal, cmux, ...) can
+  hand the parent's identity to the child. `ATM_TEAM` is never cleared.
+  `--identity` is ignored with a warning on stderr.
 - When `ATM_TEAM` is set, the launcher also runs
   `atm teams add-member <team> <identity> --model <model> --cwd <dir>` before
   starting the AI tool. Pane-specific `--pane-id` wiring is intentionally left
@@ -80,7 +87,7 @@ This package is intended for global command installation under `~/.claude/`.
 - `/sc:sol`, `/sc:astra`, `/sc:terra`, `/sc:luna`, and `/sc:codex` forward to the local `codex` executable on `PATH`.
 - `/sc:gemini` forwards to the local `gemini` executable on `PATH`.
 - cmux requires the local `cmux` CLI on `PATH`; cmux launches always target a new workspace/tab.
-- When `ATM_TEAM` is present, the launcher exports both `ATM_TEAM` and an explicit or generated `ATM_IDENTITY` into the child session.
+- When `ATM_TEAM` is present, the launcher exports both `ATM_TEAM` and an explicit or generated `ATM_IDENTITY` into the child session. Without `ATM_TEAM`, it exports no identity and clears an inherited `ATM_IDENTITY` (never `ATM_TEAM`).
 - In ATM teammate mode, the launcher also runs `atm teams add-member <team> <identity> --model <model> --cwd <dir>` before starting the tool.
 - `--tmux` creates or reuses a local tmux session and therefore depends on a trusted local `tmux` installation.
 - The installed wrapper is `.claude/scripts/sc-term-launch.sh`, which resolves Python through the local machine in this order: `python3`, `py -3`, then `python`.

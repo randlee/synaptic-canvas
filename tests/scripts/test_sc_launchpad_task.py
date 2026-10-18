@@ -43,8 +43,12 @@ def test_teammate_mode_needs_team_and_identity(env, identity, expected):
 
 def test_child_env_sets_or_clears_atm_vars():
     parent = {"ATM_TEAM": "t", "ATM_IDENTITY": "lead", "KEEP": "1"}
-    assert build_child_env(parent, False, None, None) == {"KEEP": "1"}
+    # Not teammate mode: the parent's identity is dropped, its team is kept.
+    assert build_child_env(parent, False, None, None) == {"KEEP": "1", "ATM_TEAM": "t"}
+    assert build_child_env({"ATM_IDENTITY": "lead", "KEEP": "1"}, False, None, None) == {"KEEP": "1"}
     assert build_child_env({"KEEP": "1"}, True, "t", "r1") == {"KEEP": "1", "ATM_TEAM": "t", "ATM_IDENTITY": "r1"}
+    # Teammate mode replaces an inherited identity with the registered one.
+    assert build_child_env(parent, True, "t", "r1") == {"KEEP": "1", "ATM_TEAM": "t", "ATM_IDENTITY": "r1"}
 
 
 # --- payload rules -----------------------------------------------------------

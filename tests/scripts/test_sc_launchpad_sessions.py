@@ -41,6 +41,7 @@ FAKE_CLI = textwrap.dedent(
                     "cwd_entries": sorted(os.listdir(os.getcwd())),
                     "stdin": sys.stdin.buffer.read().decode("utf-8") if not sys.stdin.isatty() else None,
                     "atm_team": os.environ.get("ATM_TEAM"),
+                    "atm_identity": os.environ.get("ATM_IDENTITY"),
                     "codex_home": os.environ.get("CODEX_HOME"),
                     "env_probe": {k: os.environ.get(k) for k in spec.get("env_probe", [])},
                 },
@@ -335,12 +336,29 @@ def test_launchpad_variables_win_over_env_file(fake_bin, tmp_path):
     (real_home / "auth.json").write_text("{}", encoding="utf-8")
     project = tmp_path / "project"
     project.mkdir()
-    (project / "creds.env").write_text(f"CODEX_HOME={real_home}\nATM_IDENTITY=from-file\n", encoding="utf-8")
+    (project / "creds.env").write_text(
+        f"CODEX_HOME={real_home}\nATM_IDENTITY=from-file\nATM_TEAM=team-file\n", encoding="utf-8"
+    )
     response = run(fake_bin, tmp_path, {"stdout": CODEX_OK}, tool="codex", isolation=ISOLATED, env_file="creds.env")
     assert response["success"] is True, response
-    home = Path(recorded(tmp_path)["codex_home"])
+    child = recorded(tmp_path)
+    home = Path(child["codex_home"])
     assert home != real_home and (home / "auth.json").exists()  # private home, login taken from the file's
-    assert response["data"]["atm_identity"] is None  # not teammate mode: ATM vars are cleared
+    # Not teammate mode: the identity is cleared, the team is kept.
+    assert response["data"]["atm_identity"] is None
+    assert child["atm_identity"] is None
+    assert child["atm_team"] == "team-file"
+
+
+def test_child_keeps_parent_team_but_never_its_identity(fake_bin, tmp_path, workdir):
+    env = make_env(fake_bin, tmp_path, {"stdout": "ok\n"}, ATM_TEAM="team-a", ATM_IDENTITY="Parent-1234")
+    env["PATH"] = str(fake_bin)  # no `atm`: any registration attempt would fail the launch
+    response = lp.run_payload(payload(cwd=str(workdir)), env)
+    assert response["success"] is True, response
+    child = recorded(tmp_path)
+    assert child["atm_team"] == "team-a"
+    assert child["atm_identity"] is None
+    assert response["data"]["teammate_mode"] is False
 
 
 def test_missing_env_file_fails_before_launch(fake_bin, tmp_path, workdir):

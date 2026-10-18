@@ -13,7 +13,7 @@ Parse from `$ARGUMENTS`:
 - `--terminal <name>` optional explicit backend. Default: `auto`.
 - `--tab` optional request for a new tab instead of a new window when supported.
 - `--tmux` optional tmux session flow using the session name `"{folder} - opus"`.
-- `--identity <name>` optional. If omitted, a random name is generated. Exports both `ATM_TEAM` and `ATM_IDENTITY=<name>` into the launched session.
+- `--identity <name>` optional; only meaningful when `ATM_TEAM` is set. With `ATM_TEAM` set, the launcher exports `ATM_TEAM` and `ATM_IDENTITY=<name>` into the launched session, generating a name from the opus identity pool when omitted. Without `ATM_TEAM`, no `ATM_IDENTITY` is generated, registered or exported, an inherited `ATM_IDENTITY` is cleared in the launched session (`ATM_TEAM` is left alone), and a supplied `--identity` is ignored with a warning.
 - `--effort <level>` optional reasoning effort: `low`, `medium`, `high`, `xhigh`, or `max` (passed as `--effort <level>`). Default: Claude's own.
 - `-- <claude args...>` optional passthrough Claude CLI arguments. Everything after `--` is forwarded to `claude`.
 
@@ -26,7 +26,7 @@ Backend notes:
 - cmux creates and focuses a new workspace, which is cmux's tab primitive.
 - `--tmux` requires `tmux` on `PATH`. On Windows, only use it if your shell already supports `tmux`.
 - When `--tmux` is used, the launcher also adds `--teammate-mode tmux` to match the current local `opus` wrapper behavior.
-- If `ATM_TEAM` is set and `--identity` is supplied, the launcher registers the member first with `atm teams add-member <team> <identity> --model opus --cwd <dir>`.
+- If `ATM_TEAM` is set, the launcher registers the member (supplied or generated identity) first with `atm teams add-member <team> <identity> --model opus --cwd <dir>`. Without `ATM_TEAM` there is no registration.
 
 ## Steps
 
@@ -56,7 +56,7 @@ Examples:
 
 **Step 4** — Build `TERM_ARG`: `--terminal <name>` if supplied, otherwise omit. Build `EFFORT_ARG`: `--effort <level>` if supplied, otherwise omit.
 
-**Step 5** — Resolve identity: use `--identity <name>` if supplied, otherwise generate a random name. Build `IDENTITY_ARG` from the resolved value.
+**Step 5** — Build `IDENTITY_ARG`: `--identity <name>` if supplied, otherwise omit. Do not invent a name; the launcher generates one from the model's pool only when `ATM_TEAM` is set.
 
 ### Without `--tmux`
 

@@ -155,8 +155,8 @@ class _Result:
 def _capture_run(monkeypatch: pytest.MonkeyPatch, result: "_Result" = None) -> list:
     calls: list = []
 
-    def fake_run(cmd, input, capture_output):
-        calls.append({"cmd": cmd, "input": input})
+    def fake_run(cmd, input, capture_output, env):
+        calls.append({"cmd": cmd, "input": input, "env": env})
         return result or _Result(0, stdout=b"ok\n")
 
     monkeypatch.setattr(task_runner, "_check_runner_available", lambda runner: f"{runner} 1.0")
@@ -224,6 +224,19 @@ def test_run_sync_claude_passes_effort(monkeypatch: pytest.MonkeyPatch) -> None:
     task_runner.run_sync("claude", "sonnet", "hi", "high")
     assert calls[0]["cmd"] == [FAKE_CLAUDE, "--model", "claude-sonnet-5-5", "--effort", "high", "--print"]
     assert calls[0]["input"] == b"hi"
+
+
+@pytest.mark.parametrize("runner", ["codex", "claude"])
+def test_run_sync_child_never_inherits_atm_identity(monkeypatch: pytest.MonkeyPatch, runner) -> None:
+    monkeypatch.setenv("ATM_IDENTITY", "Parent-1234")
+    monkeypatch.setenv("ATM_TEAM", "atm-core")
+    calls = _capture_run(monkeypatch)
+    task_runner.run_sync(runner, task_runner.resolve_model(runner, None), "hi")
+    env = calls[0]["env"]
+    assert "ATM_IDENTITY" not in env
+    assert "Parent-1234" not in env.values()
+    assert env["ATM_TEAM"] == "atm-core"  # still on the caller's team
+    assert task_runner.os.environ["ATM_IDENTITY"] == "Parent-1234"  # caller's env untouched
 
 
 def test_run_sync_raises_with_stderr(monkeypatch: pytest.MonkeyPatch) -> None:

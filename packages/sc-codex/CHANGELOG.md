@@ -3,6 +3,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.14.1] - 2026-10-17
+### Fixed
+- The launched `codex`/`claude` process no longer inherits the caller's
+  `ATM_IDENTITY` (two agents would share one ATM identity). `ATM_TEAM` is kept,
+  so the child stays on the caller's team.
+
 ## [0.14.0] - 2026-10-17
 Model selection and reasoning effort, based on the design of PR #116 by Erik Hauan (@ehrvs),
 re-implemented on the shared model table.

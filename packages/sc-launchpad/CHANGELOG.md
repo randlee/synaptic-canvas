@@ -5,6 +5,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.14.1] - 2026-10-17
+### Fixed
+- Outside teammate mode the child keeps an inherited `ATM_TEAM` and only
+  `ATM_IDENTITY` is cleared: a child is still part of the parent's team but
+  must never take on the parent's identity. Previously both were cleared.
+  Teammate mode (`atm_identity` plus a parent `ATM_TEAM`) is unchanged. This
+  also applies to `ATM_*` values loaded from `env_file`.
+
 ## [0.14.0] - 2026-10-17
 ### Added
 - `effort` payload field: claude `--effort`, codex `-c model_reasoning_effort=<level>`,

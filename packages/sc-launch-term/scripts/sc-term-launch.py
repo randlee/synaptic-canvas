@@ -51,6 +51,10 @@ def fail(message: str, exit_code: int = 1) -> None:
     sys.exit(exit_code)
 
 
+def warn(message: str) -> None:
+    print(f"warning: {message}", file=sys.stderr)
+
+
 def applescript_escape(value: str) -> str:
     return value.replace("\\", "\\\\").replace('"', '\\"')
 
@@ -496,20 +500,66 @@ def apply_env_prefix(
     command: str,
     terminal: str,
     env_vars: dict[str, str],
+    unset: tuple[str, ...] = (),
 ) -> str:
+    """Prefix `command` with env assignments, after clearing every name in `unset`."""
     filtered = {key: value for key, value in env_vars.items() if value}
-    if not filtered:
+    if not filtered and not unset:
         return command
     shell_mode = shell_mode_for_terminal(terminal)
     if shell_mode == "powershell":
         assignments: list[str] = []
+        if unset:
+            targets = ",".join(f"Env:{key}" for key in unset)
+            assignments.append(f"Remove-Item {targets} -ErrorAction SilentlyContinue")
         for key, value in filtered.items():
             assignments.append(f"$env:{key} = {quote_powershell(value)}")
         return "; ".join(assignments + [command])
-    exports: list[str] = []
+    # `unset` of a missing name succeeds, so `&&` keeps any `cd ... &&` chain intact.
+    exports: list[str] = [f"unset {' '.join(unset)}"] if unset else []
     for key, value in filtered.items():
         exports.append(f"export {key}={quote_shell(value)}")
     return " && ".join(exports + [command])
+
+
+def resolve_atm_member(
+    explicit_identity: str | None, pool_key: str | None
+) -> tuple[str | None, str | None]:
+    """Team and identity for the launched session.
+
+    With no ATM team there is no identity: none is generated or registered, an
+    explicit `--identity` is ignored with a warning, and an inherited
+    `ATM_IDENTITY` (the parent's) is dropped from this process's environment, so
+    backends that spawn the child with the launcher's environment (wezterm, wt,
+    cmux, osascript, tmux) cannot pass it on. ATM_TEAM is never touched.
+    """
+    team = resolve_team()
+    if not team:
+        if explicit_identity:
+            warn(
+                f"ignoring --identity {explicit_identity}: ATM_TEAM is not set, "
+                "so no ATM identity is exported"
+            )
+        os.environ.pop("ATM_IDENTITY", None)
+        return None, None
+    return team, resolve_identity(explicit_identity, pool_key)
+
+
+def atm_child_env(
+    team: str | None, identity: str | None
+) -> tuple[dict[str, str], tuple[str, ...]]:
+    """ATM variables to set in the child, and the ones to clear there.
+
+    With a team, export ATM_TEAM and ATM_IDENTITY. Without one, clear only
+    ATM_IDENTITY, so a shell, terminal or tmux server that inherited the parent's
+    identity does not keep it. ATM_TEAM is never cleared.
+    """
+    if not team:
+        return {}, ("ATM_IDENTITY",)
+    env_vars = {"ATM_TEAM": team}
+    if identity:
+        env_vars["ATM_IDENTITY"] = identity
+    return env_vars, ()
 
 
 def apply_atm_env_prefix(
@@ -518,12 +568,8 @@ def apply_atm_env_prefix(
     team: str | None,
     identity: str | None,
 ) -> str:
-    env_vars: dict[str, str] = {}
-    if team:
-        env_vars["ATM_TEAM"] = team
-    if identity:
-        env_vars["ATM_IDENTITY"] = identity
-    return apply_env_prefix(command, terminal, env_vars)
+    env_vars, unset = atm_child_env(team, identity)
+    return apply_env_prefix(command, terminal, env_vars, unset)
 
 
 def wait_for_path(
@@ -615,8 +661,7 @@ def handle_launch_model(args: argparse.Namespace, tool: str) -> None:
         fail("tmux is not available on PATH; omit --tmux or install tmux")
 
     spec, model = resolve_model(tool, args.model, args.effort)
-    team = resolve_team()
-    identity = resolve_identity(args.identity, identity_family(tool, model))
+    team, identity = resolve_atm_member(args.identity, identity_family(tool, model))
     register_team_member(team, identity, model, args.dir)
     launch_id = generate_ulid()
     session_record = model_session_record_path(tool, args.dir, launch_id)
@@ -625,15 +670,13 @@ def handle_launch_model(args: argparse.Namespace, tool: str) -> None:
         build_model_argv(tool, spec, args.effort, extra_args, teammate_mode=bool(args.tmux)),
         terminal,
     )
+    atm_env, atm_unset = atm_child_env(team, identity)
     env_vars = {
         "SC_LAUNCH_ID": launch_id,
         "SC_SESSION_RECORD": str(session_record),
+        **atm_env,
     }
-    if team:
-        env_vars["ATM_TEAM"] = team
-    if identity:
-        env_vars["ATM_IDENTITY"] = identity
-    command = apply_env_prefix(command, terminal, env_vars)
+    command = apply_env_prefix(command, terminal, env_vars, atm_unset)
     shell_command = prepare_shell_command(terminal, command, args.dir, args.tmux)
     run_launch(terminal, shell_command, args.dir, args.tab, title_from_label(model))
     result = {
@@ -655,8 +698,7 @@ def handle_attach_pane_model(args: argparse.Namespace, tool: str) -> None:
         fail("tmux is not available on PATH; cannot attach to a session")
 
     spec, model = resolve_model(tool, args.model, args.effort)
-    team = resolve_team()
-    identity = resolve_identity(args.identity, identity_family(tool, model))
+    team, identity = resolve_atm_member(args.identity, identity_family(tool, model))
     register_team_member(team, identity, model, args.cwd)
     launch_id = generate_ulid()
     session_record = model_session_record_path(tool, args.cwd, launch_id)
@@ -665,15 +707,13 @@ def handle_attach_pane_model(args: argparse.Namespace, tool: str) -> None:
         build_model_argv(tool, spec, args.effort, extra_args, teammate_mode=True),
         terminal,
     )
+    atm_env, atm_unset = atm_child_env(team, identity)
     env_vars = {
         "SC_LAUNCH_ID": launch_id,
         "SC_SESSION_RECORD": str(session_record),
+        **atm_env,
     }
-    if team:
-        env_vars["ATM_TEAM"] = team
-    if identity:
-        env_vars["ATM_IDENTITY"] = identity
-    command = apply_env_prefix(command, terminal, env_vars)
+    command = apply_env_prefix(command, terminal, env_vars, atm_unset)
     run_launch(
         terminal,
         build_tmux_attach_pane(args.session, command),
@@ -699,13 +739,12 @@ def handle_launch(args: argparse.Namespace) -> None:
     if args.tmux and not tmux_available():
         fail("tmux is not available on PATH; omit --tmux or install tmux")
 
-    team = resolve_team()
     member_model = (
         resolve_model("codex", args.member_model, None)[1]
         if args.member_model in agent_models.ALIASES["codex"]
         else args.member_model
     )
-    identity = resolve_identity(args.identity, member_model)
+    team, identity = resolve_atm_member(args.identity, member_model)
     register_team_member(team, identity, member_model, args.dir)
     launch_id, session_record = session_tracking_for_member_model(
         member_model, args.dir
@@ -714,11 +753,9 @@ def handle_launch(args: argparse.Namespace) -> None:
     if launch_id and session_record:
         env_vars["SC_LAUNCH_ID"] = launch_id
         env_vars["SC_SESSION_RECORD"] = str(session_record)
-    if team:
-        env_vars["ATM_TEAM"] = team
-    if identity:
-        env_vars["ATM_IDENTITY"] = identity
-    command = apply_env_prefix(args.command, terminal, env_vars)
+    atm_env, atm_unset = atm_child_env(team, identity)
+    env_vars.update(atm_env)
+    command = apply_env_prefix(args.command, terminal, env_vars, atm_unset)
     shell_command = prepare_shell_command(terminal, command, args.dir, args.tmux)
     run_launch(
         terminal, shell_command, args.dir, args.tab, title_from_command(args.command)
@@ -752,8 +789,7 @@ def handle_attach_pane(args: argparse.Namespace) -> None:
     terminal = resolve_terminal(args.terminal)
     if not tmux_available():
         fail("tmux is not available on PATH; cannot attach a pane")
-    team = resolve_team()
-    identity = resolve_identity(args.identity, args.member_model)
+    team, identity = resolve_atm_member(args.identity, args.member_model)
     register_team_member(team, identity, args.member_model, args.cwd)
     launch_id, session_record = session_tracking_for_member_model(
         args.member_model, args.cwd
@@ -762,11 +798,9 @@ def handle_attach_pane(args: argparse.Namespace) -> None:
     if launch_id and session_record:
         env_vars["SC_LAUNCH_ID"] = launch_id
         env_vars["SC_SESSION_RECORD"] = str(session_record)
-    if team:
-        env_vars["ATM_TEAM"] = team
-    if identity:
-        env_vars["ATM_IDENTITY"] = identity
-    command = apply_env_prefix(args.command, terminal, env_vars)
+    atm_env, atm_unset = atm_child_env(team, identity)
+    env_vars.update(atm_env)
+    command = apply_env_prefix(args.command, terminal, env_vars, atm_unset)
     run_launch(
         terminal,
         build_tmux_attach_pane(args.session, command),

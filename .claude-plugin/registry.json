@@ -21,7 +21,7 @@
         "scripts": 0,
         "schemas": 0
       },
-      "lastUpdated": "2026-10-17T21:00:28.004838+00:00"
+      "lastUpdated": "2026-10-18T02:31:45.580497+00:00"
     },
     {
       "name": "sc-ci-automation",
@@ -38,11 +38,11 @@
         "scripts": 1,
         "schemas": 0
       },
-      "lastUpdated": "2026-10-17T21:00:28.006010+00:00"
+      "lastUpdated": "2026-10-18T02:31:45.581608+00:00"
     },
     {
       "name": "sc-codex",
-      "version": "0.14.0",
+      "version": "0.14.1",
       "description": "Run Codex agents via a Task Tool-compatible runner, with hooks emulation and background execution support.\n",
       "author": "synaptic-canvas",
       "license": "MIT",
@@ -55,7 +55,7 @@
         "scripts": 2,
         "schemas": 2
       },
-      "lastUpdated": "2026-10-17T21:00:28.007059+00:00"
+      "lastUpdated": "2026-10-18T02:31:45.582718+00:00"
     },
     {
       "name": "sc-coding-agent-hardening",
@@ -72,7 +72,7 @@
         "scripts": 0,
         "schemas": 0
       },
-      "lastUpdated": "2026-10-17T21:00:28.007605+00:00"
+      "lastUpdated": "2026-10-18T02:31:45.583193+00:00"
     },
     {
       "name": "sc-commit-push-pr",
@@ -89,7 +89,7 @@
         "scripts": 9,
         "schemas": 0
       },
-      "lastUpdated": "2026-10-17T21:00:28.008432+00:00"
+      "lastUpdated": "2026-10-18T02:31:45.584031+00:00"
     },
     {
       "name": "sc-delay-tasks",
@@ -106,7 +106,7 @@
         "scripts": 2,
         "schemas": 0
       },
-      "lastUpdated": "2026-10-17T21:00:28.009151+00:00"
+      "lastUpdated": "2026-10-18T02:31:45.584702+00:00"
     },
     {
       "name": "sc-docling-pdf",
@@ -123,7 +123,7 @@
         "scripts": 0,
         "schemas": 0
       },
-      "lastUpdated": "2026-10-17T21:00:28.010081+00:00"
+      "lastUpdated": "2026-10-18T02:31:45.585566+00:00"
     },
     {
       "name": "sc-gh-stack",
@@ -140,7 +140,7 @@
         "scripts": 3,
         "schemas": 0
       },
-      "lastUpdated": "2026-10-17T21:00:28.011133+00:00"
+      "lastUpdated": "2026-10-18T02:31:45.586663+00:00"
     },
     {
       "name": "sc-git-worktree",
@@ -157,7 +157,7 @@
         "scripts": 7,
         "schemas": 0
       },
-      "lastUpdated": "2026-10-17T21:00:28.012451+00:00"
+      "lastUpdated": "2026-10-18T02:31:45.587689+00:00"
     },
     {
       "name": "sc-github-issue",
@@ -174,7 +174,7 @@
         "scripts": 1,
         "schemas": 0
       },
-      "lastUpdated": "2026-10-17T21:00:28.013628+00:00"
+      "lastUpdated": "2026-10-18T02:31:45.588824+00:00"
     },
     {
       "name": "sc-just",
@@ -191,7 +191,7 @@
         "scripts": 0,
         "schemas": 0
       },
-      "lastUpdated": "2026-10-17T21:00:28.014699+00:00"
+      "lastUpdated": "2026-10-18T02:31:45.589827+00:00"
     },
     {
       "name": "sc-kanban",
@@ -208,11 +208,11 @@
         "scripts": 5,
         "schemas": 0
       },
-      "lastUpdated": "2026-10-17T21:00:28.015463+00:00"
+      "lastUpdated": "2026-10-18T02:31:45.590635+00:00"
     },
     {
       "name": "sc-launch-term",
-      "version": "0.14.0",
+      "version": "0.14.1",
       "description": "Launch Claude (including Fable), Codex (including Sol, Astra, Terra, and Luna), and Gemini sessions in supported terminals with platform-aware autodetect, cmux workspace tabs, and optional tmux session management.\n",
       "author": "randlee",
       "license": "MIT",
@@ -225,12 +225,12 @@
         "scripts": 4,
         "schemas": 0
       },
-      "lastUpdated": "2026-10-17T21:00:28.016298+00:00"
+      "lastUpdated": "2026-10-18T02:31:45.591506+00:00"
     },
     {
       "name": "sc-launchpad",
-      "version": "0.14.0",
-      "description": "Launch Claude (including Fable), Codex (including Sol, Terra, and Luna), or Gemini as a separate background sub-agent runtime, with explicit ATM teammate-mode normalization and roster registration.\n",
+      "version": "0.14.1",
+      "description": "Launch Claude (including Fable), Codex (including Astra, Sol, Terra, and Luna), or Gemini as a separate background sub-agent runtime, with explicit ATM teammate-mode normalization and roster registration.\n",
       "author": "synaptic-canvas",
       "license": "MIT",
       "keywords": [],
@@ -239,10 +239,10 @@
         "commands": 0,
         "skills": 1,
         "agents": 1,
-        "scripts": 7,
+        "scripts": 8,
         "schemas": 0
       },
-      "lastUpdated": "2026-10-17T21:00:28.017203+00:00"
+      "lastUpdated": "2026-10-18T02:31:45.592508+00:00"
     },
     {
       "name": "sc-manage",
@@ -259,7 +259,7 @@
         "scripts": 8,
         "schemas": 0
       },
-      "lastUpdated": "2026-10-17T21:00:28.018013+00:00"
+      "lastUpdated": "2026-10-18T02:31:45.593347+00:00"
     },
     {
       "name": "sc-refactory",
@@ -276,7 +276,7 @@
         "scripts": 10,
         "schemas": 0
       },
-      "lastUpdated": "2026-10-17T21:00:28.019479+00:00"
+      "lastUpdated": "2026-10-18T02:31:45.594762+00:00"
     },
     {
       "name": "sc-repomix-nuget",
@@ -293,7 +293,7 @@
         "scripts": 3,
         "schemas": 0
       },
-      "lastUpdated": "2026-10-17T21:00:28.020520+00:00"
+      "lastUpdated": "2026-10-18T02:31:45.595534+00:00"
     },
     {
       "name": "sc-roslyn-diff",
@@ -310,7 +310,7 @@
         "scripts": 6,
         "schemas": 0
       },
-      "lastUpdated": "2026-10-17T21:00:28.021386+00:00"
+      "lastUpdated": "2026-10-18T02:31:45.596341+00:00"
     },
     {
       "name": "sc-rust",
@@ -327,7 +327,7 @@
         "scripts": 0,
         "schemas": 0
       },
-      "lastUpdated": "2026-10-17T21:00:28.022818+00:00"
+      "lastUpdated": "2026-10-18T02:31:45.597694+00:00"
     },
     {
       "name": "sc-startup",
@@ -344,7 +344,7 @@
         "scripts": 1,
         "schemas": 0
       },
-      "lastUpdated": "2026-10-17T21:00:28.023651+00:00"
+      "lastUpdated": "2026-10-18T02:31:45.598613+00:00"
     }
   ],
   "metadata": {
@@ -352,9 +352,9 @@
     "totalCommands": 17,
     "totalSkills": 29,
     "totalAgents": 52,
-    "totalScripts": 69,
+    "totalScripts": 70,
     "totalSchemas": 2
   },
-  "generated": "2026-10-17T21:00:28.023670+00:00",
-  "lastUpdated": "2026-10-17T21:00:28.023672+00:00"
+  "generated": "2026-10-18T02:31:45.598625+00:00",
+  "lastUpdated": "2026-10-18T02:31:45.598626+00:00"
 }

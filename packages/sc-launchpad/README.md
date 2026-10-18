@@ -43,12 +43,14 @@ When both are present, the runtime:
 - runs `atm teams add-member <team> <identity> --model <tool-or-model> --cwd <cwd>`
 - launches the child process with both `ATM_TEAM` and `ATM_IDENTITY` set
 
-Otherwise, the runtime clears both ATM variables before spawning the child.
+Otherwise, the runtime clears `ATM_IDENTITY` before spawning the child, so the child
+never takes on the parent's identity, and keeps an inherited `ATM_TEAM`, because the
+child is still part of the parent's team. No member is registered.
 
 ## Security and Runtime Notes
 
 - `sc-launchpad` launches only locally installed `claude`, `codex`, or `gemini` executables.
-- The runtime preserves most of the parent environment, but explicitly normalizes `ATM_TEAM` and `ATM_IDENTITY` to avoid leaking partial teammate state.
+- The runtime preserves most of the parent environment, but explicitly normalizes `ATM_IDENTITY` (set in teammate mode, cleared otherwise) so the parent's identity never leaks into the child. `ATM_TEAM` is kept.
 - The `launchpad` agent is intentionally thin: it should make one runtime call and return the runtime stdout exactly as emitted.
 - The runtime expects absolute working-directory paths in launch payloads.
 - Structured, resumable, and isolated launches are described in "Sessions, Resume, and Isolation" below.

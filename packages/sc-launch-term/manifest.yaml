@@ -1,5 +1,5 @@
 name: sc-launch-term
-version: 0.14.0
+version: 0.14.1
 description: >
   Launch Claude (including Fable), Codex (including Sol, Astra, Terra, and Luna), and
   Gemini sessions in supported terminals with platform-aware autodetect, cmux

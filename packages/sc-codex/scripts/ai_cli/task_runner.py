@@ -210,12 +210,23 @@ def _preview(text: str, limit: int = 200) -> str:
     return cleaned[: limit - 1] + "…"
 
 
+def child_env() -> dict:
+    """The runner's environment minus ATM_IDENTITY.
+
+    The launched agent is a separate process and must never take on the caller's
+    ATM identity. ATM_TEAM is kept: the child is still part of the caller's team.
+    """
+    env = os.environ.copy()
+    env.pop("ATM_IDENTITY", None)
+    return env
+
+
 def run_sync(runner: RunnerType, model: str, prompt: str, reasoning_effort: Optional[str] = None) -> str:
     """Run one prompt to completion. The prompt is sent as UTF-8 bytes on stdin (binary
     mode, so newlines are never translated on Windows)."""
     _check_runner_available(runner)
     cmd = build_command(runner, _runner_executable(runner), model, reasoning_effort)
-    res = subprocess.run(cmd, input=prompt.encode("utf-8"), capture_output=True)
+    res = subprocess.run(cmd, input=prompt.encode("utf-8"), capture_output=True, env=child_env())
     stdout = res.stdout.decode("utf-8", errors="replace")
     stderr = res.stderr.decode("utf-8", errors="replace")
     if res.returncode != 0:

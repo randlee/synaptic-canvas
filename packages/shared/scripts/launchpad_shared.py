@@ -22,12 +22,16 @@ def build_child_env(
     team: str | None,
     identity: str | None,
 ) -> dict[str, str]:
-    """Copy the parent environment and normalize only ATM variables."""
+    """Copy the parent environment and normalize only ATM variables.
+
+    Teammate mode sets the team and the registered identity. Otherwise only
+    ATM_IDENTITY is dropped: the child stays on the parent's team (ATM_TEAM is
+    kept) but must never take on the parent's identity.
+    """
     env = parent_env.copy()
     if teammate_mode:
         env["ATM_TEAM"] = team or ""
         env["ATM_IDENTITY"] = identity or ""
         return env
-    env.pop("ATM_TEAM", None)
     env.pop("ATM_IDENTITY", None)
     return env

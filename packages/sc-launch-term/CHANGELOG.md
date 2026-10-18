@@ -5,6 +5,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.14.1] - 2026-10-17
+### Fixed
+- With no ATM team (`ATM_TEAM` unset), launches no longer generate, register
+  (`atm teams add-member`) or export an `ATM_IDENTITY`. An inherited
+  `ATM_IDENTITY` is cleared in the launched session (`unset ATM_IDENTITY` in
+  POSIX shells, `Remove-Item Env:ATM_IDENTITY` in PowerShell for Windows
+  Terminal) and dropped from the launcher's own environment, so no backend
+  hands the parent's identity to the child (two agents sharing one identity).
+  `ATM_TEAM` is never cleared. An explicit `--identity` without a team is ignored with a warning.
+  Launches with `ATM_TEAM` set are unchanged.
+
 ## [0.14.0] - 2026-10-17
 ### Added
 - `/sc:astra` (`gpt-6-astra`) with its own identity pool.

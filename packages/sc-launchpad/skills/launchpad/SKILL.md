@@ -1,6 +1,6 @@
 ---
 name: launchpad
-version: 0.14.0
+version: 0.14.1
 description: "Use when another workflow must launch Claude, Codex, or Gemini as a separate background sub-agent without opening a terminal. Spawns the `launchpad` agent with fenced JSON input and `run_in_background: true`."
 ---
 
@@ -98,9 +98,9 @@ Then the runtime:
 - launches the child with both `ATM_TEAM` and `ATM_IDENTITY` set
 
 Otherwise the runtime:
-- clears `ATM_TEAM`
-- clears `ATM_IDENTITY`
-- launches as a plain background agent
+- clears `ATM_IDENTITY` (the child must never take on the parent's identity)
+- keeps an inherited `ATM_TEAM` (the child is still part of the parent's team)
+- launches as a plain background agent, without registering a member
 
 All other parent environment variables are preserved for the child process.
 

@@ -77,7 +77,7 @@
       "name": "sc-codex",
       "source": "./packages/sc-codex",
       "description": "Run Codex agents via a Task Tool-compatible runner, with hooks emulation and background execution support.\n",
-      "version": "0.14.0",
+      "version": "0.14.1",
       "author": {
         "name": "synaptic-canvas"
       },
@@ -265,7 +265,7 @@
       "name": "sc-launch-term",
       "source": "./packages/sc-launch-term",
       "description": "Launch Claude (including Fable), Codex (including Sol, Astra, Terra, and Luna), and Gemini sessions in supported terminals with platform-aware autodetect, cmux workspace tabs, and optional tmux session management.\n",
-      "version": "0.14.0",
+      "version": "0.14.1",
       "author": {
         "name": "randlee"
       },
@@ -292,7 +292,7 @@
       "name": "sc-launchpad",
       "source": "./packages/sc-launchpad",
       "description": "Launch Claude (including Fable), Codex (including Astra, Sol, Terra, and Luna), or Gemini as a separate background sub-agent runtime, with explicit ATM teammate-mode normalization and roster registration.\n",
-      "version": "0.14.0",
+      "version": "0.14.1",
       "author": {
         "name": "synaptic-canvas"
       },

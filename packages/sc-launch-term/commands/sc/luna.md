@@ -20,7 +20,7 @@ For `--tmux`, use `launch-codex-model luna ... --tmux "<session>"` and
 `attach-pane-codex-model "<session>" luna --cwd "<resolved_dir>" ...` in place of the
 Claude subcommands.
 
-A missing identity is drawn from the Luna sci-fi/cyberpunk name pool. The launched command is:
+With `ATM_TEAM` set, a missing identity is drawn from the Luna sci-fi/cyberpunk name pool; without `ATM_TEAM`, no identity is generated or exported and `--identity` is ignored with a warning. The launched command is:
 
 ```text
 codex --model gpt-6-luna --yolo --enable hooks
