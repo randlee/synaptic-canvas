@@ -1,11 +1,11 @@
 {
   "$schema": "https://yourcompany.github.io/schemas/package-registry.schema.json",
   "version": "2.0.0",
-  "generated": "2026-10-18T03:32:51Z",
+  "generated": "2026-10-18T05:23:01Z",
   "repo": "randlee/synaptic-canvas",
   "marketplace": {
     "name": "Synaptic Canvas",
-    "version": "0.13.0",
+    "version": "0.14.0",
     "status": "beta",
     "url": "https://github.com/randlee/synaptic-canvas"
   },
@@ -283,7 +283,7 @@
         "commands": 0,
         "skills": 0,
         "agents": 0,
-        "scripts": 4,
+        "scripts": 5,
         "schemas": 0
       },
       "dependencies": [
@@ -360,7 +360,7 @@
         "commands": 0,
         "skills": 1,
         "agents": 1,
-        "scripts": 8,
+        "scripts": 9,
         "schemas": 0
       },
       "dependencies": [
@@ -747,7 +747,7 @@
         "commands": 2,
         "skills": 2,
         "agents": 0,
-        "scripts": 3,
+        "scripts": 5,
         "schemas": 0
       },
       "dependencies": [
