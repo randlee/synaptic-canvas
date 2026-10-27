@@ -1,28 +1,35 @@
 ---
 name: rust-best-practices-assignment
-version: 1.0.0
+version: 1.1.0
 description: Render a fenced-JSON assignment for rust-best-practices-agent.
 format: json
 required_variables:
   - review_mode
   - worktree_path
   - review_targets
+  - qa_round
 optional_variables:
   - practice_mode
   - practice_ids
+  - carry_forward_findings_json
   - notes
 defaults:
   practice_mode: ""
   practice_ids: []
+  carry_forward_findings_json: "[]"
   notes: ""
 ---
+{#- A fix round (qa_round above 1) verifies only this reviewer's own carried ids; without them the render fails instead of running open-ended. #}
+{%- set cf = carry_forward_findings_json | replace(" ", "") | replace("\n", "") | replace("\r", "") | replace("\t", "") -%}
+{%- set locked = cf not in ["", "[]", "null", "[null]", "[\"\"]"] -%}
+{%- if qa_round | int > 1 and not locked %}FIX_ROUND_SCOPE_LOCK_REQUIRED{% endif -%}
 {
-  "review_mode": "{{ review_mode }}",
-  "worktree_path": "{{ worktree_path }}",
-  "review_targets": [{% for target in review_targets %}"{{ target }}"{% if not loop.last %}, {% endif %}{% endfor %}],
-  "practice_mode": {% if practice_mode %}"{{ practice_mode }}"{% elif review_mode == "phase_end" %}"all"{% else %}"selected"{% endif %},
+  "review_mode": {{ review_mode }},
+  "worktree_path": {{ worktree_path }},
+  "review_targets": [{% for target in review_targets %}{{ target }}{% if not loop.last %}, {% endif %}{% endfor %}],
+  "practice_mode": {% if practice_mode %}{{ practice_mode }}{% elif review_mode == "phase_end" %}"all"{% else %}"selected"{% endif %},
   "practice_ids": {% if practice_ids and practice_mode != "all" %}
-    [{% for practice_id in practice_ids %}"{{ practice_id }}"{% if not loop.last %}, {% endif %}{% endfor %}]
+    [{% for practice_id in practice_ids %}{{ practice_id }}{% if not loop.last %}, {% endif %}{% endfor %}]
   {% elif not practice_mode and review_mode == "doc_review" %}
     ["RBP-001", "RBP-002", "RBP-003", "RBP-004", "RBP-005", "RBP-008", "RBP-010"]
   {% elif not practice_mode and review_mode == "sprint_review" %}
@@ -30,5 +37,7 @@ defaults:
   {% else %}
     []
   {% endif %},
-  "notes": "{{ notes }}"
+  "carry_forward_findings": {{ carry_forward_findings_json | safe }},
+  "findings_scope_locked": {% if locked %}true{% else %}false{% endif %},
+  "notes": {{ notes ~ (" SCOPE LOCK: this is a fix-round verification dispatch. Report a disposition (fixed | open | regressed) for each id in carry_forward_findings ONLY. Do not add any new finding to the `findings` array beyond those ids, even if you notice something real and unrelated -- put anything else observed under `notes`, not `findings`." if locked else "") }}
 }

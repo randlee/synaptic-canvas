@@ -21,7 +21,7 @@
         "scripts": 0,
         "schemas": 0
       },
-      "lastUpdated": "2026-10-18T05:23:01.257678+00:00"
+      "lastUpdated": "2026-10-27T05:51:08.391100+00:00"
     },
     {
       "name": "sc-ci-automation",
@@ -38,7 +38,7 @@
         "scripts": 1,
         "schemas": 0
       },
-      "lastUpdated": "2026-10-18T05:23:01.258911+00:00"
+      "lastUpdated": "2026-10-27T05:51:08.391879+00:00"
     },
     {
       "name": "sc-codex",
@@ -55,7 +55,7 @@
         "scripts": 2,
         "schemas": 2
       },
-      "lastUpdated": "2026-10-18T05:23:01.259991+00:00"
+      "lastUpdated": "2026-10-27T05:51:08.392602+00:00"
     },
     {
       "name": "sc-coding-agent-hardening",
@@ -72,7 +72,7 @@
         "scripts": 0,
         "schemas": 0
       },
-      "lastUpdated": "2026-10-18T05:23:01.260546+00:00"
+      "lastUpdated": "2026-10-27T05:51:08.392989+00:00"
     },
     {
       "name": "sc-commit-push-pr",
@@ -89,7 +89,7 @@
         "scripts": 9,
         "schemas": 0
       },
-      "lastUpdated": "2026-10-18T05:23:01.261281+00:00"
+      "lastUpdated": "2026-10-27T05:51:08.393599+00:00"
     },
     {
       "name": "sc-delay-tasks",
@@ -106,7 +106,7 @@
         "scripts": 2,
         "schemas": 0
       },
-      "lastUpdated": "2026-10-18T05:23:01.261988+00:00"
+      "lastUpdated": "2026-10-27T05:51:08.394107+00:00"
     },
     {
       "name": "sc-docling-pdf",
@@ -123,7 +123,7 @@
         "scripts": 0,
         "schemas": 0
       },
-      "lastUpdated": "2026-10-18T05:23:01.262934+00:00"
+      "lastUpdated": "2026-10-27T05:51:08.394774+00:00"
     },
     {
       "name": "sc-gh-stack",
@@ -140,7 +140,7 @@
         "scripts": 5,
         "schemas": 0
       },
-      "lastUpdated": "2026-10-18T05:23:01.264084+00:00"
+      "lastUpdated": "2026-10-27T05:51:08.395689+00:00"
     },
     {
       "name": "sc-git-worktree",
@@ -157,7 +157,7 @@
         "scripts": 7,
         "schemas": 0
       },
-      "lastUpdated": "2026-10-18T05:23:01.265130+00:00"
+      "lastUpdated": "2026-10-27T05:51:08.396495+00:00"
     },
     {
       "name": "sc-github-issue",
@@ -174,7 +174,7 @@
         "scripts": 1,
         "schemas": 0
       },
-      "lastUpdated": "2026-10-18T05:23:01.266315+00:00"
+      "lastUpdated": "2026-10-27T05:51:08.397322+00:00"
     },
     {
       "name": "sc-just",
@@ -191,7 +191,7 @@
         "scripts": 0,
         "schemas": 0
       },
-      "lastUpdated": "2026-10-18T05:23:01.267470+00:00"
+      "lastUpdated": "2026-10-27T05:51:08.398106+00:00"
     },
     {
       "name": "sc-kanban",
@@ -208,7 +208,7 @@
         "scripts": 5,
         "schemas": 0
       },
-      "lastUpdated": "2026-10-18T05:23:01.268271+00:00"
+      "lastUpdated": "2026-10-27T05:51:08.398697+00:00"
     },
     {
       "name": "sc-launch-term",
@@ -225,7 +225,7 @@
         "scripts": 5,
         "schemas": 0
       },
-      "lastUpdated": "2026-10-18T05:23:01.269237+00:00"
+      "lastUpdated": "2026-10-27T05:51:08.399358+00:00"
     },
     {
       "name": "sc-launchpad",
@@ -242,7 +242,7 @@
         "scripts": 9,
         "schemas": 0
       },
-      "lastUpdated": "2026-10-18T05:23:01.270234+00:00"
+      "lastUpdated": "2026-10-27T05:51:08.400068+00:00"
     },
     {
       "name": "sc-manage",
@@ -259,7 +259,7 @@
         "scripts": 8,
         "schemas": 0
       },
-      "lastUpdated": "2026-10-18T05:23:01.271019+00:00"
+      "lastUpdated": "2026-10-27T05:51:08.400631+00:00"
     },
     {
       "name": "sc-refactory",
@@ -276,7 +276,7 @@
         "scripts": 10,
         "schemas": 0
       },
-      "lastUpdated": "2026-10-18T05:23:01.272514+00:00"
+      "lastUpdated": "2026-10-27T05:51:08.401528+00:00"
     },
     {
       "name": "sc-repomix-nuget",
@@ -293,7 +293,7 @@
         "scripts": 3,
         "schemas": 0
       },
-      "lastUpdated": "2026-10-18T05:23:01.273455+00:00"
+      "lastUpdated": "2026-10-27T05:51:08.402080+00:00"
     },
     {
       "name": "sc-roslyn-diff",
@@ -310,11 +310,11 @@
         "scripts": 6,
         "schemas": 0
       },
-      "lastUpdated": "2026-10-18T05:23:01.274445+00:00"
+      "lastUpdated": "2026-10-27T05:51:08.402645+00:00"
     },
     {
       "name": "sc-rust",
-      "version": "0.13.0",
+      "version": "0.14.0",
       "description": "Rust development toolkit: idiomatic guidelines, service hardening guidance, design pattern enforcement, and specialized agents for architecture, code review, exploration, implementation, and QA. Includes cross-platform portability guidelines for Ubuntu, macOS, and Windows.\n",
       "author": "randlee",
       "license": "MIT",
@@ -327,7 +327,7 @@
         "scripts": 0,
         "schemas": 0
       },
-      "lastUpdated": "2026-10-18T05:23:01.275834+00:00"
+      "lastUpdated": "2026-10-27T05:51:08.403602+00:00"
     },
     {
       "name": "sc-startup",
@@ -344,7 +344,7 @@
         "scripts": 1,
         "schemas": 0
       },
-      "lastUpdated": "2026-10-18T05:23:01.276663+00:00"
+      "lastUpdated": "2026-10-27T05:51:08.404322+00:00"
     }
   ],
   "metadata": {
@@ -355,6 +355,6 @@
     "totalScripts": 74,
     "totalSchemas": 2
   },
-  "generated": "2026-10-18T05:23:01.276679+00:00",
-  "lastUpdated": "2026-10-18T05:23:01.276680+00:00"
+  "generated": "2026-10-27T05:51:08.404335+00:00",
+  "lastUpdated": "2026-10-27T05:51:08.404336+00:00"
 }

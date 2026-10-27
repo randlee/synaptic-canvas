@@ -1,6 +1,6 @@
 ---
 name: rust-qa-assignment
-version: 1.0.0
+version: 1.1.0
 description: Render a fenced-JSON assignment for rust-qa-agent.
 format: json
 required_variables:
@@ -27,17 +27,17 @@ defaults:
   notes: ""
 ---
 {
-  "worktree_path": "{{ worktree_path }}",
-  "review_mode": "{{ review_mode }}",
-  "review_targets": [{% for target in review_targets %}"{{ target }}"{% if not loop.last %}, {% endif %}{% endfor %}],
+  "worktree_path": {{ worktree_path }},
+  "review_mode": {{ review_mode }},
+  "review_targets": [{% for target in review_targets %}{{ target }}{% if not loop.last %}, {% endif %}{% endfor %}],
   "run_checks": {
     "fmt": {% if fmt %}true{% else %}false{% endif %},
     "clippy": {% if clippy %}true{% else %}false{% endif %},
     "tests": {% if tests %}true{% else %}false{% endif %},
     "coverage": {% if coverage == true %}true{% elif coverage == false %}false{% elif review_mode == "phase_end" %}true{% else %}false{% endif %}
   },
-  "baseline_ref": "{{ baseline_ref }}",
+  "baseline_ref": {{ baseline_ref }},
   "artifact_regeneration_required": {% if artifact_regeneration_required %}true{% else %}false{% endif %},
-  "artifact_commands": "{{ artifact_commands }}",
-  "notes": "{{ notes }}"
+  "artifact_commands": {{ artifact_commands }},
+  "notes": {{ notes }}
 }

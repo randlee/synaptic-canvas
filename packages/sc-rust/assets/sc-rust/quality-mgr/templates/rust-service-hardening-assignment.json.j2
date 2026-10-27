@@ -1,25 +1,32 @@
 ---
 name: rust-service-hardening-assignment
-version: 1.0.0
+version: 1.1.0
 description: Render a fenced-JSON assignment for rust-service-hardening-agent.
 format: json
 required_variables:
   - review_mode
   - worktree_path
   - review_targets
+  - qa_round
 optional_variables:
   - topics
+  - carry_forward_findings_json
   - notes
 defaults:
   topics: []
+  carry_forward_findings_json: "[]"
   notes: ""
 ---
+{#- A fix round (qa_round above 1) verifies only this reviewer's own carried ids; without them the render fails instead of running open-ended. #}
+{%- set cf = carry_forward_findings_json | replace(" ", "") | replace("\n", "") | replace("\r", "") | replace("\t", "") -%}
+{%- set locked = cf not in ["", "[]", "null", "[null]", "[\"\"]"] -%}
+{%- if qa_round | int > 1 and not locked %}FIX_ROUND_SCOPE_LOCK_REQUIRED{% endif -%}
 {
-  "review_mode": "{{ review_mode }}",
-  "worktree_path": "{{ worktree_path }}",
-  "review_targets": [{% for target in review_targets %}"{{ target }}"{% if not loop.last %}, {% endif %}{% endfor %}],
+  "review_mode": {{ review_mode }},
+  "worktree_path": {{ worktree_path }},
+  "review_targets": [{% for target in review_targets %}{{ target }}{% if not loop.last %}, {% endif %}{% endfor %}],
   "topics": {% if topics %}
-    [{% for topic in topics %}"{{ topic }}"{% if not loop.last %}, {% endif %}{% endfor %}]
+    [{% for topic in topics %}{{ topic }}{% if not loop.last %}, {% endif %}{% endfor %}]
   {% elif review_mode == "doc_review" %}
     ["config_validation", "timeouts", "graceful_shutdown", "retry_scope", "backpressure", "health_readiness"]
   {% elif review_mode == "sprint_review" %}
@@ -28,5 +35,7 @@ defaults:
     ["config_validation", "timeouts", "graceful_shutdown", "structured_logging", "request_ids", "retries", "backpressure", "spawn_blocking", "input_limits", "dependency_hygiene", "health_readiness", "ci_release_gates"]
   {% endif %},
   "service_indicator_dependencies": ["tokio", "axum", "hyper", "tonic", "warp", "actix-web", "reqwest"],
-  "notes": "{{ notes }}"
+  "carry_forward_findings": {{ carry_forward_findings_json | safe }},
+  "findings_scope_locked": {% if locked %}true{% else %}false{% endif %},
+  "notes": {{ notes }}
 }

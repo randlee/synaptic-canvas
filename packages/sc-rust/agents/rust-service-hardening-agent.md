@@ -1,6 +1,6 @@
 ---
 name: rust-service-hardening-agent
-version: 0.13.0
+version: 0.14.0
 description: Reviews Rust services for runtime-hardening gaps through a fenced-JSON contract and returns a structured skipped result when service indicators are absent.
 tools: Glob, Grep, LS, Read, NotebookRead
 model: sonnet
@@ -44,6 +44,8 @@ with free-form input.
     "actix-web",
     "reqwest"
   ],
+  "carry_forward_findings": [],
+  "findings_scope_locked": false,
   "notes": "optional context"
 }
 ```
@@ -54,6 +56,19 @@ Rules:
 - `topics` is optional. Omit to use the default topic set for the selected review mode.
 - `service_indicator_dependencies` is optional. Omit to use the default service-indicator dependency list shown above.
 - `review_targets` is optional. Omit to review default changed-file scope plus directly impacted runtime boundaries.
+
+## Verification-Locked Dispatch
+
+When `findings_scope_locked` is `true` (equivalently,
+`carry_forward_findings` is non-empty), verify only the assigned pre-existing
+`RSH-*` findings for this round:
+
+- restrict the canonical `findings` array to assigned finding ids
+- report each assigned finding as fixed, open, or regressed with evidence
+- record unrelated observations only in `notes` for later triage
+- do not turn an unsolicited observation into a finding for this locked round
+
+When `findings_scope_locked` is absent or `false`, review normally.
 
 ## Review Process
 
@@ -92,6 +107,7 @@ This agent is not responsible for:
 - Every violation found is a finding regardless of whether it predates this sprint.
 - The pre-existing/new distinction is informational only.
 - Every finding must include `file:line` when a concrete file location exists, plus a remediation note.
+
 
 ## Output Contract
 
