@@ -5,6 +5,18 @@ All notable changes to the **sc-rust** package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.14.0] - 2026-10-26
+
+### Fixed
+- The three quality-mgr assignment templates render again. They quoted each variable (`"{{ worktree_path }}"`) inside a `format: json` template, where sc-compose already emits every variable as a JSON value, so sc-compose 1.7.0 refused all three with `ERR_RENDER_JSON_MALFORMED`. Variables are now emitted unquoted.
+
+### Added
+- Fix-round scope lock for the subjective reviewers. `rust-best-practices-agent` and `rust-service-hardening-agent` accept `carry_forward_findings` and `findings_scope_locked`; a locked dispatch reports fixed, open or regressed for the carried ids only and puts any new observation in `notes`, so QA converges instead of trading each fixed finding for a new one.
+- Their assignment templates take a required `qa_round` and an optional `carry_forward_findings_json`. Above round 1 the render fails unless that reviewer's own carried ids are supplied.
+
+### Changed
+- `quality-mgr.rust.md` separates Sprint QA from Fix QA: a fix round dispatches only the reviewer that filed the finding, and the subjective reviewers run on a fix round only with an assigned finding of their own category (`RBP-*`, `RSH-*`). The examples pass `qa_round`.
+
 ## [Unreleased]
 
 ### Added

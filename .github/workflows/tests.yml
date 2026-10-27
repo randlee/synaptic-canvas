@@ -57,3 +57,14 @@ jobs:
       - run: python -m pip install pytest pydantic pyyaml
       - name: Local and simulated stack quota and companion tests (no GitHub API)
         run: python -m pytest packages/sc-gh-stack/tests packages/sc-git-worktree/tests -q
+
+  sc-rust-templates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'   # sc-compose publishes cp311 wheels
+      - run: python -m pip install pytest sc-compose==1.7.0
+      - name: Render the sc-rust quality-mgr assignment templates
+        run: python -m pytest tests/test_sc_rust_templates.py -q
